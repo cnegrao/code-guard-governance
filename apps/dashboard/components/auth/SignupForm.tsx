@@ -38,7 +38,7 @@ export function SignupForm() {
         throw new Error(body.error ?? "Signup failed");
       }
 
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");

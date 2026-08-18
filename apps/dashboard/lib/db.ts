@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import "server-only";
 
 function getEnv(key: string): string {
   const value = process.env[key];
@@ -20,6 +21,6 @@ const commonOptions = {
 };
 
 export const db = {
-  read: createClient(supabaseUrl, supabaseAnonKey, commonOptions),
+  read: createClient(supabaseUrl, supabaseServiceRoleKey, commonOptions),
   write: createClient(supabaseUrl, supabaseServiceRoleKey, commonOptions),
 };

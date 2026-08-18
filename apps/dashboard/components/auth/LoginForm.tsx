@@ -29,7 +29,7 @@ export function LoginForm() {
         throw new Error(body.error ?? "Login failed");
       }
 
-      router.push("/dashboard");
+      router.push("/");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
