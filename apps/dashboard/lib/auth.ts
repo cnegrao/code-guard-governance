@@ -1,46 +1,52 @@
 import { cookies } from "next/headers";
-import { jwtVerify, SignJWT } from "jose";
+import { NextResponse } from "next/server";
+import {
+  getRequiredJwtSecret,
+  LEGACY_SESSION_COOKIE_NAME,
+  verifyLegacyToken,
+} from "@/lib/auth/token";
+import type { AuthContext, LegacyAuthResult } from "@/types/auth";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "fallback-dev-secret-change-in-production"
-);
-
-const JWT_EXPIRY = "24h";
-const COOKIE_NAME = "codeguard-token";
-
-export interface SessionPayload {
-  sub: string;
-  org: string;
-  email: string;
-  role: string;
+export function assertLegacyAuthConfigured(): void {
+  getRequiredJwtSecret();
 }
 
-export async function signToken(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(JWT_EXPIRY)
-    .sign(JWT_SECRET);
-}
-
-export async function verifyToken(token: string): Promise<SessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as unknown as SessionPayload;
-  } catch {
-    return null;
-  }
-}
-
-export async function getSession(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+export async function getAuthContextFromToken(
+  token: string | undefined
+): Promise<AuthContext | null> {
   if (!token) return null;
-  return verifyToken(token);
+
+  const payload = await verifyLegacyToken(token);
+  if (!payload) return null;
+
+  return {
+    userId: payload.sub,
+    organisationId: payload.org,
+    email: payload.email,
+    role: {
+      source: "LEGACY",
+      value: payload.role,
+    },
+  };
+}
+
+export async function getAuthContext(): Promise<AuthContext | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(LEGACY_SESSION_COOKIE_NAME)?.value;
+  return getAuthContextFromToken(token);
 }
 
 export function setTokenCookie(token: string): string {
-  return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax${
+  return `${LEGACY_SESSION_COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax${
     process.env.NODE_ENV === "production" ? "; Secure" : ""
   }`;
+}
+
+export function createLegacySessionResponse(
+  result: LegacyAuthResult,
+  status: number = 200
+): NextResponse {
+  const response = NextResponse.json({ session: result.session }, { status });
+  response.headers.set("Set-Cookie", setTokenCookie(result.token));
+  return response;
 }

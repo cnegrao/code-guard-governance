@@ -1,19 +1,28 @@
 import { NextResponse } from "next/server";
 import { loginSchema } from "@/lib/validation";
-import { setTokenCookie } from "@/lib/auth";
+import {
+  assertLegacyAuthConfigured,
+  createLegacySessionResponse,
+} from "@/lib/auth";
+import { LegacyAuthConfigurationError } from "@/lib/auth/token";
 import * as authService from "@/services/auth";
 
 export async function POST(request: Request) {
   try {
+    assertLegacyAuthConfigured();
+
     const body = await request.json();
     const input = loginSchema.parse(body);
 
-    const session = await authService.login(input.email, input.password);
-
-    const response = NextResponse.json({ session });
-    response.headers.set("Set-Cookie", setTokenCookie(session.token));
-    return response;
+    const result = await authService.login(input.email, input.password);
+    return createLegacySessionResponse(result);
   } catch (error) {
+    if (error instanceof LegacyAuthConfigurationError) {
+      return NextResponse.json(
+        { error: "Authentication unavailable" },
+        { status: 503 }
+      );
+    }
     if (
       error instanceof Error &&
       (error.message === "Invalid email or password" ||

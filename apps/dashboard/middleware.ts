@@ -1,43 +1,41 @@
-import { getSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  LEGACY_SESSION_COOKIE_NAME,
+  verifyLegacyToken,
+} from "@/lib/auth/token";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/onboarding", "/api/auth"];
+const PUBLIC_PATHS = new Set([
+  "/login",
+  "/signup",
+  "/api/auth/login",
+  "/api/auth/signup",
+]);
+
+export function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.has(pathname);
+}
+
+function rejectUnauthenticated(request: NextRequest): NextResponse {
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  return NextResponse.redirect(new URL("/login", request.url));
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-  if (isPublic) return NextResponse.next();
+  if (isPublicPath(pathname)) return NextResponse.next();
 
-  const token = request.cookies.get("codeguard-token")?.value;
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  const token = request.cookies.get(LEGACY_SESSION_COOKIE_NAME)?.value;
+  if (!token) return rejectUnauthenticated(request);
 
-  const { jwtVerify } = await import("jose");
-  const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET ?? "fallback-dev-secret-change-in-production"
-  );
+  const session = await verifyLegacyToken(token);
+  if (!session) return rejectUnauthenticated(request);
 
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const session = payload as unknown as {
-      sub: string;
-      org: string;
-      email: string;
-      role: string;
-    };
-
-    const response = NextResponse.next();
-    response.headers.set("x-codeguard-user", session.sub);
-    response.headers.set("x-codeguard-org", session.org);
-    response.headers.set("x-codeguard-email", session.email);
-    response.headers.set("x-codeguard-role", session.role);
-    return response;
-  } catch {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  return NextResponse.next();
 }
 
 export const config = {

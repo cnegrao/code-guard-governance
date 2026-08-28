@@ -5,15 +5,12 @@ import * as orgRepo from "@/repositories/organisations";
 
 export async function GET() {
   try {
-    const { orgId } = await getSessionContext();
-    if (!orgId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    const { organisationId } = await getSessionContext();
 
-    const org = await orgRepo.getOrg(orgId);
+    const org = await orgRepo.getOrg(organisationId);
     const industry = (org?.external_refs as Record<string, string>)?.industry_profile ?? "other";
 
-    const summary = await dashboardService.getSummary(orgId, industry);
+    const summary = await dashboardService.getSummary(organisationId, industry);
 
     return NextResponse.json(summary);
   } catch (error) {

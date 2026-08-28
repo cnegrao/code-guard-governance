@@ -15,10 +15,26 @@ export interface Organisation {
   external_refs: Record<string, unknown>;
 }
 
+export interface LegacyAuthRole {
+  source: "LEGACY";
+  value: string;
+}
+
+export interface AuthContext {
+  userId: string;
+  organisationId: string;
+  email: string;
+  role: LegacyAuthRole;
+}
+
 export interface AuthSession {
-  token: string;
   user: Pick<User, "user_id" | "email" | "full_name">;
   org: Pick<Organisation, "organisation_id" | "name"> & {
     industry: string;
   };
+}
+
+export interface LegacyAuthResult {
+  token: string;
+  session: AuthSession;
 }

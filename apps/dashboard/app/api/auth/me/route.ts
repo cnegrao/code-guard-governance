@@ -4,12 +4,9 @@ import * as orgRepo from "@/repositories/organisations";
 
 export async function GET() {
   try {
-    const { userId, orgId, email } = await getSessionContext();
-    if (!userId || !orgId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    const { userId, organisationId, email } = await getSessionContext();
 
-    const org = await orgRepo.getOrg(orgId);
+    const org = await orgRepo.getOrg(organisationId);
 
     return NextResponse.json({
       user: { user_id: userId, email },

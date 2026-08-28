@@ -1,7 +1,7 @@
-import { signToken } from "@/lib/auth";
+import { signLegacyToken } from "@/lib/auth/token";
 import * as orgRepo from "@/repositories/organisations";
 import * as userRepo from "@/repositories/users";
-import type { AuthSession } from "@/types/auth";
+import type { LegacyAuthResult } from "@/types/auth";
 
 export async function signup(input: {
   email: string;
@@ -9,7 +9,7 @@ export async function signup(input: {
   fullName: string;
   orgName: string;
   industry: string;
-}): Promise<AuthSession> {
+}): Promise<LegacyAuthResult> {
   const org = await orgRepo.createOrg({
     name: input.orgName,
     industry: input.industry,
@@ -22,7 +22,7 @@ export async function signup(input: {
     password: input.password,
   });
 
-  const token = await signToken({
+  const token = await signLegacyToken({
     sub: user.user_id,
     org: org.organisation_id,
     email: user.email,
@@ -31,15 +31,17 @@ export async function signup(input: {
 
   return {
     token,
-    user: {
-      user_id: user.user_id,
-      email: user.email,
-      full_name: user.full_name,
-    },
-    org: {
-      organisation_id: org.organisation_id,
-      name: org.name,
-      industry: (org.external_refs as Record<string, string>)?.industry_profile ?? "other",
+    session: {
+      user: {
+        user_id: user.user_id,
+        email: user.email,
+        full_name: user.full_name,
+      },
+      org: {
+        organisation_id: org.organisation_id,
+        name: org.name,
+        industry: (org.external_refs as Record<string, string>)?.industry_profile ?? "other",
+      },
     },
   };
 }
@@ -47,7 +49,7 @@ export async function signup(input: {
 export async function login(
   email: string,
   password: string
-): Promise<AuthSession> {
+): Promise<LegacyAuthResult> {
   const user = await userRepo.findUserByEmail(email);
   if (!user) throw new Error("Invalid email or password");
   if (user.status !== "active") throw new Error("Account is not active");
@@ -58,7 +60,7 @@ export async function login(
   const org = await orgRepo.getOrg(user.organisation_id);
   if (!org) throw new Error("Organisation not found");
 
-  const token = await signToken({
+  const token = await signLegacyToken({
     sub: user.user_id,
     org: user.organisation_id,
     email: user.email,
@@ -67,15 +69,17 @@ export async function login(
 
   return {
     token,
-    user: {
-      user_id: user.user_id,
-      email: user.email,
-      full_name: user.full_name,
-    },
-    org: {
-      organisation_id: org.organisation_id,
-      name: org.name,
-      industry: (org.external_refs as Record<string, string>)?.industry_profile ?? "other",
+    session: {
+      user: {
+        user_id: user.user_id,
+        email: user.email,
+        full_name: user.full_name,
+      },
+      org: {
+        organisation_id: org.organisation_id,
+        name: org.name,
+        industry: (org.external_refs as Record<string, string>)?.industry_profile ?? "other",
+      },
     },
   };
 }
