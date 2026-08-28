@@ -17,7 +17,10 @@ export async function POST(request: Request) {
     const result = await authService.login(input.email, input.password);
     return createLegacySessionResponse(result);
   } catch (error) {
-    if (error instanceof LegacyAuthConfigurationError) {
+    if (
+      error instanceof LegacyAuthConfigurationError ||
+      error instanceof authService.LegacyLoginRoleResolutionError
+    ) {
       return NextResponse.json(
         { error: "Authentication unavailable" },
         { status: 503 }

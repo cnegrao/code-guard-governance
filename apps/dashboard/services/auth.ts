@@ -1,15 +1,26 @@
 import { assertLegacyAuthConfigured } from "@/lib/auth";
+import { resolveLegacyJwtRole } from "@/lib/auth/legacy-role";
 import { signLegacyToken } from "@/lib/auth/token";
 import * as orgRepo from "@/repositories/organisations";
-import { findRoleByCode } from "@/repositories/roles";
+import {
+  findRoleByCode,
+  resolveRoleCodesByIds,
+} from "@/repositories/roles";
 import * as userRepo from "@/repositories/users";
+import {
+  executeLegacyLogin,
+  LegacyLoginRoleResolutionError,
+} from "@/services/legacy-login";
 import {
   executeLegacySignup,
   LegacySignupRoleUnavailableError,
 } from "@/services/legacy-signup";
 import type { LegacyAuthResult } from "@/types/auth";
 
-export { LegacySignupRoleUnavailableError };
+export {
+  LegacyLoginRoleResolutionError,
+  LegacySignupRoleUnavailableError,
+};
 
 export async function signup(input: {
   email: string;
@@ -31,36 +42,12 @@ export async function login(
   email: string,
   password: string
 ): Promise<LegacyAuthResult> {
-  const user = await userRepo.findUserByEmail(email);
-  if (!user) throw new Error("Invalid email or password");
-  if (user.status !== "active") throw new Error("Account is not active");
-
-  const valid = await userRepo.verifyPassword(user.user_id, password);
-  if (!valid) throw new Error("Invalid email or password");
-
-  const org = await orgRepo.getOrg(user.organisation_id);
-  if (!org) throw new Error("Organisation not found");
-
-  const token = await signLegacyToken({
-    sub: user.user_id,
-    org: user.organisation_id,
-    email: user.email,
-    role: user.role_ids?.length ? "org_admin" : "user",
+  return executeLegacyLogin(email, password, {
+    findUserByEmail: userRepo.findUserByEmail,
+    verifyPassword: userRepo.verifyPassword,
+    getOrg: orgRepo.getOrg,
+    resolveRoleCodesByIds,
+    resolveLegacyJwtRole,
+    signToken: signLegacyToken,
   });
-
-  return {
-    token,
-    session: {
-      user: {
-        user_id: user.user_id,
-        email: user.email,
-        full_name: user.full_name,
-      },
-      org: {
-        organisation_id: org.organisation_id,
-        name: org.name,
-        industry: (org.external_refs as Record<string, string>)?.industry_profile ?? "other",
-      },
-    },
-  };
 }

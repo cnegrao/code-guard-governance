@@ -233,12 +233,12 @@ describe("legacy signup role stabilization", () => {
     assert.doesNotMatch(usersSource, /role_ids:\s*\[\]/);
   });
 
-  it("leaves the legacy login role rule pending and unchanged", async () => {
+  it("keeps the stabilized signup wiring unchanged", async () => {
     const source = await readFile(new URL("./auth.ts", import.meta.url), "utf8");
 
     assert.match(
       source,
-      /role:\s*user\.role_ids\?\.length\s*\?\s*"org_admin"\s*:\s*"user"/
+      /return executeLegacySignup\(input, \{[\s\S]*assertAuthConfigured: assertLegacyAuthConfigured,[\s\S]*findRoleByCode,[\s\S]*createOrg: orgRepo\.createOrg,[\s\S]*createUser: userRepo\.createUser,[\s\S]*signToken: signLegacyToken,[\s\S]*\}\);/
     );
   });
 });
