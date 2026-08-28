@@ -5,6 +5,10 @@ import type { CreateAgentInput, UpdateAgentInput } from "@/lib/validation";
 import { db } from "@/lib/db";
 import { CG_AG_CONTROLS } from "@council/scanner";
 import { assertTransition } from "@/lib/lifecycle";
+import {
+  calculateComplianceMetric,
+  type MetricResult,
+} from "@/lib/metrics/compliance";
 
 export async function listAgents(
   orgId: string,
@@ -99,17 +103,13 @@ export async function assessCompliance(
   return agentRepo.updateAgentCompliance(orgId, agentId, states);
 }
 
-export function computeScore(flags: ComplianceFlags): number {
-  const passed: string[] = [];
-  const failed: string[] = [];
-  for (const [k, v] of Object.entries(flags)) {
-    if (v === "passed") passed.push(k);
-    else if (v === "failed") failed.push(k);
-    // not_assessed / waived are excluded from score
-  }
-  const total = passed.length + failed.length;
-  if (total === 0) return 100;
-  return Math.round((passed.length / total) * 100);
+export function computeComplianceMetric(flags: ComplianceFlags): MetricResult {
+  return calculateComplianceMetric(Object.values(flags));
+}
+
+/** @deprecated Prefer computeComplianceMetric for status and coverage. */
+export function computeScore(flags: ComplianceFlags): number | null {
+  return computeComplianceMetric(flags).value;
 }
 
 export function getGapLabels(flags: ComplianceFlags): string[] {

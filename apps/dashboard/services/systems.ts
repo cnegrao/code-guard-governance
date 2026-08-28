@@ -4,6 +4,10 @@ import type { AISystem, SystemFilters, ControlState } from "@/types/systems";
 import type { CreateSystemInput } from "@/lib/validation";
 import type { UpdateSystemInput } from "@/lib/validation";
 import { db } from "@/lib/db";
+import {
+  calculateComplianceMetric,
+  type MetricResult,
+} from "@/lib/metrics/compliance";
 
 export async function listSystems(
   orgId: string,
@@ -86,16 +90,17 @@ export async function assessCompliance(
   return systemRepo.updateSystemCompliance(orgId, systemId, states);
 }
 
-export function computeScore(flags: Record<string, ControlState>): number {
-  const passed: string[] = [];
-  const failed: string[] = [];
-  for (const [k, v] of Object.entries(flags)) {
-    if (v === "passed") passed.push(k);
-    else if (v === "failed") failed.push(k);
-  }
-  const total = passed.length + failed.length;
-  if (total === 0) return 100;
-  return Math.round((passed.length / total) * 100);
+export function computeComplianceMetric(
+  flags: Record<string, ControlState>
+): MetricResult {
+  return calculateComplianceMetric(Object.values(flags));
+}
+
+/** @deprecated Prefer computeComplianceMetric for status and coverage. */
+export function computeScore(
+  flags: Record<string, ControlState>
+): number | null {
+  return computeComplianceMetric(flags).value;
 }
 
 export function getGapLabels(flags: Record<string, ControlState>): string[] {

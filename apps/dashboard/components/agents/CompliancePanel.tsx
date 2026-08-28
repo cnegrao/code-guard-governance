@@ -1,10 +1,11 @@
 "use client";
 
 import { Badge } from "@/components/ui/Badge";
+import type { AssessableState, MetricResult } from "@/lib/metrics/compliance";
 
 interface CompliancePanelProps {
-  compliance: Record<string, boolean>;
-  score: number;
+  compliance: Record<string, AssessableState>;
+  metric: MetricResult;
   gaps: string[];
 }
 
@@ -18,34 +19,64 @@ const CONTROL_LABELS: Record<string, string> = {
   cg_ag_012_autonomous_governed: "CG-AG-012 — Autonomous Governance",
 };
 
-export function CompliancePanel({ compliance, score, gaps }: CompliancePanelProps) {
-  const color = score >= 85 ? "text-success" : score >= 50 ? "text-warning" : "text-danger";
+function controlPresentation(state: AssessableState): {
+  label: string;
+  variant: "passed" | "failed" | "neutral";
+} {
+  switch (state) {
+    case "passed":
+      return { label: "PASS", variant: "passed" };
+    case "failed":
+      return { label: "FAIL", variant: "failed" };
+    case "waived":
+      return { label: "WAIVED", variant: "neutral" };
+    case "not_applicable":
+      return { label: "NOT APPLICABLE", variant: "neutral" };
+    case "not_assessed":
+      return { label: "NOT ASSESSED", variant: "neutral" };
+  }
+}
+
+export function CompliancePanel({ compliance, metric, gaps }: CompliancePanelProps) {
+  const color = metric.value === null
+    ? "text-gray-400"
+    : metric.value >= 85
+      ? "text-success"
+      : metric.value >= 50
+        ? "text-warning"
+        : "text-danger";
+  const summary = metric.value === null
+    ? "Not Assessed"
+    : metric.status === "PARTIALLY_ASSESSED"
+      ? `${metric.assessedCount} of ${metric.applicableCount} applicable controls assessed`
+      : gaps.length === 0
+        ? "All assessed controls passing"
+        : `${gaps.length} gap${gaps.length > 1 ? "s" : ""} detected`;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div className={`text-3xl font-bold ${color}`}>{score}%</div>
-        <div className="text-sm text-gray-400">
-          {gaps.length === 0
-            ? "All controls passing"
-            : `${gaps.length} gap${gaps.length > 1 ? "s" : ""} detected`}
+        <div className={`text-3xl font-bold ${color}`}>
+          {metric.value === null ? "N/A" : `${metric.value}%`}
         </div>
+        <div className="text-sm text-gray-400">{summary}</div>
       </div>
 
       <div className="space-y-2">
-        {Object.entries(compliance).map(([key, value]) => (
-          <div
-            key={key}
-            className="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-dark/50 border border-border-dark/30"
-          >
-            <span className="text-sm text-gray-300">
-              {CONTROL_LABELS[key] ?? key}
-            </span>
-            <Badge variant={value ? "passed" : "failed"}>
-              {value ? "PASS" : "FAIL"}
-            </Badge>
-          </div>
-        ))}
+        {Object.entries(compliance).map(([key, state]) => {
+          const presentation = controlPresentation(state);
+          return (
+            <div
+              key={key}
+              className="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-dark/50 border border-border-dark/30"
+            >
+              <span className="text-sm text-gray-300">
+                {CONTROL_LABELS[key] ?? key}
+              </span>
+              <Badge variant={presentation.variant}>{presentation.label}</Badge>
+            </div>
+          );
+        })}
       </div>
 
       {gaps.length > 0 && (

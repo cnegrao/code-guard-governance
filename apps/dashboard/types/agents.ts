@@ -43,7 +43,8 @@ export interface Agent {
 export interface AgentDetail extends Agent {
   owner_name: string;
   owner_email: string;
-  compliance_score: number;
+  compliance_metric: MetricResult;
+  compliance_score: number | null;
   compliance_gaps: string[];
 }
 
@@ -71,3 +72,4 @@ export interface AgentFilters {
   page?: number;
   limit?: number;
 }
+import type { MetricResult } from "@/lib/metrics/compliance";

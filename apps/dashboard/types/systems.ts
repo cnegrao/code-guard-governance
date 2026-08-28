@@ -54,7 +54,8 @@ export interface SystemDetail extends AISystem {
   owner_name: string;
   owner_email: string;
   agent_count: number;
-  compliance_score: number;
+  compliance_metric: MetricResult;
+  compliance_score: number | null;
 }
 
 export interface SystemFilters {
@@ -64,3 +65,4 @@ export interface SystemFilters {
   page?: number;
   limit?: number;
 }
+import type { MetricResult } from "@/lib/metrics/compliance";

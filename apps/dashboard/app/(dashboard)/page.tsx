@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import type { MetricResult } from "@/lib/metrics/compliance";
 
 interface DashboardData {
   totalAgents: number;
   totalSystems: number;
-  complianceRate: number;
+  complianceMetric: MetricResult;
+  complianceRate: number | null;
   openFindings: number;
   openIncidents: number;
   upcomingReviews: number;
@@ -104,9 +106,17 @@ export default function DashboardPage() {
           <StatCard label="Total AI Systems" value={data.totalSystems} color="blue" />
           <StatCard
             label="Compliance Rate"
-            value={`${data.complianceRate}%`}
-            color={cColor(data.complianceRate)}
-            subtitle={data.complianceRate < 85 ? "Review gaps" : "On track"}
+            value={data.complianceMetric.value === null ? "N/A" : `${data.complianceMetric.value}%`}
+            color={data.complianceMetric.value === null ? "gray" : cColor(data.complianceMetric.value)}
+            subtitle={
+              data.complianceMetric.value === null
+                ? "Not Assessed"
+                : data.complianceMetric.status === "PARTIALLY_ASSESSED"
+                  ? `${data.complianceMetric.assessedCount} of ${data.complianceMetric.applicableCount} assessed`
+                  : data.complianceMetric.value < 85
+                    ? "Review gaps"
+                    : "On track"
+            }
           />
         </div>
       </div>

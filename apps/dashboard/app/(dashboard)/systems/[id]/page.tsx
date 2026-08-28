@@ -9,12 +9,17 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { CompliancePanel } from "@/components/agents/CompliancePanel";
 import type { AISystem } from "@/types/systems";
+import {
+  NO_APPLICABLE_METRIC,
+  type AssessableState,
+  type MetricResult,
+} from "@/lib/metrics/compliance";
 
 export default function SystemDetailPage() {
   const params = useParams();
   const [system, setSystem] = useState<(AISystem & { owner_name?: string; agent_count?: number }) | null>(null);
-  const [compliance, setCompliance] = useState<Record<string, boolean>>({});
-  const [score, setScore] = useState(0);
+  const [compliance, setCompliance] = useState<Record<string, AssessableState>>({});
+  const [metric, setMetric] = useState<MetricResult>(NO_APPLICABLE_METRIC);
   const [gaps, setGaps] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,7 +33,7 @@ export default function SystemDetailPage() {
       .then((data) => {
         setSystem(data.system ?? data);
         setCompliance(data.compliance ?? {});
-        setScore(data.compliance_score ?? 0);
+        setMetric(data.compliance_metric ?? NO_APPLICABLE_METRIC);
         setGaps(data.compliance_gaps ?? []);
       })
       .catch((err) => setError(err.message))
@@ -120,7 +125,7 @@ export default function SystemDetailPage() {
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
               Compliance
             </h3>
-            <CompliancePanel compliance={compliance} score={score} gaps={gaps} />
+            <CompliancePanel compliance={compliance} metric={metric} gaps={gaps} />
           </Card>
         </div>
       </div>

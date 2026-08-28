@@ -1,10 +1,18 @@
 import { db } from "@/lib/db";
 import { getUnifiedGraph, isAgentNode, type DiscoveryGraphNode } from "@/services/knowledge-graph";
+import {
+  calculateAssessedAverage,
+  calculateComplianceMetric,
+  isAssessableState,
+  type AssessableState,
+  type MetricResult,
+} from "@/lib/metrics/compliance";
 
 export interface DashboardSummary {
   totalAgents: number;
   totalSystems: number;
-  complianceRate: number;
+  complianceMetric: MetricResult;
+  complianceRate: number | null;
   openFindings: number;
   openIncidents: number;
   upcomingReviews: number;
@@ -43,7 +51,7 @@ export interface DashboardSummary {
   criticalFindings: number;
   aiActExposureCount: number;
   doraMajorIncidents: number;
-  cgSysComplianceRate: number;
+  cgSysComplianceRate: number | null;
   evidenceCoverage: number;
 }
 
@@ -107,7 +115,8 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
   return {
     totalAgents,
     totalSystems,
-    complianceRate: complianceResult.rate,
+    complianceMetric: complianceResult,
+    complianceRate: complianceResult.value,
     openFindings,
     openIncidents,
     upcomingReviews,
@@ -152,22 +161,46 @@ async function countSystems(orgId: string): Promise<number> {
   return count ?? 0;
 }
 
-async function computeCompliance(orgId: string): Promise<{ rate: number }> {
-  const { count: total } = await db.read
+async function computeCompliance(orgId: string): Promise<MetricResult> {
+  const { data } = await db.read
     .from("agents")
-    .select("*", { count: "exact", head: true })
+    .select(
+      "cg_ag_001_registered, cg_ag_002_owner, cg_ag_003_model_reg, cg_ag_007_oversight, cg_ag_008_audit_trail, cg_ag_010_classified, cg_ag_012_autonomous_governed, external_refs"
+    )
     .eq("organisation_id", orgId)
     .neq("status", "decommissioned");
 
-  const { data: gaps } = await db.read.rpc("agent_compliance_gaps", {
-    p_organisation_id: orgId,
-  });
+  const controlKeys = [
+    "cg_ag_001_registered",
+    "cg_ag_002_owner",
+    "cg_ag_003_model_reg",
+    "cg_ag_004_compliant",
+    "cg_ag_005_compliant",
+    "cg_ag_006_compliant",
+    "cg_ag_007_oversight",
+    "cg_ag_008_audit_trail",
+    "cg_ag_009_compliant",
+    "cg_ag_010_classified",
+    "cg_ag_011_compliant",
+    "cg_ag_012_autonomous_governed",
+  ] as const;
+  const states: AssessableState[] = [];
 
-  const gapCount = (gaps as Array<unknown>)?.length ?? 0;
-  const totalCount = total ?? 0;
-  const rate = totalCount > 0 ? Math.round((1 - gapCount / totalCount) * 100) : 100;
+  for (const row of (data as Array<Record<string, unknown>>) ?? []) {
+    const externalRefs = (row.external_refs as Record<string, unknown>) ?? {};
+    const storedStates = (externalRefs.controlStates as Record<string, unknown>) ?? {};
 
-  return { rate };
+    for (const key of controlKeys) {
+      const storedState = storedStates[key];
+      if (isAssessableState(storedState)) {
+        states.push(storedState);
+      } else {
+        states.push(row[key] === true ? "passed" : "not_assessed");
+      }
+    }
+  }
+
+  return calculateComplianceMetric(states);
 }
 
 async function countOpenFindings(orgId: string): Promise<number> {
@@ -417,12 +450,12 @@ async function countDoraMajorIncidents(orgId: string): Promise<number> {
   return graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "incident" && (n as DiscoveryGraphNode).metadata?.is_major_incident === true).length;
 }
 
-async function computeCgSysComplianceRate(orgId: string): Promise<number> {
+async function computeCgSysComplianceRate(orgId: string): Promise<number | null> {
   const graph = await getUnifiedGraph(orgId);
   const sysNodes = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "ai_system") as DiscoveryGraphNode[];
-  if (sysNodes.length === 0) return 100;
-  const totalScore = sysNodes.reduce((sum, s) => sum + ((s.metadata?.systemComplianceScore as number) ?? 0), 0);
-  return Math.round(totalScore / sysNodes.length);
+  return calculateAssessedAverage(
+    sysNodes.map((system) => system.metadata?.systemComplianceScore as number | null | undefined)
+  );
 }
 
 async function computeEvidenceCoverage(orgId: string): Promise<number> {

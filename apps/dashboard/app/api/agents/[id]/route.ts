@@ -17,13 +17,14 @@ export async function GET(
     }
 
     const compliance = await agentService.getCompliance(orgId, id);
-    const score = agentService.computeScore(compliance);
+    const metric = agentService.computeComplianceMetric(compliance);
     const gaps = agentService.getGapLabels(compliance);
 
     return NextResponse.json({
       ...agent,
       compliance,
-      compliance_score: score,
+      compliance_metric: metric,
+      compliance_score: metric.value,
       compliance_gaps: gaps,
     });
   } catch (error) {
@@ -67,10 +68,15 @@ export async function PATCH(
     await agentService.assessCompliance(orgId, id, body);
 
     const compliance = await agentService.getCompliance(orgId, id);
-    const score = agentService.computeScore(compliance);
+    const metric = agentService.computeComplianceMetric(compliance);
     const gaps = agentService.getGapLabels(compliance);
 
-    return NextResponse.json({ compliance, compliance_score: score, compliance_gaps: gaps });
+    return NextResponse.json({
+      compliance,
+      compliance_metric: metric,
+      compliance_score: metric.value,
+      compliance_gaps: gaps,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to assess compliance" },

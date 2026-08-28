@@ -9,12 +9,17 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { CompliancePanel } from "@/components/agents/CompliancePanel";
 import type { Agent } from "@/types/agents";
+import {
+  NO_APPLICABLE_METRIC,
+  type AssessableState,
+  type MetricResult,
+} from "@/lib/metrics/compliance";
 
 export default function AgentDetailPage() {
   const params = useParams();
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [compliance, setCompliance] = useState<Record<string, boolean>>({});
-  const [score, setScore] = useState(0);
+  const [compliance, setCompliance] = useState<Record<string, AssessableState>>({});
+  const [metric, setMetric] = useState<MetricResult>(NO_APPLICABLE_METRIC);
   const [gaps, setGaps] = useState<string[]>([]);
   const [ownerName, setOwnerName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -29,7 +34,7 @@ export default function AgentDetailPage() {
       .then((data) => {
         setAgent(data.agent);
         setCompliance(data.compliance ?? {});
-        setScore(data.compliance_score ?? 0);
+        setMetric(data.compliance_metric ?? NO_APPLICABLE_METRIC);
         setGaps(data.compliance_gaps ?? []);
         setOwnerName(data.owner_name ?? "");
       })
@@ -136,7 +141,7 @@ export default function AgentDetailPage() {
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
               Compliance
             </h3>
-            <CompliancePanel compliance={compliance} score={score} gaps={gaps} />
+            <CompliancePanel compliance={compliance} metric={metric} gaps={gaps} />
           </Card>
         </div>
       </div>
