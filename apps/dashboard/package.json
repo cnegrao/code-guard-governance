@@ -11,6 +11,7 @@
     "test:auth": "tsx --test lib/auth.test.ts middleware.test.ts",
     "test:authorization": "tsx --test lib/authorization/authorization.test.ts",
     "test:legacy-role": "tsx --test lib/auth/legacy-role.test.ts",
+    "test:roles": "tsx --test repositories/roles.test.ts",
     "test:metrics": "tsx --test lib/metrics/compliance.test.ts",
     "seed": "tsx seed.ts",
     "validate:repo": "tsx scripts/validate-repository.ts"
