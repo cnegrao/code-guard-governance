@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
-import { getAuthContextFromToken } from "@/lib/auth";
+import {
+  assertLegacyAuthConfigured,
+  createLegacySessionResponse,
+  getAuthContextFromToken,
+} from "@/lib/auth";
 import { resolveLegacyJwtRole } from "@/lib/auth/legacy-role";
 import { signLegacyToken } from "@/lib/auth/token";
 import {
@@ -9,6 +13,7 @@ import {
   type LegacyLoginDependencies,
   LegacyLoginRoleResolutionError,
 } from "./legacy-login";
+import { executeLegacySignup } from "./legacy-signup";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const ORGANISATION_ID = "22222222-2222-4222-8222-222222222222";
@@ -128,6 +133,12 @@ describe("legacy login role stabilization", () => {
       roleCodes: ["AUDITOR", "DPO"],
       expected: "user",
     },
+    {
+      name: "maps an unknown role code to user",
+      roleIds: [AUDITOR_ROLE_ID],
+      roleCodes: ["UNKNOWN_ROLE"],
+      expected: "user",
+    },
   ];
 
   for (const mappingCase of mappingCases) {
@@ -209,6 +220,114 @@ describe("legacy login role stabilization", () => {
 
       assert.equal(context?.role.source, "LEGACY");
       assert.equal(context?.role.value, "org_admin");
+    } finally {
+      if (previousSecret === undefined) delete process.env.JWT_SECRET;
+      else process.env.JWT_SECRET = previousSecret;
+    }
+  });
+
+  it("preserves org_admin continuity from signup through a later login", async () => {
+    const previousSecret = process.env.JWT_SECRET;
+    process.env.JWT_SECRET = "test-only-legacy-auth-continuity-secret";
+    const operations: string[] = [];
+    let persistedRoleIds: string[] = [];
+
+    try {
+      const signupResult = await executeLegacySignup(
+        {
+          email: "user@example.com",
+          password: "password",
+          fullName: "Test User",
+          orgName: "Test Organisation",
+          industry: "technology",
+        },
+        {
+          assertAuthConfigured() {
+            operations.push("signup:validate-jwt");
+            assertLegacyAuthConfigured();
+          },
+          async findRoleByCode(roleCode) {
+            operations.push(`signup:find-role:${roleCode}`);
+            assert.equal(roleCode, "GOVERNANCE_ADMIN");
+            return { roleId: ADMIN_ROLE_ID, roleCode };
+          },
+          async createOrg() {
+            operations.push("signup:create-org");
+            return organisation();
+          },
+          async createUser(input) {
+            operations.push("signup:create-user");
+            persistedRoleIds = [...input.roleIds];
+            return user(persistedRoleIds);
+          },
+          async signToken(payload) {
+            operations.push(`signup:sign:${payload.role}`);
+            return signLegacyToken(payload);
+          },
+        }
+      );
+
+      const loginResult = await executeLegacyLogin(
+        "user@example.com",
+        "password",
+        dependencies({
+          async findUserByEmail() {
+            operations.push("login:find-user");
+            return user(persistedRoleIds);
+          },
+          async verifyPassword() {
+            operations.push("login:verify-password");
+            return true;
+          },
+          async getOrg() {
+            operations.push("login:get-org");
+            return organisation();
+          },
+          async resolveRoleCodesByIds(roleIds) {
+            operations.push("login:resolve-role-codes");
+            assert.deepEqual(roleIds, [ADMIN_ROLE_ID]);
+            return ["GOVERNANCE_ADMIN"];
+          },
+          resolveLegacyJwtRole(roleCodes) {
+            operations.push("login:resolve-jwt-role");
+            return resolveLegacyJwtRole(roleCodes);
+          },
+          async signToken(payload) {
+            operations.push(`login:sign:${payload.role}`);
+            return signLegacyToken(payload);
+          },
+        })
+      );
+
+      const signupContext = await getAuthContextFromToken(signupResult.token);
+      const loginContext = await getAuthContextFromToken(loginResult.token);
+      const signupResponse = createLegacySessionResponse(signupResult, 201);
+      const loginResponse = createLegacySessionResponse(loginResult);
+      const signupBody = await signupResponse.json();
+      const loginBody = await loginResponse.json();
+
+      assert.deepEqual(persistedRoleIds, [ADMIN_ROLE_ID]);
+      assert.deepEqual(operations, [
+        "signup:validate-jwt",
+        "signup:find-role:GOVERNANCE_ADMIN",
+        "signup:create-org",
+        "signup:create-user",
+        "signup:sign:org_admin",
+        "login:find-user",
+        "login:verify-password",
+        "login:get-org",
+        "login:resolve-role-codes",
+        "login:resolve-jwt-role",
+        "login:sign:org_admin",
+      ]);
+      assert.equal(signupContext?.role.source, "LEGACY");
+      assert.equal(signupContext?.role.value, "org_admin");
+      assert.equal(loginContext?.role.source, "LEGACY");
+      assert.equal(loginContext?.role.value, "org_admin");
+      assert.equal("token" in signupBody, false);
+      assert.equal("token" in signupBody.session, false);
+      assert.equal("token" in loginBody, false);
+      assert.equal("token" in loginBody.session, false);
     } finally {
       if (previousSecret === undefined) delete process.env.JWT_SECRET;
       else process.env.JWT_SECRET = previousSecret;
