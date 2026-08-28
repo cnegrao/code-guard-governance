@@ -1,22 +1,18 @@
-import { getAuthContext } from "@/lib/auth";
+import { requireAuth } from "@/lib/authorization";
 import type { AuthContext } from "@/types/auth";
 
-async function requireAuthContext(): Promise<AuthContext> {
-  const context = await getAuthContext();
-  if (!context) throw new Error("Not authenticated");
-  return context;
-}
+export { requireAuth } from "@/lib/authorization";
 
 export async function getOrgId(): Promise<string> {
-  const context = await requireAuthContext();
+  const context = await requireAuth();
   return context.organisationId;
 }
 
 export async function getUserId(): Promise<string> {
-  const context = await requireAuthContext();
+  const context = await requireAuth();
   return context.userId;
 }
 
 export async function getSessionContext(): Promise<AuthContext> {
-  return requireAuthContext();
+  return requireAuth();
 }
