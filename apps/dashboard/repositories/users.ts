@@ -8,12 +8,14 @@ export async function createUser(input: {
   fullName: string;
   orgId: string;
   password: string;
+  roleIds: readonly string[];
 }): Promise<{
   user_id: string;
   email: string;
   full_name: string;
   organisation_id: string;
   status: string;
+  role_ids: string[];
 }> {
   const passwordHash = await hash(input.password, BCRYPT_ROUNDS);
 
@@ -24,10 +26,10 @@ export async function createUser(input: {
       full_name: input.fullName,
       organisation_id: input.orgId,
       status: "active",
-      role_ids: [],
+      role_ids: [...input.roleIds],
       external_id: `bcrypt:${passwordHash}`,
     })
-    .select("user_id, email, full_name, organisation_id, status")
+    .select("user_id, email, full_name, organisation_id, status, role_ids")
     .single();
 
   if (error) {

@@ -1,7 +1,15 @@
+import { assertLegacyAuthConfigured } from "@/lib/auth";
 import { signLegacyToken } from "@/lib/auth/token";
 import * as orgRepo from "@/repositories/organisations";
+import { findRoleByCode } from "@/repositories/roles";
 import * as userRepo from "@/repositories/users";
+import {
+  executeLegacySignup,
+  LegacySignupRoleUnavailableError,
+} from "@/services/legacy-signup";
 import type { LegacyAuthResult } from "@/types/auth";
+
+export { LegacySignupRoleUnavailableError };
 
 export async function signup(input: {
   email: string;
@@ -10,40 +18,13 @@ export async function signup(input: {
   orgName: string;
   industry: string;
 }): Promise<LegacyAuthResult> {
-  const org = await orgRepo.createOrg({
-    name: input.orgName,
-    industry: input.industry,
+  return executeLegacySignup(input, {
+    assertAuthConfigured: assertLegacyAuthConfigured,
+    findRoleByCode,
+    createOrg: orgRepo.createOrg,
+    createUser: userRepo.createUser,
+    signToken: signLegacyToken,
   });
-
-  const user = await userRepo.createUser({
-    email: input.email,
-    fullName: input.fullName,
-    orgId: org.organisation_id,
-    password: input.password,
-  });
-
-  const token = await signLegacyToken({
-    sub: user.user_id,
-    org: org.organisation_id,
-    email: user.email,
-    role: "org_admin",
-  });
-
-  return {
-    token,
-    session: {
-      user: {
-        user_id: user.user_id,
-        email: user.email,
-        full_name: user.full_name,
-      },
-      org: {
-        organisation_id: org.organisation_id,
-        name: org.name,
-        industry: (org.external_refs as Record<string, string>)?.industry_profile ?? "other",
-      },
-    },
-  };
 }
 
 export async function login(
