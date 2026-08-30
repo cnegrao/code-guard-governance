@@ -6,6 +6,8 @@
   "types": "src/index.ts",
   "scripts": {
     "test:path-policy": "tsx --test --test-isolation=none test/discovery-validation-lab/tests/path-policy.test.ts",
+    "test:validation-lab": "tsx --test --test-isolation=none test/discovery-validation-lab/tests/*.test.ts",
+    "typecheck:validation-lab": "tsc --noEmit -p tsconfig.validation-lab.json",
     "typecheck": "tsc --noEmit"
   }
 }
