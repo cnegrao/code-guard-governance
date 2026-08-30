@@ -180,6 +180,9 @@ describe("Expected scenario contract", () => {
       "CONTAINS",
       "DERIVED_FROM",
       "HANDOFF_TO",
+      "USES_TOOL",
+      "USES_MCP",
+      "USES_KNOWLEDGE_BASE",
     ]);
 
     const expected = validExpectedScenario();

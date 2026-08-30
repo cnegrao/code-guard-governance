@@ -2,22 +2,40 @@ import type { DetectionCategory } from "../contracts/detected.ts";
 import type {
   DiscoveryLayer,
   ExpectedAgent,
+  ExpectedApi,
   ExpectedDataAsset,
   ExpectedDataElement,
+  ExpectedKnowledgeBase,
+  ExpectedMcpServer,
+  ExpectedModel,
+  ExpectedPrompt,
   ExpectedRelationship,
   ExpectedScenario,
+  ExpectedTool,
 } from "../contracts/expected.ts";
 import {
   agentComparisonKey,
+  apiComparisonKey,
   compareStableText,
   dataAssetComparisonKey,
   dataElementComparisonKey,
+  knowledgeBaseComparisonKey,
+  mcpServerComparisonKey,
+  modelComparisonKey,
+  promptComparisonKey,
   relationshipComparisonKey,
+  toolComparisonKey,
   type NormalizedDetectedAgent,
+  type NormalizedDetectedApi,
   type NormalizedDetectedDataAsset,
   type NormalizedDetectedDataElement,
+  type NormalizedDetectedKnowledgeBase,
+  type NormalizedDetectedMcpServer,
+  type NormalizedDetectedModel,
+  type NormalizedDetectedPrompt,
   type NormalizedDetectedRelationship,
   type NormalizedDetectedScenario,
+  type NormalizedDetectedTool,
 } from "./normalize.ts";
 
 interface ComparableExpected<T> {
@@ -59,6 +77,12 @@ export interface ScenarioMatchResult {
   readonly agents: CategoryMatchResult<NormalizedDetectedAgent>;
   readonly dataAssets: CategoryMatchResult<NormalizedDetectedDataAsset>;
   readonly dataElements: CategoryMatchResult<NormalizedDetectedDataElement>;
+  readonly models: CategoryMatchResult<NormalizedDetectedModel>;
+  readonly tools: CategoryMatchResult<NormalizedDetectedTool>;
+  readonly mcpServers: CategoryMatchResult<NormalizedDetectedMcpServer>;
+  readonly apis: CategoryMatchResult<NormalizedDetectedApi>;
+  readonly prompts: CategoryMatchResult<NormalizedDetectedPrompt>;
+  readonly knowledgeBases: CategoryMatchResult<NormalizedDetectedKnowledgeBase>;
   readonly relationships: CategoryMatchResult<NormalizedDetectedRelationship>;
   readonly prohibitedFindings: readonly ProhibitedFinding[];
 }
@@ -206,6 +230,18 @@ function detectedByCategory(
       return result.dataAssets;
     case "DATA_ELEMENT":
       return result.dataElements;
+    case "MODEL":
+      return result.models;
+    case "TOOL":
+      return result.tools;
+    case "MCP_SERVER":
+      return result.mcpServers;
+    case "API":
+      return result.apis;
+    case "PROMPT":
+      return result.prompts;
+    case "KNOWLEDGE_BASE":
+      return result.knowledgeBases;
     case "RELATIONSHIP":
       return result.relationships;
   }
@@ -245,11 +281,54 @@ export function matchScenario(
       );
     },
   );
+  const expectedModels = (expected.models ?? []).map((item: ExpectedModel) =>
+    comparable(
+      item,
+      modelComparisonKey(
+        item.provider,
+        item.modelReference,
+        item.sourcePath,
+        item.declarationKey,
+      ),
+    ),
+  );
+  const expectedTools = (expected.tools ?? []).map((item: ExpectedTool) =>
+    comparable(item, toolComparisonKey(item.sourcePath, item.declarationKey)),
+  );
+  const expectedMcpServers = (expected.mcpServers ?? []).map(
+    (item: ExpectedMcpServer) =>
+      comparable(
+        item,
+        mcpServerComparisonKey(item.serverIdentity, item.sourcePath),
+      ),
+  );
+  const expectedApis = (expected.apis ?? []).map((item: ExpectedApi) =>
+    comparable(item, apiComparisonKey(item.apiIdentity, item.sourcePath)),
+  );
+  const expectedPrompts = (expected.prompts ?? []).map((item: ExpectedPrompt) =>
+    comparable(
+      item,
+      promptComparisonKey(item.sourcePath, item.declarationKey),
+    ),
+  );
+  const expectedKnowledgeBases = (expected.knowledgeBases ?? []).map(
+    (item: ExpectedKnowledgeBase) =>
+      comparable(
+        item,
+        knowledgeBaseComparisonKey(item.sourceIdentity, item.sourcePath),
+      ),
+  );
 
   const expectedEntityKeys = new Set([
     ...expectedAgents.map((item) => item.item.key),
     ...expectedAssets.map((item) => item.item.key),
     ...expectedElements.map((item) => item.item.key),
+    ...expectedModels.map((item) => item.item.key),
+    ...expectedTools.map((item) => item.item.key),
+    ...expectedMcpServers.map((item) => item.item.key),
+    ...expectedApis.map((item) => item.item.key),
+    ...expectedPrompts.map((item) => item.item.key),
+    ...expectedKnowledgeBases.map((item) => item.item.key),
   ]);
   for (const relationship of expected.relationships) {
     if (
@@ -265,10 +344,28 @@ export function matchScenario(
   const agentMatches = exactMatch(expectedAgents, detected.agents);
   const assetMatches = exactMatch(expectedAssets, detected.dataAssets);
   const elementMatches = exactMatch(expectedElements, detected.dataElements);
+  const modelMatches = exactMatch(expectedModels, detected.models);
+  const toolMatches = exactMatch(expectedTools, detected.tools);
+  const mcpServerMatches = exactMatch(
+    expectedMcpServers,
+    detected.mcpServers,
+  );
+  const apiMatches = exactMatch(expectedApis, detected.apis);
+  const promptMatches = exactMatch(expectedPrompts, detected.prompts);
+  const knowledgeBaseMatches = exactMatch(
+    expectedKnowledgeBases,
+    detected.knowledgeBases,
+  );
   const detectedEntityToExpectedKey = matchedEntityKeyMap(
     agentMatches,
     assetMatches,
     elementMatches,
+    modelMatches,
+    toolMatches,
+    mcpServerMatches,
+    apiMatches,
+    promptMatches,
+    knowledgeBaseMatches,
   );
   const relationshipMatches = matchRelationships(
     expected.relationships,
@@ -293,6 +390,12 @@ export function matchScenario(
     agents: agentMatches,
     dataAssets: assetMatches,
     dataElements: elementMatches,
+    models: modelMatches,
+    tools: toolMatches,
+    mcpServers: mcpServerMatches,
+    apis: apiMatches,
+    prompts: promptMatches,
+    knowledgeBases: knowledgeBaseMatches,
     relationships: relationshipMatches,
     prohibitedFindings: prohibitedFindings.sort((left, right) =>
       compareStableText(left.prohibitionKey, right.prohibitionKey) ||

@@ -33,6 +33,12 @@ export function validExpectedScenario(): ExpectedScenario {
       displayName: "email",
       discoveryLayers: ["L3"],
     }],
+    models: [],
+    tools: [],
+    mcpServers: [],
+    apis: [],
+    prompts: [],
+    knowledgeBases: [],
     relationships: [{
       key: "relationship:agent-reads-customers",
       requiredFromRound: 1,

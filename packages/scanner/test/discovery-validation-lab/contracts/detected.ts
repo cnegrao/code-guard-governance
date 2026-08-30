@@ -2,6 +2,12 @@ export const DETECTION_CATEGORY = {
   AGENT: "AGENT",
   DATA_ASSET: "DATA_ASSET",
   DATA_ELEMENT: "DATA_ELEMENT",
+  MODEL: "MODEL",
+  TOOL: "TOOL",
+  MCP_SERVER: "MCP_SERVER",
+  API: "API",
+  PROMPT: "PROMPT",
+  KNOWLEDGE_BASE: "KNOWLEDGE_BASE",
   RELATIONSHIP: "RELATIONSHIP",
 } as const;
 
@@ -16,6 +22,9 @@ export const DISCOVERY_RELATIONSHIP_TYPE = {
   CONTAINS: "CONTAINS",
   DERIVED_FROM: "DERIVED_FROM",
   HANDOFF_TO: "HANDOFF_TO",
+  USES_TOOL: "USES_TOOL",
+  USES_MCP: "USES_MCP",
+  USES_KNOWLEDGE_BASE: "USES_KNOWLEDGE_BASE",
 } as const;
 
 export type DiscoveryRelationshipType =
@@ -75,6 +84,44 @@ export interface DetectedDataElement extends DetectedItemBase {
   readonly displayName?: string;
 }
 
+export interface DetectedModel extends DetectedItemBase {
+  readonly kind: "MODEL";
+  readonly provider?: string;
+  readonly modelReference: string;
+  readonly sourcePath?: string;
+  readonly declarationKey?: string;
+}
+
+export interface DetectedTool extends DetectedItemBase {
+  readonly kind: "TOOL";
+  readonly sourcePath: string;
+  readonly declarationKey: string;
+}
+
+export interface DetectedMcpServer extends DetectedItemBase {
+  readonly kind: "MCP_SERVER";
+  readonly serverIdentity: string;
+  readonly sourcePath?: string;
+}
+
+export interface DetectedApi extends DetectedItemBase {
+  readonly kind: "API";
+  readonly apiIdentity: string;
+  readonly sourcePath?: string;
+}
+
+export interface DetectedPrompt extends DetectedItemBase {
+  readonly kind: "PROMPT";
+  readonly sourcePath: string;
+  readonly declarationKey: string;
+}
+
+export interface DetectedKnowledgeBase extends DetectedItemBase {
+  readonly kind: "KNOWLEDGE_BASE";
+  readonly sourceIdentity: string;
+  readonly sourcePath?: string;
+}
+
 export interface DetectedRelationship extends DetectedItemBase {
   readonly kind: "RELATIONSHIP";
   readonly relationshipType: DiscoveryRelationshipType;
@@ -101,6 +148,13 @@ export interface DetectedScenarioResult {
   readonly agents: readonly DetectedAgent[];
   readonly dataAssets: readonly DetectedDataAsset[];
   readonly dataElements: readonly DetectedDataElement[];
+  /** Optional only for compatibility with pre-Slice-3A test inputs. */
+  readonly models?: readonly DetectedModel[];
+  readonly tools?: readonly DetectedTool[];
+  readonly mcpServers?: readonly DetectedMcpServer[];
+  readonly apis?: readonly DetectedApi[];
+  readonly prompts?: readonly DetectedPrompt[];
+  readonly knowledgeBases?: readonly DetectedKnowledgeBase[];
   readonly relationships: readonly DetectedRelationship[];
   readonly evidence: readonly DetectedEvidence[];
 }
