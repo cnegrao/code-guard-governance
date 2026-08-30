@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
+    "test:path-policy": "tsx --test --test-isolation=none test/discovery-validation-lab/tests/path-policy.test.ts",
     "typecheck": "tsc --noEmit"
   }
 }
