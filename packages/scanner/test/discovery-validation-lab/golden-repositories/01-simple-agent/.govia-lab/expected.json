@@ -1,0 +1,204 @@
+{
+  "schemaVersion": "1.0",
+  "scenarioId": "01-simple-agent",
+  "description": "One explicit Python Agent with a model, tool, prompt, and customer schema.",
+  "targetRound": 1,
+  "discoveryLayers": ["L0", "L3", "L4", "L6", "L9"],
+  "agents": [
+    {
+      "key": "agent:customer-support",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/customer_support_agent.py",
+      "declarationKey": "CustomerSupportAgent",
+      "displayName": "Customer Support Agent"
+    }
+  ],
+  "dataAssets": [
+    {
+      "key": "asset:customers",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "sourceIdentity": "public.customers",
+      "sourcePath": "db/schema.sql",
+      "displayName": "customers"
+    }
+  ],
+  "dataElements": [
+    {
+      "key": "element:customers.customer-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:customers",
+      "elementPath": "customer_id",
+      "sourcePath": "db/schema.sql",
+      "displayName": "customer_id"
+    },
+    {
+      "key": "element:customers.email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:customers",
+      "elementPath": "email",
+      "sourcePath": "db/schema.sql",
+      "displayName": "email"
+    },
+    {
+      "key": "element:customers.country",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:customers",
+      "elementPath": "country",
+      "sourcePath": "db/schema.sql",
+      "displayName": "country"
+    },
+    {
+      "key": "element:customers.tier",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:customers",
+      "elementPath": "tier",
+      "sourcePath": "db/schema.sql",
+      "displayName": "tier"
+    }
+  ],
+  "models": [
+    {
+      "key": "model:support-v1",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "provider": "synthetic-ai",
+      "modelReference": "support-model-v1",
+      "sourcePath": "src/customer_support_agent.py",
+      "declarationKey": "MODEL_REFERENCE"
+    }
+  ],
+  "tools": [
+    {
+      "key": "tool:lookup-customer",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/customer_support_agent.py",
+      "declarationKey": "lookup_customer"
+    }
+  ],
+  "mcpServers": [],
+  "apis": [],
+  "prompts": [
+    {
+      "key": "prompt:support",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/customer_support_agent.py",
+      "declarationKey": "SUPPORT_PROMPT"
+    }
+  ],
+  "knowledgeBases": [],
+  "relationships": [
+    {
+      "key": "relationship:agent-uses-model",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_MODEL",
+      "sourceKey": "agent:customer-support",
+      "targetKey": "model:support-v1"
+    },
+    {
+      "key": "relationship:agent-uses-tool",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_TOOL",
+      "sourceKey": "agent:customer-support",
+      "targetKey": "tool:lookup-customer"
+    },
+    {
+      "key": "relationship:customers-contains-customer-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:customers",
+      "targetKey": "element:customers.customer-id"
+    },
+    {
+      "key": "relationship:customers-contains-email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:customers",
+      "targetKey": "element:customers.email"
+    },
+    {
+      "key": "relationship:customers-contains-country",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:customers",
+      "targetKey": "element:customers.country"
+    },
+    {
+      "key": "relationship:customers-contains-tier",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:customers",
+      "targetKey": "element:customers.tier"
+    }
+  ],
+  "evidenceRequirements": [
+    {
+      "key": "evidence:customer-support-agent",
+      "requiredFromRound": 1,
+      "subjectKey": "agent:customer-support",
+      "sourceLocator": "src/customer_support_agent.py",
+      "methodCode": "PYTHON_AGENT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:support-model",
+      "requiredFromRound": 1,
+      "subjectKey": "model:support-v1",
+      "sourceLocator": "src/customer_support_agent.py",
+      "methodCode": "MODEL_REFERENCE",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:lookup-customer-tool",
+      "requiredFromRound": 1,
+      "subjectKey": "tool:lookup-customer",
+      "sourceLocator": "src/customer_support_agent.py",
+      "methodCode": "PYTHON_FUNCTION_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:support-prompt",
+      "requiredFromRound": 1,
+      "subjectKey": "prompt:support",
+      "sourceLocator": "src/customer_support_agent.py",
+      "methodCode": "PROMPT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:customers-schema",
+      "requiredFromRound": 1,
+      "subjectKey": "asset:customers",
+      "sourceLocator": "db/schema.sql",
+      "methodCode": "SQL_DDL",
+      "discoveryLayers": ["L3"]
+    }
+  ],
+  "prohibited": [],
+  "semanticConcepts": [
+    {
+      "code": "CONTACT_EMAIL",
+      "requiredFromRound": 3,
+      "description": "Semantic membership only; not a physical identity assertion.",
+      "memberDataElementKeys": ["element:customers.email"]
+    },
+    {
+      "code": "CUSTOMER_IDENTIFIER",
+      "requiredFromRound": 3,
+      "description": "Synthetic customer identifier concept.",
+      "memberDataElementKeys": ["element:customers.customer-id"]
+    }
+  ]
+}

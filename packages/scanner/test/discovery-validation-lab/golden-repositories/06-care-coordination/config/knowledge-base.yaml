@@ -1,0 +1,4 @@
+knowledge_base:
+  identity: approved-care-handbook
+  source: synthetic-guidance
+  mode: retrieval

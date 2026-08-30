@@ -1,0 +1,353 @@
+{
+  "schemaVersion": "1.0",
+  "scenarioId": "02-multi-agent",
+  "description": "Three explicit TypeScript Agents with tools, models, handoffs, and two data assets.",
+  "targetRound": 1,
+  "discoveryLayers": ["L0", "L3", "L4", "L6", "L9"],
+  "agents": [
+    {
+      "key": "agent:triage",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/triage_agent.ts",
+      "declarationKey": "triageAgent",
+      "displayName": "Triage Agent"
+    },
+    {
+      "key": "agent:billing",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/billing_agent.ts",
+      "declarationKey": "billingAgent",
+      "displayName": "Billing Agent"
+    },
+    {
+      "key": "agent:retention",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/retention_agent.ts",
+      "declarationKey": "retentionAgent",
+      "displayName": "Retention Agent"
+    }
+  ],
+  "dataAssets": [
+    {
+      "key": "asset:clients",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "sourceIdentity": "public.clients",
+      "sourcePath": "db/schema.sql",
+      "displayName": "clients"
+    },
+    {
+      "key": "asset:billing-accounts",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "sourceIdentity": "public.billing_accounts",
+      "sourcePath": "db/schema.sql",
+      "displayName": "billing_accounts"
+    }
+  ],
+  "dataElements": [
+    {
+      "key": "element:clients.client-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:clients",
+      "elementPath": "client_id",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:clients.email-address",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:clients",
+      "elementPath": "email_address",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:clients.segment",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:clients",
+      "elementPath": "segment",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:billing-accounts.account-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:billing-accounts",
+      "elementPath": "account_id",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:billing-accounts.client-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:billing-accounts",
+      "elementPath": "client_id",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:billing-accounts.balance",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:billing-accounts",
+      "elementPath": "balance",
+      "sourcePath": "db/schema.sql"
+    }
+  ],
+  "models": [
+    {
+      "key": "model:triage-v1",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "provider": "synthetic-ai",
+      "modelReference": "triage-model-v1",
+      "sourcePath": "src/triage_agent.ts",
+      "declarationKey": "triageModel"
+    },
+    {
+      "key": "model:billing-v1",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "provider": "synthetic-ai",
+      "modelReference": "billing-model-v1",
+      "sourcePath": "src/billing_agent.ts",
+      "declarationKey": "billingModel"
+    },
+    {
+      "key": "model:retention-v1",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "provider": "synthetic-ai",
+      "modelReference": "retention-model-v1",
+      "sourcePath": "src/retention_agent.ts",
+      "declarationKey": "retentionModel"
+    }
+  ],
+  "tools": [
+    {
+      "key": "tool:classify-request",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/triage_agent.ts",
+      "declarationKey": "classifyRequest"
+    },
+    {
+      "key": "tool:read-balance",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/billing_agent.ts",
+      "declarationKey": "readBalance"
+    },
+    {
+      "key": "tool:select-retention-option",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/retention_agent.ts",
+      "declarationKey": "selectRetentionOption"
+    }
+  ],
+  "mcpServers": [],
+  "apis": [],
+  "prompts": [
+    {
+      "key": "prompt:triage",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/triage_agent.ts",
+      "declarationKey": "TRIAGE_PROMPT"
+    },
+    {
+      "key": "prompt:billing",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/billing_agent.ts",
+      "declarationKey": "BILLING_PROMPT"
+    },
+    {
+      "key": "prompt:retention",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/retention_agent.ts",
+      "declarationKey": "RETENTION_PROMPT"
+    }
+  ],
+  "knowledgeBases": [],
+  "relationships": [
+    {
+      "key": "relationship:triage-uses-model",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_MODEL",
+      "sourceKey": "agent:triage",
+      "targetKey": "model:triage-v1"
+    },
+    {
+      "key": "relationship:billing-uses-model",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_MODEL",
+      "sourceKey": "agent:billing",
+      "targetKey": "model:billing-v1"
+    },
+    {
+      "key": "relationship:retention-uses-model",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_MODEL",
+      "sourceKey": "agent:retention",
+      "targetKey": "model:retention-v1"
+    },
+    {
+      "key": "relationship:triage-uses-tool",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_TOOL",
+      "sourceKey": "agent:triage",
+      "targetKey": "tool:classify-request"
+    },
+    {
+      "key": "relationship:billing-uses-tool",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_TOOL",
+      "sourceKey": "agent:billing",
+      "targetKey": "tool:read-balance"
+    },
+    {
+      "key": "relationship:retention-uses-tool",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_TOOL",
+      "sourceKey": "agent:retention",
+      "targetKey": "tool:select-retention-option"
+    },
+    {
+      "key": "relationship:triage-handoff-billing",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "HANDOFF_TO",
+      "sourceKey": "agent:triage",
+      "targetKey": "agent:billing"
+    },
+    {
+      "key": "relationship:triage-handoff-retention",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "HANDOFF_TO",
+      "sourceKey": "agent:triage",
+      "targetKey": "agent:retention"
+    },
+    {
+      "key": "relationship:clients-contains-client-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:clients",
+      "targetKey": "element:clients.client-id"
+    },
+    {
+      "key": "relationship:clients-contains-email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:clients",
+      "targetKey": "element:clients.email-address"
+    },
+    {
+      "key": "relationship:clients-contains-segment",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:clients",
+      "targetKey": "element:clients.segment"
+    },
+    {
+      "key": "relationship:billing-contains-account-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:billing-accounts",
+      "targetKey": "element:billing-accounts.account-id"
+    },
+    {
+      "key": "relationship:billing-contains-client-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:billing-accounts",
+      "targetKey": "element:billing-accounts.client-id"
+    },
+    {
+      "key": "relationship:billing-contains-balance",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:billing-accounts",
+      "targetKey": "element:billing-accounts.balance"
+    }
+  ],
+  "evidenceRequirements": [
+    {
+      "key": "evidence:triage-agent",
+      "requiredFromRound": 1,
+      "subjectKey": "agent:triage",
+      "sourceLocator": "src/triage_agent.ts",
+      "methodCode": "TYPESCRIPT_AGENT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:billing-agent",
+      "requiredFromRound": 1,
+      "subjectKey": "agent:billing",
+      "sourceLocator": "src/billing_agent.ts",
+      "methodCode": "TYPESCRIPT_AGENT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:retention-agent",
+      "requiredFromRound": 1,
+      "subjectKey": "agent:retention",
+      "sourceLocator": "src/retention_agent.ts",
+      "methodCode": "TYPESCRIPT_AGENT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:client-schema",
+      "requiredFromRound": 1,
+      "subjectKey": "asset:clients",
+      "sourceLocator": "db/schema.sql",
+      "methodCode": "SQL_DDL",
+      "discoveryLayers": ["L3"]
+    },
+    {
+      "key": "evidence:billing-schema",
+      "requiredFromRound": 1,
+      "subjectKey": "asset:billing-accounts",
+      "sourceLocator": "db/schema.sql",
+      "methodCode": "SQL_DDL",
+      "discoveryLayers": ["L3"]
+    }
+  ],
+  "prohibited": [],
+  "semanticConcepts": [
+    {
+      "code": "CONTACT_EMAIL",
+      "requiredFromRound": 3,
+      "description": "Semantic membership only; not a physical identity assertion.",
+      "memberDataElementKeys": ["element:clients.email-address"]
+    },
+    {
+      "code": "CUSTOMER_IDENTIFIER",
+      "requiredFromRound": 3,
+      "description": "Semantically related identifiers remain distinct physical fields.",
+      "memberDataElementKeys": [
+        "element:clients.client-id",
+        "element:billing-accounts.client-id"
+      ]
+    }
+  ]
+}
