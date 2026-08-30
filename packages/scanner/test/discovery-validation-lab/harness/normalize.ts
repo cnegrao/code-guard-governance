@@ -1,11 +1,17 @@
 import { isDiscoveryPathExcluded } from "../../../src/discovery/path-policy.ts";
 import type {
   DetectedAgent,
+  DetectedApi,
   DetectedDataAsset,
   DetectedDataElement,
   DetectedEvidence,
+  DetectedKnowledgeBase,
+  DetectedMcpServer,
+  DetectedModel,
+  DetectedPrompt,
   DetectedRelationship,
   DetectedScenarioResult,
+  DetectedTool,
   DetectionConfidence,
   DetectionMethod,
   DiscoveryRelationshipType,
@@ -49,6 +55,44 @@ export interface NormalizedDetectedDataElement extends NormalizedDetectedItemBas
   readonly displayName: string | null;
 }
 
+export interface NormalizedDetectedModel extends NormalizedDetectedItemBase {
+  readonly kind: "MODEL";
+  readonly provider: string | null;
+  readonly modelReference: string;
+  readonly sourcePath: string | null;
+  readonly declarationKey: string | null;
+}
+
+export interface NormalizedDetectedTool extends NormalizedDetectedItemBase {
+  readonly kind: "TOOL";
+  readonly sourcePath: string;
+  readonly declarationKey: string;
+}
+
+export interface NormalizedDetectedMcpServer extends NormalizedDetectedItemBase {
+  readonly kind: "MCP_SERVER";
+  readonly serverIdentity: string;
+  readonly sourcePath: string | null;
+}
+
+export interface NormalizedDetectedApi extends NormalizedDetectedItemBase {
+  readonly kind: "API";
+  readonly apiIdentity: string;
+  readonly sourcePath: string | null;
+}
+
+export interface NormalizedDetectedPrompt extends NormalizedDetectedItemBase {
+  readonly kind: "PROMPT";
+  readonly sourcePath: string;
+  readonly declarationKey: string;
+}
+
+export interface NormalizedDetectedKnowledgeBase extends NormalizedDetectedItemBase {
+  readonly kind: "KNOWLEDGE_BASE";
+  readonly sourceIdentity: string;
+  readonly sourcePath: string | null;
+}
+
 export interface NormalizedDetectedRelationship extends NormalizedDetectedItemBase {
   readonly kind: "RELATIONSHIP";
   readonly relationshipType: DiscoveryRelationshipType;
@@ -74,6 +118,12 @@ export interface NormalizedDetectedScenario {
   readonly agents: readonly NormalizedDetectedAgent[];
   readonly dataAssets: readonly NormalizedDetectedDataAsset[];
   readonly dataElements: readonly NormalizedDetectedDataElement[];
+  readonly models: readonly NormalizedDetectedModel[];
+  readonly tools: readonly NormalizedDetectedTool[];
+  readonly mcpServers: readonly NormalizedDetectedMcpServer[];
+  readonly apis: readonly NormalizedDetectedApi[];
+  readonly prompts: readonly NormalizedDetectedPrompt[];
+  readonly knowledgeBases: readonly NormalizedDetectedKnowledgeBase[];
   readonly relationships: readonly NormalizedDetectedRelationship[];
   readonly evidence: readonly NormalizedDetectedEvidence[];
 }
@@ -129,6 +179,13 @@ export function normalizeDiscoverablePath(
 
   const normalized = normalizeSourcePath(path);
   return normalized.length === 0 ? "/" : normalized;
+}
+
+function normalizeOptionalDiscoverablePath(
+  value: string | undefined,
+  label: string,
+): string | null {
+  return value === undefined ? null : normalizeDiscoverablePath(value, label);
 }
 
 function normalizeMethod(method: DetectionMethod): NormalizedDetectionMethod {
@@ -209,6 +266,80 @@ export function dataElementComparisonKey(
   ]);
 }
 
+function optionalPathComparisonValue(path: string | null | undefined): string {
+  return path === null || path === undefined ? "" : normalizeSourcePath(path);
+}
+
+export function modelComparisonKey(
+  provider: string | null | undefined,
+  modelReference: string,
+  sourcePath?: string | null,
+  declarationKey?: string | null,
+): string {
+  return stableKey([
+    "MODEL",
+    provider?.trim() ?? "",
+    modelReference.trim(),
+    optionalPathComparisonValue(sourcePath),
+    declarationKey?.trim() ?? "",
+  ]);
+}
+
+export function toolComparisonKey(
+  sourcePath: string,
+  declarationKey: string,
+): string {
+  return stableKey([
+    "TOOL",
+    normalizeSourcePath(sourcePath),
+    declarationKey.trim(),
+  ]);
+}
+
+export function mcpServerComparisonKey(
+  serverIdentity: string,
+  sourcePath?: string | null,
+): string {
+  return stableKey([
+    "MCP_SERVER",
+    serverIdentity.trim(),
+    optionalPathComparisonValue(sourcePath),
+  ]);
+}
+
+export function apiComparisonKey(
+  apiIdentity: string,
+  sourcePath?: string | null,
+): string {
+  return stableKey([
+    "API",
+    apiIdentity.trim(),
+    optionalPathComparisonValue(sourcePath),
+  ]);
+}
+
+export function promptComparisonKey(
+  sourcePath: string,
+  declarationKey: string,
+): string {
+  return stableKey([
+    "PROMPT",
+    normalizeSourcePath(sourcePath),
+    declarationKey.trim(),
+  ]);
+}
+
+export function knowledgeBaseComparisonKey(
+  sourceIdentity: string,
+  sourcePath?: string | null,
+): string {
+  return stableKey([
+    "KNOWLEDGE_BASE",
+    sourceIdentity.trim(),
+    optionalPathComparisonValue(sourcePath),
+  ]);
+}
+
 export function relationshipComparisonKey(
   relationshipType: DiscoveryRelationshipType,
   sourceComparisonKey: string,
@@ -280,6 +411,121 @@ function normalizeDataAsset(
   };
 }
 
+function normalizeModel(model: DetectedModel): NormalizedDetectedModel {
+  const provider = normalizeOptionalText(model.provider);
+  const modelReference = normalizeRequiredText(
+    model.modelReference,
+    "Model modelReference",
+  );
+  const sourcePath = normalizeOptionalDiscoverablePath(
+    model.sourcePath,
+    "Model sourcePath",
+  );
+  const declarationKey = normalizeOptionalText(model.declarationKey);
+  return {
+    ...normalizedBase(model),
+    kind: "MODEL",
+    comparisonKey: modelComparisonKey(
+      provider,
+      modelReference,
+      sourcePath,
+      declarationKey,
+    ),
+    provider,
+    modelReference,
+    sourcePath,
+    declarationKey,
+  };
+}
+
+function normalizeTool(tool: DetectedTool): NormalizedDetectedTool {
+  const sourcePath = normalizeDiscoverablePath(tool.sourcePath, "Tool sourcePath");
+  const declarationKey = normalizeRequiredText(
+    tool.declarationKey,
+    "Tool declarationKey",
+  );
+  return {
+    ...normalizedBase(tool),
+    kind: "TOOL",
+    comparisonKey: toolComparisonKey(sourcePath, declarationKey),
+    sourcePath,
+    declarationKey,
+  };
+}
+
+function normalizeMcpServer(
+  server: DetectedMcpServer,
+): NormalizedDetectedMcpServer {
+  const serverIdentity = normalizeRequiredText(
+    server.serverIdentity,
+    "MCP Server serverIdentity",
+  );
+  const sourcePath = normalizeOptionalDiscoverablePath(
+    server.sourcePath,
+    "MCP Server sourcePath",
+  );
+  return {
+    ...normalizedBase(server),
+    kind: "MCP_SERVER",
+    comparisonKey: mcpServerComparisonKey(serverIdentity, sourcePath),
+    serverIdentity,
+    sourcePath,
+  };
+}
+
+function normalizeApi(api: DetectedApi): NormalizedDetectedApi {
+  const apiIdentity = normalizeRequiredText(api.apiIdentity, "API apiIdentity");
+  const sourcePath = normalizeOptionalDiscoverablePath(
+    api.sourcePath,
+    "API sourcePath",
+  );
+  return {
+    ...normalizedBase(api),
+    kind: "API",
+    comparisonKey: apiComparisonKey(apiIdentity, sourcePath),
+    apiIdentity,
+    sourcePath,
+  };
+}
+
+function normalizePrompt(prompt: DetectedPrompt): NormalizedDetectedPrompt {
+  const sourcePath = normalizeDiscoverablePath(
+    prompt.sourcePath,
+    "Prompt sourcePath",
+  );
+  const declarationKey = normalizeRequiredText(
+    prompt.declarationKey,
+    "Prompt declarationKey",
+  );
+  return {
+    ...normalizedBase(prompt),
+    kind: "PROMPT",
+    comparisonKey: promptComparisonKey(sourcePath, declarationKey),
+    sourcePath,
+    declarationKey,
+  };
+}
+
+function normalizeKnowledgeBase(
+  knowledgeBase: DetectedKnowledgeBase,
+): NormalizedDetectedKnowledgeBase {
+  const sourceIdentity = normalizeRequiredText(
+    knowledgeBase.sourceIdentity,
+    "Knowledge Base sourceIdentity",
+  );
+  const sourcePath = normalizeOptionalDiscoverablePath(
+    knowledgeBase.sourcePath,
+    "Knowledge Base sourcePath",
+  );
+  return {
+    ...normalizedBase(knowledgeBase),
+    kind: "KNOWLEDGE_BASE",
+    comparisonKey: knowledgeBaseComparisonKey(sourceIdentity, sourcePath),
+    sourceIdentity,
+    sourcePath,
+  };
+}
+
 function assertUniqueKey(
   key: string,
   seen: Set<string>,
@@ -340,8 +586,37 @@ export function normalizeDetectedScenario(
     },
   );
 
+  const models = (result.models ?? []).map(normalizeModel);
+  const tools = (result.tools ?? []).map(normalizeTool);
+  const mcpServers = (result.mcpServers ?? []).map(normalizeMcpServer);
+  const apis = (result.apis ?? []).map(normalizeApi);
+  const prompts = (result.prompts ?? []).map(normalizePrompt);
+  const knowledgeBases = (result.knowledgeBases ?? []).map(
+    normalizeKnowledgeBase,
+  );
+  for (const item of [
+    ...models,
+    ...tools,
+    ...mcpServers,
+    ...apis,
+    ...prompts,
+    ...knowledgeBases,
+  ]) {
+    assertUniqueKey(item.detectedKey, detectedKeys, "detectedKey");
+  }
+
   const entityByKey = new Map(
-    [...agents, ...dataAssets, ...dataElements].map(
+    [
+      ...agents,
+      ...dataAssets,
+      ...dataElements,
+      ...models,
+      ...tools,
+      ...mcpServers,
+      ...apis,
+      ...prompts,
+      ...knowledgeBases,
+    ].map(
       (entity) => [entity.detectedKey, entity] as const,
     ),
   );
@@ -418,6 +693,12 @@ export function normalizeDetectedScenario(
     agents: sortByComparisonKey(agents),
     dataAssets: sortByComparisonKey(dataAssets),
     dataElements: sortByComparisonKey(dataElements),
+    models: sortByComparisonKey(models),
+    tools: sortByComparisonKey(tools),
+    mcpServers: sortByComparisonKey(mcpServers),
+    apis: sortByComparisonKey(apis),
+    prompts: sortByComparisonKey(prompts),
+    knowledgeBases: sortByComparisonKey(knowledgeBases),
     relationships: sortByComparisonKey(relationships),
     evidence: sortByComparisonKey(evidence),
   };

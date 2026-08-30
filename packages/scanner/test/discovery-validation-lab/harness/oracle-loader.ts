@@ -10,12 +10,18 @@ import {
   EXPECTED_SCENARIO_SCHEMA_VERSION,
   type DiscoveryLayer,
   type ExpectedAgent,
+  type ExpectedApi,
   type ExpectedDataAsset,
   type ExpectedDataElement,
   type ExpectedEvidenceRequirement,
+  type ExpectedKnowledgeBase,
+  type ExpectedMcpServer,
+  type ExpectedModel,
+  type ExpectedPrompt,
   type ExpectedRelationship,
   type ExpectedScenario,
   type ExpectedSemanticConcept,
+  type ExpectedTool,
   type ImplementationRound,
   type ProhibitedExpectation,
 } from "../contracts/expected.ts";
@@ -66,6 +72,10 @@ function optionalText(value: unknown, label: string): string | undefined {
 function array(value: unknown, label: string): unknown[] {
   if (!Array.isArray(value)) throw new TypeError(`${label} must be an array`);
   return value;
+}
+
+function optionalArray(value: unknown, label: string): unknown[] {
+  return value === undefined ? [] : array(value, label);
 }
 
 function stringArray(value: unknown, label: string): string[] {
@@ -200,6 +210,160 @@ function expectedDataElement(value: unknown, index: number): ExpectedDataElement
         ? undefined
         : sourcePath(item.sourcePath, `${label}.sourcePath`),
     displayName: optionalText(item.displayName, `${label}.displayName`),
+  };
+}
+
+function expectedModel(value: unknown, index: number): ExpectedModel {
+  const label = `models[${index}]`;
+  const item = record(value, label);
+  onlyKeys(
+    item,
+    [
+      "key",
+      "requiredFromRound",
+      "discoveryLayers",
+      "comparisonAliases",
+      "provider",
+      "modelReference",
+      "sourcePath",
+      "declarationKey",
+    ],
+    label,
+  );
+  return {
+    ...baseExpectedItem(item, label),
+    provider: optionalText(item.provider, `${label}.provider`),
+    modelReference: text(item.modelReference, `${label}.modelReference`),
+    sourcePath:
+      item.sourcePath === undefined
+        ? undefined
+        : sourcePath(item.sourcePath, `${label}.sourcePath`),
+    declarationKey: optionalText(
+      item.declarationKey,
+      `${label}.declarationKey`,
+    ),
+  };
+}
+
+function expectedTool(value: unknown, index: number): ExpectedTool {
+  const label = `tools[${index}]`;
+  const item = record(value, label);
+  onlyKeys(
+    item,
+    [
+      "key",
+      "requiredFromRound",
+      "discoveryLayers",
+      "comparisonAliases",
+      "sourcePath",
+      "declarationKey",
+    ],
+    label,
+  );
+  return {
+    ...baseExpectedItem(item, label),
+    sourcePath: sourcePath(item.sourcePath, `${label}.sourcePath`),
+    declarationKey: text(item.declarationKey, `${label}.declarationKey`),
+  };
+}
+
+function expectedMcpServer(value: unknown, index: number): ExpectedMcpServer {
+  const label = `mcpServers[${index}]`;
+  const item = record(value, label);
+  onlyKeys(
+    item,
+    [
+      "key",
+      "requiredFromRound",
+      "discoveryLayers",
+      "comparisonAliases",
+      "serverIdentity",
+      "sourcePath",
+    ],
+    label,
+  );
+  return {
+    ...baseExpectedItem(item, label),
+    serverIdentity: text(item.serverIdentity, `${label}.serverIdentity`),
+    sourcePath:
+      item.sourcePath === undefined
+        ? undefined
+        : sourcePath(item.sourcePath, `${label}.sourcePath`),
+  };
+}
+
+function expectedApi(value: unknown, index: number): ExpectedApi {
+  const label = `apis[${index}]`;
+  const item = record(value, label);
+  onlyKeys(
+    item,
+    [
+      "key",
+      "requiredFromRound",
+      "discoveryLayers",
+      "comparisonAliases",
+      "apiIdentity",
+      "sourcePath",
+    ],
+    label,
+  );
+  return {
+    ...baseExpectedItem(item, label),
+    apiIdentity: text(item.apiIdentity, `${label}.apiIdentity`),
+    sourcePath:
+      item.sourcePath === undefined
+        ? undefined
+        : sourcePath(item.sourcePath, `${label}.sourcePath`),
+  };
+}
+
+function expectedPrompt(value: unknown, index: number): ExpectedPrompt {
+  const label = `prompts[${index}]`;
+  const item = record(value, label);
+  onlyKeys(
+    item,
+    [
+      "key",
+      "requiredFromRound",
+      "discoveryLayers",
+      "comparisonAliases",
+      "sourcePath",
+      "declarationKey",
+    ],
+    label,
+  );
+  return {
+    ...baseExpectedItem(item, label),
+    sourcePath: sourcePath(item.sourcePath, `${label}.sourcePath`),
+    declarationKey: text(item.declarationKey, `${label}.declarationKey`),
+  };
+}
+
+function expectedKnowledgeBase(
+  value: unknown,
+  index: number,
+): ExpectedKnowledgeBase {
+  const label = `knowledgeBases[${index}]`;
+  const item = record(value, label);
+  onlyKeys(
+    item,
+    [
+      "key",
+      "requiredFromRound",
+      "discoveryLayers",
+      "comparisonAliases",
+      "sourceIdentity",
+      "sourcePath",
+    ],
+    label,
+  );
+  return {
+    ...baseExpectedItem(item, label),
+    sourceIdentity: text(item.sourceIdentity, `${label}.sourceIdentity`),
+    sourcePath:
+      item.sourcePath === undefined
+        ? undefined
+        : sourcePath(item.sourcePath, `${label}.sourcePath`),
   };
 }
 
@@ -355,6 +519,12 @@ export function validateExpectedScenario(value: unknown): ExpectedScenario {
       "agents",
       "dataAssets",
       "dataElements",
+      "models",
+      "tools",
+      "mcpServers",
+      "apis",
+      "prompts",
+      "knowledgeBases",
       "relationships",
       "evidenceRequirements",
       "prohibited",
@@ -375,6 +545,17 @@ export function validateExpectedScenario(value: unknown): ExpectedScenario {
   const dataElements = array(root.dataElements, "dataElements").map(
     expectedDataElement,
   );
+  const models = optionalArray(root.models, "models").map(expectedModel);
+  const tools = optionalArray(root.tools, "tools").map(expectedTool);
+  const mcpServers = optionalArray(root.mcpServers, "mcpServers").map(
+    expectedMcpServer,
+  );
+  const apis = optionalArray(root.apis, "apis").map(expectedApi);
+  const prompts = optionalArray(root.prompts, "prompts").map(expectedPrompt);
+  const knowledgeBases = optionalArray(
+    root.knowledgeBases,
+    "knowledgeBases",
+  ).map(expectedKnowledgeBase);
   const relationships = array(root.relationships, "relationships").map(
     expectedRelationship,
   );
@@ -394,6 +575,12 @@ export function validateExpectedScenario(value: unknown): ExpectedScenario {
     ...agents.map((item) => item.key),
     ...dataAssets.map((item) => item.key),
     ...dataElements.map((item) => item.key),
+    ...models.map((item) => item.key),
+    ...tools.map((item) => item.key),
+    ...mcpServers.map((item) => item.key),
+    ...apis.map((item) => item.key),
+    ...prompts.map((item) => item.key),
+    ...knowledgeBases.map((item) => item.key),
   ];
   assertUnique(entityKeys, "entity key");
   assertUnique(relationships.map((item) => item.key), "relationship key");
@@ -457,6 +644,12 @@ export function validateExpectedScenario(value: unknown): ExpectedScenario {
     agents,
     dataAssets,
     dataElements,
+    models,
+    tools,
+    mcpServers,
+    apis,
+    prompts,
+    knowledgeBases,
     relationships,
     evidenceRequirements,
     prohibited,

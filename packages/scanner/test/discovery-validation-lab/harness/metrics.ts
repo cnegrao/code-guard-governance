@@ -87,6 +87,12 @@ export function calculateNegativeScenarioPass(
     matches.agents,
     matches.dataAssets,
     matches.dataElements,
+    matches.models,
+    matches.tools,
+    matches.mcpServers,
+    matches.apis,
+    matches.prompts,
+    matches.knowledgeBases,
     matches.relationships,
   ];
   const expectedCount = categories.reduce(

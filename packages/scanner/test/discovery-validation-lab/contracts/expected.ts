@@ -60,6 +60,38 @@ export interface ExpectedDataElement extends ExpectedItemBase {
   readonly displayName?: string;
 }
 
+export interface ExpectedModel extends ExpectedItemBase {
+  readonly provider?: string;
+  readonly modelReference: string;
+  readonly sourcePath?: string;
+  readonly declarationKey?: string;
+}
+
+export interface ExpectedTool extends ExpectedItemBase {
+  readonly sourcePath: string;
+  readonly declarationKey: string;
+}
+
+export interface ExpectedMcpServer extends ExpectedItemBase {
+  readonly serverIdentity: string;
+  readonly sourcePath?: string;
+}
+
+export interface ExpectedApi extends ExpectedItemBase {
+  readonly apiIdentity: string;
+  readonly sourcePath?: string;
+}
+
+export interface ExpectedPrompt extends ExpectedItemBase {
+  readonly sourcePath: string;
+  readonly declarationKey: string;
+}
+
+export interface ExpectedKnowledgeBase extends ExpectedItemBase {
+  readonly sourceIdentity: string;
+  readonly sourcePath?: string;
+}
+
 export interface ExpectedRelationship extends ExpectedItemBase {
   readonly relationshipType: DiscoveryRelationshipType;
   readonly sourceKey: string;
@@ -105,6 +137,13 @@ export interface ExpectedScenario {
   readonly agents: readonly ExpectedAgent[];
   readonly dataAssets: readonly ExpectedDataAsset[];
   readonly dataElements: readonly ExpectedDataElement[];
+  /** Optional only for compatibility with pre-Slice-3A test oracles. */
+  readonly models?: readonly ExpectedModel[];
+  readonly tools?: readonly ExpectedTool[];
+  readonly mcpServers?: readonly ExpectedMcpServer[];
+  readonly apis?: readonly ExpectedApi[];
+  readonly prompts?: readonly ExpectedPrompt[];
+  readonly knowledgeBases?: readonly ExpectedKnowledgeBase[];
   readonly relationships: readonly ExpectedRelationship[];
   readonly evidenceRequirements: readonly ExpectedEvidenceRequirement[];
   readonly prohibited: readonly ProhibitedExpectation[];
