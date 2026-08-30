@@ -1,0 +1,275 @@
+{
+  "schemaVersion": "1.0",
+  "scenarioId": "03-monorepo",
+  "description": "Two explicit Agents separated from ordinary web code with deterministic SQL lineage.",
+  "targetRound": 1,
+  "discoveryLayers": ["L0", "L3", "L4", "L6", "L9"],
+  "agents": [
+    {
+      "key": "agent:customer",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "services/agents/customer_agent.ts",
+      "declarationKey": "customerAgent",
+      "displayName": "Customer Agent"
+    },
+    {
+      "key": "agent:profile",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "services/agents/profile_agent.ts",
+      "declarationKey": "profileAgent",
+      "displayName": "Profile Agent"
+    }
+  ],
+  "dataAssets": [
+    {
+      "key": "asset:core-customer",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "sourceIdentity": "warehouse.core_customer",
+      "sourcePath": "warehouse/core_customer.sql",
+      "displayName": "core_customer"
+    },
+    {
+      "key": "asset:crm-contact",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "sourceIdentity": "warehouse.crm_contact",
+      "sourcePath": "warehouse/crm_contact.sql",
+      "displayName": "crm_contact"
+    }
+  ],
+  "dataElements": [
+    {
+      "key": "element:core-customer.customer-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:core-customer",
+      "elementPath": "customer_id",
+      "sourcePath": "warehouse/core_customer.sql"
+    },
+    {
+      "key": "element:core-customer.email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:core-customer",
+      "elementPath": "email",
+      "sourcePath": "warehouse/core_customer.sql"
+    },
+    {
+      "key": "element:core-customer.name",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:core-customer",
+      "elementPath": "name",
+      "sourcePath": "warehouse/core_customer.sql"
+    },
+    {
+      "key": "element:crm-contact.contact-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:crm-contact",
+      "elementPath": "contact_id",
+      "sourcePath": "warehouse/crm_contact.sql"
+    },
+    {
+      "key": "element:crm-contact.mail",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:crm-contact",
+      "elementPath": "mail",
+      "sourcePath": "warehouse/crm_contact.sql"
+    },
+    {
+      "key": "element:crm-contact.display-name",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:crm-contact",
+      "elementPath": "display_name",
+      "sourcePath": "warehouse/crm_contact.sql"
+    }
+  ],
+  "models": [
+    {
+      "key": "model:customer-v1",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "modelReference": "customer-model-v1",
+      "sourcePath": "services/agents/customer_agent.ts",
+      "declarationKey": "customerModel"
+    },
+    {
+      "key": "model:profile-v1",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "modelReference": "profile-model-v1",
+      "sourcePath": "services/agents/profile_agent.ts",
+      "declarationKey": "profileModel"
+    }
+  ],
+  "tools": [],
+  "mcpServers": [],
+  "apis": [],
+  "prompts": [],
+  "knowledgeBases": [],
+  "relationships": [
+    {
+      "key": "relationship:customer-uses-model",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_MODEL",
+      "sourceKey": "agent:customer",
+      "targetKey": "model:customer-v1"
+    },
+    {
+      "key": "relationship:profile-uses-model",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_MODEL",
+      "sourceKey": "agent:profile",
+      "targetKey": "model:profile-v1"
+    },
+    {
+      "key": "relationship:customer-reads-crm-contact",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "READS_FROM",
+      "sourceKey": "agent:customer",
+      "targetKey": "asset:crm-contact"
+    },
+    {
+      "key": "relationship:profile-reads-core-customer",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "READS_FROM",
+      "sourceKey": "agent:profile",
+      "targetKey": "asset:core-customer"
+    },
+    {
+      "key": "relationship:core-contains-customer-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:core-customer",
+      "targetKey": "element:core-customer.customer-id"
+    },
+    {
+      "key": "relationship:core-contains-email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:core-customer",
+      "targetKey": "element:core-customer.email"
+    },
+    {
+      "key": "relationship:core-contains-name",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:core-customer",
+      "targetKey": "element:core-customer.name"
+    },
+    {
+      "key": "relationship:crm-contains-contact-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:crm-contact",
+      "targetKey": "element:crm-contact.contact-id"
+    },
+    {
+      "key": "relationship:crm-contains-mail",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:crm-contact",
+      "targetKey": "element:crm-contact.mail"
+    },
+    {
+      "key": "relationship:crm-contains-display-name",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:crm-contact",
+      "targetKey": "element:crm-contact.display-name"
+    },
+    {
+      "key": "relationship:crm-mail-derived-from-core-email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "DERIVED_FROM",
+      "sourceKey": "element:crm-contact.mail",
+      "targetKey": "element:core-customer.email"
+    }
+  ],
+  "evidenceRequirements": [
+    {
+      "key": "evidence:customer-agent",
+      "requiredFromRound": 1,
+      "subjectKey": "agent:customer",
+      "sourceLocator": "services/agents/customer_agent.ts",
+      "methodCode": "TYPESCRIPT_AGENT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:profile-agent",
+      "requiredFromRound": 1,
+      "subjectKey": "agent:profile",
+      "sourceLocator": "services/agents/profile_agent.ts",
+      "methodCode": "TYPESCRIPT_AGENT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:core-customer-schema",
+      "requiredFromRound": 1,
+      "subjectKey": "asset:core-customer",
+      "sourceLocator": "warehouse/core_customer.sql",
+      "methodCode": "SQL_DDL",
+      "discoveryLayers": ["L3"]
+    },
+    {
+      "key": "evidence:crm-contact-view",
+      "requiredFromRound": 1,
+      "subjectKey": "asset:crm-contact",
+      "sourceLocator": "warehouse/crm_contact.sql",
+      "methodCode": "SQL_VIEW",
+      "discoveryLayers": ["L3"]
+    },
+    {
+      "key": "evidence:mail-lineage",
+      "requiredFromRound": 1,
+      "subjectKey": "relationship:crm-mail-derived-from-core-email",
+      "sourceLocator": "warehouse/crm_contact.sql",
+      "methodCode": "SQL_COLUMN_LINEAGE",
+      "discoveryLayers": ["L9"]
+    }
+  ],
+  "prohibited": [
+    {
+      "key": "prohibited:web-renderer-as-agent",
+      "requiredFromRound": 1,
+      "category": "AGENT",
+      "comparisonKey": "[\"AGENT\",\"apps/web/src/app.ts\",\"renderAgentDirectory\"]",
+      "description": "An ordinary web renderer using Agent terminology is not an AI Agent.",
+      "discoveryLayers": ["L4"]
+    }
+  ],
+  "semanticConcepts": [
+    {
+      "code": "CONTACT_EMAIL",
+      "requiredFromRound": 3,
+      "description": "The view column has email semantics without asserting physical identity.",
+      "memberDataElementKeys": ["element:crm-contact.mail"]
+    },
+    {
+      "code": "CUSTOMER_IDENTIFIER",
+      "requiredFromRound": 3,
+      "description": "Customer and contact identifiers are semantically related, not physically identical.",
+      "memberDataElementKeys": [
+        "element:core-customer.customer-id",
+        "element:crm-contact.contact-id"
+      ]
+    }
+  ]
+}
