@@ -287,6 +287,130 @@ function approveRelationship(
   };
 }
 
+function semanticDataElement(
+  organisationId,
+  suffix,
+  elementPath = `field_${suffix}`,
+) {
+  return {
+    canonicalObject: {
+      organisationId,
+      objectId: contracts.asCanonicalObjectId(`canonical:data-element:${suffix}`),
+      kind: "DATA_ELEMENT",
+    },
+    dataElementId: contracts.asDataElementId(`data-element:${suffix}`),
+    dataAssetId: contracts.asDataAssetId(`data-asset:${suffix}`),
+    elementPath,
+  };
+}
+
+function semanticConcept(organisationId, suffix = "contact-email") {
+  return {
+    semanticIdentityKind: "SEMANTIC_CONCEPT",
+    organisationId,
+    semanticConceptId: contracts.asSemanticConceptId(
+      `semantic-concept:${suffix}`,
+    ),
+  };
+}
+
+function semanticAssignmentCandidate(
+  dataElement,
+  {
+    candidateId = `semantic-candidate:${dataElement.dataElementId}`,
+    sourceCode = "correo_electronico",
+    sourceLabel,
+    confidence = 0.95,
+    assertionIds = ["assertion:semantic:candidate"],
+    evidenceIds = ["evidence:semantic:candidate"],
+    ...extra
+  } = {},
+) {
+  return contracts.createDataElementSemanticConceptAssignmentCandidate({
+    candidateId:
+      contracts.asDataElementSemanticConceptAssignmentCandidateId(candidateId),
+    candidateKind: "DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT",
+    dataElement,
+    sourceObject: sourceObjectIdentity(
+      "connection:semantic-catalog",
+      `external:${candidateId}`,
+    ),
+    sourceSignal: {
+      ...(sourceCode === undefined ? {} : { sourceCode }),
+      ...(sourceLabel === undefined ? {} : { sourceLabel }),
+    },
+    assertionIds: assertionIds.map(contracts.asSourceAssertionId),
+    evidenceIds: evidenceIds.map(contracts.asEvidenceId),
+    confidence,
+    inferredAt: contracts.asIsoTimestamp("2026-08-31T15:00:00.000Z"),
+    requiresDecision: true,
+    createsAssignment: false,
+    ...extra,
+  });
+}
+
+function semanticAssignmentState({
+  dataElement,
+  semanticConcept: target,
+  id = `semantic-assignment:${dataElement.dataElementId}`,
+  stateId = `semantic-assignment-state:${dataElement.dataElementId}:one`,
+  support = relationshipSupport(),
+  validFrom = contracts.asIsoTimestamp("2026-08-31T16:00:00.000Z"),
+  recordedAt = contracts.asIsoTimestamp("2026-08-31T16:01:00.000Z"),
+  ...extra
+}) {
+  return {
+    assignmentId: contracts.asDataElementSemanticConceptAssignmentId(id),
+    assignmentStateId:
+      contracts.asDataElementSemanticConceptAssignmentStateId(stateId),
+    organisationId: dataElement.canonicalObject.organisationId,
+    dataElement,
+    semanticConcept: target,
+    support,
+    validFrom,
+    recordedAt,
+    ...extra,
+  };
+}
+
+function approveSemanticAssignment(
+  authorizedState,
+  {
+    candidate,
+    assignmentCandidateId,
+    supersededState,
+    decisionAssertionIds = ["assertion:semantic:decision"],
+    decisionEvidenceIds = ["evidence:semantic:decision"],
+  } = {},
+) {
+  const assignmentCandidate =
+    candidate ?? semanticAssignmentCandidate(authorizedState.dataElement);
+  const decision = contracts.createSemanticAssignmentReconciliationDecision({
+    decisionId: contracts.asReconciliationDecisionId(
+      `semantic-decision:${authorizedState.assignmentStateId}`,
+    ),
+    organisationId: authorizedState.organisationId,
+    assignmentCandidateId:
+      assignmentCandidateId ?? assignmentCandidate.candidateId,
+    assignmentCandidate,
+    outcome: "CREATE_NEW",
+    authority: { authorityKind: "HUMAN", actorReference: "reviewer:semantic" },
+    reasonCode: "HUMAN_REVIEW",
+    assertionIds: decisionAssertionIds.map(contracts.asSourceAssertionId),
+    evidenceIds: decisionEvidenceIds.map(contracts.asEvidenceId),
+    decidedAt: contracts.asIsoTimestamp("2026-08-31T17:00:00.000Z"),
+    authorizedState,
+    ...(supersededState === undefined ? {} : { supersededState }),
+  });
+  return {
+    decision,
+    assignment: contracts.createDataElementSemanticConceptAssignment(
+      decision,
+      authorizedState,
+    ),
+  };
+}
+
 describe("Canonical Contract V1A", () => {
   it("preserves provider-specific identifiers as opaque external strings", () => {
     assert.equal(
@@ -4025,5 +4149,742 @@ describe("Canonical Contract V1A", () => {
     assert.equal(Object.hasOwn(decision, "token"), false);
     assert.equal(Object.hasOwn(decision, "confidence"), false);
     assert.equal(Object.hasOwn(decision, "trustState"), false);
+  });
+
+  it("keeps semantic identities distinct from physical identity and technical taxonomies", () => {
+    const organisationId = contracts.asOrganisationId(
+      "organisation:semantic:one",
+    );
+    const target = semanticConcept(organisationId);
+    const elements = [
+      semanticDataElement(organisationId, "crm", "mail"),
+      semanticDataElement(organisationId, "billing", "email"),
+      semanticDataElement(organisationId, "support", "primary_email"),
+    ];
+    const assignments = elements.map((dataElement, index) =>
+      approveSemanticAssignment(
+        semanticAssignmentState({
+          dataElement,
+          semanticConcept: target,
+          id: `semantic-assignment:shared:${index}`,
+          stateId: `semantic-assignment-state:shared:${index}`,
+        }),
+      ).assignment,
+    );
+
+    assert.equal(new Set(assignments.map((item) => item.dataElement.dataElementId)).size, 3);
+    assert.equal(
+      new Set(assignments.map((item) => item.semanticConcept.semanticConceptId))
+        .size,
+      1,
+    );
+    assert.equal(Object.keys(contracts.CANONICAL_OBJECT_KIND).length, 11);
+    assert.equal(Object.keys(contracts.GOVERNED_RELATIONSHIP_TYPE).length, 12);
+    assert.equal(
+      Object.values(contracts.CANONICAL_OBJECT_KIND).includes(
+        "SEMANTIC_CONCEPT",
+      ),
+      false,
+    );
+    assert.equal(
+      Object.values(contracts.GOVERNED_RELATIONSHIP_TYPE).includes(
+        "SEMANTICALLY_CLASSIFIED_AS",
+      ),
+      false,
+    );
+
+    const identities = [
+      target,
+      {
+        semanticIdentityKind: "BUSINESS_TERM",
+        organisationId,
+        businessTermId: contracts.asBusinessTermId("business-term:email"),
+      },
+      {
+        semanticIdentityKind: "BUSINESS_DOMAIN",
+        organisationId,
+        businessDomainId: contracts.asBusinessDomainId(
+          "business-domain:customer",
+        ),
+      },
+      {
+        semanticIdentityKind: "INFORMATION_DOMAIN",
+        organisationId,
+        informationDomainId: contracts.asInformationDomainId(
+          "information-domain:contact",
+        ),
+      },
+    ];
+    assert.deepEqual(
+      identities.map((identity) => identity.semanticIdentityKind),
+      [
+        "SEMANTIC_CONCEPT",
+        "BUSINESS_TERM",
+        "BUSINESS_DOMAIN",
+        "INFORMATION_DOMAIN",
+      ],
+    );
+    assert.deepEqual(Object.keys(target).sort(), [
+      "organisationId",
+      "semanticConceptId",
+      "semanticIdentityKind",
+    ]);
+  });
+
+  it("keeps source signals inferential and validates candidate confidence fail closed", () => {
+    const organisationOne = contracts.asOrganisationId(
+      "organisation:semantic:signal:one",
+    );
+    const organisationTwo = contracts.asOrganisationId(
+      "organisation:semantic:signal:two",
+    );
+    const assertionIds = [
+      "assertion:semantic:b",
+      "assertion:semantic:a",
+      "assertion:semantic:b",
+    ];
+    const evidenceIds = [
+      "evidence:semantic:b",
+      "evidence:semantic:a",
+      "evidence:semantic:b",
+    ];
+    const candidateOne = semanticAssignmentCandidate(
+      semanticDataElement(organisationOne, "signal-one"),
+      {
+        sourceCode: "correo_electronico",
+        sourceLabel: "Correo electrónico",
+        confidence: 1,
+        assertionIds,
+        evidenceIds,
+        trustState: "VALIDATED",
+        semanticConcept: semanticConcept(organisationOne),
+        vendorMetadata: { provider: "must-not-copy" },
+        privacy: "PII",
+        capability: "READ",
+        authorization: "ALLOW",
+        metadata: { arbitrary: true },
+      },
+    );
+    const candidateTwo = semanticAssignmentCandidate(
+      semanticDataElement(organisationTwo, "signal-two"),
+      {
+        sourceCode: "correo_electronico",
+        sourceLabel: "Correo electrónico",
+        confidence: 1,
+      },
+    );
+
+    assert.deepEqual(candidateOne.sourceSignal, candidateTwo.sourceSignal);
+    assert.notEqual(
+      candidateOne.dataElement.canonicalObject.organisationId,
+      candidateTwo.dataElement.canonicalObject.organisationId,
+    );
+    assert.equal(Object.hasOwn(candidateOne, "semanticConcept"), false);
+    assert.equal(Object.hasOwn(candidateOne, "trustState"), false);
+    assert.equal(Object.hasOwn(candidateOne, "vendorMetadata"), false);
+    assert.equal(Object.hasOwn(candidateOne, "privacy"), false);
+    assert.equal(Object.hasOwn(candidateOne, "capability"), false);
+    assert.equal(Object.hasOwn(candidateOne, "authorization"), false);
+    assert.equal(Object.hasOwn(candidateOne, "metadata"), false);
+    assert.equal(candidateOne.confidence, 1);
+    assert.equal(candidateOne.createsAssignment, false);
+    assert.deepEqual(candidateOne.assertionIds, [
+      "assertion:semantic:a",
+      "assertion:semantic:b",
+    ]);
+    assert.deepEqual(candidateOne.evidenceIds, [
+      "evidence:semantic:a",
+      "evidence:semantic:b",
+    ]);
+    assert.deepEqual(assertionIds, [
+      "assertion:semantic:b",
+      "assertion:semantic:a",
+      "assertion:semantic:b",
+    ]);
+    assert.deepEqual(evidenceIds, [
+      "evidence:semantic:b",
+      "evidence:semantic:a",
+      "evidence:semantic:b",
+    ]);
+    assert.equal(Object.isFrozen(candidateOne), true);
+    assert.equal(Object.isFrozen(candidateOne.sourceSignal), true);
+    assert.equal(Object.isFrozen(candidateOne.assertionIds), true);
+
+    for (const confidence of [-0.01, 1.01, Number.NaN, Number.POSITIVE_INFINITY]) {
+      assert.throws(
+        () =>
+          semanticAssignmentCandidate(
+            semanticDataElement(organisationOne, `confidence:${confidence}`),
+            { confidence },
+          ),
+        /confidence must be between 0 and 1/,
+      );
+    }
+    assert.throws(
+      () =>
+        contracts.createDataElementSemanticConceptAssignmentCandidate({
+          ...candidateOne,
+          candidateId:
+            contracts.asDataElementSemanticConceptAssignmentCandidateId(
+              "semantic-candidate:empty-signal",
+            ),
+          sourceSignal: {},
+        }),
+      /requires sourceCode or sourceLabel/,
+    );
+    assert.throws(
+      () =>
+        semanticAssignmentCandidate(
+          semanticDataElement(organisationOne, "invalid-kind"),
+          { candidateKind: "SEMANTIC_ENGINE" },
+        ),
+      /must have kind DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT/,
+    );
+    assert.throws(
+      () => contracts.createDataElementSemanticConceptAssignment(candidateOne, {}),
+      /Unknown semantic assignment reconciliation outcome/,
+    );
+  });
+
+  it("binds CREATE_NEW to the exact candidate DataElement and tenant", () => {
+    const organisationId = contracts.asOrganisationId(
+      "organisation:semantic:binding",
+    );
+    const otherOrganisationId = contracts.asOrganisationId(
+      "organisation:semantic:binding:other",
+    );
+    const dataElementA = semanticDataElement(organisationId, "binding-a");
+    const dataElementB = semanticDataElement(organisationId, "binding-b");
+    const target = semanticConcept(organisationId, "governed-contact-email");
+    const candidate = semanticAssignmentCandidate(dataElementA, {
+      candidateId: "semantic-candidate:binding",
+      sourceCode: "correo_electronico",
+    });
+    const stateA = semanticAssignmentState({
+      dataElement: dataElementA,
+      semanticConcept: {
+        ...target,
+        conceptCode: "CONTACT_EMAIL",
+        label: "Contact email",
+        description: "must-not-copy",
+      },
+      id: "semantic-assignment:binding",
+      stateId: "semantic-assignment-state:binding",
+    });
+    const { decision, assignment } = approveSemanticAssignment(stateA, {
+      candidate,
+      decisionAssertionIds: [
+        "assertion:decision:b",
+        "assertion:decision:a",
+        "assertion:decision:b",
+      ],
+      decisionEvidenceIds: [
+        "evidence:decision:b",
+        "evidence:decision:a",
+        "evidence:decision:b",
+      ],
+    });
+
+    assert.equal(assignment.dataElement.dataElementId, dataElementA.dataElementId);
+    assert.equal(
+      assignment.semanticConcept.semanticConceptId,
+      target.semanticConceptId,
+    );
+    assert.deepEqual(Object.keys(assignment.semanticConcept).sort(), [
+      "organisationId",
+      "semanticConceptId",
+      "semanticIdentityKind",
+    ]);
+    assert.equal(
+      decision.candidateDataElement.dataElementId,
+      dataElementA.dataElementId,
+    );
+    assert.equal(Object.hasOwn(decision, "assignmentCandidate"), false);
+    assert.deepEqual(decision.assertionIds, [
+      "assertion:decision:a",
+      "assertion:decision:b",
+    ]);
+    assert.deepEqual(decision.evidenceIds, [
+      "evidence:decision:a",
+      "evidence:decision:b",
+    ]);
+    assert.equal(Object.isFrozen(decision.candidateDataElement), true);
+    assert.equal(Object.isFrozen(decision.authority), true);
+
+    const stateB = semanticAssignmentState({
+      dataElement: dataElementB,
+      semanticConcept: target,
+      id: "semantic-assignment:binding:b",
+      stateId: "semantic-assignment-state:binding:b",
+    });
+    assert.throws(
+      () => approveSemanticAssignment(stateB, { candidate }),
+      /must match candidate DataElement and tenant/,
+    );
+    assert.throws(
+      () =>
+        approveSemanticAssignment(stateA, {
+          candidate,
+          assignmentCandidateId:
+            contracts.asDataElementSemanticConceptAssignmentCandidateId(
+              "semantic-candidate:different",
+            ),
+        }),
+      /candidate ID must match validation context/,
+    );
+    assert.throws(
+      () =>
+        approveSemanticAssignment(stateA, {
+          candidate: { ...candidate, candidateKind: "SEMANTIC_ENGINE" },
+        }),
+      /must have kind DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT/,
+    );
+    assert.throws(
+      () =>
+        approveSemanticAssignment(
+          semanticAssignmentState({
+            dataElement: dataElementA,
+            semanticConcept: semanticConcept(
+              otherOrganisationId,
+              "cross-tenant",
+            ),
+          }),
+          { candidate },
+        ),
+      /tenant must match DataElement and SemanticConcept/,
+    );
+
+    const crossTenantDecisionDraft = {
+      decisionId: contracts.asReconciliationDecisionId(
+        "semantic-decision:cross-tenant",
+      ),
+      organisationId: otherOrganisationId,
+      assignmentCandidateId: candidate.candidateId,
+      assignmentCandidate: candidate,
+      outcome: "CREATE_NEW",
+      authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+      reasonCode: "REVIEW",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+      authorizedState: stateA,
+    };
+    assert.throws(
+      () =>
+        contracts.createSemanticAssignmentReconciliationDecision(
+          crossTenantDecisionDraft,
+        ),
+      /decision tenant must match candidate DataElement/,
+    );
+    assert.throws(
+      () =>
+        contracts.createSemanticAssignmentReconciliationDecision({
+          ...crossTenantDecisionDraft,
+          organisationId,
+          outcome: "REJECT",
+          authority: { authorityKind: "LLM", actorReference: "model:one" },
+        }),
+      /Unknown reconciliation authority/,
+    );
+  });
+
+  it("binds MATCH_EXISTING and prevents non-create outcomes from materializing", () => {
+    const organisationId = contracts.asOrganisationId(
+      "organisation:semantic:match",
+    );
+    const dataElementA = semanticDataElement(organisationId, "match-a");
+    const dataElementB = semanticDataElement(organisationId, "match-b");
+    const target = semanticConcept(organisationId);
+    const state = semanticAssignmentState({
+      dataElement: dataElementA,
+      semanticConcept: target,
+      id: "semantic-assignment:match",
+      stateId: "semantic-assignment-state:match",
+    });
+    const candidate = semanticAssignmentCandidate(dataElementA, {
+      candidateId: "semantic-candidate:match",
+    });
+    const base = {
+      decisionId: contracts.asReconciliationDecisionId(
+        "semantic-decision:match",
+      ),
+      organisationId,
+      assignmentCandidateId: candidate.candidateId,
+      assignmentCandidate: candidate,
+      authority: {
+        authorityKind: "DETERMINISTIC_RULE",
+        ruleCode: "EXPLICIT_SEMANTIC_MAPPING",
+        ruleVersion: "1",
+      },
+      reasonCode: "CONFIRMED_MAPPING",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+    };
+    const matchedState = {
+      organisationId,
+      assignmentId: state.assignmentId,
+      assignmentStateId: state.assignmentStateId,
+      dataElement: state.dataElement,
+      semanticConcept: state.semanticConcept,
+    };
+    const matchDecision =
+      contracts.createSemanticAssignmentReconciliationDecision({
+        ...base,
+        outcome: "MATCH_EXISTING",
+        matchedState,
+      });
+    assert.equal(matchDecision.outcome, "MATCH_EXISTING");
+    assert.equal(
+      matchDecision.matchedState.assignmentStateId,
+      state.assignmentStateId,
+    );
+
+    assert.throws(
+      () =>
+        contracts.createSemanticAssignmentReconciliationDecision({
+          ...base,
+          outcome: "MATCH_EXISTING",
+          matchedState: {
+            ...matchedState,
+            dataElement: dataElementB,
+          },
+        }),
+      /must match candidate DataElement and tenant/,
+    );
+
+    const negativeDecisions = ["REJECT", "DEFER"].map((outcome) =>
+      contracts.createSemanticAssignmentReconciliationDecision({
+        ...base,
+        decisionId: contracts.asReconciliationDecisionId(
+          `semantic-decision:${outcome.toLowerCase()}`,
+        ),
+        outcome,
+      }),
+    );
+    for (const decision of [matchDecision, ...negativeDecisions]) {
+      assert.throws(
+        () => contracts.createDataElementSemanticConceptAssignment(decision, state),
+        /requires an approved CREATE_NEW decision/,
+      );
+    }
+    for (const decision of negativeDecisions) {
+      assert.equal(Object.hasOwn(decision, "assignmentId"), false);
+      assert.equal(Object.hasOwn(decision, "assignmentStateId"), false);
+      assert.equal(Object.hasOwn(decision, "authorizedState"), false);
+      assert.equal(Object.hasOwn(decision, "matchedState"), false);
+      assert.equal(
+        decision.candidateDataElement.dataElementId,
+        dataElementA.dataElementId,
+      );
+    }
+  });
+
+  it("rehydrates complete semantic decisions and rejects forged envelopes", () => {
+    const organisationId = contracts.asOrganisationId(
+      "organisation:semantic:rehydration",
+    );
+    const dataElement = semanticDataElement(organisationId, "rehydration");
+    const state = semanticAssignmentState({
+      dataElement,
+      semanticConcept: semanticConcept(organisationId),
+      id: "semantic-assignment:rehydration",
+      stateId: "semantic-assignment-state:rehydration",
+    });
+    const { decision } = approveSemanticAssignment(state);
+    const serialized = JSON.parse(JSON.stringify(decision));
+    const rehydrated =
+      contracts.rehydrateSemanticAssignmentReconciliationDecision(serialized);
+    const materialized =
+      contracts.createDataElementSemanticConceptAssignment(serialized, state);
+
+    assert.equal(Object.isFrozen(rehydrated), true);
+    assert.equal(Object.isFrozen(rehydrated.authorizedState), true);
+    assert.equal(materialized.assignmentId, state.assignmentId);
+
+    for (const field of [
+      "decisionId",
+      "organisationId",
+      "assignmentCandidateId",
+      "candidateDataElement",
+      "outcome",
+      "authority",
+      "reasonCode",
+      "assertionIds",
+      "evidenceIds",
+      "decidedAt",
+      "authorizedState",
+    ]) {
+      const forged = { ...serialized };
+      delete forged[field];
+      assert.throws(
+        () =>
+          contracts.createDataElementSemanticConceptAssignment(forged, state),
+        TypeError,
+        `missing ${field}`,
+      );
+    }
+    for (const forged of [
+      { ...serialized, assertionIds: "not-an-array" },
+      { ...serialized, evidenceIds: [""] },
+      {
+        ...serialized,
+        authority: { authorityKind: "SEMANTIC_ENGINE", actorReference: "one" },
+      },
+    ]) {
+      assert.throws(
+        () =>
+          contracts.createDataElementSemanticConceptAssignment(forged, state),
+        TypeError,
+      );
+    }
+    const widened = contracts.rehydrateSemanticAssignmentReconciliationDecision({
+      ...serialized,
+      metadata: { arbitrary: true },
+      privacy: "PII",
+      capability: "READ",
+      authorization: "ALLOW",
+      vendorPayload: { token: "must-not-copy" },
+    });
+    for (const forbidden of [
+      "metadata",
+      "privacy",
+      "capability",
+      "authorization",
+      "vendorPayload",
+    ]) {
+      assert.equal(Object.hasOwn(widened, forbidden), false, forbidden);
+    }
+  });
+
+  it("normalizes semantic support and compares assignment state semantically", () => {
+    const organisationId = contracts.asOrganisationId(
+      "organisation:semantic:support",
+    );
+    const dataElement = semanticDataElement(organisationId, "support");
+    const assertions = [
+      contracts.asSourceAssertionId("assertion:support:b"),
+      contracts.asSourceAssertionId("assertion:support:a"),
+      contracts.asSourceAssertionId("assertion:support:b"),
+    ];
+    const evidence = [
+      contracts.asEvidenceId("evidence:support:b"),
+      contracts.asEvidenceId("evidence:support:a"),
+      contracts.asEvidenceId("evidence:support:b"),
+    ];
+    const state = semanticAssignmentState({
+      dataElement,
+      semanticConcept: semanticConcept(organisationId),
+      id: "semantic-assignment:support",
+      stateId: "semantic-assignment-state:support",
+      support: { assertionIds: assertions, evidenceIds: evidence },
+    });
+    const originalAssertions = [...assertions];
+    const originalEvidence = [...evidence];
+    const { decision, assignment } = approveSemanticAssignment(state);
+    assert.deepEqual(assignment.support.assertionIds, [
+      "assertion:support:a",
+      "assertion:support:b",
+    ]);
+    assert.deepEqual(assignment.support.evidenceIds, [
+      "evidence:support:a",
+      "evidence:support:b",
+    ]);
+    assert.deepEqual(assertions, originalAssertions);
+    assert.deepEqual(evidence, originalEvidence);
+    assert.equal(Object.isFrozen(assignment.support), true);
+    assert.equal(Object.isFrozen(assignment.support.assertionIds), true);
+    assert.equal(Object.isFrozen(assignment.semanticConcept), true);
+
+    assertions.push(contracts.asSourceAssertionId("assertion:support:later"));
+    evidence.push(contracts.asEvidenceId("evidence:support:later"));
+    assert.deepEqual(assignment.support.assertionIds, [
+      "assertion:support:a",
+      "assertion:support:b",
+    ]);
+
+    const reorderedAndWidened = {
+      ...state,
+      support: relationshipSupport(
+        ["assertion:support:a", "assertion:support:b", "assertion:support:a"],
+        ["evidence:support:a", "evidence:support:b", "evidence:support:a"],
+      ),
+      metadata: { arbitrary: true },
+      privacy: "PII",
+      capability: "READ",
+      authorization: "ALLOW",
+      vendorField: "must-not-copy",
+    };
+    const equivalent = contracts.createDataElementSemanticConceptAssignment(
+      decision,
+      reorderedAndWidened,
+    );
+    for (const forbidden of [
+      "metadata",
+      "privacy",
+      "capability",
+      "authorization",
+      "vendorField",
+    ]) {
+      assert.equal(Object.hasOwn(equivalent, forbidden), false, forbidden);
+    }
+    assert.throws(
+      () =>
+        contracts.createDataElementSemanticConceptAssignment(decision, {
+          ...state,
+          support: relationshipSupport(
+            ["assertion:support:a", "assertion:support:different"],
+            ["evidence:support:a", "evidence:support:b"],
+          ),
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataElementSemanticConceptAssignment(decision, {
+          ...state,
+          semanticConcept: semanticConcept(
+            organisationId,
+            "different-concept",
+          ),
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+  });
+
+  it("enforces semantic assignment valid time and immutable supersession identity", () => {
+    const organisationId = contracts.asOrganisationId(
+      "organisation:semantic:temporal",
+    );
+    const dataElement = semanticDataElement(organisationId, "temporal");
+    const target = semanticConcept(organisationId);
+    const initialDraft = semanticAssignmentState({
+      dataElement,
+      semanticConcept: target,
+      id: "semantic-assignment:temporal",
+      stateId: "semantic-assignment-state:temporal:one",
+    });
+    assert.throws(
+      () =>
+        approveSemanticAssignment({
+          ...initialDraft,
+          validTo: initialDraft.validFrom,
+        }),
+      /validTo must be greater than validFrom/,
+    );
+
+    const initial = approveSemanticAssignment(initialDraft).assignment;
+    const priorSnapshot = JSON.stringify(initial);
+    const correctionDraft = {
+      ...initialDraft,
+      assignmentStateId:
+        contracts.asDataElementSemanticConceptAssignmentStateId(
+          "semantic-assignment-state:temporal:two",
+        ),
+      supersedesAssignmentStateId: initial.assignmentStateId,
+      recordedAt: contracts.asIsoTimestamp("2026-08-31T18:00:00.000Z"),
+    };
+    const correctionResult = approveSemanticAssignment(correctionDraft, {
+      supersededState: initial,
+    });
+    const correction = correctionResult.assignment;
+    assert.equal(correction.assignmentId, initial.assignmentId);
+    assert.notEqual(correction.assignmentStateId, initial.assignmentStateId);
+    assert.equal(
+      correction.supersedesAssignmentStateId,
+      initial.assignmentStateId,
+    );
+    assert.equal(JSON.stringify(initial), priorSnapshot);
+    assert.equal(
+      correctionResult.decision.supersededState.assignmentStateId,
+      initial.assignmentStateId,
+    );
+    const serializedCorrection = JSON.parse(
+      JSON.stringify(correctionResult.decision),
+    );
+    assert.equal(
+      contracts.createDataElementSemanticConceptAssignment(
+        serializedCorrection,
+        correctionDraft,
+      ).assignmentStateId,
+      correction.assignmentStateId,
+    );
+    delete serializedCorrection.supersededState;
+    assert.throws(
+      () =>
+        contracts.createDataElementSemanticConceptAssignment(
+          serializedCorrection,
+          correctionDraft,
+        ),
+      /requires the exact prior state/,
+    );
+
+    assert.throws(
+      () => approveSemanticAssignment(correctionDraft),
+      /requires the exact prior state/,
+    );
+    assert.throws(
+      () =>
+        approveSemanticAssignment(
+          {
+            ...correctionDraft,
+            dataElement: semanticDataElement(organisationId, "temporal-other"),
+          },
+          { supersededState: initial },
+        ),
+      /must preserve identity, tenant, DataElement, and SemanticConcept/,
+    );
+    assert.throws(
+      () =>
+        approveSemanticAssignment(
+          {
+            ...correctionDraft,
+            semanticConcept: semanticConcept(
+              organisationId,
+              "different-target",
+            ),
+          },
+          { supersededState: initial },
+        ),
+      /must preserve identity, tenant, DataElement, and SemanticConcept/,
+    );
+    assert.throws(
+      () =>
+        approveSemanticAssignment(
+          {
+            ...correctionDraft,
+            assignmentId:
+              contracts.asDataElementSemanticConceptAssignmentId(
+                "semantic-assignment:temporal:other",
+              ),
+          },
+          { supersededState: initial },
+        ),
+      /must preserve identity, tenant, DataElement, and SemanticConcept/,
+    );
+    assert.throws(
+      () =>
+        approveSemanticAssignment(
+          {
+            ...correctionDraft,
+            assignmentStateId: initial.assignmentStateId,
+          },
+          { supersededState: initial },
+        ),
+      /requires a new assignmentStateId/,
+    );
+    for (const recordedAt of [
+      initial.recordedAt,
+      contracts.asIsoTimestamp("2026-08-31T16:00:00.000Z"),
+    ]) {
+      assert.throws(
+        () =>
+          approveSemanticAssignment(
+            { ...correctionDraft, recordedAt },
+            { supersededState: initial },
+          ),
+        /must be recorded later/,
+      );
+    }
   });
 });

@@ -34,6 +34,16 @@ export type ReconciliationDecisionId =
   OpaqueIdentifier<"ReconciliationDecisionId">;
 export type RelationshipId = OpaqueIdentifier<"RelationshipId">;
 export type RelationshipStateId = OpaqueIdentifier<"RelationshipStateId">;
+export type SemanticConceptId = OpaqueIdentifier<"SemanticConceptId">;
+export type BusinessTermId = OpaqueIdentifier<"BusinessTermId">;
+export type BusinessDomainId = OpaqueIdentifier<"BusinessDomainId">;
+export type InformationDomainId = OpaqueIdentifier<"InformationDomainId">;
+export type DataElementSemanticConceptAssignmentCandidateId =
+  OpaqueIdentifier<"DataElementSemanticConceptAssignmentCandidateId">;
+export type DataElementSemanticConceptAssignmentId =
+  OpaqueIdentifier<"DataElementSemanticConceptAssignmentId">;
+export type DataElementSemanticConceptAssignmentStateId =
+  OpaqueIdentifier<"DataElementSemanticConceptAssignmentStateId">;
 export type ExternalId = OpaqueIdentifier<"ExternalId">;
 export type IsoTimestamp = OpaqueIdentifier<"IsoTimestamp">;
 export type SanitizedEvidenceLocator = OpaqueIdentifier<"SanitizedEvidenceLocator">;
@@ -110,6 +120,29 @@ export const asRelationshipId = (value: string): RelationshipId =>
   asNonEmptyOpaque(value, "RelationshipId");
 export const asRelationshipStateId = (value: string): RelationshipStateId =>
   asNonEmptyOpaque(value, "RelationshipStateId");
+export const asSemanticConceptId = (value: string): SemanticConceptId =>
+  asNonEmptyOpaque(value, "SemanticConceptId");
+export const asBusinessTermId = (value: string): BusinessTermId =>
+  asNonEmptyOpaque(value, "BusinessTermId");
+export const asBusinessDomainId = (value: string): BusinessDomainId =>
+  asNonEmptyOpaque(value, "BusinessDomainId");
+export const asInformationDomainId = (value: string): InformationDomainId =>
+  asNonEmptyOpaque(value, "InformationDomainId");
+export const asDataElementSemanticConceptAssignmentCandidateId = (
+  value: string,
+): DataElementSemanticConceptAssignmentCandidateId =>
+  asNonEmptyOpaque(
+    value,
+    "DataElementSemanticConceptAssignmentCandidateId",
+  );
+export const asDataElementSemanticConceptAssignmentId = (
+  value: string,
+): DataElementSemanticConceptAssignmentId =>
+  asNonEmptyOpaque(value, "DataElementSemanticConceptAssignmentId");
+export const asDataElementSemanticConceptAssignmentStateId = (
+  value: string,
+): DataElementSemanticConceptAssignmentStateId =>
+  asNonEmptyOpaque(value, "DataElementSemanticConceptAssignmentStateId");
 export const asExternalId = (value: string): ExternalId =>
   asNonEmptyOpaque(value, "ExternalId");
 

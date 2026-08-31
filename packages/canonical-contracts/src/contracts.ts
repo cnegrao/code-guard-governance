@@ -3,16 +3,22 @@ import type {
   AgentId,
   AgentVersionId,
   ApiId,
+  BusinessDomainId,
+  BusinessTermId,
   CandidateMergeId,
   CanonicalObjectId,
   DataAssetId,
   DataElementId,
+  DataElementSemanticConceptAssignmentCandidateId,
+  DataElementSemanticConceptAssignmentId,
+  DataElementSemanticConceptAssignmentStateId,
   DataKeyDefinitionId,
   DiscoveryFindingId,
   EvidenceId,
   ExternalId,
   ForeignKeyDefinitionId,
   IsoTimestamp,
+  InformationDomainId,
   KnowledgeBaseId,
   McpServerId,
   ModelId,
@@ -25,6 +31,7 @@ import type {
   RelationshipStateId,
   SanitizedEvidenceLocator,
   SanitizedTechnicalLocator,
+  SemanticConceptId,
   SkillId,
   SourceAssertionId,
   SourceConnectionId,
@@ -636,6 +643,46 @@ export interface DataElementIdentity {
   readonly dataAssetId: DataAssetId;
   readonly elementPath: string;
 }
+
+/** Closed tenant-local semantic identity family, separate from technical objects. */
+export const SEMANTIC_IDENTITY_KIND = {
+  SEMANTIC_CONCEPT: "SEMANTIC_CONCEPT",
+  BUSINESS_TERM: "BUSINESS_TERM",
+  BUSINESS_DOMAIN: "BUSINESS_DOMAIN",
+  INFORMATION_DOMAIN: "INFORMATION_DOMAIN",
+} as const;
+export type SemanticIdentityKind =
+  (typeof SEMANTIC_IDENTITY_KIND)[keyof typeof SEMANTIC_IDENTITY_KIND];
+
+export interface SemanticConceptIdentity {
+  readonly semanticIdentityKind: "SEMANTIC_CONCEPT";
+  readonly organisationId: OrganisationId;
+  readonly semanticConceptId: SemanticConceptId;
+}
+
+export interface BusinessTermIdentity {
+  readonly semanticIdentityKind: "BUSINESS_TERM";
+  readonly organisationId: OrganisationId;
+  readonly businessTermId: BusinessTermId;
+}
+
+export interface BusinessDomainIdentity {
+  readonly semanticIdentityKind: "BUSINESS_DOMAIN";
+  readonly organisationId: OrganisationId;
+  readonly businessDomainId: BusinessDomainId;
+}
+
+export interface InformationDomainIdentity {
+  readonly semanticIdentityKind: "INFORMATION_DOMAIN";
+  readonly organisationId: OrganisationId;
+  readonly informationDomainId: InformationDomainId;
+}
+
+export type GovernedSemanticIdentity =
+  | SemanticConceptIdentity
+  | BusinessTermIdentity
+  | BusinessDomainIdentity
+  | InformationDomainIdentity;
 
 /**
  * Leaf-level provenance references for one explicitly typed technical field.
@@ -3411,6 +3458,737 @@ export function createGovernedRelationship<
     );
   }
   return state as GovernedRelationship<Type>;
+}
+
+export type SemanticConceptSourceSignal =
+  | {
+      readonly sourceCode: string;
+      readonly sourceLabel?: string;
+    }
+  | {
+      readonly sourceCode?: never;
+      readonly sourceLabel: string;
+    };
+
+/**
+ * A semantic inference about an already-canonical DataElement. It remains a
+ * candidate even at confidence 1 and never creates a SemanticConcept or an
+ * assignment. SourceObject ownership is not tenant authority in this pure
+ * contract; trusted orchestration must establish that association.
+ */
+export interface DataElementSemanticConceptAssignmentCandidate {
+  readonly candidateId: DataElementSemanticConceptAssignmentCandidateId;
+  readonly candidateKind: "DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT";
+  readonly dataElement: DataElementIdentity;
+  readonly sourceObject: SourceObjectIdentity;
+  readonly sourceSignal: SemanticConceptSourceSignal;
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+  readonly confidence: number;
+  readonly inferredAt: IsoTimestamp;
+  readonly requiresDecision: true;
+  readonly createsAssignment: false;
+}
+
+export interface SemanticAssignmentSupport {
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+}
+
+/** One immutable temporal state of a logical DataElement semantic assignment. */
+export interface DataElementSemanticConceptAssignmentState {
+  readonly assignmentId: DataElementSemanticConceptAssignmentId;
+  readonly assignmentStateId: DataElementSemanticConceptAssignmentStateId;
+  readonly organisationId: OrganisationId;
+  readonly dataElement: DataElementIdentity;
+  readonly semanticConcept: SemanticConceptIdentity;
+  readonly support: SemanticAssignmentSupport;
+  /** Effective valid time is the half-open interval [validFrom, validTo). */
+  readonly validFrom: IsoTimestamp;
+  readonly validTo?: IsoTimestamp;
+  readonly recordedAt: IsoTimestamp;
+  /** Correction/replacement of a recorded state, not ordinary succession. */
+  readonly supersedesAssignmentStateId?:
+    DataElementSemanticConceptAssignmentStateId;
+}
+
+export type DataElementSemanticConceptAssignmentDraft =
+  DataElementSemanticConceptAssignmentState;
+
+declare const dataElementSemanticConceptAssignmentBrand: unique symbol;
+
+/** Created only from an approved CREATE_NEW semantic assignment decision. */
+export type DataElementSemanticConceptAssignment =
+  DataElementSemanticConceptAssignmentState & {
+    readonly [dataElementSemanticConceptAssignmentBrand]:
+      "DataElementSemanticConceptAssignment";
+  };
+
+export interface DataElementSemanticConceptAssignmentMatchReference {
+  readonly organisationId: OrganisationId;
+  readonly assignmentId: DataElementSemanticConceptAssignmentId;
+  readonly assignmentStateId: DataElementSemanticConceptAssignmentStateId;
+  readonly dataElement: DataElementIdentity;
+  readonly semanticConcept: SemanticConceptIdentity;
+}
+
+export const SEMANTIC_ASSIGNMENT_RECONCILIATION_OUTCOME = {
+  CREATE_NEW: "CREATE_NEW",
+  MATCH_EXISTING: "MATCH_EXISTING",
+  REJECT: "REJECT",
+  DEFER: "DEFER",
+} as const;
+export type SemanticAssignmentReconciliationOutcome =
+  (typeof SEMANTIC_ASSIGNMENT_RECONCILIATION_OUTCOME)[keyof typeof SEMANTIC_ASSIGNMENT_RECONCILIATION_OUTCOME];
+
+export interface SemanticAssignmentReconciliationDecisionBase<
+  Outcome extends SemanticAssignmentReconciliationOutcome,
+> {
+  readonly decisionId: ReconciliationDecisionId;
+  /** Trusted orchestration context, never supplied by a source adapter. */
+  readonly organisationId: OrganisationId;
+  readonly assignmentCandidateId:
+    DataElementSemanticConceptAssignmentCandidateId;
+  /** Minimal subject binding copied from the validated candidate. */
+  readonly candidateDataElement: DataElementIdentity;
+  readonly outcome: Outcome;
+  readonly authority: ReconciliationAuthority;
+  readonly reasonCode: string;
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+  readonly decidedAt: IsoTimestamp;
+}
+
+declare const semanticAssignmentDecisionBrand: unique symbol;
+
+type SemanticAssignmentDecisionBrand = {
+  readonly [semanticAssignmentDecisionBrand]:
+    "DataElementSemanticConceptAssignmentReconciliationDecision";
+};
+
+export type CreateNewSemanticAssignmentReconciliationDecision =
+  SemanticAssignmentReconciliationDecisionBase<"CREATE_NEW"> & {
+    readonly authorizedState: DataElementSemanticConceptAssignmentState;
+    readonly supersededState?: DataElementSemanticConceptAssignmentState;
+  } & SemanticAssignmentDecisionBrand;
+
+export type MatchExistingSemanticAssignmentReconciliationDecision =
+  SemanticAssignmentReconciliationDecisionBase<"MATCH_EXISTING"> & {
+    readonly matchedState: DataElementSemanticConceptAssignmentMatchReference;
+  } & SemanticAssignmentDecisionBrand;
+
+export type RejectSemanticAssignmentReconciliationDecision =
+  SemanticAssignmentReconciliationDecisionBase<"REJECT"> & {
+    readonly assignmentId?: never;
+    readonly assignmentStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  } & SemanticAssignmentDecisionBrand;
+
+export type DeferSemanticAssignmentReconciliationDecision =
+  SemanticAssignmentReconciliationDecisionBase<"DEFER"> & {
+    readonly assignmentId?: never;
+    readonly assignmentStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  } & SemanticAssignmentDecisionBrand;
+
+export type SemanticAssignmentReconciliationDecision =
+  | CreateNewSemanticAssignmentReconciliationDecision
+  | MatchExistingSemanticAssignmentReconciliationDecision
+  | RejectSemanticAssignmentReconciliationDecision
+  | DeferSemanticAssignmentReconciliationDecision;
+
+interface SemanticAssignmentReconciliationDecisionDraftBase<
+  Outcome extends SemanticAssignmentReconciliationOutcome,
+> {
+  readonly decisionId: ReconciliationDecisionId;
+  readonly organisationId: OrganisationId;
+  readonly assignmentCandidateId:
+    DataElementSemanticConceptAssignmentCandidateId;
+  /** Validation context only; never copied wholesale into the final decision. */
+  readonly assignmentCandidate: DataElementSemanticConceptAssignmentCandidate;
+  readonly outcome: Outcome;
+  readonly authority: ReconciliationAuthority;
+  readonly reasonCode: string;
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+  readonly decidedAt: IsoTimestamp;
+}
+
+export type CreateNewSemanticAssignmentReconciliationDecisionDraft =
+  SemanticAssignmentReconciliationDecisionDraftBase<"CREATE_NEW"> & {
+    readonly authorizedState: DataElementSemanticConceptAssignmentDraft;
+    /** Validation context only; never copied into the final decision. */
+    readonly supersededState?: DataElementSemanticConceptAssignmentState;
+  };
+
+export type MatchExistingSemanticAssignmentReconciliationDecisionDraft =
+  SemanticAssignmentReconciliationDecisionDraftBase<"MATCH_EXISTING"> & {
+    readonly matchedState: DataElementSemanticConceptAssignmentMatchReference;
+  };
+
+export type RejectSemanticAssignmentReconciliationDecisionDraft =
+  SemanticAssignmentReconciliationDecisionDraftBase<"REJECT"> & {
+    readonly assignmentId?: never;
+    readonly assignmentStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  };
+
+export type DeferSemanticAssignmentReconciliationDecisionDraft =
+  SemanticAssignmentReconciliationDecisionDraftBase<"DEFER"> & {
+    readonly assignmentId?: never;
+    readonly assignmentStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  };
+
+export type SemanticAssignmentReconciliationDecisionDraft =
+  | CreateNewSemanticAssignmentReconciliationDecisionDraft
+  | MatchExistingSemanticAssignmentReconciliationDecisionDraft
+  | RejectSemanticAssignmentReconciliationDecisionDraft
+  | DeferSemanticAssignmentReconciliationDecisionDraft;
+
+function copySemanticAssignmentSupport(
+  value: unknown,
+  label = "Semantic assignment support",
+): SemanticAssignmentSupport {
+  return copyRelationshipSupport(value, label);
+}
+
+function copySemanticAssignmentDataElement(value: unknown): DataElementIdentity {
+  return copyRelationshipEndpoint(value, "DATA_ELEMENT") as DataElementIdentity;
+}
+
+function semanticAssignmentDataElementsEqual(
+  left: DataElementIdentity,
+  right: DataElementIdentity,
+): boolean {
+  return (
+    canonicalObjectIdentitiesEqual(left.canonicalObject, right.canonicalObject) &&
+    left.dataElementId === right.dataElementId &&
+    left.dataAssetId === right.dataAssetId &&
+    left.elementPath === right.elementPath
+  );
+}
+
+function copySemanticConceptIdentity(value: unknown): SemanticConceptIdentity {
+  const identity = asObjectRecord(value, "Semantic concept identity");
+  if (identity.semanticIdentityKind !== "SEMANTIC_CONCEPT") {
+    throw new TypeError(
+      "Semantic assignment target must be a SEMANTIC_CONCEPT identity",
+    );
+  }
+  return Object.freeze({
+    semanticIdentityKind: "SEMANTIC_CONCEPT",
+    organisationId: requiredString(
+      identity.organisationId,
+      "Semantic concept organisationId",
+    ) as OrganisationId,
+    semanticConceptId: requiredString(
+      identity.semanticConceptId,
+      "Semantic concept ID",
+    ) as SemanticConceptId,
+  });
+}
+
+function semanticConceptIdentitiesEqual(
+  left: SemanticConceptIdentity,
+  right: SemanticConceptIdentity,
+): boolean {
+  return (
+    left.semanticIdentityKind === right.semanticIdentityKind &&
+    left.organisationId === right.organisationId &&
+    left.semanticConceptId === right.semanticConceptId
+  );
+}
+
+function copySemanticSourceObject(value: unknown): SourceObjectIdentity {
+  const identity = asObjectRecord(value, "Semantic candidate source object");
+  return Object.freeze({
+    connectionId: requiredString(
+      identity.connectionId,
+      "Semantic candidate source connectionId",
+    ) as SourceConnectionId,
+    externalType: requiredString(
+      identity.externalType,
+      "Semantic candidate source externalType",
+    ),
+    externalId: requiredString(
+      identity.externalId,
+      "Semantic candidate source externalId",
+    ) as ExternalId,
+  });
+}
+
+function copySemanticConceptSourceSignal(
+  value: unknown,
+): SemanticConceptSourceSignal {
+  const signal = asObjectRecord(value, "Semantic concept source signal");
+  const sourceCode =
+    signal.sourceCode === undefined
+      ? undefined
+      : requiredString(signal.sourceCode, "Semantic sourceCode");
+  const sourceLabel =
+    signal.sourceLabel === undefined
+      ? undefined
+      : requiredString(signal.sourceLabel, "Semantic sourceLabel");
+  if (sourceCode === undefined && sourceLabel === undefined) {
+    throw new TypeError(
+      "Semantic concept source signal requires sourceCode or sourceLabel",
+    );
+  }
+  if (sourceCode !== undefined) {
+    return Object.freeze({
+      sourceCode,
+      ...(sourceLabel === undefined ? {} : { sourceLabel }),
+    });
+  }
+  return Object.freeze({ sourceLabel: sourceLabel as string });
+}
+
+function copyDataElementSemanticConceptAssignmentCandidate(
+  draft: unknown,
+): DataElementSemanticConceptAssignmentCandidate {
+  const candidate = asObjectRecord(
+    draft,
+    "DataElement semantic concept assignment candidate",
+  );
+  if (
+    candidate.candidateKind !==
+    "DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT"
+  ) {
+    throw new TypeError(
+      "Semantic assignment candidate must have kind DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT",
+    );
+  }
+  if (candidate.requiresDecision !== true) {
+    throw new TypeError("Semantic assignment candidate requires a decision");
+  }
+  if (candidate.createsAssignment !== false) {
+    throw new TypeError("Semantic assignment candidate cannot create an assignment");
+  }
+  if (
+    typeof candidate.confidence !== "number" ||
+    !Number.isFinite(candidate.confidence) ||
+    candidate.confidence < 0 ||
+    candidate.confidence > 1
+  ) {
+    throw new TypeError("Semantic assignment confidence must be between 0 and 1");
+  }
+  const provenance = copySemanticAssignmentSupport(
+    {
+      assertionIds: candidate.assertionIds,
+      evidenceIds: candidate.evidenceIds,
+    },
+    "Semantic assignment candidate provenance",
+  );
+  return Object.freeze({
+    candidateId: requiredString(
+      candidate.candidateId,
+      "Semantic assignment candidate ID",
+    ) as DataElementSemanticConceptAssignmentCandidateId,
+    candidateKind: "DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT",
+    dataElement: copySemanticAssignmentDataElement(candidate.dataElement),
+    sourceObject: copySemanticSourceObject(candidate.sourceObject),
+    sourceSignal: copySemanticConceptSourceSignal(candidate.sourceSignal),
+    assertionIds: provenance.assertionIds,
+    evidenceIds: provenance.evidenceIds,
+    confidence: candidate.confidence,
+    inferredAt: requiredTimestamp(
+      candidate.inferredAt,
+      "Semantic assignment inferredAt",
+    ),
+    requiresDecision: true,
+    createsAssignment: false,
+  });
+}
+
+export function createDataElementSemanticConceptAssignmentCandidate(
+  draft: DataElementSemanticConceptAssignmentCandidate,
+): DataElementSemanticConceptAssignmentCandidate {
+  return copyDataElementSemanticConceptAssignmentCandidate(draft);
+}
+
+function copyDataElementSemanticConceptAssignmentState(
+  value: unknown,
+): DataElementSemanticConceptAssignmentState {
+  const state = asObjectRecord(value, "DataElement semantic assignment state");
+  const organisationId = requiredString(
+    state.organisationId,
+    "Semantic assignment organisationId",
+  ) as OrganisationId;
+  const dataElement = copySemanticAssignmentDataElement(state.dataElement);
+  const semanticConcept = copySemanticConceptIdentity(state.semanticConcept);
+  if (
+    dataElement.canonicalObject.organisationId !== organisationId ||
+    semanticConcept.organisationId !== organisationId
+  ) {
+    throw new TypeError(
+      "Semantic assignment tenant must match DataElement and SemanticConcept",
+    );
+  }
+  const validFrom = requiredTimestamp(
+    state.validFrom,
+    "Semantic assignment validFrom",
+  );
+  const validTo =
+    state.validTo === undefined
+      ? undefined
+      : requiredTimestamp(state.validTo, "Semantic assignment validTo");
+  if (validTo !== undefined && Date.parse(validTo) <= Date.parse(validFrom)) {
+    throw new TypeError(
+      "Semantic assignment validTo must be greater than validFrom",
+    );
+  }
+  const supersedesAssignmentStateId =
+    state.supersedesAssignmentStateId === undefined
+      ? undefined
+      : (requiredString(
+          state.supersedesAssignmentStateId,
+          "Superseded semantic assignment state ID",
+        ) as DataElementSemanticConceptAssignmentStateId);
+  return Object.freeze({
+    assignmentId: requiredString(
+      state.assignmentId,
+      "Semantic assignment ID",
+    ) as DataElementSemanticConceptAssignmentId,
+    assignmentStateId: requiredString(
+      state.assignmentStateId,
+      "Semantic assignment state ID",
+    ) as DataElementSemanticConceptAssignmentStateId,
+    organisationId,
+    dataElement,
+    semanticConcept,
+    support: copySemanticAssignmentSupport(state.support),
+    validFrom,
+    ...(validTo === undefined ? {} : { validTo }),
+    recordedAt: requiredTimestamp(
+      state.recordedAt,
+      "Semantic assignment recordedAt",
+    ),
+    ...(supersedesAssignmentStateId === undefined
+      ? {}
+      : { supersedesAssignmentStateId }),
+  });
+}
+
+function semanticAssignmentStatesEqual(
+  left: DataElementSemanticConceptAssignmentState,
+  right: DataElementSemanticConceptAssignmentState,
+): boolean {
+  return (
+    left.assignmentId === right.assignmentId &&
+    left.assignmentStateId === right.assignmentStateId &&
+    left.organisationId === right.organisationId &&
+    semanticAssignmentDataElementsEqual(left.dataElement, right.dataElement) &&
+    semanticConceptIdentitiesEqual(
+      left.semanticConcept,
+      right.semanticConcept,
+    ) &&
+    relationshipSupportsEqual(left.support, right.support) &&
+    left.validFrom === right.validFrom &&
+    left.validTo === right.validTo &&
+    left.recordedAt === right.recordedAt &&
+    left.supersedesAssignmentStateId === right.supersedesAssignmentStateId
+  );
+}
+
+function validateSemanticAssignmentSupersession(
+  current: DataElementSemanticConceptAssignmentState,
+  supersededState: unknown,
+): DataElementSemanticConceptAssignmentState | undefined {
+  if (current.supersedesAssignmentStateId === undefined) {
+    if (supersededState !== undefined) {
+      throw new TypeError(
+        "Superseded semantic assignment context requires supersedesAssignmentStateId",
+      );
+    }
+    return undefined;
+  }
+  if (supersededState === undefined) {
+    throw new TypeError(
+      "Semantic assignment supersession requires the exact prior state",
+    );
+  }
+  const prior = copyDataElementSemanticConceptAssignmentState(supersededState);
+  if (
+    prior.assignmentStateId !== current.supersedesAssignmentStateId ||
+    prior.assignmentId !== current.assignmentId ||
+    prior.organisationId !== current.organisationId ||
+    !semanticAssignmentDataElementsEqual(
+      prior.dataElement,
+      current.dataElement,
+    ) ||
+    !semanticConceptIdentitiesEqual(
+      prior.semanticConcept,
+      current.semanticConcept,
+    )
+  ) {
+    throw new TypeError(
+      "Semantic assignment supersession must preserve identity, tenant, DataElement, and SemanticConcept",
+    );
+  }
+  if (prior.assignmentStateId === current.assignmentStateId) {
+    throw new TypeError(
+      "Semantic assignment supersession requires a new assignmentStateId",
+    );
+  }
+  if (Date.parse(current.recordedAt) <= Date.parse(prior.recordedAt)) {
+    throw new TypeError(
+      "Superseding semantic assignment state must be recorded later",
+    );
+  }
+  return prior;
+}
+
+function copySemanticAssignmentMatchReference(
+  value: unknown,
+): DataElementSemanticConceptAssignmentMatchReference {
+  const reference = asObjectRecord(
+    value,
+    "Matched DataElement semantic assignment state",
+  );
+  const organisationId = requiredString(
+    reference.organisationId,
+    "Matched semantic assignment organisationId",
+  ) as OrganisationId;
+  const dataElement = copySemanticAssignmentDataElement(reference.dataElement);
+  const semanticConcept = copySemanticConceptIdentity(
+    reference.semanticConcept,
+  );
+  if (
+    dataElement.canonicalObject.organisationId !== organisationId ||
+    semanticConcept.organisationId !== organisationId
+  ) {
+    throw new TypeError(
+      "Matched semantic assignment tenant must match DataElement and SemanticConcept",
+    );
+  }
+  return Object.freeze({
+    organisationId,
+    assignmentId: requiredString(
+      reference.assignmentId,
+      "Matched semantic assignment ID",
+    ) as DataElementSemanticConceptAssignmentId,
+    assignmentStateId: requiredString(
+      reference.assignmentStateId,
+      "Matched semantic assignment state ID",
+    ) as DataElementSemanticConceptAssignmentStateId,
+    dataElement,
+    semanticConcept,
+  });
+}
+
+function copySemanticAssignmentDecisionBase(
+  value: Readonly<Record<string, unknown>>,
+  outcome: SemanticAssignmentReconciliationOutcome,
+): SemanticAssignmentReconciliationDecisionBase<SemanticAssignmentReconciliationOutcome> {
+  const provenance = copySemanticAssignmentSupport(
+    {
+      assertionIds: value.assertionIds,
+      evidenceIds: value.evidenceIds,
+    },
+    "Semantic assignment decision provenance",
+  );
+  const organisationId = requiredString(
+    value.organisationId,
+    "Semantic assignment decision organisationId",
+  ) as OrganisationId;
+  const candidateDataElement = copySemanticAssignmentDataElement(
+    value.candidateDataElement,
+  );
+  if (candidateDataElement.canonicalObject.organisationId !== organisationId) {
+    throw new TypeError(
+      "Semantic assignment decision tenant must match candidate DataElement",
+    );
+  }
+  return {
+    decisionId: requiredString(
+      value.decisionId,
+      "Semantic assignment decision ID",
+    ) as ReconciliationDecisionId,
+    organisationId,
+    assignmentCandidateId: requiredString(
+      value.assignmentCandidateId,
+      "Semantic assignment candidate ID",
+    ) as DataElementSemanticConceptAssignmentCandidateId,
+    candidateDataElement,
+    outcome,
+    authority: copyReconciliationAuthority(value.authority),
+    reasonCode: requiredString(
+      value.reasonCode,
+      "Semantic assignment decision reasonCode",
+    ),
+    assertionIds: provenance.assertionIds,
+    evidenceIds: provenance.evidenceIds,
+    decidedAt: requiredTimestamp(
+      value.decidedAt,
+      "Semantic assignment decision decidedAt",
+    ),
+  };
+}
+
+export function createSemanticAssignmentReconciliationDecision(
+  draft: CreateNewSemanticAssignmentReconciliationDecisionDraft,
+): CreateNewSemanticAssignmentReconciliationDecision;
+export function createSemanticAssignmentReconciliationDecision(
+  draft: MatchExistingSemanticAssignmentReconciliationDecisionDraft,
+): MatchExistingSemanticAssignmentReconciliationDecision;
+export function createSemanticAssignmentReconciliationDecision(
+  draft: RejectSemanticAssignmentReconciliationDecisionDraft,
+): RejectSemanticAssignmentReconciliationDecision;
+export function createSemanticAssignmentReconciliationDecision(
+  draft: DeferSemanticAssignmentReconciliationDecisionDraft,
+): DeferSemanticAssignmentReconciliationDecision;
+export function createSemanticAssignmentReconciliationDecision(
+  draft: SemanticAssignmentReconciliationDecisionDraft,
+): SemanticAssignmentReconciliationDecision;
+export function createSemanticAssignmentReconciliationDecision(
+  draft: unknown,
+): unknown {
+  const input = asObjectRecord(
+    draft,
+    "Semantic assignment reconciliation decision draft",
+  );
+  const candidate = copyDataElementSemanticConceptAssignmentCandidate(
+    input.assignmentCandidate,
+  );
+  const assignmentCandidateId = requiredString(
+    input.assignmentCandidateId,
+    "Semantic assignment candidate ID",
+  );
+  if (candidate.candidateId !== assignmentCandidateId) {
+    throw new TypeError(
+      "Semantic assignment decision candidate ID must match validation context",
+    );
+  }
+  return rehydrateSemanticAssignmentReconciliationDecision({
+    ...input,
+    candidateDataElement: candidate.dataElement,
+  });
+}
+
+/**
+ * Rebuilds an untrusted or serialized decision through a complete structural
+ * allowlist. Authentication and persistence authenticity remain future
+ * service/repository responsibilities.
+ */
+export function rehydrateSemanticAssignmentReconciliationDecision(
+  value: unknown,
+): SemanticAssignmentReconciliationDecision {
+  const input = asObjectRecord(
+    value,
+    "Semantic assignment reconciliation decision",
+  );
+  if (
+    typeof input.outcome !== "string" ||
+    !(
+      Object.values(
+        SEMANTIC_ASSIGNMENT_RECONCILIATION_OUTCOME,
+      ) as readonly string[]
+    ).includes(input.outcome)
+  ) {
+    throw new TypeError("Unknown semantic assignment reconciliation outcome");
+  }
+  const outcome = input.outcome as SemanticAssignmentReconciliationOutcome;
+  const base = copySemanticAssignmentDecisionBase(input, outcome);
+
+  if (outcome === "CREATE_NEW") {
+    const authorizedState = copyDataElementSemanticConceptAssignmentState(
+      input.authorizedState,
+    );
+    const supersededState = validateSemanticAssignmentSupersession(
+      authorizedState,
+      input.supersededState,
+    );
+    if (
+      authorizedState.organisationId !== base.organisationId ||
+      !semanticAssignmentDataElementsEqual(
+        authorizedState.dataElement,
+        base.candidateDataElement,
+      )
+    ) {
+      throw new TypeError(
+        "CREATE_NEW semantic assignment must match candidate DataElement and tenant",
+      );
+    }
+    return Object.freeze({
+      ...base,
+      outcome,
+      authorizedState,
+      ...(supersededState === undefined ? {} : { supersededState }),
+    }) as CreateNewSemanticAssignmentReconciliationDecision;
+  }
+
+  if (outcome === "MATCH_EXISTING") {
+    const matchedState = copySemanticAssignmentMatchReference(
+      input.matchedState,
+    );
+    if (
+      matchedState.organisationId !== base.organisationId ||
+      !semanticAssignmentDataElementsEqual(
+        matchedState.dataElement,
+        base.candidateDataElement,
+      )
+    ) {
+      throw new TypeError(
+        "MATCH_EXISTING semantic assignment must match candidate DataElement and tenant",
+      );
+    }
+    return Object.freeze({
+      ...base,
+      outcome,
+      matchedState,
+    }) as MatchExistingSemanticAssignmentReconciliationDecision;
+  }
+
+  for (const prohibited of [
+    "assignmentId",
+    "assignmentStateId",
+    "authorizedState",
+    "matchedState",
+    "supersededState",
+  ]) {
+    if (Object.prototype.hasOwnProperty.call(input, prohibited)) {
+      throw new TypeError(`${outcome} cannot reference semantic assignment state`);
+    }
+  }
+  return Object.freeze({ ...base, outcome }) as
+    | RejectSemanticAssignmentReconciliationDecision
+    | DeferSemanticAssignmentReconciliationDecision;
+}
+
+/**
+ * Materializes only the exact normalized state approved by a complete
+ * CREATE_NEW decision. Repository-wide uniqueness and interval overlap remain
+ * future tenant-safe persistence responsibilities.
+ */
+export function createDataElementSemanticConceptAssignment(
+  decision: CreateNewSemanticAssignmentReconciliationDecision,
+  draft: DataElementSemanticConceptAssignmentDraft,
+): DataElementSemanticConceptAssignment {
+  const validatedDecision =
+    rehydrateSemanticAssignmentReconciliationDecision(decision);
+  if (validatedDecision.outcome !== "CREATE_NEW") {
+    throw new TypeError(
+      "Governed semantic assignment requires an approved CREATE_NEW decision",
+    );
+  }
+  const authorizedState = copyDataElementSemanticConceptAssignmentState(
+    validatedDecision.authorizedState,
+  );
+  const state = copyDataElementSemanticConceptAssignmentState(draft);
+  if (
+    validatedDecision.organisationId !== state.organisationId ||
+    !semanticAssignmentStatesEqual(authorizedState, state)
+  ) {
+    throw new TypeError(
+      "Semantic assignment state does not match CREATE_NEW authorization",
+    );
+  }
+  return state as DataElementSemanticConceptAssignment;
 }
 
 export type ReconciliationSubjectReference<
