@@ -25,6 +25,9 @@ export type DiscoveryFindingId = OpaqueIdentifier<"DiscoveryFindingId">;
 export type EvidenceId = OpaqueIdentifier<"EvidenceId">;
 export type ObjectSourceMappingId = OpaqueIdentifier<"ObjectSourceMappingId">;
 export type NormalizedCandidateId = OpaqueIdentifier<"NormalizedCandidateId">;
+export type CandidateMergeId = OpaqueIdentifier<"CandidateMergeId">;
+export type ReconciliationDecisionId =
+  OpaqueIdentifier<"ReconciliationDecisionId">;
 export type ExternalId = OpaqueIdentifier<"ExternalId">;
 export type IsoTimestamp = OpaqueIdentifier<"IsoTimestamp">;
 export type SanitizedEvidenceLocator = OpaqueIdentifier<"SanitizedEvidenceLocator">;
@@ -82,6 +85,12 @@ export const asObjectSourceMappingId = (value: string): ObjectSourceMappingId =>
   asNonEmptyOpaque(value, "ObjectSourceMappingId");
 export const asNormalizedCandidateId = (value: string): NormalizedCandidateId =>
   asNonEmptyOpaque(value, "NormalizedCandidateId");
+export const asCandidateMergeId = (value: string): CandidateMergeId =>
+  asNonEmptyOpaque(value, "CandidateMergeId");
+export const asReconciliationDecisionId = (
+  value: string,
+): ReconciliationDecisionId =>
+  asNonEmptyOpaque(value, "ReconciliationDecisionId");
 export const asExternalId = (value: string): ExternalId =>
   asNonEmptyOpaque(value, "ExternalId");
 
