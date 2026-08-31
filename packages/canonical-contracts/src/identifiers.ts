@@ -8,6 +8,14 @@ export type OrganisationId = OpaqueIdentifier<"OrganisationId">;
 export type CanonicalObjectId = OpaqueIdentifier<"CanonicalObjectId">;
 export type AgentId = OpaqueIdentifier<"AgentId">;
 export type AgentVersionId = OpaqueIdentifier<"AgentVersionId">;
+export type ModelId = OpaqueIdentifier<"ModelId">;
+export type ToolId = OpaqueIdentifier<"ToolId">;
+export type McpServerId = OpaqueIdentifier<"McpServerId">;
+export type ApiId = OpaqueIdentifier<"ApiId">;
+export type PromptId = OpaqueIdentifier<"PromptId">;
+export type KnowledgeBaseId = OpaqueIdentifier<"KnowledgeBaseId">;
+export type DataAssetId = OpaqueIdentifier<"DataAssetId">;
+export type DataElementId = OpaqueIdentifier<"DataElementId">;
 export type SourceSystemId = OpaqueIdentifier<"SourceSystemId">;
 export type SourceConnectionId = OpaqueIdentifier<"SourceConnectionId">;
 export type AcquisitionRunId = OpaqueIdentifier<"AcquisitionRunId">;
@@ -40,6 +48,22 @@ export const asAgentId = (value: string): AgentId =>
   asNonEmptyOpaque(value, "AgentId");
 export const asAgentVersionId = (value: string): AgentVersionId =>
   asNonEmptyOpaque(value, "AgentVersionId");
+export const asModelId = (value: string): ModelId =>
+  asNonEmptyOpaque(value, "ModelId");
+export const asToolId = (value: string): ToolId =>
+  asNonEmptyOpaque(value, "ToolId");
+export const asMcpServerId = (value: string): McpServerId =>
+  asNonEmptyOpaque(value, "McpServerId");
+export const asApiId = (value: string): ApiId =>
+  asNonEmptyOpaque(value, "ApiId");
+export const asPromptId = (value: string): PromptId =>
+  asNonEmptyOpaque(value, "PromptId");
+export const asKnowledgeBaseId = (value: string): KnowledgeBaseId =>
+  asNonEmptyOpaque(value, "KnowledgeBaseId");
+export const asDataAssetId = (value: string): DataAssetId =>
+  asNonEmptyOpaque(value, "DataAssetId");
+export const asDataElementId = (value: string): DataElementId =>
+  asNonEmptyOpaque(value, "DataElementId");
 export const asSourceSystemId = (value: string): SourceSystemId =>
   asNonEmptyOpaque(value, "SourceSystemId");
 export const asSourceConnectionId = (value: string): SourceConnectionId =>
