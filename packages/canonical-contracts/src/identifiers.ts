@@ -32,6 +32,8 @@ export type NormalizedCandidateId = OpaqueIdentifier<"NormalizedCandidateId">;
 export type CandidateMergeId = OpaqueIdentifier<"CandidateMergeId">;
 export type ReconciliationDecisionId =
   OpaqueIdentifier<"ReconciliationDecisionId">;
+export type RelationshipId = OpaqueIdentifier<"RelationshipId">;
+export type RelationshipStateId = OpaqueIdentifier<"RelationshipStateId">;
 export type ExternalId = OpaqueIdentifier<"ExternalId">;
 export type IsoTimestamp = OpaqueIdentifier<"IsoTimestamp">;
 export type SanitizedEvidenceLocator = OpaqueIdentifier<"SanitizedEvidenceLocator">;
@@ -104,6 +106,10 @@ export const asReconciliationDecisionId = (
   value: string,
 ): ReconciliationDecisionId =>
   asNonEmptyOpaque(value, "ReconciliationDecisionId");
+export const asRelationshipId = (value: string): RelationshipId =>
+  asNonEmptyOpaque(value, "RelationshipId");
+export const asRelationshipStateId = (value: string): RelationshipStateId =>
+  asNonEmptyOpaque(value, "RelationshipStateId");
 export const asExternalId = (value: string): ExternalId =>
   asNonEmptyOpaque(value, "ExternalId");
 

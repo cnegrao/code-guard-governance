@@ -1,7 +1,12 @@
 import {
   CANONICAL_OBJECT_KIND,
   createBehaviorFingerprint,
+  createGovernedRelationship,
+  createRelationshipReconciliationDecision,
   createTechnicalFingerprint,
+  GOVERNED_RELATIONSHIP_TYPE,
+  type BehaviorBindingConfigurationReference,
+  type BehaviorBindingSupport,
   type AgentIdentity,
   type AgentVersionIdentity,
   type AgentVersionTechnicalProfile,
@@ -14,6 +19,8 @@ import {
   type CanonicalObjectIdentity,
   type CanonicalObjectKind,
   type CreateNewReconciliationDecision,
+  type CreateNewRelationshipReconciliationDecision,
+  type CreateNewRelationshipReconciliationDecisionDraft,
   type DataAssetIdentity,
   type DataAssetTechnicalProfile,
   type DataAssetTechnicalProfileSupport,
@@ -22,15 +29,22 @@ import {
   type DataKeyDefinition,
   type DataTypeDescriptor,
   type DeferReconciliationDecision,
+  type DeferRelationshipReconciliationDecisionDraft,
   type DiscoveryFinding,
   type Evidence,
   type EvidenceHash,
   type ForeignKeyDefinition,
+  type GovernedRelationship,
+  type GovernedRelationshipDraft,
+  type GovernedRelationshipType,
+  type HandoffToRelationship,
   type InboundAdapterEnvelope,
   type KnowledgeBaseIdentity,
   type KnowledgeBaseTechnicalProfile,
   type KnowledgeBaseTechnicalProfileSupport,
   type MatchExistingReconciliationDecision,
+  type MatchExistingRelationshipReconciliationDecision,
+  type MatchExistingRelationshipReconciliationDecisionDraft,
   type McpServerIdentity,
   type McpServerTechnicalProfile,
   type McpServerTechnicalProfileSupport,
@@ -57,6 +71,10 @@ import {
   type ReconciliationAuthority,
   type ReconciliationSubjectReference,
   type RejectReconciliationDecision,
+  type RejectRelationshipReconciliationDecisionDraft,
+  type RelationshipMatchReference,
+  type RelationshipReconciliationOutcome,
+  type RelationshipSupport,
   type SourceAssertion,
   type SkillIdentity,
   type SkillTechnicalProfile,
@@ -67,6 +85,7 @@ import {
   type ToolIdentity,
   type ToolTechnicalProfile,
   type ToolTechnicalProfileSupport,
+  type UsesSkillRelationship,
 } from "./contracts.ts";
 import { githubRepositoryDiscoveryFixture } from "./fixtures.ts";
 import {
@@ -86,6 +105,8 @@ import {
   asOrganisationId,
   asPromptId,
   asReconciliationDecisionId,
+  asRelationshipId,
+  asRelationshipStateId,
   asSkillId,
   asDiscoveryFindingId,
   asEvidenceId,
@@ -94,6 +115,8 @@ import {
   asSourceAssertionId,
   asToolId,
   sanitizeTechnicalLocator,
+  type RelationshipId,
+  type RelationshipStateId,
 } from "./identifiers.ts";
 
 const validKinds: readonly CanonicalObjectKind[] = [
@@ -425,6 +448,25 @@ const relationshipCandidate: NormalizedRelationshipCandidate = {
   },
 };
 void relationshipCandidate;
+
+const usesSkillRelationshipCandidate: NormalizedRelationshipCandidate = {
+  ...relationshipCandidate,
+  candidateId: asNormalizedCandidateId("candidate:relationship:uses-skill"),
+  relationshipTypeCode: "USES_SKILL",
+  sourceEndpoint: {
+    referenceKind: "CANDIDATE",
+    candidateId: asNormalizedCandidateId("candidate:agent-version"),
+    candidateKind: "AGENT_VERSION",
+  },
+  targetEndpoint: {
+    referenceKind: "CANDIDATE",
+    candidateId: asNormalizedCandidateId("candidate:skill"),
+    candidateKind: "SKILL",
+  },
+};
+const sourceRelationshipTypeCodeRemainsString: string =
+  usesSkillRelationshipCandidate.relationshipTypeCode;
+void sourceRelationshipTypeCodeRemainsString;
 
 const relationshipCannotBeReconciliationSubject: ReconciliationSubjectReference = {
   subjectKind: "CANDIDATE",
@@ -1333,3 +1375,468 @@ void [
 // @ts-expect-error PromptRevision is not a canonical object kind in V1A.1d.
 const promptRevisionCannotBeCanonical: CanonicalObjectKind = "PROMPT_REVISION";
 void promptRevisionCannotBeCanonical;
+
+const relationshipTypes: readonly GovernedRelationshipType[] = [
+  GOVERNED_RELATIONSHIP_TYPE.USES_MODEL,
+  GOVERNED_RELATIONSHIP_TYPE.USES_TOOL,
+  GOVERNED_RELATIONSHIP_TYPE.USES_MCP,
+  GOVERNED_RELATIONSHIP_TYPE.INVOKES,
+  GOVERNED_RELATIONSHIP_TYPE.USES_PROMPT,
+  GOVERNED_RELATIONSHIP_TYPE.USES_KNOWLEDGE_BASE,
+  GOVERNED_RELATIONSHIP_TYPE.USES_SKILL,
+  GOVERNED_RELATIONSHIP_TYPE.EXPOSES,
+  GOVERNED_RELATIONSHIP_TYPE.HANDOFF_TO,
+  GOVERNED_RELATIONSHIP_TYPE.READS_FROM,
+  GOVERNED_RELATIONSHIP_TYPE.WRITES_TO,
+  GOVERNED_RELATIONSHIP_TYPE.DERIVED_FROM,
+];
+void relationshipTypes;
+
+// @ts-expect-error Governed relationships remain associations, not objects.
+const relationshipTypeCannotBeObjectKind: CanonicalObjectKind = "USES_MODEL";
+// @ts-expect-error CONTAINS is not a governed relationship type.
+const containsCannotBeGoverned: GovernedRelationshipType = "CONTAINS";
+// @ts-expect-error Version-specific handoff is not in V1A.1e.
+const handoffVersionCannotBeGoverned: GovernedRelationshipType =
+  "HANDOFF_TO_VERSION";
+// @ts-expect-error Relationship candidates are never merged canonically.
+const relationshipMergeCannotBeOutcome: RelationshipReconciliationOutcome =
+  "MERGE_CANDIDATES";
+void [
+  relationshipTypeCannotBeObjectKind,
+  containsCannotBeGoverned,
+  handoffVersionCannotBeGoverned,
+  relationshipMergeCannotBeOutcome,
+];
+
+const relationshipId: RelationshipId = asRelationshipId("relationship:one");
+const relationshipStateId: RelationshipStateId = asRelationshipStateId(
+  "relationship-state:one",
+);
+// @ts-expect-error Logical relationship and temporal-state IDs are distinct.
+const relationshipCannotUseStateId: RelationshipId = relationshipStateId;
+// @ts-expect-error Temporal-state ID cannot use a logical relationship ID.
+const stateCannotUseRelationshipId: RelationshipStateId = relationshipId;
+void [relationshipCannotUseStateId, stateCannotUseRelationshipId];
+
+const relationshipOrganisationId = asOrganisationId(
+  "organisation:identity-type-test",
+);
+const emptyRelationshipSupport: RelationshipSupport = {
+  assertionIds: [],
+  evidenceIds: [],
+};
+const behaviorBindingSupport: BehaviorBindingSupport = {
+  relationship: {
+    assertionIds: [asSourceAssertionId("assertion:relationship")],
+    evidenceIds: [],
+  },
+  boundTechnicalFingerprint: {
+    assertionIds: [asSourceAssertionId("assertion:binding:fingerprint")],
+    evidenceIds: [asEvidenceId("evidence:binding:fingerprint")],
+  },
+  bindingConfiguration: {
+    configurationHash: emptyRelationshipSupport,
+    configurationLocator: emptyRelationshipSupport,
+  },
+};
+const bindingConfiguration: BehaviorBindingConfigurationReference = {
+  configurationHash: evidenceHash,
+  configurationLocator: sanitizeTechnicalLocator("bindings/config.yaml"),
+};
+const relationshipStateBase = {
+  relationshipId,
+  relationshipStateId,
+  organisationId: relationshipOrganisationId,
+  validFrom: asIsoTimestamp("2026-08-31T12:00:00.000Z"),
+  recordedAt: asIsoTimestamp("2026-08-31T12:00:00.000Z"),
+} as const;
+
+const usesModelDraft: GovernedRelationshipDraft<"USES_MODEL"> = {
+  ...relationshipStateBase,
+  relationshipType: "USES_MODEL",
+  source: agentVersionIdentity,
+  target: modelIdentity,
+  boundTechnicalFingerprint: technicalFingerprint,
+  bindingConfiguration,
+  support: behaviorBindingSupport,
+};
+const usesToolDraft: GovernedRelationshipDraft<"USES_TOOL"> = {
+  ...relationshipStateBase,
+  relationshipType: "USES_TOOL",
+  source: agentVersionIdentity,
+  target: toolIdentity,
+  boundTechnicalFingerprint: technicalFingerprint,
+  support: behaviorBindingSupport,
+};
+const usesMcpDraft: GovernedRelationshipDraft<"USES_MCP"> = {
+  ...relationshipStateBase,
+  relationshipType: "USES_MCP",
+  source: agentVersionIdentity,
+  target: mcpServerIdentity,
+  boundTechnicalFingerprint: technicalFingerprint,
+  support: behaviorBindingSupport,
+};
+const invokesDraft: GovernedRelationshipDraft<"INVOKES"> = {
+  ...relationshipStateBase,
+  relationshipType: "INVOKES",
+  source: agentVersionIdentity,
+  target: apiIdentity,
+  boundTechnicalFingerprint: technicalFingerprint,
+  support: behaviorBindingSupport,
+};
+const usesPromptDraft: GovernedRelationshipDraft<"USES_PROMPT"> = {
+  ...relationshipStateBase,
+  relationshipType: "USES_PROMPT",
+  source: agentVersionIdentity,
+  target: promptIdentity,
+  boundTechnicalFingerprint: technicalFingerprint,
+  support: behaviorBindingSupport,
+};
+const usesKnowledgeBaseDraft: GovernedRelationshipDraft<"USES_KNOWLEDGE_BASE"> = {
+  ...relationshipStateBase,
+  relationshipType: "USES_KNOWLEDGE_BASE",
+  source: agentVersionIdentity,
+  target: knowledgeBaseIdentity,
+  boundTechnicalFingerprint: technicalFingerprint,
+  support: behaviorBindingSupport,
+};
+const usesSkillDraft: GovernedRelationshipDraft<"USES_SKILL"> = {
+  ...relationshipStateBase,
+  relationshipType: "USES_SKILL",
+  source: agentVersionIdentity,
+  target: skillIdentity,
+  boundTechnicalFingerprint: technicalFingerprint,
+  support: behaviorBindingSupport,
+};
+const exposesDraft: GovernedRelationshipDraft<"EXPOSES"> = {
+  ...relationshipStateBase,
+  relationshipType: "EXPOSES",
+  source: mcpServerIdentity,
+  target: toolIdentity,
+  support: emptyRelationshipSupport,
+};
+const handoffDraft: GovernedRelationshipDraft<"HANDOFF_TO"> = {
+  ...relationshipStateBase,
+  relationshipType: "HANDOFF_TO",
+  source: agentVersionIdentity,
+  target: agentIdentity,
+  support: emptyRelationshipSupport,
+};
+const readsAssetDraft: GovernedRelationshipDraft<"READS_FROM"> = {
+  ...relationshipStateBase,
+  relationshipType: "READS_FROM",
+  source: agentVersionIdentity,
+  target: dataAssetIdentity,
+  support: emptyRelationshipSupport,
+};
+const readsElementDraft: GovernedRelationshipDraft<"READS_FROM"> = {
+  ...readsAssetDraft,
+  target: dataElementIdentity,
+};
+const writesAssetDraft: GovernedRelationshipDraft<"WRITES_TO"> = {
+  ...relationshipStateBase,
+  relationshipType: "WRITES_TO",
+  source: agentVersionIdentity,
+  target: dataAssetIdentity,
+  support: emptyRelationshipSupport,
+};
+const writesElementDraft: GovernedRelationshipDraft<"WRITES_TO"> = {
+  ...writesAssetDraft,
+  target: dataElementIdentity,
+};
+const derivedFromDraft: GovernedRelationshipDraft<"DERIVED_FROM"> = {
+  ...relationshipStateBase,
+  relationshipType: "DERIVED_FROM",
+  source: dataElementIdentity,
+  target: {
+    ...dataElementIdentity,
+    canonicalObject: {
+      ...dataElementIdentity.canonicalObject,
+      objectId: asCanonicalObjectId("canonical:data-element:origin"),
+    },
+    dataElementId: asDataElementId("data-element:origin"),
+  },
+  transformation: {
+    reference: sanitizeTechnicalLocator("transformations/customer.sql"),
+    hash: evidenceHash,
+    support: {
+      reference: emptyRelationshipSupport,
+      hash: emptyRelationshipSupport,
+    },
+  },
+  support: emptyRelationshipSupport,
+};
+void [
+  usesModelDraft,
+  usesToolDraft,
+  usesMcpDraft,
+  invokesDraft,
+  usesPromptDraft,
+  usesKnowledgeBaseDraft,
+  usesSkillDraft,
+  exposesDraft,
+  handoffDraft,
+  readsAssetDraft,
+  readsElementDraft,
+  writesAssetDraft,
+  writesElementDraft,
+  derivedFromDraft,
+];
+
+const {
+  relationshipId: omittedRelationshipId,
+  ...stateWithoutRelationshipIdValue
+} = usesSkillDraft;
+// @ts-expect-error CREATE_NEW state requires allocated RelationshipId.
+const stateWithoutRelationshipId: GovernedRelationshipDraft<"USES_SKILL"> =
+  stateWithoutRelationshipIdValue;
+const {
+  relationshipStateId: omittedRelationshipStateId,
+  ...stateWithoutRelationshipStateIdValue
+} = usesSkillDraft;
+// @ts-expect-error CREATE_NEW state requires allocated RelationshipStateId.
+const stateWithoutRelationshipStateId: GovernedRelationshipDraft<"USES_SKILL"> =
+  stateWithoutRelationshipStateIdValue;
+void [
+  omittedRelationshipId,
+  stateWithoutRelationshipId,
+  omittedRelationshipStateId,
+  stateWithoutRelationshipStateId,
+];
+
+const invalidUsesModelTarget: GovernedRelationshipDraft<"USES_MODEL"> = {
+  ...usesModelDraft,
+  // @ts-expect-error USES_MODEL accepts only a Model target.
+  target: toolIdentity,
+};
+// @ts-expect-error Every behavior binding requires a pinned fingerprint.
+const bindingWithoutFingerprint: GovernedRelationshipDraft<"USES_SKILL"> = {
+  ...relationshipStateBase,
+  relationshipType: "USES_SKILL",
+  source: agentVersionIdentity,
+  target: skillIdentity,
+  support: behaviorBindingSupport,
+};
+const bindingCannotUseEvidenceHash: GovernedRelationshipDraft<"USES_SKILL"> = {
+  ...usesSkillDraft,
+  // @ts-expect-error EvidenceHash is artifact integrity, not technical identity.
+  boundTechnicalFingerprint: evidenceHash,
+};
+const handoffCannotTargetVersion: GovernedRelationshipDraft<"HANDOFF_TO"> = {
+  ...handoffDraft,
+  // @ts-expect-error HANDOFF_TO targets the logical Agent.
+  target: agentVersionIdentity,
+};
+const exposesCannotTargetAgent: GovernedRelationshipDraft<"EXPOSES"> = {
+  ...exposesDraft,
+  // @ts-expect-error EXPOSES is MCP_SERVER to TOOL only.
+  target: agentIdentity,
+};
+const lineageCannotUseAsset: GovernedRelationshipDraft<"DERIVED_FROM"> = {
+  ...derivedFromDraft,
+  // @ts-expect-error Canonical lineage is DataElement to DataElement.
+  source: dataAssetIdentity,
+};
+const lineageCannotUseEmptyTransformation: GovernedRelationshipDraft<"DERIVED_FROM"> = {
+  ...derivedFromDraft,
+  // @ts-expect-error Transformation requires a sanitized reference or hash.
+  transformation: {
+    support: {
+      reference: emptyRelationshipSupport,
+      hash: emptyRelationshipSupport,
+    },
+  },
+};
+const lineageCannotContainRawSql: GovernedRelationshipDraft<"DERIVED_FROM"> = {
+  ...derivedFromDraft,
+  transformation: {
+    reference: sanitizeTechnicalLocator("transformations/customer.sql"),
+    support: {
+      reference: emptyRelationshipSupport,
+      hash: emptyRelationshipSupport,
+    },
+    // @ts-expect-error Raw transformation content is evidence, not relationship state.
+    rawSql: "select * from customer",
+  },
+};
+const relationshipCannotUseCandidateEndpoint: GovernedRelationshipDraft<"USES_MODEL"> = {
+  ...usesModelDraft,
+  // @ts-expect-error Pre-canonical candidate references are not endpoints.
+  source: agentVersionCandidate.proposedIdentity.agent,
+};
+void [
+  invalidUsesModelTarget,
+  bindingWithoutFingerprint,
+  bindingCannotUseEvidenceHash,
+  handoffCannotTargetVersion,
+  exposesCannotTargetAgent,
+  lineageCannotUseAsset,
+  lineageCannotUseEmptyTransformation,
+  lineageCannotContainRawSql,
+  relationshipCannotUseCandidateEndpoint,
+];
+
+// @ts-expect-error All explicit binding-configuration support keys are required.
+const incompleteBindingSupport: BehaviorBindingSupport = {
+  relationship: emptyRelationshipSupport,
+  boundTechnicalFingerprint: emptyRelationshipSupport,
+};
+// @ts-expect-error Configuration reference always requires its integrity hash.
+const configurationWithoutHash: BehaviorBindingConfigurationReference = {
+  configurationLocator: sanitizeTechnicalLocator("bindings/config.yaml"),
+};
+const configurationCannotUseRawLocator: BehaviorBindingConfigurationReference = {
+  configurationHash: evidenceHash,
+  // @ts-expect-error Locator must cross the sanitizer boundary.
+  configurationLocator: "https://user:secret@example.invalid/config?token=x",
+};
+const configurationCannotContainParameters: BehaviorBindingConfigurationReference = {
+  ...bindingConfiguration,
+  // @ts-expect-error Generic configuration/parameter bags are forbidden.
+  parameters: { temperature: 0.7 },
+};
+void [
+  incompleteBindingSupport,
+  configurationWithoutHash,
+  configurationCannotUseRawLocator,
+  configurationCannotContainParameters,
+];
+
+const relationshipCannotClaimTrust: GovernedRelationshipDraft<"EXPOSES"> = {
+  ...exposesDraft,
+  // @ts-expect-error Trust remains on SourceAssertion.
+  trustState: "VALIDATED",
+};
+const relationshipCannotAggregateConfidence: GovernedRelationshipDraft<"EXPOSES"> = {
+  ...exposesDraft,
+  // @ts-expect-error Confidence remains on discovery/provenance artifacts.
+  confidence: 1,
+};
+const relationshipCannotContainMetadata: GovernedRelationshipDraft<"EXPOSES"> = {
+  ...exposesDraft,
+  // @ts-expect-error Generic metadata bags are outside the contract.
+  metadata: { arbitrary: true },
+};
+void [
+  relationshipCannotClaimTrust,
+  relationshipCannotAggregateConfidence,
+  relationshipCannotContainMetadata,
+];
+
+const relationshipDecisionBase = {
+  decisionId: asReconciliationDecisionId("relationship-decision:one"),
+  organisationId: relationshipOrganisationId,
+  relationshipCandidateId: usesSkillRelationshipCandidate.candidateId,
+  relationshipCandidate: usesSkillRelationshipCandidate,
+  authority: humanAuthority,
+  reasonCode: "HUMAN_REVIEW",
+  assertionIds: [candidateAssertionId],
+  evidenceIds: [candidateEvidenceId],
+  decidedAt: asIsoTimestamp("2026-08-31T13:00:00.000Z"),
+} as const;
+const createRelationshipDecision = createRelationshipReconciliationDecision({
+  ...relationshipDecisionBase,
+  outcome: "CREATE_NEW",
+  authorizedState: usesSkillDraft,
+});
+const finalSourceRelationshipTypeCode: string =
+  createRelationshipDecision.relationshipTypeCode;
+const successfulCanonicalRelationshipType: GovernedRelationshipType =
+  createRelationshipDecision.authorizedState.relationshipType;
+const canonicalUsesSkill: UsesSkillRelationship = createGovernedRelationship(
+  createRelationshipDecision,
+  usesSkillDraft,
+);
+const brandedRelationship: GovernedRelationship = canonicalUsesSkill;
+// @ts-expect-error A draft is not yet an authorized governed relationship.
+const draftCannotBeCanonicalRelationship: GovernedRelationship = usesSkillDraft;
+void [
+  createRelationshipDecision,
+  canonicalUsesSkill,
+  brandedRelationship,
+  draftCannotBeCanonicalRelationship,
+  finalSourceRelationshipTypeCode,
+  successfulCanonicalRelationshipType,
+];
+
+const {
+  relationshipCandidate: omittedRelationshipCandidateContext,
+  ...relationshipDecisionWithoutCandidateContext
+} = relationshipDecisionBase;
+// @ts-expect-error Relationship decisions require the actual candidate context.
+const decisionWithoutCandidateContext: CreateNewRelationshipReconciliationDecisionDraft<"USES_SKILL"> = {
+  ...relationshipDecisionWithoutCandidateContext,
+  outcome: "CREATE_NEW",
+  authorizedState: usesSkillDraft,
+};
+void [omittedRelationshipCandidateContext, decisionWithoutCandidateContext];
+
+// @ts-expect-error CREATE_NEW requires an authorized state with IDs/endpoints.
+const createDecisionWithoutState: CreateNewRelationshipReconciliationDecisionDraft = {
+  ...relationshipDecisionBase,
+  outcome: "CREATE_NEW",
+};
+const matchedState: RelationshipMatchReference<"USES_SKILL"> = {
+  relationshipId,
+  relationshipStateId,
+  organisationId: relationshipOrganisationId,
+  relationshipType: "USES_SKILL",
+  source: agentVersionIdentity,
+  target: skillIdentity,
+};
+const {
+  relationshipStateId: omittedMatchedStateId,
+  ...matchWithoutStateIdValue
+} = matchedState;
+// @ts-expect-error MATCH_EXISTING must reference the exact temporal state.
+const matchReferenceWithoutStateId: RelationshipMatchReference<"USES_SKILL"> =
+  matchWithoutStateIdValue;
+const matchRelationshipDecision: MatchExistingRelationshipReconciliationDecision<"USES_SKILL"> =
+  createRelationshipReconciliationDecision({
+    ...relationshipDecisionBase,
+    outcome: "MATCH_EXISTING",
+    matchedState,
+  });
+// @ts-expect-error MATCH_EXISTING requires the exact state reference.
+const matchWithoutState: MatchExistingRelationshipReconciliationDecisionDraft = {
+  ...relationshipDecisionBase,
+  outcome: "MATCH_EXISTING",
+};
+const rejectDraft: RejectRelationshipReconciliationDecisionDraft = {
+  ...relationshipDecisionBase,
+  outcome: "REJECT",
+};
+const deferDraft: DeferRelationshipReconciliationDecisionDraft = {
+  ...relationshipDecisionBase,
+  outcome: "DEFER",
+};
+const rejectCannotReferenceRelationship: RejectRelationshipReconciliationDecisionDraft = {
+  ...rejectDraft,
+  // @ts-expect-error REJECT cannot reference a canonical relationship ID.
+  relationshipId,
+};
+const deferCannotReferenceState: DeferRelationshipReconciliationDecisionDraft = {
+  ...deferDraft,
+  // @ts-expect-error DEFER cannot reference a canonical relationship state.
+  relationshipStateId,
+};
+void [
+  createDecisionWithoutState,
+  omittedMatchedStateId,
+  matchReferenceWithoutStateId,
+  matchRelationshipDecision,
+  matchWithoutState,
+  rejectDraft,
+  deferDraft,
+  rejectCannotReferenceRelationship,
+  deferCannotReferenceState,
+];
+
+const candidateCannotCreateRelationship: HandoffToRelationship =
+  createGovernedRelationship(
+    // @ts-expect-error Discovery candidates cannot bypass relationship decisions.
+    relationshipCandidate,
+    handoffDraft,
+  );
+void candidateCannotCreateRelationship;

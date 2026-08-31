@@ -21,6 +21,8 @@ import type {
   OrganisationId,
   PromptId,
   ReconciliationDecisionId,
+  RelationshipId,
+  RelationshipStateId,
   SanitizedEvidenceLocator,
   SanitizedTechnicalLocator,
   SkillId,
@@ -30,6 +32,7 @@ import type {
   SourceSystemId,
   ToolId,
 } from "./identifiers.ts";
+import { sanitizeTechnicalLocator } from "./identifiers.ts";
 
 export const SUPPORTED_CANONICAL_CONTRACT_VERSIONS = ["1.0", "1.1"] as const;
 export type CanonicalContractVersion =
@@ -1569,6 +1572,254 @@ export function createSkillTechnicalProfile(
   });
 }
 
+/** The closed V1A.1e taxonomy of canonical governed relationships. */
+export const GOVERNED_RELATIONSHIP_TYPE = {
+  USES_MODEL: "USES_MODEL",
+  USES_TOOL: "USES_TOOL",
+  USES_MCP: "USES_MCP",
+  INVOKES: "INVOKES",
+  USES_PROMPT: "USES_PROMPT",
+  USES_KNOWLEDGE_BASE: "USES_KNOWLEDGE_BASE",
+  USES_SKILL: "USES_SKILL",
+  EXPOSES: "EXPOSES",
+  HANDOFF_TO: "HANDOFF_TO",
+  READS_FROM: "READS_FROM",
+  WRITES_TO: "WRITES_TO",
+  DERIVED_FROM: "DERIVED_FROM",
+} as const;
+export type GovernedRelationshipType =
+  (typeof GOVERNED_RELATIONSHIP_TYPE)[keyof typeof GOVERNED_RELATIONSHIP_TYPE];
+
+export type BehaviorBindingRelationshipType =
+  | "USES_MODEL"
+  | "USES_TOOL"
+  | "USES_MCP"
+  | "INVOKES"
+  | "USES_PROMPT"
+  | "USES_KNOWLEDGE_BASE"
+  | "USES_SKILL";
+
+export interface RelationshipEndpointIdentityByKind {
+  readonly AGENT: AgentIdentity;
+  readonly AGENT_VERSION: AgentVersionIdentity;
+  readonly MODEL: ModelIdentity;
+  readonly TOOL: ToolIdentity;
+  readonly MCP_SERVER: McpServerIdentity;
+  readonly API: ApiIdentity;
+  readonly PROMPT: PromptIdentity;
+  readonly KNOWLEDGE_BASE: KnowledgeBaseIdentity;
+  readonly DATA_ASSET: DataAssetIdentity;
+  readonly DATA_ELEMENT: DataElementIdentity;
+  readonly SKILL: SkillIdentity;
+}
+
+export type RelationshipEndpointIdentity<
+  Kind extends CanonicalObjectKind,
+> = RelationshipEndpointIdentityByKind[Kind];
+
+/** Compile-time endpoint-kind matrix; runtime factories enforce the same map. */
+export interface GovernedRelationshipEndpointKinds {
+  readonly USES_MODEL: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "MODEL";
+  };
+  readonly USES_TOOL: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "TOOL";
+  };
+  readonly USES_MCP: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "MCP_SERVER";
+  };
+  readonly INVOKES: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "API";
+  };
+  readonly USES_PROMPT: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "PROMPT";
+  };
+  readonly USES_KNOWLEDGE_BASE: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "KNOWLEDGE_BASE";
+  };
+  readonly USES_SKILL: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "SKILL";
+  };
+  readonly EXPOSES: {
+    readonly source: "MCP_SERVER";
+    readonly target: "TOOL";
+  };
+  readonly HANDOFF_TO: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "AGENT";
+  };
+  readonly READS_FROM: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "DATA_ASSET" | "DATA_ELEMENT";
+  };
+  readonly WRITES_TO: {
+    readonly source: "AGENT_VERSION";
+    readonly target: "DATA_ASSET" | "DATA_ELEMENT";
+  };
+  readonly DERIVED_FROM: {
+    readonly source: "DATA_ELEMENT";
+    readonly target: "DATA_ELEMENT";
+  };
+}
+
+type GovernedRelationshipSourceKind<
+  Type extends GovernedRelationshipType,
+> = GovernedRelationshipEndpointKinds[Type]["source"];
+type GovernedRelationshipTargetKind<
+  Type extends GovernedRelationshipType,
+> = GovernedRelationshipEndpointKinds[Type]["target"];
+
+/** Relationship provenance is intentionally separate from technical metadata. */
+export interface RelationshipSupport {
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+}
+
+export interface BehaviorBindingConfigurationReference {
+  readonly configurationHash: EvidenceHash;
+  readonly configurationLocator?: SanitizedTechnicalLocator;
+}
+
+export interface BehaviorBindingConfigurationSupport {
+  readonly configurationHash: RelationshipSupport;
+  readonly configurationLocator: RelationshipSupport;
+}
+
+export interface BehaviorBindingSupport {
+  readonly relationship: RelationshipSupport;
+  readonly boundTechnicalFingerprint: RelationshipSupport;
+  readonly bindingConfiguration: BehaviorBindingConfigurationSupport;
+}
+
+export interface LineageTransformationSupport {
+  readonly reference: RelationshipSupport;
+  readonly hash: RelationshipSupport;
+}
+
+interface LineageTransformationBase {
+  readonly support: LineageTransformationSupport;
+}
+
+export type LineageTransformation =
+  | (LineageTransformationBase & {
+      readonly reference: SanitizedTechnicalLocator;
+      readonly hash?: EvidenceHash;
+    })
+  | (LineageTransformationBase & {
+      readonly reference?: SanitizedTechnicalLocator;
+      readonly hash: EvidenceHash;
+    });
+
+/**
+ * One immutable valid-time state of an assigned logical relationship. IDs are
+ * opaque allocations: type + source + target is only a duplicate-detection
+ * signal and never relationship identity or a uniqueness promise.
+ *
+ * Future persistence must normalize logical identity, temporal state, support,
+ * behavior binding, and lineage transformation grains with tenant-safe FKs.
+ * This in-memory contract does not claim repository-wide history/uniqueness.
+ */
+export interface GovernedRelationshipBase<
+  Type extends GovernedRelationshipType,
+  SourceKind extends CanonicalObjectKind,
+  TargetKind extends CanonicalObjectKind,
+  Support extends RelationshipSupport | BehaviorBindingSupport,
+> {
+  readonly relationshipId: RelationshipId;
+  readonly relationshipStateId: RelationshipStateId;
+  readonly organisationId: OrganisationId;
+  readonly relationshipType: Type;
+  readonly source: RelationshipEndpointIdentity<SourceKind>;
+  readonly target: RelationshipEndpointIdentity<TargetKind>;
+  readonly support: Support;
+  /** Effective valid time is the half-open interval [validFrom, validTo). */
+  readonly validFrom: IsoTimestamp;
+  readonly validTo?: IsoTimestamp;
+  readonly recordedAt: IsoTimestamp;
+  /** Correction/replacement of a recorded state, not ordinary succession. */
+  readonly supersedesRelationshipStateId?: RelationshipStateId;
+}
+
+interface BehaviorBindingState {
+  readonly boundTechnicalFingerprint: TechnicalFingerprint;
+  readonly bindingConfiguration?: BehaviorBindingConfigurationReference;
+}
+
+interface DerivedFromState {
+  readonly transformation?: LineageTransformation;
+}
+
+type RelationshipSupportFor<Type extends GovernedRelationshipType> =
+  Type extends BehaviorBindingRelationshipType
+    ? BehaviorBindingSupport
+    : RelationshipSupport;
+
+type RelationshipSpecificState<Type extends GovernedRelationshipType> =
+  Type extends BehaviorBindingRelationshipType
+    ? BehaviorBindingState
+    : Type extends "DERIVED_FROM"
+      ? DerivedFromState
+      : object;
+
+export type GovernedRelationshipDraft<
+  Type extends GovernedRelationshipType = GovernedRelationshipType,
+> = Type extends GovernedRelationshipType
+  ? GovernedRelationshipBase<
+      Type,
+      GovernedRelationshipSourceKind<Type>,
+      GovernedRelationshipTargetKind<Type>,
+      RelationshipSupportFor<Type>
+    > &
+      RelationshipSpecificState<Type>
+  : never;
+
+declare const governedRelationshipBrand: unique symbol;
+
+/** Created only from an approved CREATE_NEW relationship decision. */
+export type GovernedRelationship<
+  Type extends GovernedRelationshipType = GovernedRelationshipType,
+> = GovernedRelationshipDraft<Type> & {
+  readonly [governedRelationshipBrand]: "GovernedRelationship";
+};
+
+export type UsesModelRelationship = GovernedRelationship<"USES_MODEL">;
+export type UsesToolRelationship = GovernedRelationship<"USES_TOOL">;
+export type UsesMcpRelationship = GovernedRelationship<"USES_MCP">;
+export type InvokesRelationship = GovernedRelationship<"INVOKES">;
+export type UsesPromptRelationship = GovernedRelationship<"USES_PROMPT">;
+export type UsesKnowledgeBaseRelationship =
+  GovernedRelationship<"USES_KNOWLEDGE_BASE">;
+export type UsesSkillRelationship = GovernedRelationship<"USES_SKILL">;
+export type ExposesRelationship = GovernedRelationship<"EXPOSES">;
+export type HandoffToRelationship = GovernedRelationship<"HANDOFF_TO">;
+export type ReadsFromRelationship = GovernedRelationship<"READS_FROM">;
+export type WritesToRelationship = GovernedRelationship<"WRITES_TO">;
+export type DerivedFromRelationship = GovernedRelationship<"DERIVED_FROM">;
+
+export type RelationshipMatchReference<
+  Type extends GovernedRelationshipType = GovernedRelationshipType,
+> = Type extends GovernedRelationshipType
+  ? Readonly<{
+      relationshipId: RelationshipId;
+      relationshipStateId: RelationshipStateId;
+      organisationId: OrganisationId;
+      relationshipType: Type;
+      source: RelationshipEndpointIdentity<
+        GovernedRelationshipSourceKind<Type>
+      >;
+      target: RelationshipEndpointIdentity<
+        GovernedRelationshipTargetKind<Type>
+      >;
+    }>
+  : never;
+
 export type PreCanonicalObjectReference<
   Kind extends CanonicalObjectKind = CanonicalObjectKind,
 > =
@@ -1863,6 +2114,1304 @@ export type ReconciliationAuthority =
       readonly ruleCode: string;
       readonly ruleVersion: string;
     };
+
+export const RELATIONSHIP_RECONCILIATION_OUTCOME = {
+  CREATE_NEW: "CREATE_NEW",
+  MATCH_EXISTING: "MATCH_EXISTING",
+  REJECT: "REJECT",
+  DEFER: "DEFER",
+} as const;
+export type RelationshipReconciliationOutcome =
+  (typeof RELATIONSHIP_RECONCILIATION_OUTCOME)[keyof typeof RELATIONSHIP_RECONCILIATION_OUTCOME];
+
+export interface RelationshipReconciliationDecisionBase<
+  Outcome extends RelationshipReconciliationOutcome,
+> {
+  readonly decisionId: ReconciliationDecisionId;
+  /** Trusted orchestration context; never copied from the relationship candidate. */
+  readonly organisationId: OrganisationId;
+  readonly relationshipCandidateId: NormalizedCandidateId;
+  /** Exact source/discovery vocabulary code preserved for auditability. */
+  readonly relationshipTypeCode: string;
+  readonly outcome: Outcome;
+  readonly authority: ReconciliationAuthority;
+  readonly reasonCode: string;
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+  readonly decidedAt: IsoTimestamp;
+}
+
+declare const relationshipReconciliationDecisionBrand: unique symbol;
+
+type RelationshipReconciliationDecisionBrand = {
+  readonly [relationshipReconciliationDecisionBrand]:
+    "RelationshipReconciliationDecision";
+};
+
+export type CreateNewRelationshipReconciliationDecision<
+  Type extends GovernedRelationshipType = GovernedRelationshipType,
+> = Type extends GovernedRelationshipType
+  ? RelationshipReconciliationDecisionBase<"CREATE_NEW"> & {
+      readonly authorizedState: GovernedRelationshipDraft<Type>;
+    } & RelationshipReconciliationDecisionBrand
+  : never;
+
+export type MatchExistingRelationshipReconciliationDecision<
+  Type extends GovernedRelationshipType = GovernedRelationshipType,
+> = Type extends GovernedRelationshipType
+  ? RelationshipReconciliationDecisionBase<"MATCH_EXISTING"> & {
+      readonly matchedState: RelationshipMatchReference<Type>;
+    } & RelationshipReconciliationDecisionBrand
+  : never;
+
+export type RejectRelationshipReconciliationDecision =
+  RelationshipReconciliationDecisionBase<"REJECT"> & {
+    readonly relationshipId?: never;
+    readonly relationshipStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  } & RelationshipReconciliationDecisionBrand;
+
+export type DeferRelationshipReconciliationDecision =
+  RelationshipReconciliationDecisionBase<"DEFER"> & {
+    readonly relationshipId?: never;
+    readonly relationshipStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  } & RelationshipReconciliationDecisionBrand;
+
+export type RelationshipReconciliationDecision =
+  | CreateNewRelationshipReconciliationDecision
+  | MatchExistingRelationshipReconciliationDecision
+  | RejectRelationshipReconciliationDecision
+  | DeferRelationshipReconciliationDecision;
+
+interface RelationshipReconciliationDecisionDraftBase<
+  Outcome extends RelationshipReconciliationOutcome,
+> {
+  readonly decisionId: ReconciliationDecisionId;
+  readonly organisationId: OrganisationId;
+  readonly relationshipCandidateId: NormalizedCandidateId;
+  /**
+   * Validation context only; never copied wholesale into the decision. This
+   * package validates its pre-canonical shape, but a trusted orchestrator or
+   * repository must prove its endpoint reconciliation links before approval.
+   */
+  readonly relationshipCandidate: NormalizedRelationshipCandidate;
+  readonly outcome: Outcome;
+  readonly authority: ReconciliationAuthority;
+  readonly reasonCode: string;
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+  readonly decidedAt: IsoTimestamp;
+}
+
+export type CreateNewRelationshipReconciliationDecisionDraft<
+  Type extends GovernedRelationshipType = GovernedRelationshipType,
+> = Type extends GovernedRelationshipType
+  ? RelationshipReconciliationDecisionDraftBase<"CREATE_NEW"> & {
+      readonly authorizedState: GovernedRelationshipDraft<Type>;
+      /** Validation context only; never copied into the decision. */
+      readonly supersededState?: GovernedRelationship;
+    }
+  : never;
+
+export type MatchExistingRelationshipReconciliationDecisionDraft<
+  Type extends GovernedRelationshipType = GovernedRelationshipType,
+> = Type extends GovernedRelationshipType
+  ? RelationshipReconciliationDecisionDraftBase<"MATCH_EXISTING"> & {
+      readonly matchedState: RelationshipMatchReference<Type>;
+    }
+  : never;
+
+export type RejectRelationshipReconciliationDecisionDraft =
+  RelationshipReconciliationDecisionDraftBase<"REJECT"> & {
+    readonly relationshipId?: never;
+    readonly relationshipStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  };
+
+export type DeferRelationshipReconciliationDecisionDraft =
+  RelationshipReconciliationDecisionDraftBase<"DEFER"> & {
+    readonly relationshipId?: never;
+    readonly relationshipStateId?: never;
+    readonly authorizedState?: never;
+    readonly matchedState?: never;
+  };
+
+export type RelationshipReconciliationDecisionDraft =
+  | CreateNewRelationshipReconciliationDecisionDraft
+  | MatchExistingRelationshipReconciliationDecisionDraft
+  | RejectRelationshipReconciliationDecisionDraft
+  | DeferRelationshipReconciliationDecisionDraft;
+
+const RELATIONSHIP_ENDPOINT_CONSTRAINTS = {
+  USES_MODEL: { source: "AGENT_VERSION", targets: ["MODEL"] },
+  USES_TOOL: { source: "AGENT_VERSION", targets: ["TOOL"] },
+  USES_MCP: { source: "AGENT_VERSION", targets: ["MCP_SERVER"] },
+  INVOKES: { source: "AGENT_VERSION", targets: ["API"] },
+  USES_PROMPT: { source: "AGENT_VERSION", targets: ["PROMPT"] },
+  USES_KNOWLEDGE_BASE: {
+    source: "AGENT_VERSION",
+    targets: ["KNOWLEDGE_BASE"],
+  },
+  USES_SKILL: { source: "AGENT_VERSION", targets: ["SKILL"] },
+  EXPOSES: { source: "MCP_SERVER", targets: ["TOOL"] },
+  HANDOFF_TO: { source: "AGENT_VERSION", targets: ["AGENT"] },
+  READS_FROM: {
+    source: "AGENT_VERSION",
+    targets: ["DATA_ASSET", "DATA_ELEMENT"],
+  },
+  WRITES_TO: {
+    source: "AGENT_VERSION",
+    targets: ["DATA_ASSET", "DATA_ELEMENT"],
+  },
+  DERIVED_FROM: { source: "DATA_ELEMENT", targets: ["DATA_ELEMENT"] },
+} as const satisfies Record<
+  GovernedRelationshipType,
+  {
+    readonly source: CanonicalObjectKind;
+    readonly targets: readonly CanonicalObjectKind[];
+  }
+>;
+
+const BEHAVIOR_BINDING_RELATIONSHIP_TYPES = new Set<string>([
+  "USES_MODEL",
+  "USES_TOOL",
+  "USES_MCP",
+  "INVOKES",
+  "USES_PROMPT",
+  "USES_KNOWLEDGE_BASE",
+  "USES_SKILL",
+]);
+
+function isGovernedRelationshipType(
+  value: unknown,
+): value is GovernedRelationshipType {
+  return (
+    typeof value === "string" &&
+    (Object.values(GOVERNED_RELATIONSHIP_TYPE) as readonly string[]).includes(
+      value,
+    )
+  );
+}
+
+function isBehaviorBindingRelationshipType(
+  value: GovernedRelationshipType,
+): value is BehaviorBindingRelationshipType {
+  return BEHAVIOR_BINDING_RELATIONSHIP_TYPES.has(value);
+}
+
+function asObjectRecord(
+  value: unknown,
+  label: string,
+): Readonly<Record<string, unknown>> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError(`${label} must be an object`);
+  }
+  return value as Readonly<Record<string, unknown>>;
+}
+
+function requiredString(value: unknown, label: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new TypeError(`${label} must be a non-empty string`);
+  }
+  return value;
+}
+
+function requiredTimestamp(value: unknown, label: string): IsoTimestamp {
+  const timestamp = requiredString(value, label);
+  if (Number.isNaN(Date.parse(timestamp))) {
+    throw new TypeError(`${label} must be a valid date-time string`);
+  }
+  return timestamp as IsoTimestamp;
+}
+
+function copyRelationshipSupport(
+  value: unknown,
+  label = "Relationship support",
+): RelationshipSupport {
+  const support = asObjectRecord(value, label);
+  if (!Array.isArray(support.assertionIds)) {
+    throw new TypeError(`${label} assertionIds must be an array`);
+  }
+  if (!Array.isArray(support.evidenceIds)) {
+    throw new TypeError(`${label} evidenceIds must be an array`);
+  }
+  const assertionIds = [...new Set(
+    support.assertionIds.map((id) =>
+      requiredString(id, `${label} assertion ID`),
+    ),
+  )].sort() as SourceAssertionId[];
+  const evidenceIds = [...new Set(
+    support.evidenceIds.map((id) =>
+      requiredString(id, `${label} evidence ID`),
+    ),
+  )].sort() as EvidenceId[];
+  return Object.freeze({
+    assertionIds: Object.freeze(assertionIds),
+    evidenceIds: Object.freeze(evidenceIds),
+  });
+}
+
+function copyEvidenceHash(value: unknown, label: string): EvidenceHash {
+  const hash = asObjectRecord(value, label);
+  return Object.freeze({
+    algorithm: requiredString(hash.algorithm, `${label} algorithm`),
+    value: requiredString(hash.value, `${label} value`),
+  });
+}
+
+function copyTechnicalFingerprint(value: unknown): TechnicalFingerprint {
+  const fingerprint = asObjectRecord(value, "Bound technical fingerprint");
+  return createTechnicalFingerprint({
+    algorithm: requiredString(
+      fingerprint.algorithm,
+      "Bound technical fingerprint algorithm",
+    ),
+    schemaVersion: requiredString(
+      fingerprint.schemaVersion,
+      "Bound technical fingerprint schemaVersion",
+    ),
+    value: requiredString(
+      fingerprint.value,
+      "Bound technical fingerprint value",
+    ),
+  });
+}
+
+function requireSanitizedTechnicalLocator(
+  value: unknown,
+  label: string,
+): SanitizedTechnicalLocator {
+  const locator = requiredString(value, label);
+  if (sanitizeTechnicalLocator(locator) !== locator) {
+    throw new TypeError(`${label} must already be sanitized`);
+  }
+  return locator as SanitizedTechnicalLocator;
+}
+
+function copyCanonicalObjectIdentity(
+  value: unknown,
+  expectedKind: CanonicalObjectKind,
+): CanonicalObjectIdentity {
+  const canonicalObject = asObjectRecord(value, "Canonical endpoint identity");
+  if (canonicalObject.kind !== expectedKind) {
+    throw new TypeError(`Relationship endpoint must be ${expectedKind}`);
+  }
+  return Object.freeze({
+    organisationId: requiredString(
+      canonicalObject.organisationId,
+      "Canonical endpoint organisationId",
+    ) as OrganisationId,
+    objectId: requiredString(
+      canonicalObject.objectId,
+      "Canonical endpoint objectId",
+    ) as CanonicalObjectId,
+    kind: expectedKind,
+  });
+}
+
+function copyRelationshipEndpoint(
+  value: unknown,
+  expectedKind: CanonicalObjectKind,
+): RelationshipEndpointIdentity<CanonicalObjectKind> {
+  const endpoint = asObjectRecord(value, `${expectedKind} endpoint`);
+  const canonicalObject = copyCanonicalObjectIdentity(
+    endpoint.canonicalObject,
+    expectedKind,
+  );
+  let copied: Readonly<Record<string, unknown>>;
+
+  switch (expectedKind) {
+    case "AGENT":
+      copied = {
+        canonicalObject,
+        agentId: requiredString(endpoint.agentId, "Agent endpoint agentId"),
+        agentCode: requiredString(endpoint.agentCode, "Agent endpoint agentCode"),
+      };
+      break;
+    case "AGENT_VERSION": {
+      const agent = copyRelationshipEndpoint(endpoint.agent, "AGENT") as AgentIdentity;
+      if (
+        agent.canonicalObject.organisationId !== canonicalObject.organisationId
+      ) {
+        throw new TypeError("AgentVersion and parent Agent must share a tenant");
+      }
+      copied = {
+        canonicalObject,
+        agent,
+        agentVersionId: requiredString(
+          endpoint.agentVersionId,
+          "AgentVersion endpoint agentVersionId",
+        ),
+        versionCode: requiredString(
+          endpoint.versionCode,
+          "AgentVersion endpoint versionCode",
+        ),
+      };
+      break;
+    }
+    case "MODEL":
+      copied = {
+        canonicalObject,
+        modelId: requiredString(endpoint.modelId, "Model endpoint modelId"),
+      };
+      break;
+    case "TOOL":
+      copied = {
+        canonicalObject,
+        toolId: requiredString(endpoint.toolId, "Tool endpoint toolId"),
+      };
+      break;
+    case "MCP_SERVER":
+      copied = {
+        canonicalObject,
+        mcpServerId: requiredString(
+          endpoint.mcpServerId,
+          "MCP endpoint mcpServerId",
+        ),
+      };
+      break;
+    case "API":
+      copied = {
+        canonicalObject,
+        apiId: requiredString(endpoint.apiId, "API endpoint apiId"),
+      };
+      break;
+    case "PROMPT":
+      copied = {
+        canonicalObject,
+        promptId: requiredString(endpoint.promptId, "Prompt endpoint promptId"),
+      };
+      break;
+    case "KNOWLEDGE_BASE":
+      copied = {
+        canonicalObject,
+        knowledgeBaseId: requiredString(
+          endpoint.knowledgeBaseId,
+          "Knowledge Base endpoint knowledgeBaseId",
+        ),
+      };
+      break;
+    case "SKILL":
+      copied = {
+        canonicalObject,
+        skillId: requiredString(endpoint.skillId, "Skill endpoint skillId"),
+      };
+      break;
+    case "DATA_ASSET":
+      copied = {
+        canonicalObject,
+        dataAssetId: requiredString(
+          endpoint.dataAssetId,
+          "DataAsset endpoint dataAssetId",
+        ),
+      };
+      break;
+    case "DATA_ELEMENT":
+      copied = {
+        canonicalObject,
+        dataElementId: requiredString(
+          endpoint.dataElementId,
+          "DataElement endpoint dataElementId",
+        ),
+        dataAssetId: requiredString(
+          endpoint.dataAssetId,
+          "DataElement endpoint dataAssetId",
+        ),
+        elementPath: requiredString(
+          endpoint.elementPath,
+          "DataElement endpoint elementPath",
+        ),
+      };
+      break;
+  }
+
+  return Object.freeze(copied) as unknown as RelationshipEndpointIdentity<CanonicalObjectKind>;
+}
+
+function canonicalObjectIdentitiesEqual(
+  left: CanonicalObjectIdentity,
+  right: CanonicalObjectIdentity,
+): boolean {
+  return (
+    left.organisationId === right.organisationId &&
+    left.objectId === right.objectId &&
+    left.kind === right.kind
+  );
+}
+
+function relationshipEndpointsEqual(
+  left: RelationshipEndpointIdentity<CanonicalObjectKind>,
+  right: RelationshipEndpointIdentity<CanonicalObjectKind>,
+): boolean {
+  if (!canonicalObjectIdentitiesEqual(left.canonicalObject, right.canonicalObject)) {
+    return false;
+  }
+  switch (left.canonicalObject.kind) {
+    case "AGENT": {
+      const leftAgent = left as AgentIdentity;
+      const rightAgent = right as AgentIdentity;
+      return (
+        leftAgent.agentId === rightAgent.agentId &&
+        leftAgent.agentCode === rightAgent.agentCode
+      );
+    }
+    case "AGENT_VERSION": {
+      const leftVersion = left as AgentVersionIdentity;
+      const rightVersion = right as AgentVersionIdentity;
+      return (
+        leftVersion.agentVersionId === rightVersion.agentVersionId &&
+        leftVersion.versionCode === rightVersion.versionCode &&
+        relationshipEndpointsEqual(leftVersion.agent, rightVersion.agent)
+      );
+    }
+    case "MODEL":
+      return (left as ModelIdentity).modelId === (right as ModelIdentity).modelId;
+    case "TOOL":
+      return (left as ToolIdentity).toolId === (right as ToolIdentity).toolId;
+    case "MCP_SERVER":
+      return (
+        (left as McpServerIdentity).mcpServerId ===
+        (right as McpServerIdentity).mcpServerId
+      );
+    case "API":
+      return (left as ApiIdentity).apiId === (right as ApiIdentity).apiId;
+    case "PROMPT":
+      return (
+        (left as PromptIdentity).promptId ===
+        (right as PromptIdentity).promptId
+      );
+    case "KNOWLEDGE_BASE":
+      return (
+        (left as KnowledgeBaseIdentity).knowledgeBaseId ===
+        (right as KnowledgeBaseIdentity).knowledgeBaseId
+      );
+    case "SKILL":
+      return (left as SkillIdentity).skillId === (right as SkillIdentity).skillId;
+    case "DATA_ASSET":
+      return (
+        (left as DataAssetIdentity).dataAssetId ===
+        (right as DataAssetIdentity).dataAssetId
+      );
+    case "DATA_ELEMENT": {
+      const leftElement = left as DataElementIdentity;
+      const rightElement = right as DataElementIdentity;
+      return (
+        leftElement.dataElementId === rightElement.dataElementId &&
+        leftElement.dataAssetId === rightElement.dataAssetId &&
+        leftElement.elementPath === rightElement.elementPath
+      );
+    }
+  }
+}
+
+function copyBehaviorBindingConfiguration(
+  value: unknown,
+): BehaviorBindingConfigurationReference {
+  const configuration = asObjectRecord(
+    value,
+    "Behavior binding configuration",
+  );
+  return Object.freeze({
+    configurationHash: copyEvidenceHash(
+      configuration.configurationHash,
+      "Behavior binding configuration hash",
+    ),
+    ...(configuration.configurationLocator === undefined
+      ? {}
+      : {
+          configurationLocator: requireSanitizedTechnicalLocator(
+            configuration.configurationLocator,
+            "Behavior binding configuration locator",
+          ),
+        }),
+  });
+}
+
+function copyBehaviorBindingSupport(value: unknown): BehaviorBindingSupport {
+  const support = asObjectRecord(value, "Behavior binding support");
+  const bindingConfiguration = asObjectRecord(
+    support.bindingConfiguration,
+    "Behavior binding configuration support",
+  );
+  return Object.freeze({
+    relationship: copyRelationshipSupport(
+      support.relationship,
+      "Behavior relationship support",
+    ),
+    boundTechnicalFingerprint: copyRelationshipSupport(
+      support.boundTechnicalFingerprint,
+      "Behavior fingerprint support",
+    ),
+    bindingConfiguration: Object.freeze({
+      configurationHash: copyRelationshipSupport(
+        bindingConfiguration.configurationHash,
+        "Binding configuration hash support",
+      ),
+      configurationLocator: copyRelationshipSupport(
+        bindingConfiguration.configurationLocator,
+        "Binding configuration locator support",
+      ),
+    }),
+  });
+}
+
+function copyLineageTransformation(value: unknown): LineageTransformation {
+  const transformation = asObjectRecord(value, "Lineage transformation");
+  if (
+    transformation.reference === undefined &&
+    transformation.hash === undefined
+  ) {
+    throw new TypeError(
+      "Lineage transformation requires a reference or hash",
+    );
+  }
+  const support = asObjectRecord(
+    transformation.support,
+    "Lineage transformation support",
+  );
+  return Object.freeze({
+    ...(transformation.reference === undefined
+      ? {}
+      : {
+          reference: requireSanitizedTechnicalLocator(
+            transformation.reference,
+            "Lineage transformation reference",
+          ),
+        }),
+    ...(transformation.hash === undefined
+      ? {}
+      : {
+          hash: copyEvidenceHash(
+            transformation.hash,
+            "Lineage transformation hash",
+          ),
+        }),
+    support: Object.freeze({
+      reference: copyRelationshipSupport(
+        support.reference,
+        "Lineage transformation reference support",
+      ),
+      hash: copyRelationshipSupport(
+        support.hash,
+        "Lineage transformation hash support",
+      ),
+    }),
+  }) as LineageTransformation;
+}
+
+function copyGovernedRelationshipDraft(
+  value: unknown,
+): GovernedRelationshipDraft {
+  const draft = asObjectRecord(value, "Governed relationship state");
+  if (!isGovernedRelationshipType(draft.relationshipType)) {
+    throw new TypeError("Unknown governed relationship type");
+  }
+  const relationshipType = draft.relationshipType;
+  const constraint = RELATIONSHIP_ENDPOINT_CONSTRAINTS[relationshipType];
+  const sourceRecord = asObjectRecord(draft.source, "Relationship source");
+  const targetRecord = asObjectRecord(draft.target, "Relationship target");
+  const sourceCanonical = asObjectRecord(
+    sourceRecord.canonicalObject,
+    "Relationship source canonical identity",
+  );
+  const targetCanonical = asObjectRecord(
+    targetRecord.canonicalObject,
+    "Relationship target canonical identity",
+  );
+  if (sourceCanonical.kind !== constraint.source) {
+    throw new TypeError(
+      `${relationshipType} source must be ${constraint.source}`,
+    );
+  }
+  if (
+    typeof targetCanonical.kind !== "string" ||
+    !(constraint.targets as readonly string[]).includes(targetCanonical.kind)
+  ) {
+    throw new TypeError(
+      `${relationshipType} target must be ${constraint.targets.join(" or ")}`,
+    );
+  }
+
+  const organisationId = requiredString(
+    draft.organisationId,
+    "Relationship organisationId",
+  ) as OrganisationId;
+  const source = copyRelationshipEndpoint(
+    draft.source,
+    constraint.source,
+  );
+  const target = copyRelationshipEndpoint(
+    draft.target,
+    targetCanonical.kind as CanonicalObjectKind,
+  );
+  if (
+    source.canonicalObject.organisationId !== organisationId ||
+    target.canonicalObject.organisationId !== organisationId
+  ) {
+    throw new TypeError(
+      "Relationship tenant must match both canonical endpoints",
+    );
+  }
+
+  const validFrom = requiredTimestamp(draft.validFrom, "Relationship validFrom");
+  const validTo =
+    draft.validTo === undefined
+      ? undefined
+      : requiredTimestamp(draft.validTo, "Relationship validTo");
+  if (
+    validTo !== undefined &&
+    Date.parse(validTo) <= Date.parse(validFrom)
+  ) {
+    throw new TypeError("Relationship validTo must be greater than validFrom");
+  }
+  const recordedAt = requiredTimestamp(
+    draft.recordedAt,
+    "Relationship recordedAt",
+  );
+  const supersedesRelationshipStateId =
+    draft.supersedesRelationshipStateId === undefined
+      ? undefined
+      : (requiredString(
+          draft.supersedesRelationshipStateId,
+          "Superseded relationship state ID",
+        ) as RelationshipStateId);
+
+  const base = {
+    relationshipId: requiredString(
+      draft.relationshipId,
+      "Relationship ID",
+    ) as RelationshipId,
+    relationshipStateId: requiredString(
+      draft.relationshipStateId,
+      "Relationship state ID",
+    ) as RelationshipStateId,
+    organisationId,
+    relationshipType,
+    source,
+    target,
+    validFrom,
+    ...(validTo === undefined ? {} : { validTo }),
+    recordedAt,
+    ...(supersedesRelationshipStateId === undefined
+      ? {}
+      : { supersedesRelationshipStateId }),
+  };
+
+  if (isBehaviorBindingRelationshipType(relationshipType)) {
+    return Object.freeze({
+      ...base,
+      boundTechnicalFingerprint: copyTechnicalFingerprint(
+        draft.boundTechnicalFingerprint,
+      ),
+      ...(draft.bindingConfiguration === undefined
+        ? {}
+        : {
+            bindingConfiguration: copyBehaviorBindingConfiguration(
+              draft.bindingConfiguration,
+            ),
+          }),
+      support: copyBehaviorBindingSupport(draft.support),
+    }) as GovernedRelationshipDraft;
+  }
+
+  return Object.freeze({
+    ...base,
+    ...(relationshipType === "DERIVED_FROM" && draft.transformation !== undefined
+      ? { transformation: copyLineageTransformation(draft.transformation) }
+      : {}),
+    support: copyRelationshipSupport(draft.support),
+  }) as GovernedRelationshipDraft;
+}
+
+function technicalFingerprintsEqual(
+  left: TechnicalFingerprint,
+  right: TechnicalFingerprint,
+): boolean {
+  return (
+    left.algorithm === right.algorithm &&
+    left.schemaVersion === right.schemaVersion &&
+    left.value === right.value
+  );
+}
+
+function evidenceHashesEqual(
+  left: EvidenceHash | undefined,
+  right: EvidenceHash | undefined,
+): boolean {
+  return left === undefined
+    ? right === undefined
+    : right !== undefined &&
+        left.algorithm === right.algorithm &&
+        left.value === right.value;
+}
+
+function behaviorConfigurationsEqual(
+  left: BehaviorBindingConfigurationReference | undefined,
+  right: BehaviorBindingConfigurationReference | undefined,
+): boolean {
+  if (left === undefined || right === undefined) {
+    return left === right;
+  }
+  return (
+    evidenceHashesEqual(left.configurationHash, right.configurationHash) &&
+    left.configurationLocator === right.configurationLocator
+  );
+}
+
+function validateRelationshipSupersession(
+  current: GovernedRelationshipDraft,
+  supersededState: unknown,
+): void {
+  if (current.supersedesRelationshipStateId === undefined) {
+    if (supersededState !== undefined) {
+      throw new TypeError(
+        "Superseded state context requires supersedesRelationshipStateId",
+      );
+    }
+    return;
+  }
+  if (supersededState === undefined) {
+    throw new TypeError("Supersession requires the exact prior relationship state");
+  }
+  const prior = copyGovernedRelationshipDraft(supersededState);
+  if (
+    prior.relationshipStateId !== current.supersedesRelationshipStateId ||
+    prior.relationshipId !== current.relationshipId ||
+    prior.relationshipType !== current.relationshipType ||
+    !relationshipEndpointsEqual(prior.source, current.source) ||
+    !relationshipEndpointsEqual(prior.target, current.target)
+  ) {
+    throw new TypeError(
+      "Supersession must preserve relationship identity, type, and endpoints",
+    );
+  }
+  if (prior.relationshipStateId === current.relationshipStateId) {
+    throw new TypeError("Supersession requires a new RelationshipStateId");
+  }
+  if (Date.parse(current.recordedAt) <= Date.parse(prior.recordedAt)) {
+    throw new TypeError("Superseding state must be recorded after the prior state");
+  }
+  if (
+    isBehaviorBindingRelationshipType(current.relationshipType) &&
+    isBehaviorBindingRelationshipType(prior.relationshipType)
+  ) {
+    const currentBinding = current as GovernedRelationshipDraft<BehaviorBindingRelationshipType>;
+    const priorBinding = prior as GovernedRelationshipDraft<BehaviorBindingRelationshipType>;
+    if (
+      !technicalFingerprintsEqual(
+        currentBinding.boundTechnicalFingerprint,
+        priorBinding.boundTechnicalFingerprint,
+      ) ||
+      !behaviorConfigurationsEqual(
+        currentBinding.bindingConfiguration,
+        priorBinding.bindingConfiguration,
+      )
+    ) {
+      throw new TypeError(
+        "Behavior binding fingerprint and configuration are immutable for an AgentVersion relationship",
+      );
+    }
+  }
+}
+
+function copyMatchReference(value: unknown): RelationshipMatchReference {
+  const reference = asObjectRecord(value, "Matched relationship state");
+  if (!isGovernedRelationshipType(reference.relationshipType)) {
+    throw new TypeError("Unknown governed relationship type");
+  }
+  const relationshipType = reference.relationshipType;
+  const constraint = RELATIONSHIP_ENDPOINT_CONSTRAINTS[relationshipType];
+  const sourceRecord = asObjectRecord(reference.source, "Matched source");
+  const targetRecord = asObjectRecord(reference.target, "Matched target");
+  const sourceCanonical = asObjectRecord(
+    sourceRecord.canonicalObject,
+    "Matched source canonical identity",
+  );
+  const targetCanonical = asObjectRecord(
+    targetRecord.canonicalObject,
+    "Matched target canonical identity",
+  );
+  if (sourceCanonical.kind !== constraint.source) {
+    throw new TypeError(
+      `${relationshipType} source must be ${constraint.source}`,
+    );
+  }
+  if (
+    typeof targetCanonical.kind !== "string" ||
+    !(constraint.targets as readonly string[]).includes(targetCanonical.kind)
+  ) {
+    throw new TypeError(
+      `${relationshipType} target must be ${constraint.targets.join(" or ")}`,
+    );
+  }
+  const organisationId = requiredString(
+    reference.organisationId,
+    "Matched relationship organisationId",
+  ) as OrganisationId;
+  const source = copyRelationshipEndpoint(reference.source, constraint.source);
+  const target = copyRelationshipEndpoint(
+    reference.target,
+    targetCanonical.kind as CanonicalObjectKind,
+  );
+  if (
+    source.canonicalObject.organisationId !== organisationId ||
+    target.canonicalObject.organisationId !== organisationId
+  ) {
+    throw new TypeError(
+      "Matched relationship tenant must match both canonical endpoints",
+    );
+  }
+  return Object.freeze({
+    relationshipId: requiredString(
+      reference.relationshipId,
+      "Matched relationship ID",
+    ) as RelationshipId,
+    relationshipStateId: requiredString(
+      reference.relationshipStateId,
+      "Matched relationship state ID",
+    ) as RelationshipStateId,
+    organisationId,
+    relationshipType,
+    source,
+    target,
+  }) as RelationshipMatchReference;
+}
+
+function copyReconciliationAuthority(
+  value: unknown,
+): ReconciliationAuthority {
+  const authority = asObjectRecord(value, "Reconciliation authority");
+  if (authority.authorityKind === "HUMAN") {
+    return Object.freeze({
+      authorityKind: "HUMAN",
+      actorReference: requiredString(
+        authority.actorReference,
+        "Human authority actorReference",
+      ),
+    });
+  }
+  if (authority.authorityKind === "DETERMINISTIC_RULE") {
+    return Object.freeze({
+      authorityKind: "DETERMINISTIC_RULE",
+      ruleCode: requiredString(
+        authority.ruleCode,
+        "Deterministic authority ruleCode",
+      ),
+      ruleVersion: requiredString(
+        authority.ruleVersion,
+        "Deterministic authority ruleVersion",
+      ),
+    });
+  }
+  throw new TypeError("Unknown reconciliation authority");
+}
+
+function validatePreCanonicalRelationshipEndpoint(
+  value: unknown,
+  label: string,
+): void {
+  const endpoint = asObjectRecord(value, label);
+  if (Object.prototype.hasOwnProperty.call(endpoint, "canonicalObject")) {
+    throw new TypeError(`${label} must remain pre-canonical`);
+  }
+  if (
+    typeof endpoint.candidateKind !== "string" ||
+    !isCanonicalObjectKind(endpoint.candidateKind)
+  ) {
+    throw new TypeError(`${label} candidateKind must be canonical`);
+  }
+  if (endpoint.referenceKind === "CANDIDATE") {
+    requiredString(endpoint.candidateId, `${label} candidateId`);
+    return;
+  }
+  if (endpoint.referenceKind === "SOURCE_OBJECT") {
+    const sourceObject = asObjectRecord(
+      endpoint.sourceObject,
+      `${label} sourceObject`,
+    );
+    requiredString(sourceObject.connectionId, `${label} connectionId`);
+    requiredString(sourceObject.externalType, `${label} externalType`);
+    requiredString(sourceObject.externalId, `${label} externalId`);
+    return;
+  }
+  throw new TypeError(`${label} must be a pre-canonical reference`);
+}
+
+function validateRelationshipCandidateContext(value: unknown): Readonly<{
+  candidateId: NormalizedCandidateId;
+  relationshipTypeCode: string;
+}> {
+  const candidate = asObjectRecord(
+    value,
+    "Relationship candidate validation context",
+  );
+  if (candidate.candidateKind !== "RELATIONSHIP") {
+    throw new TypeError("Relationship candidate must have kind RELATIONSHIP");
+  }
+  const candidateId = requiredString(
+    candidate.candidateId,
+    "Relationship candidate ID",
+  ) as NormalizedCandidateId;
+  const relationshipTypeCode = requiredString(
+    candidate.relationshipTypeCode,
+    "Source relationship type code",
+  );
+  validatePreCanonicalRelationshipEndpoint(
+    candidate.sourceEndpoint,
+    "Relationship candidate source endpoint",
+  );
+  validatePreCanonicalRelationshipEndpoint(
+    candidate.targetEndpoint,
+    "Relationship candidate target endpoint",
+  );
+  return Object.freeze({ candidateId, relationshipTypeCode });
+}
+
+function validateSuccessfulRelationshipTypeNormalization(
+  relationshipTypeCode: string,
+  relationshipType: GovernedRelationshipType,
+): void {
+  if (
+    !isGovernedRelationshipType(relationshipTypeCode) ||
+    relationshipTypeCode !== relationshipType
+  ) {
+    throw new TypeError(
+      "Successful relationship decision requires an exact canonical relationship type code",
+    );
+  }
+}
+
+function copyRelationshipDecisionBase(
+  draft: Readonly<Record<string, unknown>>,
+  outcome: RelationshipReconciliationOutcome,
+  relationshipTypeCode: string,
+): RelationshipReconciliationDecisionBase<RelationshipReconciliationOutcome> {
+  const provenance = copyRelationshipSupport(
+    {
+      assertionIds: draft.assertionIds,
+      evidenceIds: draft.evidenceIds,
+    },
+    "Relationship decision provenance",
+  );
+  return {
+    decisionId: requiredString(
+      draft.decisionId,
+      "Relationship decision ID",
+    ) as ReconciliationDecisionId,
+    organisationId: requiredString(
+      draft.organisationId,
+      "Relationship decision organisationId",
+    ) as OrganisationId,
+    relationshipCandidateId: requiredString(
+      draft.relationshipCandidateId,
+      "Relationship candidate ID",
+    ) as NormalizedCandidateId,
+    relationshipTypeCode,
+    outcome,
+    authority: copyReconciliationAuthority(draft.authority),
+    reasonCode: requiredString(
+      draft.reasonCode,
+      "Relationship decision reasonCode",
+    ),
+    assertionIds: provenance.assertionIds,
+    evidenceIds: provenance.evidenceIds,
+    decidedAt: requiredTimestamp(
+      draft.decidedAt,
+      "Relationship decision decidedAt",
+    ),
+  };
+}
+
+export function createRelationshipReconciliationDecision<
+  Type extends GovernedRelationshipType,
+>(
+  draft: CreateNewRelationshipReconciliationDecisionDraft<Type>,
+): CreateNewRelationshipReconciliationDecision<Type>;
+export function createRelationshipReconciliationDecision<
+  Type extends GovernedRelationshipType,
+>(
+  draft: MatchExistingRelationshipReconciliationDecisionDraft<Type>,
+): MatchExistingRelationshipReconciliationDecision<Type>;
+export function createRelationshipReconciliationDecision(
+  draft: RejectRelationshipReconciliationDecisionDraft,
+): RejectRelationshipReconciliationDecision;
+export function createRelationshipReconciliationDecision(
+  draft: DeferRelationshipReconciliationDecisionDraft,
+): DeferRelationshipReconciliationDecision;
+export function createRelationshipReconciliationDecision(
+  draft: RelationshipReconciliationDecisionDraft,
+): RelationshipReconciliationDecision;
+export function createRelationshipReconciliationDecision(
+  draft: unknown,
+): unknown {
+  const input = asObjectRecord(
+    draft,
+    "Relationship reconciliation decision draft",
+  );
+  const candidate = validateRelationshipCandidateContext(
+    input.relationshipCandidate,
+  );
+  const relationshipCandidateId = requiredString(
+    input.relationshipCandidateId,
+    "Relationship candidate ID",
+  );
+  if (candidate.candidateId !== relationshipCandidateId) {
+    throw new TypeError(
+      "Relationship decision candidate ID must match validation context",
+    );
+  }
+  if (input.outcome === "CREATE_NEW") {
+    const authorizedState = copyGovernedRelationshipDraft(
+      input.authorizedState,
+    );
+    validateRelationshipSupersession(
+      authorizedState,
+      input.supersededState,
+    );
+  }
+  return rehydrateRelationshipReconciliationDecision({
+    ...input,
+    relationshipTypeCode: candidate.relationshipTypeCode,
+  });
+}
+
+/**
+ * Rebuilds a serialized or untrusted runtime decision through the complete
+ * canonical allowlist. No process-local token or object identity is required.
+ */
+export function rehydrateRelationshipReconciliationDecision(
+  value: unknown,
+): RelationshipReconciliationDecision {
+  const input = asObjectRecord(
+    value,
+    "Relationship reconciliation decision",
+  );
+  if (
+    typeof input.outcome !== "string" ||
+    !(Object.values(RELATIONSHIP_RECONCILIATION_OUTCOME) as readonly string[]).includes(
+      input.outcome,
+    )
+  ) {
+    throw new TypeError("Unknown relationship reconciliation outcome");
+  }
+  const outcome = input.outcome as RelationshipReconciliationOutcome;
+  const relationshipTypeCode = requiredString(
+    input.relationshipTypeCode,
+    "Source relationship type code",
+  );
+  const base = copyRelationshipDecisionBase(
+    input,
+    outcome,
+    relationshipTypeCode,
+  );
+
+  if (outcome === "CREATE_NEW") {
+    const authorizedState = copyGovernedRelationshipDraft(
+      input.authorizedState,
+    );
+    if (authorizedState.organisationId !== base.organisationId) {
+      throw new TypeError(
+        "Relationship decision tenant must match authorized state",
+      );
+    }
+    validateSuccessfulRelationshipTypeNormalization(
+      relationshipTypeCode,
+      authorizedState.relationshipType,
+    );
+    return Object.freeze({
+      ...base,
+      outcome,
+      authorizedState,
+    }) as CreateNewRelationshipReconciliationDecision;
+  }
+
+  if (outcome === "MATCH_EXISTING") {
+    const matchedState = copyMatchReference(input.matchedState);
+    if (matchedState.organisationId !== base.organisationId) {
+      throw new TypeError(
+        "Relationship decision tenant must match the existing state",
+      );
+    }
+    validateSuccessfulRelationshipTypeNormalization(
+      relationshipTypeCode,
+      matchedState.relationshipType,
+    );
+    return Object.freeze({
+      ...base,
+      outcome,
+      matchedState,
+    }) as MatchExistingRelationshipReconciliationDecision;
+  }
+
+  for (const prohibited of [
+    "relationshipId",
+    "relationshipStateId",
+    "authorizedState",
+    "matchedState",
+  ]) {
+    if (Object.prototype.hasOwnProperty.call(input, prohibited)) {
+      throw new TypeError(`${outcome} cannot reference relationship state`);
+    }
+  }
+  return Object.freeze({ ...base, outcome }) as
+    | RejectRelationshipReconciliationDecision
+    | DeferRelationshipReconciliationDecision;
+}
+
+function identifierArraysEqual(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
+}
+
+function relationshipSupportsEqual(
+  left: RelationshipSupport,
+  right: RelationshipSupport,
+): boolean {
+  return (
+    identifierArraysEqual(left.assertionIds, right.assertionIds) &&
+    identifierArraysEqual(left.evidenceIds, right.evidenceIds)
+  );
+}
+
+function behaviorBindingSupportsEqual(
+  left: BehaviorBindingSupport,
+  right: BehaviorBindingSupport,
+): boolean {
+  return (
+    relationshipSupportsEqual(left.relationship, right.relationship) &&
+    relationshipSupportsEqual(
+      left.boundTechnicalFingerprint,
+      right.boundTechnicalFingerprint,
+    ) &&
+    relationshipSupportsEqual(
+      left.bindingConfiguration.configurationHash,
+      right.bindingConfiguration.configurationHash,
+    ) &&
+    relationshipSupportsEqual(
+      left.bindingConfiguration.configurationLocator,
+      right.bindingConfiguration.configurationLocator,
+    )
+  );
+}
+
+function lineageTransformationsEqual(
+  left: LineageTransformation | undefined,
+  right: LineageTransformation | undefined,
+): boolean {
+  if (left === undefined || right === undefined) {
+    return left === right;
+  }
+  return (
+    left.reference === right.reference &&
+    evidenceHashesEqual(left.hash, right.hash) &&
+    relationshipSupportsEqual(left.support.reference, right.support.reference) &&
+    relationshipSupportsEqual(left.support.hash, right.support.hash)
+  );
+}
+
+function governedRelationshipStatesEqual(
+  left: GovernedRelationshipDraft,
+  right: GovernedRelationshipDraft,
+): boolean {
+  if (
+    left.relationshipId !== right.relationshipId ||
+    left.relationshipStateId !== right.relationshipStateId ||
+    left.organisationId !== right.organisationId ||
+    left.relationshipType !== right.relationshipType ||
+    !relationshipEndpointsEqual(left.source, right.source) ||
+    !relationshipEndpointsEqual(left.target, right.target) ||
+    left.validFrom !== right.validFrom ||
+    left.validTo !== right.validTo ||
+    left.recordedAt !== right.recordedAt ||
+    left.supersedesRelationshipStateId !==
+      right.supersedesRelationshipStateId
+  ) {
+    return false;
+  }
+
+  if (
+    isBehaviorBindingRelationshipType(left.relationshipType) &&
+    isBehaviorBindingRelationshipType(right.relationshipType)
+  ) {
+    const leftBinding =
+      left as GovernedRelationshipDraft<BehaviorBindingRelationshipType>;
+    const rightBinding =
+      right as GovernedRelationshipDraft<BehaviorBindingRelationshipType>;
+    return (
+      technicalFingerprintsEqual(
+        leftBinding.boundTechnicalFingerprint,
+        rightBinding.boundTechnicalFingerprint,
+      ) &&
+      behaviorConfigurationsEqual(
+        leftBinding.bindingConfiguration,
+        rightBinding.bindingConfiguration,
+      ) &&
+      behaviorBindingSupportsEqual(leftBinding.support, rightBinding.support)
+    );
+  }
+
+  if (
+    !relationshipSupportsEqual(
+      left.support as RelationshipSupport,
+      right.support as RelationshipSupport,
+    )
+  ) {
+    return false;
+  }
+  if (left.relationshipType === "DERIVED_FROM") {
+    const leftLineage = left as GovernedRelationshipDraft<"DERIVED_FROM">;
+    const rightLineage = right as GovernedRelationshipDraft<"DERIVED_FROM">;
+    return lineageTransformationsEqual(
+      leftLineage.transformation,
+      rightLineage.transformation,
+    );
+  }
+  return true;
+}
+
+/**
+ * Materializes exactly the state authorized by an auditable CREATE_NEW
+ * decision. It cannot accept a discovery candidate or a MATCH/REJECT/DEFER
+ * decision. Historical uniqueness and overlap constraints remain repository
+ * responsibilities in future tenant-safe 3NF persistence.
+ */
+export function createGovernedRelationship<
+  Type extends GovernedRelationshipType,
+>(
+  decision: CreateNewRelationshipReconciliationDecision<Type>,
+  draft: GovernedRelationshipDraft<Type>,
+): GovernedRelationship<Type> {
+  const validatedDecision = rehydrateRelationshipReconciliationDecision(
+    decision,
+  );
+  if (validatedDecision.outcome !== "CREATE_NEW") {
+    throw new TypeError(
+      "Governed relationship requires an approved CREATE_NEW decision",
+    );
+  }
+  const authorizedState = copyGovernedRelationshipDraft(
+    validatedDecision.authorizedState,
+  );
+  const state = copyGovernedRelationshipDraft(draft);
+  if (
+    validatedDecision.organisationId !== state.organisationId ||
+    !governedRelationshipStatesEqual(authorizedState, state)
+  ) {
+    throw new TypeError(
+      "Governed relationship state does not match CREATE_NEW authorization",
+    );
+  }
+  return state as GovernedRelationship<Type>;
+}
 
 export type ReconciliationSubjectReference<
   Kind extends CanonicalObjectKind = CanonicalObjectKind,

@@ -93,6 +93,200 @@ function profileSupport(...fields) {
   return Object.fromEntries(fields.map((field) => [field, technicalSupport()]));
 }
 
+function relationshipIdentities(
+  organisationId = contracts.asOrganisationId("organisation:relationships"),
+) {
+  const canonicalObject = (kind, id) => ({
+    organisationId,
+    objectId: contracts.asCanonicalObjectId(`canonical:${id}`),
+    kind,
+  });
+  const agent = {
+    canonicalObject: canonicalObject("AGENT", "agent"),
+    agentId: contracts.asAgentId("agent:relationship"),
+    agentCode: "RELATIONSHIP_AGENT",
+  };
+  return {
+    organisationId,
+    agent,
+    agentVersion: {
+      canonicalObject: canonicalObject("AGENT_VERSION", "agent-version"),
+      agent,
+      agentVersionId: contracts.asAgentVersionId("agent-version:relationship"),
+      versionCode: "version:one",
+    },
+    model: {
+      canonicalObject: canonicalObject("MODEL", "model"),
+      modelId: contracts.asModelId("model:relationship"),
+    },
+    tool: {
+      canonicalObject: canonicalObject("TOOL", "tool"),
+      toolId: contracts.asToolId("tool:relationship"),
+    },
+    mcpServer: {
+      canonicalObject: canonicalObject("MCP_SERVER", "mcp-server"),
+      mcpServerId: contracts.asMcpServerId("mcp-server:relationship"),
+    },
+    api: {
+      canonicalObject: canonicalObject("API", "api"),
+      apiId: contracts.asApiId("api:relationship"),
+    },
+    prompt: {
+      canonicalObject: canonicalObject("PROMPT", "prompt"),
+      promptId: contracts.asPromptId("prompt:relationship"),
+    },
+    knowledgeBase: {
+      canonicalObject: canonicalObject("KNOWLEDGE_BASE", "knowledge-base"),
+      knowledgeBaseId: contracts.asKnowledgeBaseId(
+        "knowledge-base:relationship",
+      ),
+    },
+    skill: {
+      canonicalObject: canonicalObject("SKILL", "skill"),
+      skillId: contracts.asSkillId("skill:relationship"),
+    },
+    dataAsset: {
+      canonicalObject: canonicalObject("DATA_ASSET", "data-asset"),
+      dataAssetId: contracts.asDataAssetId("data-asset:relationship"),
+    },
+    dataElement: {
+      canonicalObject: canonicalObject("DATA_ELEMENT", "data-element"),
+      dataElementId: contracts.asDataElementId("data-element:derived"),
+      dataAssetId: contracts.asDataAssetId("data-asset:derived"),
+      elementPath: "mail",
+    },
+    originDataElement: {
+      canonicalObject: canonicalObject(
+        "DATA_ELEMENT",
+        "data-element:origin",
+      ),
+      dataElementId: contracts.asDataElementId("data-element:origin"),
+      dataAssetId: contracts.asDataAssetId("data-asset:origin"),
+      elementPath: "email",
+    },
+  };
+}
+
+function relationshipSupport(assertions = [], evidence = []) {
+  return {
+    assertionIds: assertions.map(contracts.asSourceAssertionId),
+    evidenceIds: evidence.map(contracts.asEvidenceId),
+  };
+}
+
+function behaviorBindingSupport() {
+  return {
+    relationship: relationshipSupport(["assertion:relationship"]),
+    boundTechnicalFingerprint: relationshipSupport(
+      ["assertion:fingerprint"],
+      ["evidence:fingerprint"],
+    ),
+    bindingConfiguration: {
+      configurationHash: relationshipSupport(["assertion:configuration:hash"]),
+      configurationLocator: relationshipSupport(
+        [],
+        ["evidence:configuration:locator"],
+      ),
+    },
+  };
+}
+
+function relationshipStateDraft({
+  type,
+  source,
+  target,
+  id = `relationship:${type}`,
+  stateId = `relationship-state:${type}:one`,
+  support = relationshipSupport(),
+  ...specific
+}) {
+  return {
+    relationshipId: contracts.asRelationshipId(id),
+    relationshipStateId: contracts.asRelationshipStateId(stateId),
+    organisationId: source.canonicalObject.organisationId,
+    relationshipType: type,
+    source,
+    target,
+    support,
+    validFrom: contracts.asIsoTimestamp("2026-08-31T12:00:00.000Z"),
+    recordedAt: contracts.asIsoTimestamp("2026-08-31T12:01:00.000Z"),
+    ...specific,
+  };
+}
+
+function relationshipCandidateFor(
+  state,
+  {
+    candidateId = `candidate:${state.relationshipStateId}`,
+    relationshipTypeCode = state.relationshipType,
+    candidateKind = "RELATIONSHIP",
+  } = {},
+) {
+  return {
+    ...objectCandidate(
+      candidateKind,
+      candidateId,
+      sourceObjectIdentity(
+        "connection:relationship",
+        `external:${candidateId}`,
+      ),
+    ),
+    relationshipTypeCode,
+    sourceEndpoint: {
+      referenceKind: "CANDIDATE",
+      candidateId: contracts.asNormalizedCandidateId(
+        `${candidateId}:source`,
+      ),
+      candidateKind: state.source.canonicalObject.kind,
+    },
+    targetEndpoint: {
+      referenceKind: "CANDIDATE",
+      candidateId: contracts.asNormalizedCandidateId(
+        `${candidateId}:target`,
+      ),
+      candidateKind: state.target.canonicalObject.kind,
+    },
+  };
+}
+
+function approveRelationship(
+  authorizedState,
+  {
+    supersededState,
+    candidate,
+    relationshipCandidateId,
+    decisionAssertionIds = ["assertion:decision"],
+    decisionEvidenceIds = ["evidence:decision"],
+  } = {},
+) {
+  const relationshipCandidate =
+    candidate ?? relationshipCandidateFor(authorizedState);
+  const decision = contracts.createRelationshipReconciliationDecision({
+    decisionId: contracts.asReconciliationDecisionId(
+      `decision:${authorizedState.relationshipStateId}`,
+    ),
+    organisationId: authorizedState.organisationId,
+    relationshipCandidateId:
+      relationshipCandidateId ?? relationshipCandidate.candidateId,
+    relationshipCandidate,
+    outcome: "CREATE_NEW",
+    authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+    reasonCode: "HUMAN_REVIEW",
+    assertionIds: decisionAssertionIds.map(contracts.asSourceAssertionId),
+    evidenceIds: decisionEvidenceIds.map(contracts.asEvidenceId),
+    decidedAt: contracts.asIsoTimestamp("2026-08-31T13:00:00.000Z"),
+    authorizedState,
+    ...(supersededState === undefined ? {} : { supersededState }),
+  });
+  return {
+    decision,
+    relationship: contracts.createGovernedRelationship(
+      decision,
+      authorizedState,
+    ),
+  };
+}
+
 describe("Canonical Contract V1A", () => {
   it("preserves provider-specific identifiers as opaque external strings", () => {
     assert.equal(
@@ -363,6 +557,10 @@ describe("Canonical Contract V1A", () => {
     assert.equal(
       Object.values(contracts.CANONICAL_OBJECT_KIND).includes("RELATIONSHIP"),
       false,
+    );
+    assert.deepEqual(
+      Object.values(contracts.RELATIONSHIP_RECONCILIATION_OUTCOME),
+      ["CREATE_NEW", "MATCH_EXISTING", "REJECT", "DEFER"],
     );
   });
 
@@ -2157,5 +2355,1675 @@ describe("Canonical Contract V1A", () => {
     assert.deepEqual(profile.support.modelFamily.assertionIds, [
       "assertion:model:family",
     ]);
+  });
+
+  it("exposes exactly the twelve governed relationship types", () => {
+    assert.deepEqual(Object.values(contracts.GOVERNED_RELATIONSHIP_TYPE), [
+      "USES_MODEL",
+      "USES_TOOL",
+      "USES_MCP",
+      "INVOKES",
+      "USES_PROMPT",
+      "USES_KNOWLEDGE_BASE",
+      "USES_SKILL",
+      "EXPOSES",
+      "HANDOFF_TO",
+      "READS_FROM",
+      "WRITES_TO",
+      "DERIVED_FROM",
+    ]);
+    for (const forbidden of [
+      "CONTAINS",
+      "HAS_SKILL",
+      "EXECUTES_SKILL",
+      "HANDOFF_TO_VERSION",
+      "USES_DATA",
+      "CALLS",
+      "DEPENDS_ON",
+    ]) {
+      assert.equal(
+        Object.values(contracts.GOVERNED_RELATIONSHIP_TYPE).includes(forbidden),
+        false,
+        forbidden,
+      );
+    }
+    assert.equal(Object.values(contracts.CANONICAL_OBJECT_KIND).length, 11);
+    assert.equal(
+      Object.values(contracts.CANONICAL_OBJECT_KIND).includes("RELATIONSHIP"),
+      false,
+    );
+  });
+
+  it("creates all twelve valid endpoint combinations through explicit decisions", () => {
+    const ids = relationshipIdentities();
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "pinned-target-state",
+    });
+    const behavior = (type, target) =>
+      relationshipStateDraft({
+        type,
+        source: ids.agentVersion,
+        target,
+        support: behaviorBindingSupport(),
+        boundTechnicalFingerprint: fingerprint,
+      });
+    const drafts = [
+      behavior("USES_MODEL", ids.model),
+      behavior("USES_TOOL", ids.tool),
+      behavior("USES_MCP", ids.mcpServer),
+      behavior("INVOKES", ids.api),
+      behavior("USES_PROMPT", ids.prompt),
+      behavior("USES_KNOWLEDGE_BASE", ids.knowledgeBase),
+      behavior("USES_SKILL", ids.skill),
+      relationshipStateDraft({
+        type: "EXPOSES",
+        source: ids.mcpServer,
+        target: ids.tool,
+      }),
+      relationshipStateDraft({
+        type: "HANDOFF_TO",
+        source: ids.agentVersion,
+        target: ids.agent,
+      }),
+      relationshipStateDraft({
+        type: "READS_FROM",
+        source: ids.agentVersion,
+        target: ids.dataAsset,
+      }),
+      relationshipStateDraft({
+        type: "WRITES_TO",
+        source: ids.agentVersion,
+        target: ids.dataElement,
+      }),
+      relationshipStateDraft({
+        type: "DERIVED_FROM",
+        source: ids.dataElement,
+        target: ids.originDataElement,
+      }),
+    ];
+
+    const relationships = drafts.map(
+      (draft) => approveRelationship(draft).relationship,
+    );
+    assert.deepEqual(
+      relationships.map(({ relationshipType }) => relationshipType),
+      Object.values(contracts.GOVERNED_RELATIONSHIP_TYPE),
+    );
+    for (const relationship of relationships) {
+      assert.equal(Object.isFrozen(relationship), true);
+      assert.equal(Object.isFrozen(relationship.source), true);
+      assert.equal(Object.isFrozen(relationship.target), true);
+      assert.equal(Object.isFrozen(relationship.support), true);
+      assert.equal(
+        relationship.source.canonicalObject.organisationId,
+        relationship.organisationId,
+      );
+      assert.equal(
+        relationship.target.canonicalObject.organisationId,
+        relationship.organisationId,
+      );
+    }
+    for (const binding of relationships.slice(0, 7)) {
+      assert.deepEqual(binding.boundTechnicalFingerprint, fingerprint);
+      assert.notEqual(binding.boundTechnicalFingerprint, fingerprint);
+      assert.equal(Object.isFrozen(binding.boundTechnicalFingerprint), true);
+    }
+    const usesSkill = relationships[6];
+    assert.equal(usesSkill.relationshipType, "USES_SKILL");
+    assert.equal(usesSkill.target.canonicalObject.kind, "SKILL");
+    assert.equal(usesSkill.target.skillId, ids.skill.skillId);
+  });
+
+  it("accepts both DataAsset and DataElement access without adding fingerprints", () => {
+    const ids = relationshipIdentities();
+    for (const relationshipType of ["READS_FROM", "WRITES_TO"]) {
+      for (const target of [ids.dataAsset, ids.dataElement]) {
+        const { relationship } = approveRelationship(
+          relationshipStateDraft({
+            type: relationshipType,
+            source: ids.agentVersion,
+            target,
+            id: `relationship:${relationshipType}:${target.canonicalObject.kind}`,
+            stateId: `state:${relationshipType}:${target.canonicalObject.kind}`,
+          }),
+        );
+        assert.equal(relationship.target.canonicalObject.kind, target.canonicalObject.kind);
+        assert.equal(
+          Object.hasOwn(relationship, "boundTechnicalFingerprint"),
+          false,
+        );
+      }
+    }
+
+    const handoff = approveRelationship(
+      relationshipStateDraft({
+        type: "HANDOFF_TO",
+        source: ids.agentVersion,
+        target: ids.agent,
+      }),
+    ).relationship;
+    const exposes = approveRelationship(
+      relationshipStateDraft({
+        type: "EXPOSES",
+        source: ids.mcpServer,
+        target: ids.tool,
+      }),
+    ).relationship;
+    assert.equal(handoff.target.canonicalObject.kind, "AGENT");
+    assert.equal(exposes.source.canonicalObject.kind, "MCP_SERVER");
+    assert.equal(exposes.target.canonicalObject.kind, "TOOL");
+  });
+
+  it("rejects invalid endpoint combinations fail closed", () => {
+    const ids = relationshipIdentities();
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "target-state",
+    });
+    const invalidDrafts = [
+      relationshipStateDraft({
+        type: "USES_MODEL",
+        source: ids.agentVersion,
+        target: ids.tool,
+        support: behaviorBindingSupport(),
+        boundTechnicalFingerprint: fingerprint,
+      }),
+      relationshipStateDraft({
+        type: "HANDOFF_TO",
+        source: ids.agentVersion,
+        target: ids.agentVersion,
+      }),
+      relationshipStateDraft({
+        type: "EXPOSES",
+        source: ids.agent,
+        target: ids.tool,
+      }),
+      relationshipStateDraft({
+        type: "EXPOSES",
+        source: ids.mcpServer,
+        target: ids.dataAsset,
+      }),
+      relationshipStateDraft({
+        type: "DERIVED_FROM",
+        source: ids.dataAsset,
+        target: ids.dataElement,
+      }),
+    ];
+
+    for (const draft of invalidDrafts) {
+      assert.throws(
+        () => approveRelationship(draft),
+        /source must be|target must be/,
+      );
+    }
+  });
+
+  it("requires a pinned TechnicalFingerprint for every behavior binding", () => {
+    const ids = relationshipIdentities();
+    const behaviorTargets = [
+      ["USES_MODEL", ids.model],
+      ["USES_TOOL", ids.tool],
+      ["USES_MCP", ids.mcpServer],
+      ["INVOKES", ids.api],
+      ["USES_PROMPT", ids.prompt],
+      ["USES_KNOWLEDGE_BASE", ids.knowledgeBase],
+      ["USES_SKILL", ids.skill],
+    ];
+    for (const [type, target] of behaviorTargets) {
+      const draft = relationshipStateDraft({
+        type,
+        source: ids.agentVersion,
+        target,
+        support: behaviorBindingSupport(),
+      });
+      assert.throws(
+        () => approveRelationship(draft),
+        /Bound technical fingerprint must be an object/,
+        type,
+      );
+    }
+  });
+
+  it("keeps parallel logical relationships distinct despite duplicate signals", () => {
+    const ids = relationshipIdentities();
+    const first = approveRelationship(
+      relationshipStateDraft({
+        type: "HANDOFF_TO",
+        source: ids.agentVersion,
+        target: ids.agent,
+        id: "relationship:parallel:one",
+        stateId: "state:parallel:one",
+      }),
+    ).relationship;
+    const second = approveRelationship(
+      relationshipStateDraft({
+        type: "HANDOFF_TO",
+        source: ids.agentVersion,
+        target: ids.agent,
+        id: "relationship:parallel:two",
+        stateId: "state:parallel:two",
+      }),
+    ).relationship;
+
+    assert.notEqual(first.relationshipId, second.relationshipId);
+    assert.equal(first.relationshipType, second.relationshipType);
+    assert.deepEqual(first.source, second.source);
+    assert.deepEqual(first.target, second.target);
+    assert.equal(Object.isFrozen(first), true);
+    assert.equal(Object.isFrozen(second), true);
+  });
+
+  it("keeps relationship reconciliation outcomes explicit and auditable", () => {
+    const ids = relationshipIdentities();
+    const draft = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+    });
+    const { decision, relationship } = approveRelationship(draft);
+    assert.equal(decision.outcome, "CREATE_NEW");
+    assert.equal(decision.authorizedState.relationshipId, draft.relationshipId);
+    assert.equal(
+      decision.authorizedState.relationshipStateId,
+      draft.relationshipStateId,
+    );
+    assert.equal(Object.isFrozen(decision), true);
+    assert.equal(Object.isFrozen(decision.assertionIds), true);
+    assert.equal(Object.isFrozen(decision.evidenceIds), true);
+
+    const changedState = {
+      ...draft,
+      relationshipStateId: contracts.asRelationshipStateId("state:changed"),
+    };
+    assert.throws(
+      () => contracts.createGovernedRelationship(decision, changedState),
+      /does not match CREATE_NEW authorization/,
+    );
+
+    const matchCandidate = relationshipCandidateFor(draft, {
+      candidateId: "candidate:relationship:match",
+    });
+    const match = contracts.createRelationshipReconciliationDecision({
+      decisionId: contracts.asReconciliationDecisionId("decision:match"),
+      organisationId: ids.organisationId,
+      relationshipCandidateId: matchCandidate.candidateId,
+      relationshipCandidate: matchCandidate,
+      outcome: "MATCH_EXISTING",
+      authority: {
+        authorityKind: "DETERMINISTIC_RULE",
+        ruleCode: "CONFIRMED_MAPPING",
+        ruleVersion: "1",
+      },
+      reasonCode: "CONFIRMED_MAPPING",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+      matchedState: {
+        relationshipId: relationship.relationshipId,
+        relationshipStateId: relationship.relationshipStateId,
+        organisationId: relationship.organisationId,
+        relationshipType: relationship.relationshipType,
+        source: relationship.source,
+        target: relationship.target,
+      },
+    });
+    assert.equal(match.outcome, "MATCH_EXISTING");
+    assert.equal(match.matchedState.relationshipId, relationship.relationshipId);
+    assert.equal(
+      match.matchedState.relationshipStateId,
+      relationship.relationshipStateId,
+    );
+    assert.equal(Object.hasOwn(match, "authorizedState"), false);
+
+    for (const outcome of ["REJECT", "DEFER"]) {
+      const candidateId = `candidate:${outcome.toLowerCase()}`;
+      const relationshipCandidate = relationshipCandidateFor(draft, {
+        candidateId,
+        relationshipTypeCode: "SOURCE_USES_TARGET",
+      });
+      const negativeDecision = contracts.createRelationshipReconciliationDecision({
+        decisionId: contracts.asReconciliationDecisionId(
+          `decision:${outcome.toLowerCase()}`,
+        ),
+        organisationId: ids.organisationId,
+        relationshipCandidateId: relationshipCandidate.candidateId,
+        relationshipCandidate,
+        outcome,
+        authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+        reasonCode: outcome,
+        assertionIds: [],
+        evidenceIds: [],
+        decidedAt: reconciliationTimestamp,
+      });
+      assert.equal(negativeDecision.outcome, outcome);
+      assert.equal(
+        negativeDecision.relationshipTypeCode,
+        "SOURCE_USES_TARGET",
+      );
+      assert.equal(Object.hasOwn(negativeDecision, "relationshipId"), false);
+      assert.equal(
+        Object.hasOwn(negativeDecision, "relationshipStateId"),
+        false,
+      );
+      assert.equal(Object.hasOwn(negativeDecision, "authorizedState"), false);
+      assert.equal(Object.hasOwn(negativeDecision, "matchedState"), false);
+      assert.throws(
+        () =>
+          contracts.createGovernedRelationship(negativeDecision, draft),
+        /requires an approved CREATE_NEW decision/,
+      );
+    }
+  });
+
+  it("binds successful decisions to the exact relationship candidate type", () => {
+    const ids = relationshipIdentities();
+    const draft = relationshipStateDraft({
+      type: "USES_MODEL",
+      source: ids.agentVersion,
+      target: ids.model,
+      support: behaviorBindingSupport(),
+      boundTechnicalFingerprint: contracts.createTechnicalFingerprint({
+        algorithm: "SHA-256",
+        schemaVersion: "technical-profile/v1",
+        value: "model-state",
+      }),
+    });
+    const candidate = relationshipCandidateFor(draft, {
+      candidateId: "candidate:type-binding:exact",
+    });
+    const decisionBase = (relationshipCandidate, suffix) => ({
+      decisionId: contracts.asReconciliationDecisionId(
+        `decision:type-binding:${suffix}`,
+      ),
+      organisationId: ids.organisationId,
+      relationshipCandidateId: relationshipCandidate.candidateId,
+      relationshipCandidate,
+      authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+      reasonCode: "TYPE_NORMALIZED",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+    });
+
+    const createDecision = contracts.createRelationshipReconciliationDecision({
+      ...decisionBase(candidate, "create"),
+      outcome: "CREATE_NEW",
+      authorizedState: draft,
+    });
+    assert.equal(createDecision.relationshipTypeCode, "USES_MODEL");
+    assert.equal(createDecision.authorizedState.relationshipType, "USES_MODEL");
+    assert.equal(Object.hasOwn(createDecision, "relationshipCandidate"), false);
+    assert.equal(
+      contracts.createGovernedRelationship(createDecision, draft)
+        .relationshipType,
+      "USES_MODEL",
+    );
+
+    const matchedState = {
+      relationshipId: draft.relationshipId,
+      relationshipStateId: draft.relationshipStateId,
+      organisationId: draft.organisationId,
+      relationshipType: draft.relationshipType,
+      source: draft.source,
+      target: draft.target,
+    };
+    const matchDecision = contracts.createRelationshipReconciliationDecision({
+      ...decisionBase(candidate, "match"),
+      outcome: "MATCH_EXISTING",
+      matchedState,
+    });
+    assert.equal(matchDecision.relationshipTypeCode, "USES_MODEL");
+    assert.equal(matchDecision.matchedState.relationshipType, "USES_MODEL");
+
+    for (const relationshipTypeCode of [
+      "SOURCE_USES_TARGET",
+      "USES_TOOL",
+    ]) {
+      const nonCanonicalCandidate = relationshipCandidateFor(draft, {
+        candidateId: `candidate:type-binding:${relationshipTypeCode}`,
+        relationshipTypeCode,
+      });
+      assert.throws(
+        () =>
+          contracts.createRelationshipReconciliationDecision({
+            ...decisionBase(nonCanonicalCandidate, `create:${relationshipTypeCode}`),
+            outcome: "CREATE_NEW",
+            authorizedState: draft,
+          }),
+        /exact canonical relationship type code/,
+      );
+      assert.throws(
+        () =>
+          contracts.createRelationshipReconciliationDecision({
+            ...decisionBase(nonCanonicalCandidate, `match:${relationshipTypeCode}`),
+            outcome: "MATCH_EXISTING",
+            matchedState,
+          }),
+        /exact canonical relationship type code/,
+      );
+    }
+
+    const unknownCandidate = relationshipCandidateFor(draft, {
+      candidateId: "candidate:type-binding:unknown",
+      relationshipTypeCode: "SOURCE_USES_TARGET",
+    });
+    for (const outcome of ["REJECT", "DEFER"]) {
+      const negativeDecision =
+        contracts.createRelationshipReconciliationDecision({
+          ...decisionBase(unknownCandidate, outcome.toLowerCase()),
+          outcome,
+        });
+      assert.equal(negativeDecision.relationshipTypeCode, "SOURCE_USES_TARGET");
+      assert.equal(Object.hasOwn(negativeDecision, "authorizedState"), false);
+      assert.equal(Object.hasOwn(negativeDecision, "matchedState"), false);
+    }
+
+    assert.throws(
+      () =>
+        contracts.createRelationshipReconciliationDecision({
+          ...decisionBase(candidate, "candidate-id-mismatch"),
+          relationshipCandidateId: contracts.asNormalizedCandidateId(
+            "candidate:type-binding:different",
+          ),
+          outcome: "REJECT",
+        }),
+      /candidate ID must match validation context/,
+    );
+    const wrongKindCandidate = relationshipCandidateFor(draft, {
+      candidateId: "candidate:type-binding:wrong-kind",
+      candidateKind: "MODEL",
+    });
+    assert.throws(
+      () =>
+        contracts.createRelationshipReconciliationDecision({
+          ...decisionBase(wrongKindCandidate, "wrong-kind"),
+          outcome: "REJECT",
+        }),
+      /must have kind RELATIONSHIP/,
+    );
+  });
+
+  it("rehydrates the complete decision envelope across runtime boundaries", () => {
+    const ids = relationshipIdentities();
+    const draft = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+      support: relationshipSupport(
+        ["assertion:state:b", "assertion:state:a"],
+        ["evidence:state:b", "evidence:state:a"],
+      ),
+    });
+    const { decision } = approveRelationship(draft);
+    const serialized = JSON.parse(JSON.stringify(decision));
+    const rehydrated =
+      contracts.rehydrateRelationshipReconciliationDecision(serialized);
+
+    assert.equal(Object.isFrozen(rehydrated), true);
+    assert.equal(Object.isFrozen(rehydrated.authority), true);
+    assert.equal(Object.isFrozen(rehydrated.assertionIds), true);
+    assert.equal(Object.isFrozen(rehydrated.evidenceIds), true);
+    assert.equal(Object.isFrozen(rehydrated.authorizedState), true);
+    assert.equal(
+      contracts.createGovernedRelationship(decision, draft).relationshipId,
+      draft.relationshipId,
+    );
+    assert.equal(
+      contracts.createGovernedRelationship(serialized, draft).relationshipId,
+      draft.relationshipId,
+    );
+
+    for (const field of [
+      "decisionId",
+      "relationshipCandidateId",
+      "relationshipTypeCode",
+      "outcome",
+      "authority",
+      "reasonCode",
+      "decidedAt",
+      "authorizedState",
+    ]) {
+      const forged = { ...serialized };
+      delete forged[field];
+      assert.throws(
+        () => contracts.createGovernedRelationship(forged, draft),
+        TypeError,
+        `missing ${field}`,
+      );
+    }
+
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(
+          {
+            ...serialized,
+            authority: { authorityKind: "AI", actorReference: "model:one" },
+          },
+          draft,
+        ),
+      /Unknown reconciliation authority/,
+    );
+    for (const malformedProvenance of [
+      { assertionIds: "assertion:not-an-array" },
+      { evidenceIds: "evidence:not-an-array" },
+      { assertionIds: [""] },
+      { evidenceIds: [""] },
+    ]) {
+      assert.throws(
+        () =>
+          contracts.createGovernedRelationship(
+            { ...serialized, ...malformedProvenance },
+            draft,
+          ),
+        TypeError,
+      );
+    }
+    for (const relationshipTypeCode of [
+      "SOURCE_USES_TARGET",
+      "USES_MODEL",
+    ]) {
+      assert.throws(
+        () =>
+          contracts.createGovernedRelationship(
+            { ...serialized, relationshipTypeCode },
+            draft,
+          ),
+        /exact canonical relationship type code/,
+      );
+    }
+
+    const candidate = relationshipCandidateFor(draft, {
+      candidateId: "candidate:rehydration:other-outcomes",
+    });
+    const base = {
+      decisionId: contracts.asReconciliationDecisionId(
+        "decision:rehydration:other-outcomes",
+      ),
+      organisationId: ids.organisationId,
+      relationshipCandidateId: candidate.candidateId,
+      relationshipCandidate: candidate,
+      authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+      reasonCode: "REVIEWED",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+    };
+    const matchedState = {
+      relationshipId: draft.relationshipId,
+      relationshipStateId: draft.relationshipStateId,
+      organisationId: draft.organisationId,
+      relationshipType: draft.relationshipType,
+      source: draft.source,
+      target: draft.target,
+    };
+    const nonCreateDecisions = [
+      contracts.createRelationshipReconciliationDecision({
+        ...base,
+        outcome: "MATCH_EXISTING",
+        matchedState,
+      }),
+      contracts.createRelationshipReconciliationDecision({
+        ...base,
+        outcome: "REJECT",
+      }),
+      contracts.createRelationshipReconciliationDecision({
+        ...base,
+        outcome: "DEFER",
+      }),
+    ];
+    for (const nonCreateDecision of nonCreateDecisions) {
+      assert.throws(
+        () => contracts.createGovernedRelationship(nonCreateDecision, draft),
+        /requires an approved CREATE_NEW decision/,
+      );
+    }
+    assert.throws(
+      () =>
+        contracts.rehydrateRelationshipReconciliationDecision({
+          ...JSON.parse(JSON.stringify(nonCreateDecisions[1])),
+          authorizedState: draft,
+        }),
+      /cannot reference relationship state/,
+    );
+  });
+
+  it("rejects candidate bypasses, unknown taxonomy, IDs on negative outcomes, and AI authority", () => {
+    const ids = relationshipIdentities();
+    const validDraft = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+    });
+    const candidate = {
+      ...objectCandidate(
+        "RELATIONSHIP",
+        "candidate:relationship:bypass",
+        sourceObjectIdentity("connection:relationship", "external:relationship"),
+      ),
+      relationshipTypeCode: "HANDOFF_TO",
+      sourceEndpoint: {
+        referenceKind: "CANDIDATE",
+        candidateId: contracts.asNormalizedCandidateId("candidate:source"),
+        candidateKind: "AGENT_VERSION",
+      },
+      targetEndpoint: {
+        referenceKind: "CANDIDATE",
+        candidateId: contracts.asNormalizedCandidateId("candidate:target"),
+        candidateKind: "AGENT",
+      },
+    };
+    assert.throws(
+      () => contracts.createGovernedRelationship(candidate, validDraft),
+      /Unknown relationship reconciliation outcome/,
+    );
+
+    const decisionBase = {
+      decisionId: contracts.asReconciliationDecisionId("decision:invalid"),
+      organisationId: ids.organisationId,
+      relationshipCandidateId: candidate.candidateId,
+      relationshipCandidate: candidate,
+      authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+      reasonCode: "REVIEW",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+    };
+    assert.throws(
+      () =>
+        contracts.createRelationshipReconciliationDecision({
+          ...decisionBase,
+          outcome: "CREATE_NEW",
+          authorizedState: {
+            ...validDraft,
+            relationshipType: "CALLS",
+          },
+        }),
+      /Unknown governed relationship type/,
+    );
+    assert.throws(
+      () =>
+        contracts.createRelationshipReconciliationDecision({
+          ...decisionBase,
+          outcome: "MATCH_EXISTING",
+          matchedState: {
+            relationshipId: validDraft.relationshipId,
+            relationshipStateId: validDraft.relationshipStateId,
+            organisationId: ids.organisationId,
+            relationshipType: "CALLS",
+            source: ids.agentVersion,
+            target: ids.agent,
+          },
+        }),
+      /Unknown governed relationship type/,
+    );
+    for (const outcome of ["REJECT", "DEFER"]) {
+      assert.throws(
+        () =>
+          contracts.createRelationshipReconciliationDecision({
+            ...decisionBase,
+            outcome,
+            relationshipId: validDraft.relationshipId,
+          }),
+        /cannot reference relationship state/,
+      );
+    }
+    assert.throws(
+      () =>
+        contracts.createRelationshipReconciliationDecision({
+          ...decisionBase,
+          outcome: "REJECT",
+          authority: { authorityKind: "AI", actorReference: "model:one" },
+        }),
+      /Unknown reconciliation authority/,
+    );
+  });
+
+  it("fails closed when relationship, source, target, or decision tenants differ", () => {
+    const ids = relationshipIdentities();
+    const other = relationshipIdentities(
+      contracts.asOrganisationId("organisation:other"),
+    );
+    const sourceMismatch = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: other.agentVersion,
+      target: ids.agent,
+    });
+    const targetMismatch = {
+      ...relationshipStateDraft({
+        type: "HANDOFF_TO",
+        source: ids.agentVersion,
+        target: other.agent,
+      }),
+      organisationId: ids.organisationId,
+    };
+    assert.throws(
+      () => approveRelationship(sourceMismatch),
+      /tenant must match both canonical endpoints/,
+    );
+    assert.throws(
+      () => approveRelationship(targetMismatch),
+      /tenant must match both canonical endpoints/,
+    );
+
+    const valid = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+    });
+    const relationshipCandidate = relationshipCandidateFor(valid, {
+      candidateId: "candidate:tenant:mismatch",
+    });
+    assert.throws(
+      () =>
+        contracts.createRelationshipReconciliationDecision({
+          decisionId: contracts.asReconciliationDecisionId(
+            "decision:tenant:mismatch",
+          ),
+          organisationId: other.organisationId,
+          relationshipCandidateId: relationshipCandidate.candidateId,
+          relationshipCandidate,
+          outcome: "CREATE_NEW",
+          authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+          reasonCode: "REVIEW",
+          assertionIds: [],
+          evidenceIds: [],
+          decidedAt: reconciliationTimestamp,
+          authorizedState: valid,
+        }),
+      /decision tenant must match authorized state/,
+    );
+  });
+
+  it("deep-freezes independent binding support and sanitized configuration", () => {
+    const ids = relationshipIdentities();
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "skill-pinned-state",
+    });
+    const relationshipExistence = relationshipSupport(
+      ["assertion:existence"],
+      ["evidence:existence"],
+    );
+    const fingerprintSupport = relationshipSupport(
+      ["assertion:fingerprint"],
+      ["evidence:fingerprint"],
+    );
+    const configHashSupport = relationshipSupport(["assertion:config:hash"]);
+    const configLocatorSupport = relationshipSupport(
+      [],
+      ["evidence:config:locator"],
+    );
+    const configurationHash = {
+      algorithm: "SHA-256",
+      value: "binding-config-integrity",
+    };
+    const draft = relationshipStateDraft({
+      type: "USES_SKILL",
+      source: ids.agentVersion,
+      target: ids.skill,
+      support: {
+        relationship: relationshipExistence,
+        boundTechnicalFingerprint: fingerprintSupport,
+        bindingConfiguration: {
+          configurationHash: configHashSupport,
+          configurationLocator: configLocatorSupport,
+          arbitrarySupport: relationshipSupport(["assertion:must-not-copy"]),
+        },
+        arbitrarySupport: relationshipSupport(["assertion:must-not-copy"]),
+      },
+      boundTechnicalFingerprint: fingerprint,
+      bindingConfiguration: {
+        configurationHash,
+        configurationLocator: contracts.sanitizeTechnicalLocator(
+          "bindings/skill.yaml",
+        ),
+        parameters: { arbitrary: true },
+        rawConfiguration: "must-not-copy",
+      },
+      trustState: "VALIDATED",
+      confidence: 1,
+      credentials: "must-not-copy",
+    });
+    const relationship = approveRelationship(draft).relationship;
+
+    assert.equal(Object.isFrozen(relationship.support), true);
+    assert.equal(Object.isFrozen(relationship.support.relationship), true);
+    assert.equal(
+      Object.isFrozen(relationship.support.relationship.assertionIds),
+      true,
+    );
+    assert.equal(
+      Object.isFrozen(relationship.support.bindingConfiguration),
+      true,
+    );
+    assert.notEqual(
+      relationship.support.relationship,
+      relationship.support.boundTechnicalFingerprint,
+    );
+    assert.notEqual(
+      relationship.support.bindingConfiguration.configurationHash,
+      relationship.support.bindingConfiguration.configurationLocator,
+    );
+    assert.deepEqual(relationship.support.relationship.assertionIds, [
+      "assertion:existence",
+    ]);
+    assert.deepEqual(
+      relationship.support.boundTechnicalFingerprint.assertionIds,
+      ["assertion:fingerprint"],
+    );
+    assert.equal(Object.isFrozen(relationship.bindingConfiguration), true);
+    assert.equal(
+      Object.isFrozen(relationship.bindingConfiguration.configurationHash),
+      true,
+    );
+    assert.notEqual(
+      relationship.bindingConfiguration.configurationHash,
+      configurationHash,
+    );
+    assert.equal(
+      relationship.bindingConfiguration.configurationLocator,
+      "bindings/skill.yaml",
+    );
+    for (const forbidden of [
+      "parameters",
+      "rawConfiguration",
+    ]) {
+      assert.equal(
+        Object.hasOwn(relationship.bindingConfiguration, forbidden),
+        false,
+      );
+    }
+    for (const forbidden of [
+      "trustState",
+      "confidence",
+      "credentials",
+    ]) {
+      assert.equal(Object.hasOwn(relationship, forbidden), false, forbidden);
+    }
+    assert.equal(Object.hasOwn(relationship.support, "arbitrarySupport"), false);
+    assert.equal(
+      Object.hasOwn(
+        relationship.support.bindingConfiguration,
+        "arbitrarySupport",
+      ),
+      false,
+    );
+
+    relationshipExistence.assertionIds.push("assertion:mutated");
+    fingerprintSupport.evidenceIds.push("evidence:mutated");
+    assert.deepEqual(relationship.support.relationship.assertionIds, [
+      "assertion:existence",
+    ]);
+    assert.deepEqual(
+      relationship.support.boundTechnicalFingerprint.evidenceIds,
+      ["evidence:fingerprint"],
+    );
+
+    const absentConfiguration = approveRelationship(
+      relationshipStateDraft({
+        type: "USES_SKILL",
+        source: ids.agentVersion,
+        target: ids.skill,
+        id: "relationship:skill:no-config",
+        stateId: "state:skill:no-config",
+        support: behaviorBindingSupport(),
+        boundTechnicalFingerprint: fingerprint,
+      }),
+    ).relationship;
+    assert.equal(Object.hasOwn(absentConfiguration, "bindingConfiguration"), false);
+    assert.deepEqual(
+      absentConfiguration.support.bindingConfiguration.configurationHash
+        .assertionIds,
+      ["assertion:configuration:hash"],
+    );
+  });
+
+  it("normalizes relationship support as immutable deterministic ID sets", () => {
+    const ids = relationshipIdentities();
+    const assertionIds = [
+      contracts.asSourceAssertionId("assertion:b"),
+      contracts.asSourceAssertionId("assertion:a"),
+      contracts.asSourceAssertionId("assertion:b"),
+    ];
+    const evidenceIds = [
+      contracts.asEvidenceId("evidence:b"),
+      contracts.asEvidenceId("evidence:a"),
+      contracts.asEvidenceId("evidence:b"),
+    ];
+    const support = { assertionIds, evidenceIds };
+    const originalAssertions = [...assertionIds];
+    const originalEvidence = [...evidenceIds];
+    const draft = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+      support,
+    });
+    const { decision, relationship } = approveRelationship(draft, {
+      decisionAssertionIds: ["assertion:decision:b", "assertion:decision:a", "assertion:decision:b"],
+      decisionEvidenceIds: ["evidence:decision:b", "evidence:decision:a", "evidence:decision:b"],
+    });
+
+    assert.deepEqual(relationship.support.assertionIds, [
+      "assertion:a",
+      "assertion:b",
+    ]);
+    assert.deepEqual(relationship.support.evidenceIds, [
+      "evidence:a",
+      "evidence:b",
+    ]);
+    assert.deepEqual(decision.assertionIds, [
+      "assertion:decision:a",
+      "assertion:decision:b",
+    ]);
+    assert.deepEqual(decision.evidenceIds, [
+      "evidence:decision:a",
+      "evidence:decision:b",
+    ]);
+    assert.deepEqual(assertionIds, originalAssertions);
+    assert.deepEqual(evidenceIds, originalEvidence);
+    assert.equal(Object.isFrozen(relationship.support), true);
+    assert.equal(Object.isFrozen(relationship.support.assertionIds), true);
+    assert.equal(Object.isFrozen(relationship.support.evidenceIds), true);
+
+    assertionIds.push(contracts.asSourceAssertionId("assertion:later"));
+    evidenceIds.push(contracts.asEvidenceId("evidence:later"));
+    assert.deepEqual(relationship.support.assertionIds, [
+      "assertion:a",
+      "assertion:b",
+    ]);
+    assert.deepEqual(relationship.support.evidenceIds, [
+      "evidence:a",
+      "evidence:b",
+    ]);
+
+    const behaviorSupport = {
+      relationship: relationshipSupport(
+        ["assertion:relationship:b", "assertion:relationship:a", "assertion:relationship:b"],
+        ["evidence:relationship:b", "evidence:relationship:a"],
+      ),
+      boundTechnicalFingerprint: relationshipSupport(
+        ["assertion:fingerprint:b", "assertion:fingerprint:a"],
+        ["evidence:fingerprint:b", "evidence:fingerprint:a", "evidence:fingerprint:b"],
+      ),
+      bindingConfiguration: {
+        configurationHash: relationshipSupport(
+          ["assertion:config:b", "assertion:config:a", "assertion:config:b"],
+        ),
+        configurationLocator: relationshipSupport(
+          [],
+          ["evidence:locator:b", "evidence:locator:a", "evidence:locator:b"],
+        ),
+      },
+    };
+    const behavior = approveRelationship(
+      relationshipStateDraft({
+        type: "USES_SKILL",
+        source: ids.agentVersion,
+        target: ids.skill,
+        id: "relationship:support:behavior",
+        stateId: "state:support:behavior",
+        support: behaviorSupport,
+        boundTechnicalFingerprint: contracts.createTechnicalFingerprint({
+          algorithm: "SHA-256",
+          schemaVersion: "technical-profile/v1",
+          value: "skill-state",
+        }),
+      }),
+    ).relationship;
+    assert.deepEqual(behavior.support.relationship.assertionIds, [
+      "assertion:relationship:a",
+      "assertion:relationship:b",
+    ]);
+    assert.deepEqual(
+      behavior.support.boundTechnicalFingerprint.evidenceIds,
+      ["evidence:fingerprint:a", "evidence:fingerprint:b"],
+    );
+    assert.deepEqual(
+      behavior.support.bindingConfiguration.configurationHash.assertionIds,
+      ["assertion:config:a", "assertion:config:b"],
+    );
+    assert.deepEqual(
+      behavior.support.bindingConfiguration.configurationLocator.evidenceIds,
+      ["evidence:locator:a", "evidence:locator:b"],
+    );
+
+    const lineageSupport = {
+      reference: relationshipSupport(
+        ["assertion:lineage:b", "assertion:lineage:a", "assertion:lineage:b"],
+      ),
+      hash: relationshipSupport(
+        [],
+        ["evidence:lineage:b", "evidence:lineage:a", "evidence:lineage:b"],
+      ),
+    };
+    const lineage = approveRelationship(
+      relationshipStateDraft({
+        type: "DERIVED_FROM",
+        source: ids.dataElement,
+        target: ids.originDataElement,
+        id: "relationship:support:lineage",
+        stateId: "state:support:lineage",
+        transformation: {
+          reference: contracts.sanitizeTechnicalLocator("transform.sql"),
+          support: lineageSupport,
+        },
+      }),
+    ).relationship;
+    assert.deepEqual(lineage.transformation.support.reference.assertionIds, [
+      "assertion:lineage:a",
+      "assertion:lineage:b",
+    ]);
+    assert.deepEqual(lineage.transformation.support.hash.evidenceIds, [
+      "evidence:lineage:a",
+      "evidence:lineage:b",
+    ]);
+    assert.equal(Object.isFrozen(lineage.transformation.support), true);
+  });
+
+  it("compares normalized relationship states by explicit semantic fields", () => {
+    const ids = relationshipIdentities();
+    const authorizedDraft = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+      id: "relationship:semantic",
+      stateId: "state:semantic",
+      support: relationshipSupport(
+        ["assertion:b", "assertion:a"],
+        ["evidence:b", "evidence:a"],
+      ),
+    });
+    const { decision } = approveRelationship(authorizedDraft);
+    const reorderedAndWidened = {
+      ...authorizedDraft,
+      support: relationshipSupport(
+        ["assertion:a", "assertion:b", "assertion:a"],
+        ["evidence:a", "evidence:b", "evidence:a"],
+      ),
+      arbitraryMetadata: { ignored: true },
+      secret: "must-not-copy",
+    };
+    const equivalent = contracts.createGovernedRelationship(
+      decision,
+      reorderedAndWidened,
+    );
+    assert.deepEqual(equivalent.support.assertionIds, [
+      "assertion:a",
+      "assertion:b",
+    ]);
+    assert.deepEqual(equivalent.support.evidenceIds, [
+      "evidence:a",
+      "evidence:b",
+    ]);
+    assert.equal(Object.hasOwn(equivalent, "arbitraryMetadata"), false);
+    assert.equal(Object.hasOwn(equivalent, "secret"), false);
+
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(decision, {
+          ...authorizedDraft,
+          support: relationshipSupport(
+            ["assertion:a", "assertion:different"],
+            ["evidence:a", "evidence:b"],
+          ),
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+    const differentTarget = {
+      ...ids.agent,
+      canonicalObject: {
+        ...ids.agent.canonicalObject,
+        objectId: contracts.asCanonicalObjectId("canonical:agent:different"),
+      },
+      agentId: contracts.asAgentId("agent:different"),
+      agentCode: "DIFFERENT_AGENT",
+    };
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(decision, {
+          ...authorizedDraft,
+          target: differentTarget,
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(decision, {
+          ...authorizedDraft,
+          validTo: contracts.asIsoTimestamp("2026-09-01T00:00:00.000Z"),
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(decision, {
+          ...authorizedDraft,
+          relationshipStateId: contracts.asRelationshipStateId(
+            "state:semantic:different",
+          ),
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+  });
+
+  it("compares behavior bindings and lineage with nested semantic support", () => {
+    const ids = relationshipIdentities();
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "behavior:one",
+    });
+    const behaviorSupport = {
+      relationship: relationshipSupport(
+        ["assertion:relationship:b", "assertion:relationship:a"],
+      ),
+      boundTechnicalFingerprint: relationshipSupport(
+        [],
+        ["evidence:fingerprint:b", "evidence:fingerprint:a"],
+      ),
+      bindingConfiguration: {
+        configurationHash: relationshipSupport(
+          ["assertion:config:b", "assertion:config:a"],
+        ),
+        configurationLocator: relationshipSupport(
+          [],
+          ["evidence:locator:b", "evidence:locator:a"],
+        ),
+      },
+    };
+    const behaviorDraft = relationshipStateDraft({
+      type: "USES_SKILL",
+      source: ids.agentVersion,
+      target: ids.skill,
+      id: "relationship:semantic:behavior",
+      stateId: "state:semantic:behavior",
+      support: behaviorSupport,
+      boundTechnicalFingerprint: fingerprint,
+      bindingConfiguration: {
+        configurationHash: {
+          algorithm: "SHA-256",
+          value: "configuration:one",
+        },
+        configurationLocator:
+          contracts.sanitizeTechnicalLocator("bindings/skill.yaml"),
+      },
+    });
+    const { decision: behaviorDecision } = approveRelationship(behaviorDraft);
+    const reorderedBehavior = {
+      ...behaviorDraft,
+      support: {
+        relationship: relationshipSupport(
+          ["assertion:relationship:a", "assertion:relationship:b", "assertion:relationship:a"],
+        ),
+        boundTechnicalFingerprint: relationshipSupport(
+          [],
+          ["evidence:fingerprint:a", "evidence:fingerprint:b", "evidence:fingerprint:a"],
+        ),
+        bindingConfiguration: {
+          configurationHash: relationshipSupport(
+            ["assertion:config:a", "assertion:config:b"],
+          ),
+          configurationLocator: relationshipSupport(
+            [],
+            ["evidence:locator:a", "evidence:locator:b"],
+          ),
+        },
+      },
+    };
+    assert.equal(
+      contracts.createGovernedRelationship(
+        behaviorDecision,
+        reorderedBehavior,
+      ).relationshipId,
+      behaviorDraft.relationshipId,
+    );
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(behaviorDecision, {
+          ...reorderedBehavior,
+          boundTechnicalFingerprint: contracts.createTechnicalFingerprint({
+            algorithm: "SHA-256",
+            schemaVersion: "technical-profile/v1",
+            value: "behavior:changed",
+          }),
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(behaviorDecision, {
+          ...reorderedBehavior,
+          bindingConfiguration: {
+            ...behaviorDraft.bindingConfiguration,
+            configurationHash: {
+              algorithm: "SHA-256",
+              value: "configuration:changed",
+            },
+          },
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+
+    const lineageDraft = relationshipStateDraft({
+      type: "DERIVED_FROM",
+      source: ids.dataElement,
+      target: ids.originDataElement,
+      id: "relationship:semantic:lineage",
+      stateId: "state:semantic:lineage",
+      transformation: {
+        reference: contracts.sanitizeTechnicalLocator("lineage/derive.sql"),
+        hash: { algorithm: "SHA-256", value: "lineage:one" },
+        support: {
+          reference: relationshipSupport(
+            ["assertion:lineage:b", "assertion:lineage:a"],
+          ),
+          hash: relationshipSupport(
+            [],
+            ["evidence:lineage:b", "evidence:lineage:a"],
+          ),
+        },
+      },
+    });
+    const { decision: lineageDecision } = approveRelationship(lineageDraft);
+    const reorderedLineage = {
+      ...lineageDraft,
+      transformation: {
+        ...lineageDraft.transformation,
+        support: {
+          reference: relationshipSupport(
+            ["assertion:lineage:a", "assertion:lineage:b", "assertion:lineage:a"],
+          ),
+          hash: relationshipSupport(
+            [],
+            ["evidence:lineage:a", "evidence:lineage:b", "evidence:lineage:a"],
+          ),
+        },
+      },
+    };
+    assert.equal(
+      contracts.createGovernedRelationship(
+        lineageDecision,
+        reorderedLineage,
+      ).relationshipId,
+      lineageDraft.relationshipId,
+    );
+    assert.throws(
+      () =>
+        contracts.createGovernedRelationship(lineageDecision, {
+          ...reorderedLineage,
+          transformation: {
+            ...reorderedLineage.transformation,
+            reference:
+              contracts.sanitizeTechnicalLocator("lineage/changed.sql"),
+          },
+        }),
+      /does not match CREATE_NEW authorization/,
+    );
+  });
+
+  it("rejects unsanitized binding locators and incomplete support", () => {
+    const ids = relationshipIdentities();
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "skill-state",
+    });
+    const base = relationshipStateDraft({
+      type: "USES_SKILL",
+      source: ids.agentVersion,
+      target: ids.skill,
+      support: behaviorBindingSupport(),
+      boundTechnicalFingerprint: fingerprint,
+    });
+    assert.throws(
+      () =>
+        approveRelationship({
+          ...base,
+          bindingConfiguration: {
+            configurationHash: { algorithm: "SHA-256", value: "hash" },
+            configurationLocator:
+              "https://user:secret@example.invalid/config?token=secret",
+          },
+        }),
+      /must already be sanitized/,
+    );
+    assert.throws(
+      () =>
+        approveRelationship({
+          ...base,
+          support: {
+            relationship: relationshipSupport(),
+            boundTechnicalFingerprint: relationshipSupport(),
+          },
+        }),
+      /Behavior binding configuration support must be an object/,
+    );
+  });
+
+  it("enforces half-open valid-time intervals", () => {
+    const ids = relationshipIdentities();
+    const base = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+      validFrom: contracts.asIsoTimestamp("2026-08-31T12:00:00.000Z"),
+    });
+    assert.throws(
+      () =>
+        approveRelationship({
+          ...base,
+          validTo: base.validFrom,
+        }),
+      /validTo must be greater than validFrom/,
+    );
+    assert.throws(
+      () =>
+        approveRelationship({
+          ...base,
+          validTo: contracts.asIsoTimestamp("2026-08-31T11:59:59.000Z"),
+        }),
+      /validTo must be greater than validFrom/,
+    );
+    const valid = approveRelationship({
+      ...base,
+      validTo: contracts.asIsoTimestamp("2026-09-01T12:00:00.000Z"),
+    }).relationship;
+    assert.equal(valid.validFrom, "2026-08-31T12:00:00.000Z");
+    assert.equal(valid.validTo, "2026-09-01T12:00:00.000Z");
+  });
+
+  it("creates immutable superseding states without rewriting history", () => {
+    const ids = relationshipIdentities();
+    const initialDraft = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: ids.agentVersion,
+      target: ids.agent,
+      id: "relationship:temporal",
+      stateId: "state:temporal:one",
+    });
+    const initial = approveRelationship(initialDraft).relationship;
+    const priorSnapshot = JSON.stringify(initial);
+    const correctionDraft = {
+      ...initialDraft,
+      relationshipStateId: contracts.asRelationshipStateId(
+        "state:temporal:two",
+      ),
+      supersedesRelationshipStateId: initial.relationshipStateId,
+      recordedAt: contracts.asIsoTimestamp("2026-08-31T14:00:00.000Z"),
+    };
+    const correction = approveRelationship(correctionDraft, {
+      supersededState: initial,
+    }).relationship;
+
+    assert.equal(correction.relationshipId, initial.relationshipId);
+    assert.notEqual(correction.relationshipStateId, initial.relationshipStateId);
+    assert.equal(
+      correction.supersedesRelationshipStateId,
+      initial.relationshipStateId,
+    );
+    assert.equal(JSON.stringify(initial), priorSnapshot);
+    assert.equal(Object.isFrozen(initial), true);
+
+    assert.throws(
+      () =>
+        approveRelationship(
+          {
+            ...correctionDraft,
+            relationshipId: contracts.asRelationshipId("relationship:other"),
+          },
+          { supersededState: initial },
+        ),
+      /must preserve relationship identity/,
+    );
+    assert.throws(
+      () => approveRelationship(correctionDraft),
+      /requires the exact prior relationship state/,
+    );
+
+    const ordinaryNextPeriod = approveRelationship({
+      ...initialDraft,
+      relationshipStateId: contracts.asRelationshipStateId(
+        "state:temporal:next-period",
+      ),
+      validFrom: contracts.asIsoTimestamp("2026-09-01T00:00:00.000Z"),
+      recordedAt: contracts.asIsoTimestamp("2026-09-01T00:00:01.000Z"),
+    }).relationship;
+    assert.equal(
+      Object.hasOwn(ordinaryNextPeriod, "supersedesRelationshipStateId"),
+      false,
+    );
+  });
+
+  it("prevents behavior changes under the same superseded AgentVersion binding", () => {
+    const ids = relationshipIdentities();
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "skill-state:one",
+    });
+    const initialDraft = relationshipStateDraft({
+      type: "USES_SKILL",
+      source: ids.agentVersion,
+      target: ids.skill,
+      id: "relationship:skill:immutable",
+      stateId: "state:skill:immutable:one",
+      support: behaviorBindingSupport(),
+      boundTechnicalFingerprint: fingerprint,
+      bindingConfiguration: {
+        configurationHash: { algorithm: "SHA-256", value: "config:one" },
+      },
+    });
+    const initial = approveRelationship(initialDraft).relationship;
+    const correctionBase = {
+      ...initialDraft,
+      relationshipStateId: contracts.asRelationshipStateId(
+        "state:skill:immutable:two",
+      ),
+      supersedesRelationshipStateId: initial.relationshipStateId,
+      recordedAt: contracts.asIsoTimestamp("2026-08-31T14:00:00.000Z"),
+    };
+
+    assert.throws(
+      () =>
+        approveRelationship(
+          {
+            ...correctionBase,
+            boundTechnicalFingerprint: contracts.createTechnicalFingerprint({
+              algorithm: "SHA-256",
+              schemaVersion: "technical-profile/v1",
+              value: "skill-state:changed",
+            }),
+          },
+          { supersededState: initial },
+        ),
+      /fingerprint and configuration are immutable/,
+    );
+    assert.throws(
+      () =>
+        approveRelationship(
+          {
+            ...correctionBase,
+            bindingConfiguration: {
+              configurationHash: {
+                algorithm: "SHA-256",
+                value: "config:changed",
+              },
+            },
+          },
+          { supersededState: initial },
+        ),
+      /fingerprint and configuration are immutable/,
+    );
+  });
+
+  it("preserves directional cross-asset lineage and typed transformation evidence", () => {
+    const ids = relationshipIdentities();
+    const sourceWithSystemSignal = {
+      ...ids.dataElement,
+      sourceSystemId: "source-system:derived",
+    };
+    const targetWithSystemSignal = {
+      ...ids.originDataElement,
+      sourceSystemId: "source-system:origin",
+    };
+    const transformationHash = {
+      algorithm: "SHA-256",
+      value: "transformation-integrity",
+    };
+    const draft = relationshipStateDraft({
+      type: "DERIVED_FROM",
+      source: sourceWithSystemSignal,
+      target: targetWithSystemSignal,
+      transformation: {
+        reference: contracts.sanitizeTechnicalLocator(
+          "transformations/customer-email.sql",
+        ),
+        hash: transformationHash,
+        support: {
+          reference: relationshipSupport(["assertion:transformation:reference"]),
+          hash: relationshipSupport([], ["evidence:transformation:hash"]),
+        },
+        rawSql: "select email from customer",
+        rawPython: "must-not-copy",
+      },
+    });
+    const relationship = approveRelationship(draft).relationship;
+
+    assert.equal(relationship.source.elementPath, "mail");
+    assert.equal(relationship.target.elementPath, "email");
+    assert.notEqual(relationship.source.dataAssetId, relationship.target.dataAssetId);
+    assert.equal(Object.hasOwn(relationship.source, "sourceSystemId"), false);
+    assert.equal(Object.hasOwn(relationship.target, "sourceSystemId"), false);
+    assert.equal(Object.isFrozen(relationship.transformation), true);
+    assert.equal(Object.isFrozen(relationship.transformation.hash), true);
+    assert.notEqual(relationship.transformation.hash, transformationHash);
+    assert.equal(Object.isFrozen(relationship.transformation.support), true);
+    assert.equal(Object.hasOwn(relationship.transformation, "rawSql"), false);
+    assert.equal(Object.hasOwn(relationship.transformation, "rawPython"), false);
+
+    const reversed = approveRelationship(
+      relationshipStateDraft({
+        type: "DERIVED_FROM",
+        source: ids.originDataElement,
+        target: ids.dataElement,
+        id: "relationship:lineage:reversed",
+        stateId: "state:lineage:reversed",
+      }),
+    ).relationship;
+    assert.notDeepEqual(relationship.source, reversed.source);
+    assert.notDeepEqual(relationship.target, reversed.target);
+
+    assert.throws(
+      () =>
+        approveRelationship(
+          relationshipStateDraft({
+            type: "DERIVED_FROM",
+            source: ids.dataElement,
+            target: ids.originDataElement,
+            id: "relationship:lineage:empty-transformation",
+            stateId: "state:lineage:empty-transformation",
+            transformation: {
+              support: {
+                reference: relationshipSupport(),
+                hash: relationshipSupport(),
+              },
+            },
+          }),
+        ),
+      /requires a reference or hash/,
+    );
+    assert.throws(
+      () =>
+        approveRelationship(
+          relationshipStateDraft({
+            type: "DERIVED_FROM",
+            source: ids.dataElement,
+            target: ids.originDataElement,
+            id: "relationship:lineage:unsafe-reference",
+            stateId: "state:lineage:unsafe-reference",
+            transformation: {
+              reference:
+                "https://user:secret@example.invalid/sql?token=secret",
+              support: {
+                reference: relationshipSupport(),
+                hash: relationshipSupport(),
+              },
+            },
+          }),
+        ),
+      /must already be sanitized/,
+    );
+  });
+
+  it("discards widened secrets and never promotes detection confidence to trust", () => {
+    const ids = relationshipIdentities();
+    const draft = relationshipStateDraft({
+      type: "HANDOFF_TO",
+      source: {
+        ...ids.agentVersion,
+        password: "must-not-copy",
+      },
+      target: {
+        ...ids.agent,
+        token: "must-not-copy",
+      },
+      metadata: { arbitrary: true },
+      trustState: "VALIDATED",
+      confidence: 1,
+      password: "must-not-copy",
+      token: "must-not-copy",
+      bearerToken: "must-not-copy",
+      apiKey: "must-not-copy",
+      privateKey: "must-not-copy",
+      connectionCredentials: "must-not-copy",
+      secretHeaders: { authorization: "must-not-copy" },
+      runtimeEvent: "must-not-copy",
+    });
+    const relationship = approveRelationship(draft).relationship;
+    for (const forbidden of [
+      "metadata",
+      "trustState",
+      "confidence",
+      "password",
+      "token",
+      "bearerToken",
+      "apiKey",
+      "privateKey",
+      "connectionCredentials",
+      "secretHeaders",
+      "runtimeEvent",
+    ]) {
+      assert.equal(Object.hasOwn(relationship, forbidden), false, forbidden);
+    }
+    assert.equal(Object.hasOwn(relationship.source, "password"), false);
+    assert.equal(Object.hasOwn(relationship.target, "token"), false);
+
+    const relationshipCandidate = relationshipCandidateFor(draft, {
+      candidateId: "candidate:sanitized",
+      relationshipTypeCode: "SOURCE_REJECTED_RELATIONSHIP",
+    });
+    const decision = contracts.createRelationshipReconciliationDecision({
+      decisionId: contracts.asReconciliationDecisionId("decision:sanitized"),
+      organisationId: ids.organisationId,
+      relationshipCandidateId: relationshipCandidate.candidateId,
+      relationshipCandidate,
+      outcome: "REJECT",
+      authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+      reasonCode: "REJECTED",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+      token: "must-not-copy",
+      confidence: 1,
+      trustState: "VALIDATED",
+    });
+    assert.equal(Object.hasOwn(decision, "token"), false);
+    assert.equal(Object.hasOwn(decision, "confidence"), false);
+    assert.equal(Object.hasOwn(decision, "trustState"), false);
   });
 });
