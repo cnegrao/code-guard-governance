@@ -1,6 +1,15 @@
 import {
   CANONICAL_OBJECT_KIND,
+  createBehaviorFingerprint,
+  createTechnicalFingerprint,
+  type AgentIdentity,
+  type AgentVersionIdentity,
+  type AgentVersionTechnicalProfile,
+  type AgentVersionTechnicalProfileSupport,
   type ApiIdentity,
+  type ApiTechnicalProfile,
+  type ApiTechnicalProfileSupport,
+  type BehaviorFingerprint,
   type CandidateMergeRecord,
   type CanonicalObjectIdentity,
   type CanonicalObjectKind,
@@ -15,13 +24,20 @@ import {
   type DeferReconciliationDecision,
   type DiscoveryFinding,
   type Evidence,
+  type EvidenceHash,
   type ForeignKeyDefinition,
   type InboundAdapterEnvelope,
   type KnowledgeBaseIdentity,
+  type KnowledgeBaseTechnicalProfile,
+  type KnowledgeBaseTechnicalProfileSupport,
   type MatchExistingReconciliationDecision,
   type McpServerIdentity,
+  type McpServerTechnicalProfile,
+  type McpServerTechnicalProfileSupport,
   type MergeCandidatesReconciliationDecision,
   type ModelIdentity,
+  type ModelTechnicalProfile,
+  type ModelTechnicalProfileSupport,
   type NormalizedAgentCandidate,
   type NormalizedAgentVersionCandidate,
   type NormalizedApiCandidate,
@@ -34,18 +50,25 @@ import {
   type NormalizedRelationshipCandidate,
   type NormalizedToolCandidate,
   type PromptIdentity,
+  type PromptTechnicalProfile,
+  type PromptTechnicalProfileSupport,
   type ReconciledObjectSourceMapping,
   type ReconciliationAuthority,
   type ReconciliationSubjectReference,
   type RejectReconciliationDecision,
   type SourceAssertion,
   type TechnicalMetadataSupport,
+  type TechnicalFingerprint,
   type TrustedSingleSourceCandidateContributor,
   type ToolIdentity,
+  type ToolTechnicalProfile,
+  type ToolTechnicalProfileSupport,
 } from "./contracts.ts";
 import { githubRepositoryDiscoveryFixture } from "./fixtures.ts";
 import {
+  asAgentId,
   asApiId,
+  asAgentVersionId,
   asCandidateMergeId,
   asCanonicalObjectId,
   asDataAssetId,
@@ -65,6 +88,7 @@ import {
   asIsoTimestamp,
   asSourceAssertionId,
   asToolId,
+  sanitizeTechnicalLocator,
 } from "./identifiers.ts";
 
 const validKinds: readonly CanonicalObjectKind[] = [
@@ -94,6 +118,24 @@ function canonicalObject<Kind extends CanonicalObjectKind>(
     kind,
   };
 }
+
+const agentIdentity: AgentIdentity = {
+  canonicalObject: canonicalObject(CANONICAL_OBJECT_KIND.AGENT),
+  agentId: asAgentId("agent:canonical"),
+  agentCode: "AGENT_CANONICAL",
+};
+const agentVersionIdentity: AgentVersionIdentity = {
+  canonicalObject: canonicalObject(CANONICAL_OBJECT_KIND.AGENT_VERSION),
+  agent: agentIdentity,
+  agentVersionId: asAgentVersionId("agent-version:canonical"),
+  versionCode: "version:one",
+};
+const agentVersionCannotUseAgentId: AgentVersionIdentity = {
+  ...agentVersionIdentity,
+  // @ts-expect-error Agent and AgentVersion retain distinct branded identities.
+  agentVersionId: agentIdentity.agentId,
+};
+void [agentIdentity, agentVersionIdentity, agentVersionCannotUseAgentId];
 
 const modelIdentity: ModelIdentity = {
   canonicalObject: canonicalObject(CANONICAL_OBJECT_KIND.MODEL),
@@ -802,3 +844,323 @@ void dataAssetCandidateCannotContainProfile;
 // @ts-expect-error CONTAINS is a reconstructable projection, not an object kind.
 const containsCannotBeCanonicalIdentity: CanonicalObjectKind = "CONTAINS";
 void containsCannotBeCanonicalIdentity;
+
+const behaviorFingerprint: BehaviorFingerprint = createBehaviorFingerprint({
+  algorithm: "SHA-256",
+  schemaVersion: "agent-behavior/v1",
+  value: "behavior-fingerprint",
+});
+const technicalFingerprint: TechnicalFingerprint = createTechnicalFingerprint({
+  algorithm: "SHA-256",
+  schemaVersion: "technical-profile/v1",
+  value: "technical-fingerprint",
+});
+
+// @ts-expect-error Behavior and technical fingerprints are nominally distinct.
+const behaviorCannotBeTechnical: TechnicalFingerprint = behaviorFingerprint;
+// @ts-expect-error Technical and behavior fingerprints are nominally distinct.
+const technicalCannotBeBehavior: BehaviorFingerprint = technicalFingerprint;
+const evidenceHash: EvidenceHash = {
+  algorithm: "SHA-256",
+  value: "content-hash",
+};
+// @ts-expect-error A content-integrity hash is not a technical fingerprint.
+const evidenceHashCannotBeTechnical: TechnicalFingerprint = evidenceHash;
+void [
+  behaviorCannotBeTechnical,
+  technicalCannotBeBehavior,
+  evidenceHashCannotBeTechnical,
+];
+
+const agentVersionProfileSupport: AgentVersionTechnicalProfileSupport = {
+  behaviorFingerprint: emptyTechnicalSupport,
+  buildReference: emptyTechnicalSupport,
+  runtimeFrameworkReference: emptyTechnicalSupport,
+  entrypointReference: emptyTechnicalSupport,
+  configurationReference: emptyTechnicalSupport,
+};
+const agentVersionProfile: AgentVersionTechnicalProfile = {
+  agentVersionId: asAgentVersionId("agent-version:canonical"),
+  behaviorFingerprint,
+  support: agentVersionProfileSupport,
+};
+// @ts-expect-error Every AgentVersion technical profile requires behavior identity.
+const agentVersionProfileWithoutFingerprint: AgentVersionTechnicalProfile = {
+  agentVersionId: asAgentVersionId("agent-version:missing-fingerprint"),
+  support: agentVersionProfileSupport,
+};
+const agentVersionProfileCannotContainBindings: AgentVersionTechnicalProfile = {
+  ...agentVersionProfile,
+  // @ts-expect-error Bindings are separate future immutable relationships.
+  modelBindings: [],
+};
+const agentVersionProfileCannotContainGovernance: AgentVersionTechnicalProfile = {
+  ...agentVersionProfile,
+  // @ts-expect-error Governance state does not define immutable behavior.
+  risk: "HIGH",
+};
+void [
+  agentVersionProfile,
+  agentVersionProfileWithoutFingerprint,
+  agentVersionProfileCannotContainBindings,
+  agentVersionProfileCannotContainGovernance,
+];
+
+const modelProfileSupport: ModelTechnicalProfileSupport = {
+  technicalFingerprint: emptyTechnicalSupport,
+  providerReference: emptyTechnicalSupport,
+  providerModelReference: emptyTechnicalSupport,
+  modelFamily: emptyTechnicalSupport,
+  modelRevision: emptyTechnicalSupport,
+};
+const modelProfile: ModelTechnicalProfile = {
+  modelId: modelIdentity.modelId,
+  technicalFingerprint,
+  support: modelProfileSupport,
+};
+// @ts-expect-error A Model profile requires a technical fingerprint.
+const modelProfileWithoutFingerprint: ModelTechnicalProfile = {
+  modelId: modelIdentity.modelId,
+  support: modelProfileSupport,
+};
+const modelProfileCannotContainDeployment: ModelTechnicalProfile = {
+  ...modelProfile,
+  // @ts-expect-error Deployment and endpoint state is a later grain.
+  deployment: "production",
+};
+const modelProfileCannotContainIdentity: ModelTechnicalProfile = {
+  ...modelProfile,
+  // @ts-expect-error Canonical identity remains separate from its profile.
+  canonicalObject: modelIdentity.canonicalObject,
+};
+void [
+  modelProfile,
+  modelProfileWithoutFingerprint,
+  modelProfileCannotContainDeployment,
+  modelProfileCannotContainIdentity,
+];
+
+const toolProfileSupport: ToolTechnicalProfileSupport = {
+  technicalFingerprint: emptyTechnicalSupport,
+  declarationReference: emptyTechnicalSupport,
+  contractReference: emptyTechnicalSupport,
+  contractHash: emptyTechnicalSupport,
+  technicalDescription: emptyTechnicalSupport,
+};
+const toolProfile: ToolTechnicalProfile = {
+  toolId: toolIdentity.toolId,
+  technicalFingerprint,
+  contractHash: evidenceHash,
+  support: toolProfileSupport,
+};
+// @ts-expect-error A Tool profile requires a technical fingerprint.
+const toolProfileWithoutFingerprint: ToolTechnicalProfile = {
+  toolId: toolIdentity.toolId,
+  support: toolProfileSupport,
+};
+void [toolProfile, toolProfileWithoutFingerprint];
+
+const mcpProfileSupport: McpServerTechnicalProfileSupport = {
+  technicalFingerprint: emptyTechnicalSupport,
+  declaredServerReference: emptyTechnicalSupport,
+  protocolVersion: emptyTechnicalSupport,
+  transport: emptyTechnicalSupport,
+  endpointLocator: emptyTechnicalSupport,
+};
+const mcpProfile: McpServerTechnicalProfile = {
+  mcpServerId: mcpServerIdentity.mcpServerId,
+  technicalFingerprint,
+  transport: "STREAMABLE_HTTP",
+  endpointLocator: sanitizeTechnicalLocator("https://mcp.invalid/rpc"),
+  support: mcpProfileSupport,
+};
+// @ts-expect-error An MCP server profile requires a technical fingerprint.
+const mcpProfileWithoutFingerprint: McpServerTechnicalProfile = {
+  mcpServerId: mcpServerIdentity.mcpServerId,
+  transport: "STDIO",
+  support: mcpProfileSupport,
+};
+const mcpProfileCannotUseRawLocator: McpServerTechnicalProfile = {
+  ...mcpProfile,
+  // @ts-expect-error Technical locators must cross the sanitizer boundary.
+  endpointLocator: "https://user:secret@mcp.invalid/rpc?token=secret",
+};
+void [mcpProfile, mcpProfileWithoutFingerprint, mcpProfileCannotUseRawLocator];
+
+const apiProfileSupport: ApiTechnicalProfileSupport = {
+  technicalFingerprint: emptyTechnicalSupport,
+  protocolFamily: emptyTechnicalSupport,
+  serviceReference: emptyTechnicalSupport,
+  baseLocator: emptyTechnicalSupport,
+  specificationReference: emptyTechnicalSupport,
+  specificationHash: emptyTechnicalSupport,
+};
+const apiProfile: ApiTechnicalProfile = {
+  apiId: apiIdentity.apiId,
+  technicalFingerprint,
+  protocolFamily: "HTTP",
+  baseLocator: sanitizeTechnicalLocator("https://api.invalid/v1"),
+  support: apiProfileSupport,
+};
+// @ts-expect-error An API profile requires a technical fingerprint.
+const apiProfileWithoutFingerprint: ApiTechnicalProfile = {
+  apiId: apiIdentity.apiId,
+  protocolFamily: "GRPC",
+  support: apiProfileSupport,
+};
+const apiProfileCannotContainCredentials: ApiTechnicalProfile = {
+  ...apiProfile,
+  // @ts-expect-error Credentials and secrets have no profile field.
+  credentials: "secret",
+};
+void [
+  apiProfile,
+  apiProfileWithoutFingerprint,
+  apiProfileCannotContainCredentials,
+];
+
+const promptProfileSupport: PromptTechnicalProfileSupport = {
+  technicalFingerprint: emptyTechnicalSupport,
+  declarationReference: emptyTechnicalSupport,
+  revision: emptyTechnicalSupport,
+  contentHash: emptyTechnicalSupport,
+  sourceLocator: emptyTechnicalSupport,
+};
+const promptProfile: PromptTechnicalProfile = {
+  promptId: promptIdentity.promptId,
+  technicalFingerprint,
+  contentHash: evidenceHash,
+  sourceLocator: sanitizeTechnicalLocator("prompts/system.md"),
+  support: promptProfileSupport,
+};
+// @ts-expect-error A Prompt profile requires a technical fingerprint.
+const promptProfileWithoutFingerprint: PromptTechnicalProfile = {
+  promptId: promptIdentity.promptId,
+  support: promptProfileSupport,
+};
+const promptProfileCannotContainContent: PromptTechnicalProfile = {
+  ...promptProfile,
+  // @ts-expect-error Raw prompt content is not part of the canonical profile.
+  content: "system prompt",
+};
+void [
+  promptProfile,
+  promptProfileWithoutFingerprint,
+  promptProfileCannotContainContent,
+];
+
+const knowledgeBaseProfileSupport: KnowledgeBaseTechnicalProfileSupport = {
+  technicalFingerprint: emptyTechnicalSupport,
+  sourceReference: emptyTechnicalSupport,
+  resourceKind: emptyTechnicalSupport,
+  contentHash: emptyTechnicalSupport,
+  retrievalConfigurationReference: emptyTechnicalSupport,
+};
+const knowledgeBaseProfile: KnowledgeBaseTechnicalProfile = {
+  knowledgeBaseId: knowledgeBaseIdentity.knowledgeBaseId,
+  technicalFingerprint,
+  resourceKind: "VECTOR_INDEX",
+  support: knowledgeBaseProfileSupport,
+};
+// @ts-expect-error A KnowledgeBase profile requires a technical fingerprint.
+const knowledgeBaseProfileWithoutFingerprint: KnowledgeBaseTechnicalProfile = {
+  knowledgeBaseId: knowledgeBaseIdentity.knowledgeBaseId,
+  resourceKind: "SEARCH_INDEX",
+  support: knowledgeBaseProfileSupport,
+};
+const knowledgeBaseProfileCannotContainEmbeddings: KnowledgeBaseTechnicalProfile = {
+  ...knowledgeBaseProfile,
+  // @ts-expect-error Embedding/vector contents are outside this profile.
+  embeddings: [[0.1, 0.2]],
+};
+void [
+  knowledgeBaseProfile,
+  knowledgeBaseProfileWithoutFingerprint,
+  knowledgeBaseProfileCannotContainEmbeddings,
+];
+
+const modelSupportCannotUseArbitraryKeys: ModelTechnicalProfileSupport = {
+  ...modelProfileSupport,
+  // @ts-expect-error Field support is explicit and cannot become metadata/EAV.
+  arbitraryField: emptyTechnicalSupport,
+};
+void modelSupportCannotUseArbitraryKeys;
+
+// @ts-expect-error Fingerprint provenance is an explicit required support key.
+const modelSupportWithoutFingerprint: ModelTechnicalProfileSupport = {
+  providerReference: emptyTechnicalSupport,
+  providerModelReference: emptyTechnicalSupport,
+  modelFamily: emptyTechnicalSupport,
+  modelRevision: emptyTechnicalSupport,
+};
+void modelSupportWithoutFingerprint;
+
+const agentVersionCandidateCannotContainProfile: NormalizedAgentVersionCandidate = {
+  ...agentVersionCandidate,
+  proposedIdentity: {
+    ...agentVersionCandidate.proposedIdentity,
+    // @ts-expect-error Candidates remain identity proposals, not canonical profiles.
+    technicalProfile: agentVersionProfile,
+  },
+};
+const modelCandidateCannotContainFingerprint: NormalizedModelCandidate = {
+  ...modelCandidate,
+  proposedIdentity: {
+    ...modelCandidate.proposedIdentity,
+    // @ts-expect-error Reconciliation has not accepted a technical fingerprint.
+    technicalFingerprint,
+  },
+};
+const toolCandidateCannotContainFingerprint: NormalizedToolCandidate = {
+  ...toolCandidate,
+  proposedIdentity: {
+    ...toolCandidate.proposedIdentity,
+    // @ts-expect-error Tool candidates remain minimum identity proposals.
+    technicalFingerprint,
+  },
+};
+const mcpCandidateCannotContainFingerprint: NormalizedMcpServerCandidate = {
+  ...mcpCandidate,
+  proposedIdentity: {
+    ...mcpCandidate.proposedIdentity,
+    // @ts-expect-error MCP candidates remain minimum identity proposals.
+    technicalFingerprint,
+  },
+};
+const apiCandidateCannotContainFingerprint: NormalizedApiCandidate = {
+  ...apiCandidate,
+  proposedIdentity: {
+    ...apiCandidate.proposedIdentity,
+    // @ts-expect-error API candidates remain minimum identity proposals.
+    technicalFingerprint,
+  },
+};
+const promptCandidateCannotContainFingerprint: NormalizedPromptCandidate = {
+  ...promptCandidate,
+  proposedIdentity: {
+    ...promptCandidate.proposedIdentity,
+    // @ts-expect-error Prompt candidates remain minimum identity proposals.
+    technicalFingerprint,
+  },
+};
+const knowledgeBaseCandidateCannotContainFingerprint: NormalizedKnowledgeBaseCandidate = {
+  ...knowledgeBaseCandidate,
+  proposedIdentity: {
+    ...knowledgeBaseCandidate.proposedIdentity,
+    // @ts-expect-error Knowledge Base candidates remain minimum identity proposals.
+    technicalFingerprint,
+  },
+};
+void [
+  agentVersionCandidateCannotContainProfile,
+  modelCandidateCannotContainFingerprint,
+  toolCandidateCannotContainFingerprint,
+  mcpCandidateCannotContainFingerprint,
+  apiCandidateCannotContainFingerprint,
+  promptCandidateCannotContainFingerprint,
+  knowledgeBaseCandidateCannotContainFingerprint,
+];
+
+// @ts-expect-error PromptRevision is not a canonical object kind in V1A.1d.
+const promptRevisionCannotBeCanonical: CanonicalObjectKind = "PROMPT_REVISION";
+void promptRevisionCannotBeCanonical;

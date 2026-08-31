@@ -34,6 +34,8 @@ export type ReconciliationDecisionId =
 export type ExternalId = OpaqueIdentifier<"ExternalId">;
 export type IsoTimestamp = OpaqueIdentifier<"IsoTimestamp">;
 export type SanitizedEvidenceLocator = OpaqueIdentifier<"SanitizedEvidenceLocator">;
+export type SanitizedTechnicalLocator =
+  OpaqueIdentifier<"SanitizedTechnicalLocator">;
 
 function asNonEmptyOpaque<Name extends string>(
   value: string,
@@ -131,4 +133,47 @@ export function sanitizeEvidenceLocator(value: string): SanitizedEvidenceLocator
   } catch {
     return trimmed.split(/[?#]/, 1)[0] as SanitizedEvidenceLocator;
   }
+}
+
+/**
+ * Produces a sanitized technical location reference. For URLs, credentials,
+ * query parameters, and fragments are removed. For opaque paths, query and
+ * fragment suffixes are removed. This is an allowlisted locator boundary, not
+ * a universal secret or sensitive-data detector; adapters remain responsible
+ * for deeper sanitization before supplying a locator.
+ */
+export function sanitizeTechnicalLocator(
+  value: string,
+): SanitizedTechnicalLocator {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    throw new TypeError("Technical locator must be a non-empty string");
+  }
+
+  let sanitized: string;
+  const isWindowsDrivePath = /^[A-Za-z]:[\\/]/.test(trimmed);
+  const isUncPath = trimmed.startsWith("\\") || trimmed.startsWith("//");
+
+  if (isWindowsDrivePath || isUncPath) {
+    sanitized = trimmed.split(/[?#]/, 1)[0];
+  } else {
+    try {
+      const url = new URL(trimmed);
+      url.username = "";
+      url.password = "";
+      url.search = "";
+      url.hash = "";
+      sanitized = url.toString();
+    } catch {
+      sanitized = trimmed.split(/[?#]/, 1)[0];
+    }
+  }
+
+  if (sanitized.trim().length === 0) {
+    throw new TypeError(
+      "Technical locator must remain non-empty after sanitization",
+    );
+  }
+
+  return sanitized as SanitizedTechnicalLocator;
 }
