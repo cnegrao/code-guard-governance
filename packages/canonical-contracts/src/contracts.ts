@@ -3,6 +3,7 @@ import type {
   AgentId,
   AgentVersionId,
   ApiId,
+  CandidateMergeId,
   CanonicalObjectId,
   DataAssetId,
   DataElementId,
@@ -17,6 +18,7 @@ import type {
   ObjectSourceMappingId,
   OrganisationId,
   PromptId,
+  ReconciliationDecisionId,
   SanitizedEvidenceLocator,
   SourceAssertionId,
   SourceConnectionId,
@@ -143,6 +145,9 @@ export const CANONICAL_OBJECT_KIND = {
 } as const;
 export type CanonicalObjectKind =
   (typeof CANONICAL_OBJECT_KIND)[keyof typeof CANONICAL_OBJECT_KIND];
+
+/** RELATIONSHIP is discovery-only and is never a canonical object kind. */
+export type DiscoveryCandidateKind = CanonicalObjectKind | "RELATIONSHIP";
 
 export type SourceAttributeValue =
   | string
@@ -331,20 +336,31 @@ export function createEvidence(draft: EvidenceDraft): Evidence {
   return Object.freeze(evidence);
 }
 
-export interface DiscoveryFinding {
+export interface DiscoveryFinding<
+  CandidateKind extends DiscoveryCandidateKind = DiscoveryCandidateKind,
+> {
   readonly findingId: DiscoveryFindingId;
   readonly findingNature: "CANDIDATE";
-  readonly candidateKind: "AGENT";
+  readonly candidateKind: CandidateKind;
   readonly sourceObject: SourceObjectIdentity;
   readonly assertionIds: readonly SourceAssertionId[];
   readonly evidenceIds: readonly EvidenceId[];
   readonly confidence: number;
   readonly reviewStatus: FindingReviewStatus;
-  /** Review/reconciliation is mandatory; a finding never creates an Agent. */
+  /**
+   * Review/reconciliation is mandatory. ACCEPTED means accepted for that
+   * process; it never means validated canonical truth.
+   */
   readonly requiresReview: true;
   readonly createsCanonicalObject: false;
   readonly detectedAt: IsoTimestamp;
 }
+
+export type ObjectDiscoveryFinding<
+  Kind extends CanonicalObjectKind = CanonicalObjectKind,
+> = DiscoveryFinding<Kind>;
+
+export type RelationshipDiscoveryFinding = DiscoveryFinding<"RELATIONSHIP">;
 
 export interface CanonicalObjectIdentity<
   Kind extends CanonicalObjectKind = CanonicalObjectKind,
@@ -410,23 +426,364 @@ export interface DataElementIdentity {
   readonly elementPath: string;
 }
 
-export interface NormalizedAgentCandidate {
+export type PreCanonicalObjectReference<
+  Kind extends CanonicalObjectKind = CanonicalObjectKind,
+> =
+  | {
+      readonly referenceKind: "CANDIDATE";
+      readonly candidateId: NormalizedCandidateId;
+      readonly candidateKind: Kind;
+    }
+  | {
+      readonly referenceKind: "SOURCE_OBJECT";
+      readonly sourceObject: SourceObjectIdentity;
+      readonly candidateKind: Kind;
+    };
+
+/** A normalized candidate is always a single-source discovery artifact. */
+export interface NormalizedCandidateBase<
+  Kind extends DiscoveryCandidateKind,
+> {
   readonly candidateId: NormalizedCandidateId;
-  readonly candidateKind: "AGENT";
+  readonly candidateKind: Kind;
   readonly sourceObject: SourceObjectIdentity;
   readonly findingId: DiscoveryFindingId;
-  readonly proposedIdentity: {
-    readonly agentCode?: string;
-    readonly displayName?: string;
-    readonly versionCode?: string;
-  };
   readonly assertionIds: readonly SourceAssertionId[];
   readonly evidenceIds: readonly EvidenceId[];
   readonly confidence: number;
   readonly requiresReconciliation: true;
 }
 
-export type NormalizedCandidate = NormalizedAgentCandidate;
+/** Preserves the V1A Agent candidate shape exactly. */
+export interface NormalizedAgentCandidate
+  extends NormalizedCandidateBase<"AGENT"> {
+  readonly proposedIdentity: {
+    readonly agentCode?: string;
+    readonly displayName?: string;
+    readonly versionCode?: string;
+  };
+}
+
+export interface NormalizedAgentVersionCandidate
+  extends NormalizedCandidateBase<"AGENT_VERSION"> {
+  readonly proposedIdentity: {
+    readonly agent: PreCanonicalObjectReference<"AGENT">;
+    readonly versionCode?: string;
+  };
+}
+
+export interface NormalizedModelCandidate
+  extends NormalizedCandidateBase<"MODEL"> {
+  readonly proposedIdentity: {
+    readonly modelReference?: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedToolCandidate
+  extends NormalizedCandidateBase<"TOOL"> {
+  readonly proposedIdentity: {
+    readonly declarationKey?: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedMcpServerCandidate
+  extends NormalizedCandidateBase<"MCP_SERVER"> {
+  readonly proposedIdentity: {
+    readonly serverReference?: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedApiCandidate
+  extends NormalizedCandidateBase<"API"> {
+  readonly proposedIdentity: {
+    readonly apiReference?: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedPromptCandidate
+  extends NormalizedCandidateBase<"PROMPT"> {
+  readonly proposedIdentity: {
+    readonly declarationKey?: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedKnowledgeBaseCandidate
+  extends NormalizedCandidateBase<"KNOWLEDGE_BASE"> {
+  readonly proposedIdentity: {
+    readonly sourceReference?: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedDataAssetCandidate
+  extends NormalizedCandidateBase<"DATA_ASSET"> {
+  readonly proposedIdentity: {
+    readonly sourceReference?: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedDataElementCandidate
+  extends NormalizedCandidateBase<"DATA_ELEMENT"> {
+  readonly proposedIdentity: {
+    readonly parentDataAsset: PreCanonicalObjectReference<"DATA_ASSET">;
+    readonly elementPath: string;
+    readonly displayName?: string;
+  };
+}
+
+export interface NormalizedRelationshipCandidate
+  extends NormalizedCandidateBase<"RELATIONSHIP"> {
+  /** Discovery vocabulary only; V1A.1e will define canonical relationships. */
+  readonly relationshipTypeCode: string;
+  readonly sourceEndpoint: PreCanonicalObjectReference;
+  readonly targetEndpoint: PreCanonicalObjectReference;
+}
+
+export type NormalizedObjectCandidate =
+  | NormalizedAgentCandidate
+  | NormalizedAgentVersionCandidate
+  | NormalizedModelCandidate
+  | NormalizedToolCandidate
+  | NormalizedMcpServerCandidate
+  | NormalizedApiCandidate
+  | NormalizedPromptCandidate
+  | NormalizedKnowledgeBaseCandidate
+  | NormalizedDataAssetCandidate
+  | NormalizedDataElementCandidate;
+
+export type NormalizedCandidate =
+  | NormalizedObjectCandidate
+  | NormalizedRelationshipCandidate;
+
+export type MultipleCandidateIds = readonly [
+  NormalizedCandidateId,
+  NormalizedCandidateId,
+  ...NormalizedCandidateId[],
+];
+
+/**
+ * Immutable multi-source reconciliation artifact. It deliberately contains no
+ * sourceObject, canonicalObject, flattened facts, or proposed identity.
+ */
+export interface CandidateMergeRecord {
+  readonly candidateMergeId: CandidateMergeId;
+  readonly organisationId: OrganisationId;
+  readonly candidateKind: CanonicalObjectKind;
+  readonly contributingCandidateIds: MultipleCandidateIds;
+  readonly createdByDecisionId: ReconciliationDecisionId;
+  readonly createdAt: IsoTimestamp;
+  readonly requiresReconciliation: true;
+  readonly createsCanonicalObject: false;
+}
+
+export interface TrustedSingleSourceCandidateContributor {
+  readonly contributorKind: "CANDIDATE";
+  /** Supplied only by tenant-scoped, trusted server-side processing. */
+  readonly organisationId: OrganisationId;
+  readonly candidate: NormalizedObjectCandidate;
+}
+
+export interface ExistingCandidateMergeContributor {
+  readonly contributorKind: "CANDIDATE_MERGE";
+  readonly candidateMerge: CandidateMergeRecord;
+}
+
+export type CandidateMergeContributor =
+  | TrustedSingleSourceCandidateContributor
+  | ExistingCandidateMergeContributor;
+
+export interface CandidateMergeDraft {
+  readonly candidateMergeId: CandidateMergeId;
+  readonly organisationId: OrganisationId;
+  readonly candidateKind: CanonicalObjectKind;
+  readonly contributors: readonly CandidateMergeContributor[];
+  readonly createdByDecisionId: ReconciliationDecisionId;
+  readonly createdAt: IsoTimestamp;
+}
+
+function compareOpaqueIds(
+  left: NormalizedCandidateId,
+  right: NormalizedCandidateId,
+): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function isCanonicalObjectKind(value: string): value is CanonicalObjectKind {
+  return (Object.values(CANONICAL_OBJECT_KIND) as readonly string[]).includes(
+    value,
+  );
+}
+
+/**
+ * Flattens successive merges into immutable leaf candidate IDs. Candidate
+ * tenant membership must come from the trusted contributor wrapper, never an
+ * adapter payload.
+ */
+export function createCandidateMergeRecord(
+  draft: CandidateMergeDraft,
+): CandidateMergeRecord {
+  const leafIds: NormalizedCandidateId[] = [];
+
+  if (!isCanonicalObjectKind(draft.candidateKind)) {
+    throw new TypeError("Relationship candidates cannot be merged in V1A.1b");
+  }
+
+  for (const contributor of draft.contributors) {
+    if (contributor.contributorKind === "CANDIDATE") {
+      if (contributor.organisationId !== draft.organisationId) {
+        throw new TypeError("Candidate contributor belongs to another organisation");
+      }
+      if (!isCanonicalObjectKind(contributor.candidate.candidateKind)) {
+        throw new TypeError("Relationship candidates cannot be merged in V1A.1b");
+      }
+      if (contributor.candidate.candidateKind !== draft.candidateKind) {
+        throw new TypeError("Candidate merge cannot mix candidate kinds");
+      }
+      leafIds.push(contributor.candidate.candidateId);
+      continue;
+    }
+
+    if (contributor.candidateMerge.organisationId !== draft.organisationId) {
+      throw new TypeError("Candidate merge contributor belongs to another organisation");
+    }
+    if (contributor.candidateMerge.candidateKind !== draft.candidateKind) {
+      throw new TypeError("Candidate merge cannot mix candidate kinds");
+    }
+    leafIds.push(...contributor.candidateMerge.contributingCandidateIds);
+  }
+
+  if (leafIds.length < 2) {
+    throw new TypeError("Candidate merge requires at least two leaf candidates");
+  }
+  if (new Set(leafIds).size !== leafIds.length) {
+    throw new TypeError("Candidate merge contributors must be unique");
+  }
+
+  const contributingCandidateIds = Object.freeze(
+    [...leafIds].sort(compareOpaqueIds),
+  ) as unknown as MultipleCandidateIds;
+
+  return Object.freeze({
+    candidateMergeId: draft.candidateMergeId,
+    organisationId: draft.organisationId,
+    candidateKind: draft.candidateKind,
+    contributingCandidateIds,
+    createdByDecisionId: draft.createdByDecisionId,
+    createdAt: draft.createdAt,
+    requiresReconciliation: true,
+    createsCanonicalObject: false,
+  });
+}
+
+export const RECONCILIATION_OUTCOME = {
+  CREATE_NEW: "CREATE_NEW",
+  MATCH_EXISTING: "MATCH_EXISTING",
+  MERGE_CANDIDATES: "MERGE_CANDIDATES",
+  REJECT: "REJECT",
+  DEFER: "DEFER",
+} as const;
+export type ReconciliationOutcome =
+  (typeof RECONCILIATION_OUTCOME)[keyof typeof RECONCILIATION_OUTCOME];
+
+export const RECONCILIATION_AUTHORITY_KIND = {
+  HUMAN: "HUMAN",
+  DETERMINISTIC_RULE: "DETERMINISTIC_RULE",
+} as const;
+
+export type ReconciliationAuthority =
+  | {
+      readonly authorityKind: "HUMAN";
+      readonly actorReference: string;
+    }
+  | {
+      readonly authorityKind: "DETERMINISTIC_RULE";
+      readonly ruleCode: string;
+      readonly ruleVersion: string;
+    };
+
+export type ReconciliationSubjectReference<
+  Kind extends CanonicalObjectKind = CanonicalObjectKind,
+> =
+  | {
+      readonly subjectKind: "CANDIDATE";
+      readonly candidateId: NormalizedCandidateId;
+      readonly candidateKind: Kind;
+    }
+  | {
+      readonly subjectKind: "CANDIDATE_MERGE";
+      readonly candidateMergeId: CandidateMergeId;
+      readonly candidateKind: Kind;
+    };
+
+export interface ReconciliationDecisionBase<
+  Outcome extends ReconciliationOutcome,
+  Kind extends CanonicalObjectKind = CanonicalObjectKind,
+> {
+  readonly decisionId: ReconciliationDecisionId;
+  /** Trusted server-side context, never adapter authority. */
+  readonly organisationId: OrganisationId;
+  readonly outcome: Outcome;
+  readonly candidateKind: Kind;
+  readonly authority: ReconciliationAuthority;
+  readonly reasonCode: string;
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+  readonly decidedAt: IsoTimestamp;
+}
+
+export type CreateNewReconciliationDecision = {
+  [Kind in CanonicalObjectKind]: ReconciliationDecisionBase<
+    "CREATE_NEW",
+    Kind
+  > & {
+    readonly subject: ReconciliationSubjectReference<Kind>;
+    readonly canonicalObject: CanonicalObjectIdentity<Kind>;
+  };
+}[CanonicalObjectKind];
+
+export type MatchExistingReconciliationDecision = {
+  [Kind in CanonicalObjectKind]: ReconciliationDecisionBase<
+    "MATCH_EXISTING",
+    Kind
+  > & {
+    readonly subject: ReconciliationSubjectReference<Kind>;
+    readonly canonicalObject: CanonicalObjectIdentity<Kind>;
+  };
+}[CanonicalObjectKind];
+
+export type MergeCandidatesReconciliationDecision =
+  ReconciliationDecisionBase<"MERGE_CANDIDATES"> & {
+    readonly contributingCandidateIds: MultipleCandidateIds;
+    readonly candidateMergeId: CandidateMergeId;
+    readonly canonicalObject?: never;
+  };
+
+export type RejectReconciliationDecision = {
+  [Kind in CanonicalObjectKind]: ReconciliationDecisionBase<"REJECT", Kind> & {
+    readonly subject: ReconciliationSubjectReference<Kind>;
+    readonly canonicalObject?: never;
+  };
+}[CanonicalObjectKind];
+
+export type DeferReconciliationDecision = {
+  [Kind in CanonicalObjectKind]: ReconciliationDecisionBase<"DEFER", Kind> & {
+    readonly subject: ReconciliationSubjectReference<Kind>;
+    readonly canonicalObject?: never;
+  };
+}[CanonicalObjectKind];
+
+export type ReconciliationDecision =
+  | CreateNewReconciliationDecision
+  | MatchExistingReconciliationDecision
+  | MergeCandidatesReconciliationDecision
+  | RejectReconciliationDecision
+  | DeferReconciliationDecision;
 
 /** Created by trusted reconciliation, never accepted from an adapter payload. */
 export interface ObjectSourceMapping {
@@ -438,6 +795,12 @@ export interface ObjectSourceMapping {
   readonly confidence?: number;
   readonly validFrom: IsoTimestamp;
   readonly validTo?: IsoTimestamp;
+}
+
+/** Auditable mapping output of a successful final reconciliation decision. */
+export interface ReconciledObjectSourceMapping extends ObjectSourceMapping {
+  readonly status: "CONFIRMED";
+  readonly reconciliationDecisionId: ReconciliationDecisionId;
 }
 
 /**
