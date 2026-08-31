@@ -89,6 +89,10 @@ function dataElementSupport(overrides = {}) {
   };
 }
 
+function profileSupport(...fields) {
+  return Object.fromEntries(fields.map((field) => [field, technicalSupport()]));
+}
+
 describe("Canonical Contract V1A", () => {
   it("preserves provider-specific identifiers as opaque external strings", () => {
     assert.equal(
@@ -1367,5 +1371,466 @@ describe("Canonical Contract V1A", () => {
       assert.ok(fixture.sourceSystem.provider.providerCode);
       assert.ok(fixture.objects.every((object) => object.identity.externalType.length > 0));
     }
+  });
+
+  it("exposes only the approved AI technical vocabularies", () => {
+    assert.deepEqual(Object.values(contracts.MCP_TRANSPORT), [
+      "UNKNOWN",
+      "STDIO",
+      "STREAMABLE_HTTP",
+      "SERVER_SENT_EVENTS",
+      "OTHER",
+    ]);
+    assert.deepEqual(Object.values(contracts.API_PROTOCOL_FAMILY), [
+      "UNKNOWN",
+      "HTTP",
+      "GRPC",
+      "GRAPHQL",
+      "WEBSOCKET",
+      "EVENT",
+      "OTHER",
+    ]);
+    assert.deepEqual(Object.values(contracts.KNOWLEDGE_BASE_RESOURCE_KIND), [
+      "UNKNOWN",
+      "DOCUMENT_COLLECTION",
+      "SEARCH_INDEX",
+      "VECTOR_INDEX",
+      "KNOWLEDGE_GRAPH",
+      "OTHER",
+    ]);
+  });
+
+  it("creates allowlisted nominal fingerprints with the same minimal serialized shape", () => {
+    const behaviorDraft = {
+      algorithm: "SHA-256",
+      schemaVersion: "agent-behavior/v1",
+      value: "behavior-digest",
+      canonicalObjectId: "must-not-copy",
+      provenance: "must-not-copy",
+      timestamp: "must-not-copy",
+      secret: "must-not-copy",
+    };
+    const technicalDraft = {
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "technical-digest",
+      runtimeMetrics: { requests: 42 },
+    };
+
+    const behavior = contracts.createBehaviorFingerprint(behaviorDraft);
+    const technical = contracts.createTechnicalFingerprint(technicalDraft);
+
+    assert.deepEqual(Object.keys(behavior), [
+      "algorithm",
+      "schemaVersion",
+      "value",
+    ]);
+    assert.deepEqual(Object.keys(technical), [
+      "algorithm",
+      "schemaVersion",
+      "value",
+    ]);
+    assert.equal(Object.isFrozen(behavior), true);
+    assert.equal(Object.isFrozen(technical), true);
+    assert.equal(Object.hasOwn(behavior, "canonicalObjectId"), false);
+    assert.equal(Object.hasOwn(behavior, "provenance"), false);
+    assert.equal(Object.hasOwn(behavior, "timestamp"), false);
+    assert.equal(Object.hasOwn(behavior, "secret"), false);
+    assert.equal(Object.hasOwn(technical, "runtimeMetrics"), false);
+    assert.equal(Object.isFrozen(behaviorDraft), false);
+    assert.equal(Object.isFrozen(technicalDraft), false);
+
+    for (const factory of [
+      contracts.createBehaviorFingerprint,
+      contracts.createTechnicalFingerprint,
+    ]) {
+      for (const field of ["algorithm", "schemaVersion", "value"]) {
+        assert.throws(
+          () =>
+            factory({
+              algorithm: "SHA-256",
+              schemaVersion: "v1",
+              value: "digest",
+              [field]: "   ",
+            }),
+          /must be a non-empty string/,
+        );
+      }
+    }
+  });
+
+  it("preserves Windows drive paths before URL parsing", () => {
+    const backslashPath = String.raw`C:\repo\agent.ts`;
+    const forwardSlashPath = "D:/code/project/file.ts";
+    const lowerCaseDrivePath = String.raw`c:\repo\lower-case-drive.ts`;
+
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(backslashPath),
+      backslashPath,
+    );
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(forwardSlashPath),
+      forwardSlashPath,
+    );
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(lowerCaseDrivePath),
+      lowerCaseDrivePath,
+    );
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(
+        String.raw`D:\code-guard-governance\packages\x.ts?draft=true#section`,
+      ),
+      String.raw`D:\code-guard-governance\packages\x.ts`,
+    );
+  });
+
+  it("preserves UNC and POSIX locator representation", () => {
+    const uncPath = String.raw`\\server\share\folder\file.ts`;
+    const rootRelativeWindowsPath = String.raw`\server\share\folder\file.ts`;
+    const posixPath = "/repository/src/agent.ts";
+
+    assert.equal(contracts.sanitizeTechnicalLocator(uncPath), uncPath);
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(rootRelativeWindowsPath),
+      rootRelativeWindowsPath,
+    );
+    assert.equal(contracts.sanitizeTechnicalLocator(posixPath), posixPath);
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(
+        String.raw`\\server\share\folder\file.ts?draft=true#section`,
+      ),
+      uncPath,
+    );
+  });
+
+  it("sanitizes actual HTTP URLs without treating them as filesystem paths", () => {
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(
+        "https://user:pass@example.com/api?token=123#frag",
+      ),
+      "https://example.com/api",
+    );
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(
+        "https://user:pass@example.com/api",
+      ),
+      "https://example.com/api",
+    );
+    assert.equal(
+      contracts.sanitizeTechnicalLocator("https://example.com/api?token=123"),
+      "https://example.com/api",
+    );
+    assert.equal(
+      contracts.sanitizeTechnicalLocator("https://example.com/api#frag"),
+      "https://example.com/api",
+    );
+  });
+
+  it("rejects empty sanitized locators without mutating the input", () => {
+    const input = String.raw`C:\repo\agent.ts?draft=true#section`;
+    const original = input;
+
+    assert.equal(
+      contracts.sanitizeTechnicalLocator(input),
+      String.raw`C:\repo\agent.ts`,
+    );
+    assert.equal(input, original);
+    assert.throws(
+      () => contracts.sanitizeTechnicalLocator("  "),
+      /must be a non-empty string/,
+    );
+    assert.throws(
+      () => contracts.sanitizeTechnicalLocator("?token=secret"),
+      /must remain non-empty after sanitization/,
+    );
+  });
+
+  it("constructs an immutable allowlisted AgentVersion behavior snapshot", () => {
+    const behaviorFingerprint = contracts.createBehaviorFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "agent-behavior/v1",
+      value: "agent-version-behavior",
+    });
+    const behaviorSupport = technicalSupport(
+      ["assertion:agent-version:behavior"],
+      ["evidence:agent-version:behavior"],
+    );
+    const draft = {
+      agentVersionId: contracts.asAgentVersionId("agent-version:one"),
+      behaviorFingerprint,
+      buildReference: "build:2026.08.30",
+      runtimeFrameworkReference: undefined,
+      entrypointReference: "src/agent.ts#run",
+      configurationReference: "config/agent.yaml",
+      support: {
+        behaviorFingerprint: behaviorSupport,
+        buildReference: technicalSupport(),
+        runtimeFrameworkReference: technicalSupport(),
+        entrypointReference: technicalSupport(),
+        configurationReference: technicalSupport(),
+        arbitraryMetadata: technicalSupport(["assertion:must-not-copy"]),
+      },
+      bindings: [{ target: "model:current" }],
+      owner: "must-not-copy",
+      runtimeMetrics: { requests: 42 },
+      secret: "must-not-copy",
+    };
+
+    const profile = contracts.createAgentVersionTechnicalProfile(draft);
+
+    assert.deepEqual(Object.keys(profile), [
+      "agentVersionId",
+      "behaviorFingerprint",
+      "buildReference",
+      "entrypointReference",
+      "configurationReference",
+      "support",
+    ]);
+    assert.equal(Object.hasOwn(profile, "runtimeFrameworkReference"), false);
+    for (const forbidden of [
+      "bindings",
+      "owner",
+      "runtimeMetrics",
+      "secret",
+    ]) {
+      assert.equal(Object.hasOwn(profile, forbidden), false, forbidden);
+    }
+    assert.equal(Object.hasOwn(profile.support, "arbitraryMetadata"), false);
+    assert.equal(Object.isFrozen(profile), true);
+    assert.equal(Object.isFrozen(profile.behaviorFingerprint), true);
+    assert.notEqual(profile.behaviorFingerprint, behaviorFingerprint);
+    assert.equal(Object.isFrozen(profile.support), true);
+    for (const support of Object.values(profile.support)) {
+      assert.equal(Object.isFrozen(support), true);
+      assert.equal(Object.isFrozen(support.assertionIds), true);
+      assert.equal(Object.isFrozen(support.evidenceIds), true);
+    }
+
+    behaviorSupport.assertionIds.push("assertion:input:mutated");
+    behaviorSupport.evidenceIds.push("evidence:input:mutated");
+    assert.deepEqual(profile.support.behaviorFingerprint.assertionIds, [
+      "assertion:agent-version:behavior",
+    ]);
+    assert.deepEqual(profile.support.behaviorFingerprint.evidenceIds, [
+      "evidence:agent-version:behavior",
+    ]);
+  });
+
+  it("constructs all six current technical target profiles with pinned fingerprints", () => {
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "target-configuration",
+    });
+    const hash = { algorithm: "SHA-256", value: "content-integrity" };
+    const mcpLocator = contracts.sanitizeTechnicalLocator(
+      "https://mcp.invalid/rpc",
+    );
+    const apiLocator = contracts.sanitizeTechnicalLocator(
+      "https://api.invalid/v1",
+    );
+    const promptLocator = contracts.sanitizeTechnicalLocator(
+      "prompts/system.md",
+    );
+
+    const model = contracts.createModelTechnicalProfile({
+      modelId: contracts.asModelId("model:one"),
+      technicalFingerprint: fingerprint,
+      providerReference: "provider:one",
+      providerModelReference: "provider-model:one",
+      modelFamily: "model-family",
+      modelRevision: "revision:one",
+      support: profileSupport(
+        "technicalFingerprint",
+        "providerReference",
+        "providerModelReference",
+        "modelFamily",
+        "modelRevision",
+      ),
+      deployment: "must-not-copy",
+      endpoint: "must-not-copy",
+      credentials: "must-not-copy",
+    });
+    const tool = contracts.createToolTechnicalProfile({
+      toolId: contracts.asToolId("tool:one"),
+      technicalFingerprint: fingerprint,
+      declarationReference: "tool:declaration",
+      contractReference: "tool:contract",
+      contractHash: hash,
+      technicalDescription: "Typed tool contract",
+      support: profileSupport(
+        "technicalFingerprint",
+        "declarationReference",
+        "contractReference",
+        "contractHash",
+        "technicalDescription",
+      ),
+      secret: "must-not-copy",
+    });
+    const mcp = contracts.createMcpServerTechnicalProfile({
+      mcpServerId: contracts.asMcpServerId("mcp:one"),
+      technicalFingerprint: fingerprint,
+      declaredServerReference: "mcp:declaration",
+      protocolVersion: "2025-06-18",
+      transport: "STREAMABLE_HTTP",
+      endpointLocator: mcpLocator,
+      support: profileSupport(
+        "technicalFingerprint",
+        "declaredServerReference",
+        "protocolVersion",
+        "transport",
+        "endpointLocator",
+      ),
+      tools: ["must-not-copy"],
+      credentials: "must-not-copy",
+    });
+    const api = contracts.createApiTechnicalProfile({
+      apiId: contracts.asApiId("api:one"),
+      technicalFingerprint: fingerprint,
+      protocolFamily: "HTTP",
+      serviceReference: "service:one",
+      baseLocator: apiLocator,
+      specificationReference: "openapi:one",
+      specificationHash: hash,
+      support: profileSupport(
+        "technicalFingerprint",
+        "protocolFamily",
+        "serviceReference",
+        "baseLocator",
+        "specificationReference",
+        "specificationHash",
+      ),
+      operations: ["must-not-copy"],
+      credentials: "must-not-copy",
+    });
+    const prompt = contracts.createPromptTechnicalProfile({
+      promptId: contracts.asPromptId("prompt:one"),
+      technicalFingerprint: fingerprint,
+      declarationReference: "prompt:declaration",
+      revision: "revision:one",
+      contentHash: hash,
+      sourceLocator: promptLocator,
+      support: profileSupport(
+        "technicalFingerprint",
+        "declarationReference",
+        "revision",
+        "contentHash",
+        "sourceLocator",
+      ),
+      content: "must-not-copy",
+      secret: "must-not-copy",
+    });
+    const knowledgeBase = contracts.createKnowledgeBaseTechnicalProfile({
+      knowledgeBaseId: contracts.asKnowledgeBaseId("knowledge-base:one"),
+      technicalFingerprint: fingerprint,
+      sourceReference: "knowledge-source:one",
+      resourceKind: "VECTOR_INDEX",
+      contentHash: hash,
+      retrievalConfigurationReference: "retrieval:one",
+      support: profileSupport(
+        "technicalFingerprint",
+        "sourceReference",
+        "resourceKind",
+        "contentHash",
+        "retrievalConfigurationReference",
+      ),
+      documents: ["must-not-copy"],
+      chunks: ["must-not-copy"],
+      embeddings: [[0.1, 0.2]],
+      credentials: "must-not-copy",
+    });
+
+    const profiles = [model, tool, mcp, api, prompt, knowledgeBase];
+    for (const profile of profiles) {
+      assert.equal(Object.isFrozen(profile), true);
+      assert.equal(Object.isFrozen(profile.technicalFingerprint), true);
+      assert.notEqual(profile.technicalFingerprint, fingerprint);
+      assert.equal(Object.isFrozen(profile.support), true);
+      for (const support of Object.values(profile.support)) {
+        assert.equal(Object.isFrozen(support), true);
+        assert.equal(Object.isFrozen(support.assertionIds), true);
+        assert.equal(Object.isFrozen(support.evidenceIds), true);
+      }
+      for (const forbidden of [
+        "canonicalObject",
+        "organisationId",
+        "owner",
+        "runtimeMetrics",
+        "secret",
+        "credentials",
+      ]) {
+        assert.equal(Object.hasOwn(profile, forbidden), false, forbidden);
+      }
+    }
+
+    assert.equal(Object.hasOwn(model, "deployment"), false);
+    assert.equal(Object.hasOwn(model, "endpoint"), false);
+    assert.equal(Object.hasOwn(mcp, "tools"), false);
+    assert.equal(Object.hasOwn(api, "operations"), false);
+    assert.equal(Object.hasOwn(prompt, "content"), false);
+    assert.equal(Object.hasOwn(knowledgeBase, "documents"), false);
+    assert.equal(Object.hasOwn(knowledgeBase, "chunks"), false);
+    assert.equal(Object.hasOwn(knowledgeBase, "embeddings"), false);
+    assert.notEqual(tool.contractHash, hash);
+    assert.notEqual(api.specificationHash, hash);
+    assert.notEqual(prompt.contentHash, hash);
+    assert.notEqual(knowledgeBase.contentHash, hash);
+    assert.equal(Object.isFrozen(tool.contractHash), true);
+    assert.equal(Object.isFrozen(api.specificationHash), true);
+    assert.equal(Object.isFrozen(prompt.contentHash), true);
+    assert.equal(Object.isFrozen(knowledgeBase.contentHash), true);
+  });
+
+  it("keeps optional target fields omitted and field support independent", () => {
+    const technicalFingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "technical-profile/v1",
+      value: "minimal-model",
+    });
+    const fingerprintSupport = technicalSupport(
+      ["assertion:model:fingerprint"],
+      ["evidence:model:fingerprint"],
+    );
+    const familySupport = technicalSupport(["assertion:model:family"]);
+    const profile = contracts.createModelTechnicalProfile({
+      modelId: contracts.asModelId("model:minimal"),
+      technicalFingerprint,
+      providerReference: undefined,
+      providerModelReference: undefined,
+      modelFamily: undefined,
+      modelRevision: undefined,
+      support: {
+        technicalFingerprint: fingerprintSupport,
+        providerReference: technicalSupport(),
+        providerModelReference: technicalSupport(),
+        modelFamily: familySupport,
+        modelRevision: technicalSupport(),
+      },
+    });
+
+    assert.deepEqual(Object.keys(profile), [
+      "modelId",
+      "technicalFingerprint",
+      "support",
+    ]);
+    assert.notEqual(
+      profile.support.technicalFingerprint,
+      profile.support.modelFamily,
+    );
+    assert.deepEqual(profile.support.technicalFingerprint.assertionIds, [
+      "assertion:model:fingerprint",
+    ]);
+    assert.deepEqual(profile.support.modelFamily.assertionIds, [
+      "assertion:model:family",
+    ]);
+
+    fingerprintSupport.assertionIds.push("assertion:input:mutated");
+    familySupport.assertionIds.push("assertion:input:mutated");
+    assert.deepEqual(profile.support.technicalFingerprint.assertionIds, [
+      "assertion:model:fingerprint",
+    ]);
+    assert.deepEqual(profile.support.modelFamily.assertionIds, [
+      "assertion:model:family",
+    ]);
   });
 });

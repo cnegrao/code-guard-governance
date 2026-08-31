@@ -22,6 +22,7 @@ import type {
   PromptId,
   ReconciliationDecisionId,
   SanitizedEvidenceLocator,
+  SanitizedTechnicalLocator,
   SourceAssertionId,
   SourceConnectionId,
   SourceSnapshotId,
@@ -226,6 +227,39 @@ export const DATA_KEY_TYPE = {
 } as const;
 export type DataKeyType = (typeof DATA_KEY_TYPE)[keyof typeof DATA_KEY_TYPE];
 
+export const MCP_TRANSPORT = {
+  UNKNOWN: "UNKNOWN",
+  STDIO: "STDIO",
+  STREAMABLE_HTTP: "STREAMABLE_HTTP",
+  SERVER_SENT_EVENTS: "SERVER_SENT_EVENTS",
+  OTHER: "OTHER",
+} as const;
+export type McpTransport =
+  (typeof MCP_TRANSPORT)[keyof typeof MCP_TRANSPORT];
+
+export const API_PROTOCOL_FAMILY = {
+  UNKNOWN: "UNKNOWN",
+  HTTP: "HTTP",
+  GRPC: "GRPC",
+  GRAPHQL: "GRAPHQL",
+  WEBSOCKET: "WEBSOCKET",
+  EVENT: "EVENT",
+  OTHER: "OTHER",
+} as const;
+export type ApiProtocolFamily =
+  (typeof API_PROTOCOL_FAMILY)[keyof typeof API_PROTOCOL_FAMILY];
+
+export const KNOWLEDGE_BASE_RESOURCE_KIND = {
+  UNKNOWN: "UNKNOWN",
+  DOCUMENT_COLLECTION: "DOCUMENT_COLLECTION",
+  SEARCH_INDEX: "SEARCH_INDEX",
+  VECTOR_INDEX: "VECTOR_INDEX",
+  KNOWLEDGE_GRAPH: "KNOWLEDGE_GRAPH",
+  OTHER: "OTHER",
+} as const;
+export type KnowledgeBaseResourceKind =
+  (typeof KNOWLEDGE_BASE_RESOURCE_KIND)[keyof typeof KNOWLEDGE_BASE_RESOURCE_KIND];
+
 export type SourceAttributeValue =
   | string
   | number
@@ -311,8 +345,93 @@ export interface SourceObject {
 }
 
 export interface EvidenceHash {
+  /** Content-integrity digest; it does not identify a technical configuration. */
   readonly algorithm: string;
   readonly value: string;
+}
+
+declare const behaviorFingerprintBrand: unique symbol;
+declare const technicalFingerprintBrand: unique symbol;
+
+/**
+ * Immutable equivalence marker for resolved AgentVersion behavior. Its input
+ * includes behavior-affecting code/configuration and, for a bound technical
+ * target, the target kind, canonical identity, pinned TechnicalFingerprint,
+ * and binding configuration. The contract deliberately provides no universal
+ * serializer or hashing algorithm. It is opaque: neither canonical/runtime
+ * identity, credential, EvidenceHash, nor raw content.
+ */
+export type BehaviorFingerprint = Readonly<{
+  readonly algorithm: string;
+  readonly schemaVersion: string;
+  readonly value: string;
+}> & {
+  readonly [behaviorFingerprintBrand]: "BehaviorFingerprint";
+};
+
+/**
+ * Immutable equivalence marker for one target's behavior-relevant technical
+ * configuration. Canonical IDs, support/provenance, timestamps, governance,
+ * secrets, and runtime metrics are excluded from its composition. It is
+ * opaque: neither canonical/runtime identity, credential, EvidenceHash, nor
+ * raw content. Direct fingerprint equality is meaningful only when algorithm
+ * and schemaVersion are compatible.
+ */
+export type TechnicalFingerprint = Readonly<{
+  readonly algorithm: string;
+  readonly schemaVersion: string;
+  readonly value: string;
+}> & {
+  readonly [technicalFingerprintBrand]: "TechnicalFingerprint";
+};
+
+function createFingerprint(
+  draft: Readonly<{
+    readonly algorithm: string;
+    readonly schemaVersion: string;
+    readonly value: string;
+  }>,
+  label: string,
+): Readonly<{
+  readonly algorithm: string;
+  readonly schemaVersion: string;
+  readonly value: string;
+}> {
+  for (const [field, value] of [
+    ["algorithm", draft.algorithm],
+    ["schemaVersion", draft.schemaVersion],
+    ["value", draft.value],
+  ] as const) {
+    if (value.trim().length === 0) {
+      throw new TypeError(`${label} ${field} must be a non-empty string`);
+    }
+  }
+
+  return Object.freeze({
+    algorithm: draft.algorithm,
+    schemaVersion: draft.schemaVersion,
+    value: draft.value,
+  });
+}
+
+export function createBehaviorFingerprint(
+  draft: Readonly<{
+    readonly algorithm: string;
+    readonly schemaVersion: string;
+    readonly value: string;
+  }>,
+): BehaviorFingerprint {
+  return createFingerprint(draft, "Behavior fingerprint") as BehaviorFingerprint;
+}
+
+export function createTechnicalFingerprint(
+  draft: Readonly<{
+    readonly algorithm: string;
+    readonly schemaVersion: string;
+    readonly value: string;
+  }>,
+): TechnicalFingerprint {
+  return createFingerprint(draft, "Technical fingerprint") as TechnicalFingerprint;
 }
 
 export interface SourceSnapshotReference {
@@ -891,6 +1010,459 @@ export function createForeignKeyDefinition(
       : { technicalName: draft.technicalName }),
     mappings,
     support: freezeTechnicalMetadataSupport(draft.support),
+  });
+}
+
+/**
+ * Agent is the stable logical identity. AgentVersion is immutable resolved
+ * behavior configuration: behavior-affecting code/config, prompts, model
+ * state, inference settings, bindings, capabilities, guardrails, HITL, I/O,
+ * memory, material data access/purpose, and affecting build dependencies MUST
+ * produce a new version when changed or when equivalence is not proven.
+ * Governance/operational facts such as owner, status, risk, controls, waivers,
+ * evidence, incidents, runtime metrics, classification, display-only naming,
+ * locator-only moves of an identical artifact, or fingerprint rehashing MUST
+ * NOT create a version. Implementations MAY version other deliberately chosen
+ * behavior-significant changes, but cannot weaken those boundaries.
+ *
+ * Binding relationships are intentionally not modeled in V1A.1d. A future
+ * immutable binding records target canonical identity, the pinned
+ * TechnicalFingerprint, and binding configuration. An old AgentVersion never
+ * resolves through a target's current profile; adopting a changed target
+ * fingerprint creates a new AgentVersion.
+ */
+export interface AgentVersionTechnicalProfileSupport {
+  readonly behaviorFingerprint: TechnicalMetadataSupport;
+  readonly buildReference: TechnicalMetadataSupport;
+  readonly runtimeFrameworkReference: TechnicalMetadataSupport;
+  readonly entrypointReference: TechnicalMetadataSupport;
+  readonly configurationReference: TechnicalMetadataSupport;
+}
+
+export interface AgentVersionTechnicalProfile {
+  readonly agentVersionId: AgentVersionId;
+  readonly behaviorFingerprint: BehaviorFingerprint;
+  readonly buildReference?: string;
+  readonly runtimeFrameworkReference?: string;
+  readonly entrypointReference?: string;
+  readonly configurationReference?: string;
+  readonly support: AgentVersionTechnicalProfileSupport;
+}
+
+/**
+ * Every *Reference field in the V1A.1d profiles is opaque non-secret metadata.
+ * It must never carry a credential, token, key, or credential-bearing
+ * connection string. These nested domain contracts do not imply JSONB
+ * persistence; future storage remains tenant-safe and normalized by default.
+ */
+
+export interface ModelTechnicalProfileSupport {
+  readonly technicalFingerprint: TechnicalMetadataSupport;
+  readonly providerReference: TechnicalMetadataSupport;
+  readonly providerModelReference: TechnicalMetadataSupport;
+  readonly modelFamily: TechnicalMetadataSupport;
+  readonly modelRevision: TechnicalMetadataSupport;
+}
+
+export interface ModelTechnicalProfile {
+  readonly modelId: ModelId;
+  readonly technicalFingerprint: TechnicalFingerprint;
+  readonly providerReference?: string;
+  readonly providerModelReference?: string;
+  readonly modelFamily?: string;
+  readonly modelRevision?: string;
+  readonly support: ModelTechnicalProfileSupport;
+}
+
+export interface ToolTechnicalProfileSupport {
+  readonly technicalFingerprint: TechnicalMetadataSupport;
+  readonly declarationReference: TechnicalMetadataSupport;
+  readonly contractReference: TechnicalMetadataSupport;
+  readonly contractHash: TechnicalMetadataSupport;
+  readonly technicalDescription: TechnicalMetadataSupport;
+}
+
+export interface ToolTechnicalProfile {
+  readonly toolId: ToolId;
+  readonly technicalFingerprint: TechnicalFingerprint;
+  readonly declarationReference?: string;
+  readonly contractReference?: string;
+  /** Integrity of the contract/schema artifact, not technical-state identity. */
+  readonly contractHash?: EvidenceHash;
+  readonly technicalDescription?: string;
+  readonly support: ToolTechnicalProfileSupport;
+}
+
+export interface McpServerTechnicalProfileSupport {
+  readonly technicalFingerprint: TechnicalMetadataSupport;
+  readonly declaredServerReference: TechnicalMetadataSupport;
+  readonly protocolVersion: TechnicalMetadataSupport;
+  readonly transport: TechnicalMetadataSupport;
+  readonly endpointLocator: TechnicalMetadataSupport;
+}
+
+export interface McpServerTechnicalProfile {
+  readonly mcpServerId: McpServerId;
+  readonly technicalFingerprint: TechnicalFingerprint;
+  readonly declaredServerReference?: string;
+  readonly protocolVersion?: string;
+  readonly transport: McpTransport;
+  readonly endpointLocator?: SanitizedTechnicalLocator;
+  readonly support: McpServerTechnicalProfileSupport;
+}
+
+export interface ApiTechnicalProfileSupport {
+  readonly technicalFingerprint: TechnicalMetadataSupport;
+  readonly protocolFamily: TechnicalMetadataSupport;
+  readonly serviceReference: TechnicalMetadataSupport;
+  readonly baseLocator: TechnicalMetadataSupport;
+  readonly specificationReference: TechnicalMetadataSupport;
+  readonly specificationHash: TechnicalMetadataSupport;
+}
+
+export interface ApiTechnicalProfile {
+  readonly apiId: ApiId;
+  readonly technicalFingerprint: TechnicalFingerprint;
+  readonly protocolFamily: ApiProtocolFamily;
+  readonly serviceReference?: string;
+  readonly baseLocator?: SanitizedTechnicalLocator;
+  readonly specificationReference?: string;
+  /** Integrity of the API specification artifact, not a fingerprint. */
+  readonly specificationHash?: EvidenceHash;
+  readonly support: ApiTechnicalProfileSupport;
+}
+
+export interface PromptTechnicalProfileSupport {
+  readonly technicalFingerprint: TechnicalMetadataSupport;
+  readonly declarationReference: TechnicalMetadataSupport;
+  readonly revision: TechnicalMetadataSupport;
+  readonly contentHash: TechnicalMetadataSupport;
+  readonly sourceLocator: TechnicalMetadataSupport;
+}
+
+export interface PromptTechnicalProfile {
+  readonly promptId: PromptId;
+  readonly technicalFingerprint: TechnicalFingerprint;
+  readonly declarationReference?: string;
+  readonly revision?: string;
+  /** Integrity of prompt content bytes; full prompt content is not stored. */
+  readonly contentHash?: EvidenceHash;
+  readonly sourceLocator?: SanitizedTechnicalLocator;
+  readonly support: PromptTechnicalProfileSupport;
+}
+
+export interface KnowledgeBaseTechnicalProfileSupport {
+  readonly technicalFingerprint: TechnicalMetadataSupport;
+  readonly sourceReference: TechnicalMetadataSupport;
+  readonly resourceKind: TechnicalMetadataSupport;
+  readonly contentHash: TechnicalMetadataSupport;
+  readonly retrievalConfigurationReference: TechnicalMetadataSupport;
+}
+
+export interface KnowledgeBaseTechnicalProfile {
+  readonly knowledgeBaseId: KnowledgeBaseId;
+  readonly technicalFingerprint: TechnicalFingerprint;
+  readonly sourceReference?: string;
+  readonly resourceKind: KnowledgeBaseResourceKind;
+  /** Integrity of a content artifact, not a technical-state fingerprint. */
+  readonly contentHash?: EvidenceHash;
+  readonly retrievalConfigurationReference?: string;
+  readonly support: KnowledgeBaseTechnicalProfileSupport;
+}
+
+function freezeEvidenceHash(hash: EvidenceHash): EvidenceHash {
+  return Object.freeze({ algorithm: hash.algorithm, value: hash.value });
+}
+
+function freezeAgentVersionTechnicalProfileSupport(
+  support: AgentVersionTechnicalProfileSupport,
+): AgentVersionTechnicalProfileSupport {
+  return Object.freeze({
+    behaviorFingerprint: freezeTechnicalMetadataSupport(
+      support.behaviorFingerprint,
+    ),
+    buildReference: freezeTechnicalMetadataSupport(support.buildReference),
+    runtimeFrameworkReference: freezeTechnicalMetadataSupport(
+      support.runtimeFrameworkReference,
+    ),
+    entrypointReference: freezeTechnicalMetadataSupport(
+      support.entrypointReference,
+    ),
+    configurationReference: freezeTechnicalMetadataSupport(
+      support.configurationReference,
+    ),
+  });
+}
+
+function freezeModelTechnicalProfileSupport(
+  support: ModelTechnicalProfileSupport,
+): ModelTechnicalProfileSupport {
+  return Object.freeze({
+    technicalFingerprint: freezeTechnicalMetadataSupport(
+      support.technicalFingerprint,
+    ),
+    providerReference: freezeTechnicalMetadataSupport(support.providerReference),
+    providerModelReference: freezeTechnicalMetadataSupport(
+      support.providerModelReference,
+    ),
+    modelFamily: freezeTechnicalMetadataSupport(support.modelFamily),
+    modelRevision: freezeTechnicalMetadataSupport(support.modelRevision),
+  });
+}
+
+function freezeToolTechnicalProfileSupport(
+  support: ToolTechnicalProfileSupport,
+): ToolTechnicalProfileSupport {
+  return Object.freeze({
+    technicalFingerprint: freezeTechnicalMetadataSupport(
+      support.technicalFingerprint,
+    ),
+    declarationReference: freezeTechnicalMetadataSupport(
+      support.declarationReference,
+    ),
+    contractReference: freezeTechnicalMetadataSupport(support.contractReference),
+    contractHash: freezeTechnicalMetadataSupport(support.contractHash),
+    technicalDescription: freezeTechnicalMetadataSupport(
+      support.technicalDescription,
+    ),
+  });
+}
+
+function freezeMcpServerTechnicalProfileSupport(
+  support: McpServerTechnicalProfileSupport,
+): McpServerTechnicalProfileSupport {
+  return Object.freeze({
+    technicalFingerprint: freezeTechnicalMetadataSupport(
+      support.technicalFingerprint,
+    ),
+    declaredServerReference: freezeTechnicalMetadataSupport(
+      support.declaredServerReference,
+    ),
+    protocolVersion: freezeTechnicalMetadataSupport(support.protocolVersion),
+    transport: freezeTechnicalMetadataSupport(support.transport),
+    endpointLocator: freezeTechnicalMetadataSupport(support.endpointLocator),
+  });
+}
+
+function freezeApiTechnicalProfileSupport(
+  support: ApiTechnicalProfileSupport,
+): ApiTechnicalProfileSupport {
+  return Object.freeze({
+    technicalFingerprint: freezeTechnicalMetadataSupport(
+      support.technicalFingerprint,
+    ),
+    protocolFamily: freezeTechnicalMetadataSupport(support.protocolFamily),
+    serviceReference: freezeTechnicalMetadataSupport(support.serviceReference),
+    baseLocator: freezeTechnicalMetadataSupport(support.baseLocator),
+    specificationReference: freezeTechnicalMetadataSupport(
+      support.specificationReference,
+    ),
+    specificationHash: freezeTechnicalMetadataSupport(
+      support.specificationHash,
+    ),
+  });
+}
+
+function freezePromptTechnicalProfileSupport(
+  support: PromptTechnicalProfileSupport,
+): PromptTechnicalProfileSupport {
+  return Object.freeze({
+    technicalFingerprint: freezeTechnicalMetadataSupport(
+      support.technicalFingerprint,
+    ),
+    declarationReference: freezeTechnicalMetadataSupport(
+      support.declarationReference,
+    ),
+    revision: freezeTechnicalMetadataSupport(support.revision),
+    contentHash: freezeTechnicalMetadataSupport(support.contentHash),
+    sourceLocator: freezeTechnicalMetadataSupport(support.sourceLocator),
+  });
+}
+
+function freezeKnowledgeBaseTechnicalProfileSupport(
+  support: KnowledgeBaseTechnicalProfileSupport,
+): KnowledgeBaseTechnicalProfileSupport {
+  return Object.freeze({
+    technicalFingerprint: freezeTechnicalMetadataSupport(
+      support.technicalFingerprint,
+    ),
+    sourceReference: freezeTechnicalMetadataSupport(support.sourceReference),
+    resourceKind: freezeTechnicalMetadataSupport(support.resourceKind),
+    contentHash: freezeTechnicalMetadataSupport(support.contentHash),
+    retrievalConfigurationReference: freezeTechnicalMetadataSupport(
+      support.retrievalConfigurationReference,
+    ),
+  });
+}
+
+/** Copies and freezes an immutable AgentVersion technical snapshot. */
+export function createAgentVersionTechnicalProfile(
+  draft: AgentVersionTechnicalProfile,
+): AgentVersionTechnicalProfile {
+  return Object.freeze({
+    agentVersionId: draft.agentVersionId,
+    behaviorFingerprint: createBehaviorFingerprint(draft.behaviorFingerprint),
+    ...(draft.buildReference === undefined
+      ? {}
+      : { buildReference: draft.buildReference }),
+    ...(draft.runtimeFrameworkReference === undefined
+      ? {}
+      : { runtimeFrameworkReference: draft.runtimeFrameworkReference }),
+    ...(draft.entrypointReference === undefined
+      ? {}
+      : { entrypointReference: draft.entrypointReference }),
+    ...(draft.configurationReference === undefined
+      ? {}
+      : { configurationReference: draft.configurationReference }),
+    support: freezeAgentVersionTechnicalProfileSupport(draft.support),
+  });
+}
+
+/**
+ * Target profiles below are current reconciled views. Each factory freezes one
+ * value snapshot, but evolution replaces that view. Future persistence must
+ * retain historical snapshots so immutable AgentVersion bindings can keep
+ * resolving their pinned state; a current profile is not a temporal lookup.
+ */
+export function createModelTechnicalProfile(
+  draft: ModelTechnicalProfile,
+): ModelTechnicalProfile {
+  return Object.freeze({
+    modelId: draft.modelId,
+    technicalFingerprint: createTechnicalFingerprint(
+      draft.technicalFingerprint,
+    ),
+    ...(draft.providerReference === undefined
+      ? {}
+      : { providerReference: draft.providerReference }),
+    ...(draft.providerModelReference === undefined
+      ? {}
+      : { providerModelReference: draft.providerModelReference }),
+    ...(draft.modelFamily === undefined
+      ? {}
+      : { modelFamily: draft.modelFamily }),
+    ...(draft.modelRevision === undefined
+      ? {}
+      : { modelRevision: draft.modelRevision }),
+    support: freezeModelTechnicalProfileSupport(draft.support),
+  });
+}
+
+export function createToolTechnicalProfile(
+  draft: ToolTechnicalProfile,
+): ToolTechnicalProfile {
+  return Object.freeze({
+    toolId: draft.toolId,
+    technicalFingerprint: createTechnicalFingerprint(
+      draft.technicalFingerprint,
+    ),
+    ...(draft.declarationReference === undefined
+      ? {}
+      : { declarationReference: draft.declarationReference }),
+    ...(draft.contractReference === undefined
+      ? {}
+      : { contractReference: draft.contractReference }),
+    ...(draft.contractHash === undefined
+      ? {}
+      : { contractHash: freezeEvidenceHash(draft.contractHash) }),
+    ...(draft.technicalDescription === undefined
+      ? {}
+      : { technicalDescription: draft.technicalDescription }),
+    support: freezeToolTechnicalProfileSupport(draft.support),
+  });
+}
+
+export function createMcpServerTechnicalProfile(
+  draft: McpServerTechnicalProfile,
+): McpServerTechnicalProfile {
+  return Object.freeze({
+    mcpServerId: draft.mcpServerId,
+    technicalFingerprint: createTechnicalFingerprint(
+      draft.technicalFingerprint,
+    ),
+    ...(draft.declaredServerReference === undefined
+      ? {}
+      : { declaredServerReference: draft.declaredServerReference }),
+    ...(draft.protocolVersion === undefined
+      ? {}
+      : { protocolVersion: draft.protocolVersion }),
+    transport: draft.transport,
+    ...(draft.endpointLocator === undefined
+      ? {}
+      : { endpointLocator: draft.endpointLocator }),
+    support: freezeMcpServerTechnicalProfileSupport(draft.support),
+  });
+}
+
+export function createApiTechnicalProfile(
+  draft: ApiTechnicalProfile,
+): ApiTechnicalProfile {
+  return Object.freeze({
+    apiId: draft.apiId,
+    technicalFingerprint: createTechnicalFingerprint(
+      draft.technicalFingerprint,
+    ),
+    protocolFamily: draft.protocolFamily,
+    ...(draft.serviceReference === undefined
+      ? {}
+      : { serviceReference: draft.serviceReference }),
+    ...(draft.baseLocator === undefined
+      ? {}
+      : { baseLocator: draft.baseLocator }),
+    ...(draft.specificationReference === undefined
+      ? {}
+      : { specificationReference: draft.specificationReference }),
+    ...(draft.specificationHash === undefined
+      ? {}
+      : { specificationHash: freezeEvidenceHash(draft.specificationHash) }),
+    support: freezeApiTechnicalProfileSupport(draft.support),
+  });
+}
+
+export function createPromptTechnicalProfile(
+  draft: PromptTechnicalProfile,
+): PromptTechnicalProfile {
+  return Object.freeze({
+    promptId: draft.promptId,
+    technicalFingerprint: createTechnicalFingerprint(
+      draft.technicalFingerprint,
+    ),
+    ...(draft.declarationReference === undefined
+      ? {}
+      : { declarationReference: draft.declarationReference }),
+    ...(draft.revision === undefined ? {} : { revision: draft.revision }),
+    ...(draft.contentHash === undefined
+      ? {}
+      : { contentHash: freezeEvidenceHash(draft.contentHash) }),
+    ...(draft.sourceLocator === undefined
+      ? {}
+      : { sourceLocator: draft.sourceLocator }),
+    support: freezePromptTechnicalProfileSupport(draft.support),
+  });
+}
+
+export function createKnowledgeBaseTechnicalProfile(
+  draft: KnowledgeBaseTechnicalProfile,
+): KnowledgeBaseTechnicalProfile {
+  return Object.freeze({
+    knowledgeBaseId: draft.knowledgeBaseId,
+    technicalFingerprint: createTechnicalFingerprint(
+      draft.technicalFingerprint,
+    ),
+    ...(draft.sourceReference === undefined
+      ? {}
+      : { sourceReference: draft.sourceReference }),
+    resourceKind: draft.resourceKind,
+    ...(draft.contentHash === undefined
+      ? {}
+      : { contentHash: freezeEvidenceHash(draft.contentHash) }),
+    ...(draft.retrievalConfigurationReference === undefined
+      ? {}
+      : {
+          retrievalConfigurationReference:
+            draft.retrievalConfigurationReference,
+        }),
+    support: freezeKnowledgeBaseTechnicalProfileSupport(draft.support),
   });
 }
 
