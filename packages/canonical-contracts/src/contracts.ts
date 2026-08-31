@@ -2,22 +2,34 @@ import type {
   AcquisitionRunId,
   AgentId,
   AgentVersionId,
+  ApiId,
   CanonicalObjectId,
+  DataAssetId,
+  DataElementId,
   DiscoveryFindingId,
   EvidenceId,
   ExternalId,
   IsoTimestamp,
+  KnowledgeBaseId,
+  McpServerId,
+  ModelId,
   NormalizedCandidateId,
   ObjectSourceMappingId,
   OrganisationId,
+  PromptId,
   SanitizedEvidenceLocator,
   SourceAssertionId,
   SourceConnectionId,
   SourceSnapshotId,
   SourceSystemId,
+  ToolId,
 } from "./identifiers.ts";
 
-export const CANONICAL_CONTRACT_VERSION = "1.0" as const;
+export const SUPPORTED_CANONICAL_CONTRACT_VERSIONS = ["1.0", "1.1"] as const;
+export type CanonicalContractVersion =
+  (typeof SUPPORTED_CANONICAL_CONTRACT_VERSIONS)[number];
+export const CANONICAL_CONTRACT_VERSION =
+  "1.1" as const satisfies CanonicalContractVersion;
 
 export const SOURCE_FAMILY = {
   REPOSITORY: "REPOSITORY",
@@ -25,6 +37,7 @@ export const SOURCE_FAMILY = {
   BUILD_METADATA: "BUILD_METADATA",
   IDENTITY: "IDENTITY",
   CLOUD: "CLOUD",
+  RUNTIME: "RUNTIME",
   OTHER: "OTHER",
 } as const;
 export type SourceFamily = (typeof SOURCE_FAMILY)[keyof typeof SOURCE_FAMILY];
@@ -115,10 +128,18 @@ export const OBJECT_SOURCE_MATCH_METHOD = {
 export type ObjectSourceMatchMethod =
   (typeof OBJECT_SOURCE_MATCH_METHOD)[keyof typeof OBJECT_SOURCE_MATCH_METHOD];
 
-/** V1A is deliberately closed to these two kinds. */
+/** V1A.1 is deliberately closed to these ten governed technical kinds. */
 export const CANONICAL_OBJECT_KIND = {
   AGENT: "AGENT",
   AGENT_VERSION: "AGENT_VERSION",
+  MODEL: "MODEL",
+  TOOL: "TOOL",
+  MCP_SERVER: "MCP_SERVER",
+  API: "API",
+  PROMPT: "PROMPT",
+  KNOWLEDGE_BASE: "KNOWLEDGE_BASE",
+  DATA_ASSET: "DATA_ASSET",
+  DATA_ELEMENT: "DATA_ELEMENT",
 } as const;
 export type CanonicalObjectKind =
   (typeof CANONICAL_OBJECT_KIND)[keyof typeof CANONICAL_OBJECT_KIND];
@@ -347,6 +368,48 @@ export interface AgentVersionIdentity {
   readonly versionCode: string;
 }
 
+export interface ModelIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"MODEL">;
+  readonly modelId: ModelId;
+}
+
+export interface ToolIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"TOOL">;
+  readonly toolId: ToolId;
+}
+
+export interface McpServerIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"MCP_SERVER">;
+  readonly mcpServerId: McpServerId;
+}
+
+export interface ApiIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"API">;
+  readonly apiId: ApiId;
+}
+
+export interface PromptIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"PROMPT">;
+  readonly promptId: PromptId;
+}
+
+export interface KnowledgeBaseIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"KNOWLEDGE_BASE">;
+  readonly knowledgeBaseId: KnowledgeBaseId;
+}
+
+export interface DataAssetIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"DATA_ASSET">;
+  readonly dataAssetId: DataAssetId;
+}
+
+export interface DataElementIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"DATA_ELEMENT">;
+  readonly dataElementId: DataElementId;
+  readonly dataAssetId: DataAssetId;
+  readonly elementPath: string;
+}
+
 export interface NormalizedAgentCandidate {
   readonly candidateId: NormalizedCandidateId;
   readonly candidateKind: "AGENT";
@@ -382,7 +445,7 @@ export interface ObjectSourceMapping {
  * organisation field and cannot submit canonical mappings.
  */
 export interface InboundAdapterEnvelope {
-  readonly contractVersion: typeof CANONICAL_CONTRACT_VERSION;
+  readonly contractVersion: CanonicalContractVersion;
   readonly sourceSystem: SourceSystem;
   readonly connection: SourceConnectionReference;
   readonly run: AcquisitionRun;
