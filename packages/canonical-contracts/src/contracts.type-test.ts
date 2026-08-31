@@ -48,6 +48,7 @@ import {
   type NormalizedModelCandidate,
   type NormalizedPromptCandidate,
   type NormalizedRelationshipCandidate,
+  type NormalizedSkillCandidate,
   type NormalizedToolCandidate,
   type PromptIdentity,
   type PromptTechnicalProfile,
@@ -57,6 +58,9 @@ import {
   type ReconciliationSubjectReference,
   type RejectReconciliationDecision,
   type SourceAssertion,
+  type SkillIdentity,
+  type SkillTechnicalProfile,
+  type SkillTechnicalProfileSupport,
   type TechnicalMetadataSupport,
   type TechnicalFingerprint,
   type TrustedSingleSourceCandidateContributor,
@@ -82,6 +86,7 @@ import {
   asOrganisationId,
   asPromptId,
   asReconciliationDecisionId,
+  asSkillId,
   asDiscoveryFindingId,
   asEvidenceId,
   asForeignKeyDefinitionId,
@@ -102,12 +107,17 @@ const validKinds: readonly CanonicalObjectKind[] = [
   CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE,
   CANONICAL_OBJECT_KIND.DATA_ASSET,
   CANONICAL_OBJECT_KIND.DATA_ELEMENT,
+  CANONICAL_OBJECT_KIND.SKILL,
 ];
 void validKinds;
 
 // @ts-expect-error Relationships remain governed associations, not object kinds.
 const unsupportedKind: CanonicalObjectKind = "RELATIONSHIP";
 void unsupportedKind;
+
+// @ts-expect-error Skill has no separately governed version kind in V1A.1.
+const skillVersionCannotBeCanonical: CanonicalObjectKind = "SKILL_VERSION";
+void skillVersionCannotBeCanonical;
 
 function canonicalObject<Kind extends CanonicalObjectKind>(
   kind: Kind,
@@ -161,6 +171,15 @@ const knowledgeBaseIdentity: KnowledgeBaseIdentity = {
   canonicalObject: canonicalObject(CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE),
   knowledgeBaseId: asKnowledgeBaseId("knowledge-base:canonical"),
 };
+const skillIdentity: SkillIdentity = {
+  canonicalObject: canonicalObject(CANONICAL_OBJECT_KIND.SKILL),
+  skillId: asSkillId("skill:canonical"),
+};
+const skillIdentityCannotUsePromptId: SkillIdentity = {
+  ...skillIdentity,
+  // @ts-expect-error Skill and Prompt retain distinct branded identities.
+  skillId: promptIdentity.promptId,
+};
 const dataAssetIdentity: DataAssetIdentity = {
   canonicalObject: canonicalObject(CANONICAL_OBJECT_KIND.DATA_ASSET),
   dataAssetId: asDataAssetId("data-asset:canonical"),
@@ -178,6 +197,8 @@ void [
   apiIdentity,
   promptIdentity,
   knowledgeBaseIdentity,
+  skillIdentity,
+  skillIdentityCannotUsePromptId,
   dataAssetIdentity,
   dataElementIdentity,
 ];
@@ -299,6 +320,15 @@ const knowledgeBaseCandidate: NormalizedKnowledgeBaseCandidate = {
   candidateKind: "KNOWLEDGE_BASE",
   proposedIdentity: { sourceReference: "source-knowledge-base" },
 };
+const skillCandidate: NormalizedSkillCandidate = {
+  ...candidateBase,
+  candidateId: asNormalizedCandidateId("candidate:skill"),
+  candidateKind: "SKILL",
+  proposedIdentity: {
+    declarationReference: "skills/review/SKILL.md",
+    displayName: "Review procedure",
+  },
+};
 const dataAssetCandidate: NormalizedDataAssetCandidate = {
   ...candidateBase,
   candidateId: asNormalizedCandidateId("candidate:data-asset"),
@@ -340,6 +370,7 @@ void [
   apiCandidate,
   promptCandidate,
   knowledgeBaseCandidate,
+  skillCandidate,
   dataAssetCandidate,
   dataElementFromCandidate,
   dataElementFromSource,
@@ -425,6 +456,23 @@ const mergeRecord: CandidateMergeRecord = {
   createsCanonicalObject: false,
 };
 void mergeRecord;
+
+const skillMergeRecord: CandidateMergeRecord = {
+  candidateMergeId: asCandidateMergeId("candidate-merge:skill:type-test"),
+  organisationId: asOrganisationId("organisation:type-test"),
+  candidateKind: "SKILL",
+  contributingCandidateIds: [
+    skillCandidate.candidateId,
+    asNormalizedCandidateId("candidate:skill:second-source"),
+  ],
+  createdByDecisionId: asReconciliationDecisionId(
+    "decision:merge:skill:type-test",
+  ),
+  createdAt: asIsoTimestamp("2026-08-30T12:00:00.000Z"),
+  requiresReconciliation: true,
+  createsCanonicalObject: false,
+};
+void skillMergeRecord;
 
 const mergeRecordCannotHaveSource: CandidateMergeRecord = {
   ...mergeRecord,
@@ -535,12 +583,32 @@ const mergeDecision: MergeCandidatesReconciliationDecision = {
   contributingCandidateIds: mergeRecord.contributingCandidateIds,
   candidateMergeId: mergeRecord.candidateMergeId,
 };
+const skillCreateDecision: CreateNewReconciliationDecision = {
+  ...decisionBase,
+  outcome: "CREATE_NEW",
+  candidateKind: "SKILL",
+  subject: {
+    subjectKind: "CANDIDATE_MERGE",
+    candidateMergeId: skillMergeRecord.candidateMergeId,
+    candidateKind: "SKILL",
+  },
+  canonicalObject: canonicalObject(CANONICAL_OBJECT_KIND.SKILL),
+};
+const skillMergeDecision: MergeCandidatesReconciliationDecision = {
+  ...decisionBase,
+  outcome: "MERGE_CANDIDATES",
+  candidateKind: "SKILL",
+  contributingCandidateIds: skillMergeRecord.contributingCandidateIds,
+  candidateMergeId: skillMergeRecord.candidateMergeId,
+};
 void [
   createDecision,
   matchDecision,
   rejectDecision,
   deferDecision,
   mergeDecision,
+  skillCreateDecision,
+  skillMergeDecision,
 ];
 
 // @ts-expect-error A MODEL subject cannot reconcile to an AGENT identity.
@@ -1079,6 +1147,71 @@ void [
   knowledgeBaseProfileCannotContainEmbeddings,
 ];
 
+const skillProfileSupport: SkillTechnicalProfileSupport = {
+  technicalFingerprint: emptyTechnicalSupport,
+  declarationReference: repositoryNameSupport,
+  revisionReference: emptyTechnicalSupport,
+  artifactHash: catalogTypeSupport,
+  manifestReference: emptyTechnicalSupport,
+  sourceLocator: emptyTechnicalSupport,
+};
+const skillProfile: SkillTechnicalProfile = {
+  skillId: skillIdentity.skillId,
+  technicalFingerprint,
+  declarationReference: "skills/review/SKILL.md",
+  revisionReference: "revision:one",
+  artifactHash: evidenceHash,
+  manifestReference: "skills/review/package.json",
+  sourceLocator: sanitizeTechnicalLocator("skills/review/SKILL.md"),
+  support: skillProfileSupport,
+};
+const minimalSkillProfile: SkillTechnicalProfile = {
+  skillId: skillIdentity.skillId,
+  technicalFingerprint,
+  support: {
+    technicalFingerprint: emptyTechnicalSupport,
+    declarationReference: emptyTechnicalSupport,
+    revisionReference: emptyTechnicalSupport,
+    artifactHash: emptyTechnicalSupport,
+    manifestReference: emptyTechnicalSupport,
+    sourceLocator: emptyTechnicalSupport,
+  },
+};
+// @ts-expect-error A Skill profile requires technical-state identity.
+const skillProfileWithoutFingerprint: SkillTechnicalProfile = {
+  skillId: skillIdentity.skillId,
+  support: skillProfileSupport,
+};
+const skillProfileCannotUseRawLocator: SkillTechnicalProfile = {
+  ...skillProfile,
+  // @ts-expect-error Skill locators must cross the sanitizer boundary.
+  sourceLocator: "skills/review/SKILL.md?token=secret",
+};
+const skillProfileCannotContainRawContent: SkillTechnicalProfile = {
+  ...skillProfile,
+  // @ts-expect-error Raw Skill content is not part of the technical profile.
+  content: "procedure body",
+};
+const skillProfileCannotContainAuthorization: SkillTechnicalProfile = {
+  ...skillProfile,
+  // @ts-expect-error Binding a Skill never grants authorization.
+  authorization: "GRANTED",
+};
+const skillSupportCannotUseArbitraryKeys: SkillTechnicalProfileSupport = {
+  ...skillProfileSupport,
+  // @ts-expect-error Skill field provenance is explicit, never metadata/EAV.
+  arbitraryField: emptyTechnicalSupport,
+};
+void [
+  skillProfile,
+  minimalSkillProfile,
+  skillProfileWithoutFingerprint,
+  skillProfileCannotUseRawLocator,
+  skillProfileCannotContainRawContent,
+  skillProfileCannotContainAuthorization,
+  skillSupportCannotUseArbitraryKeys,
+];
+
 const modelSupportCannotUseArbitraryKeys: ModelTechnicalProfileSupport = {
   ...modelProfileSupport,
   // @ts-expect-error Field support is explicit and cannot become metadata/EAV.
@@ -1151,6 +1284,38 @@ const knowledgeBaseCandidateCannotContainFingerprint: NormalizedKnowledgeBaseCan
     technicalFingerprint,
   },
 };
+const skillCandidateCannotContainCanonicalId: NormalizedSkillCandidate = {
+  ...skillCandidate,
+  proposedIdentity: {
+    ...skillCandidate.proposedIdentity,
+    // @ts-expect-error Reconciliation has not assigned a canonical Skill ID.
+    skillId: skillIdentity.skillId,
+  },
+};
+const skillCandidateCannotContainFingerprint: NormalizedSkillCandidate = {
+  ...skillCandidate,
+  proposedIdentity: {
+    ...skillCandidate.proposedIdentity,
+    // @ts-expect-error Skill candidates carry signals, not accepted state.
+    technicalFingerprint,
+  },
+};
+const skillCandidateCannotContainProfile: NormalizedSkillCandidate = {
+  ...skillCandidate,
+  proposedIdentity: {
+    ...skillCandidate.proposedIdentity,
+    // @ts-expect-error Technical profiles exist only after reconciliation.
+    technicalProfile: skillProfile,
+  },
+};
+const skillCandidateCannotContainRevision: NormalizedSkillCandidate = {
+  ...skillCandidate,
+  proposedIdentity: {
+    ...skillCandidate.proposedIdentity,
+    // @ts-expect-error Revision is a reconciliation signal, not proposed identity.
+    revisionReference: "revision:one",
+  },
+};
 void [
   agentVersionCandidateCannotContainProfile,
   modelCandidateCannotContainFingerprint,
@@ -1159,6 +1324,10 @@ void [
   apiCandidateCannotContainFingerprint,
   promptCandidateCannotContainFingerprint,
   knowledgeBaseCandidateCannotContainFingerprint,
+  skillCandidateCannotContainCanonicalId,
+  skillCandidateCannotContainFingerprint,
+  skillCandidateCannotContainProfile,
+  skillCandidateCannotContainRevision,
 ];
 
 // @ts-expect-error PromptRevision is not a canonical object kind in V1A.1d.

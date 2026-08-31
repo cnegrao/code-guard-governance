@@ -14,6 +14,7 @@ export type McpServerId = OpaqueIdentifier<"McpServerId">;
 export type ApiId = OpaqueIdentifier<"ApiId">;
 export type PromptId = OpaqueIdentifier<"PromptId">;
 export type KnowledgeBaseId = OpaqueIdentifier<"KnowledgeBaseId">;
+export type SkillId = OpaqueIdentifier<"SkillId">;
 export type DataAssetId = OpaqueIdentifier<"DataAssetId">;
 export type DataElementId = OpaqueIdentifier<"DataElementId">;
 export type DataKeyDefinitionId = OpaqueIdentifier<"DataKeyDefinitionId">;
@@ -68,6 +69,8 @@ export const asPromptId = (value: string): PromptId =>
   asNonEmptyOpaque(value, "PromptId");
 export const asKnowledgeBaseId = (value: string): KnowledgeBaseId =>
   asNonEmptyOpaque(value, "KnowledgeBaseId");
+export const asSkillId = (value: string): SkillId =>
+  asNonEmptyOpaque(value, "SkillId");
 export const asDataAssetId = (value: string): DataAssetId =>
   asNonEmptyOpaque(value, "DataAssetId");
 export const asDataElementId = (value: string): DataElementId =>

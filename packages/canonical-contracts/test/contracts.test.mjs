@@ -150,7 +150,7 @@ describe("Canonical Contract V1A", () => {
     assert.equal(Object.hasOwn(candidate, "canonicalObject"), false);
   });
 
-  it("supports findings and single-source candidates for all ten object kinds", () => {
+  it("supports findings and single-source candidates for all eleven object kinds", () => {
     const sourceObject = sourceObjectIdentity(
       "connection:all-kinds",
       "external:all-kinds",
@@ -173,8 +173,8 @@ describe("Canonical Contract V1A", () => {
       objectCandidate(kind, `candidate:${kind}`, sourceObject),
     );
 
-    assert.equal(findings.length, 10);
-    assert.equal(candidates.length, 10);
+    assert.equal(findings.length, 11);
+    assert.equal(candidates.length, 11);
     assert.deepEqual(
       findings.map((finding) => finding.candidateKind).sort(),
       [...objectKinds].sort(),
@@ -188,6 +188,115 @@ describe("Canonical Contract V1A", () => {
     const legacyAgent = githubRepositoryDiscoveryFixture.candidates[0];
     assert.equal(legacyAgent.candidateKind, "AGENT");
     assert.equal(legacyAgent.requiresReconciliation, true);
+  });
+
+  it("keeps Skill findings and candidates unresolved across reconciliation signals", () => {
+    const organisationId = contracts.asOrganisationId("organisation:skill");
+    const firstSource = sourceObjectIdentity(
+      "connection:skill:repository",
+      "external:skill:one",
+    );
+    const secondSource = sourceObjectIdentity(
+      "connection:skill:catalog",
+      "external:skill:two",
+    );
+    const finding = {
+      findingId: contracts.asDiscoveryFindingId("finding:skill:one"),
+      findingNature: "CANDIDATE",
+      candidateKind: "SKILL",
+      sourceObject: firstSource,
+      assertionIds: [],
+      evidenceIds: [],
+      confidence: 0.98,
+      reviewStatus: contracts.FINDING_REVIEW_STATUS.UNREVIEWED,
+      requiresReview: true,
+      createsCanonicalObject: false,
+      detectedAt: reconciliationTimestamp,
+    };
+    const firstCandidate = {
+      ...objectCandidate("SKILL", "candidate:skill:one", firstSource),
+      findingId: finding.findingId,
+      proposedIdentity: {
+        declarationReference: "skills/review/SKILL.md",
+        displayName: "Review procedure",
+      },
+    };
+    const secondCandidate = {
+      ...objectCandidate("SKILL", "candidate:skill:two", secondSource),
+      proposedIdentity: {
+        declarationReference: "skills/review/SKILL.md",
+        displayName: "Review procedure",
+      },
+    };
+
+    assert.equal(finding.createsCanonicalObject, false);
+    assert.equal(firstCandidate.requiresReconciliation, true);
+    assert.equal(secondCandidate.requiresReconciliation, true);
+    assert.notEqual(firstCandidate.candidateId, secondCandidate.candidateId);
+    assert.notDeepEqual(firstCandidate.sourceObject, secondCandidate.sourceObject);
+    for (const candidate of [firstCandidate, secondCandidate]) {
+      for (const forbidden of [
+        "canonicalObject",
+        "skillId",
+        "technicalFingerprint",
+        "technicalProfile",
+        "revisionReference",
+        "artifactHash",
+        "manifestReference",
+        "sourceLocator",
+        "content",
+      ]) {
+        assert.equal(Object.hasOwn(candidate, forbidden), false, forbidden);
+        assert.equal(
+          Object.hasOwn(candidate.proposedIdentity, forbidden),
+          false,
+          forbidden,
+        );
+      }
+    }
+
+    const merge = contracts.createCandidateMergeRecord(
+      mergeDraft({
+        id: "candidate-merge:skill",
+        organisationId,
+        kind: "SKILL",
+        contributors: [
+          trustedContributor(organisationId, firstCandidate),
+          trustedContributor(organisationId, secondCandidate),
+        ],
+        decisionId: "decision:skill:merge",
+      }),
+    );
+    const decision = {
+      decisionId: contracts.asReconciliationDecisionId("decision:skill:create"),
+      organisationId,
+      outcome: "CREATE_NEW",
+      candidateKind: "SKILL",
+      subject: {
+        subjectKind: "CANDIDATE_MERGE",
+        candidateMergeId: merge.candidateMergeId,
+        candidateKind: "SKILL",
+      },
+      canonicalObject: {
+        organisationId,
+        objectId: contracts.asCanonicalObjectId("canonical:skill:one"),
+        kind: "SKILL",
+      },
+      authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+      reasonCode: "HUMAN_REVIEW",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: reconciliationTimestamp,
+    };
+
+    assert.equal(merge.candidateKind, "SKILL");
+    assert.equal(merge.createsCanonicalObject, false);
+    assert.equal(merge.requiresReconciliation, true);
+    assert.deepEqual(new Set(merge.contributingCandidateIds), new Set([
+      firstCandidate.candidateId,
+      secondCandidate.candidateId,
+    ]));
+    assert.equal(decision.canonicalObject.kind, "SKILL");
   });
 
   it("uses pre-canonical parents and preserves relationship direction", () => {
@@ -1163,7 +1272,7 @@ describe("Canonical Contract V1A", () => {
     }
   });
 
-  it("exposes exactly the ten approved canonical object kinds in V1A.1", () => {
+  it("exposes exactly the eleven approved canonical object kinds in V1A.1", () => {
     assert.deepEqual(Object.values(contracts.CANONICAL_OBJECT_KIND).sort(), [
       "AGENT",
       "AGENT_VERSION",
@@ -1174,13 +1283,18 @@ describe("Canonical Contract V1A", () => {
       "MCP_SERVER",
       "MODEL",
       "PROMPT",
+      "SKILL",
       "TOOL",
     ]);
     assert.equal(contracts.CANONICAL_OBJECT_KIND.AGENT, "AGENT");
     assert.equal(contracts.CANONICAL_OBJECT_KIND.AGENT_VERSION, "AGENT_VERSION");
+    assert.equal(Object.values(contracts.CANONICAL_OBJECT_KIND).length, 11);
+    assert.equal(Object.values(contracts.CANONICAL_OBJECT_KIND)[10], "SKILL");
+    assert.equal(Object.hasOwn(contracts.CANONICAL_OBJECT_KIND, "SKILL_VERSION"), false);
+    assert.equal(Object.hasOwn(contracts, "USES_SKILL"), false);
   });
 
-  it("constructs the eight new identities without source or business metadata", () => {
+  it("constructs the nine new identities without source or business metadata", () => {
     const organisationId = contracts.asOrganisationId("organisation:test");
     const canonicalObject = (kind, suffix) => ({
       organisationId,
@@ -1214,6 +1328,10 @@ describe("Canonical Contract V1A", () => {
         knowledgeBaseId: contracts.asKnowledgeBaseId("knowledge-base:test"),
       },
       {
+        canonicalObject: canonicalObject("SKILL", "skill"),
+        skillId: contracts.asSkillId("skill:test"),
+      },
+      {
         canonicalObject: canonicalObject("DATA_ASSET", "data-asset"),
         dataAssetId,
       },
@@ -1225,7 +1343,7 @@ describe("Canonical Contract V1A", () => {
       },
     ];
 
-    assert.equal(identities.length, 8);
+    assert.equal(identities.length, 9);
     const forbiddenFields = [
       "provider",
       "path",
@@ -1244,8 +1362,10 @@ describe("Canonical Contract V1A", () => {
 
     const promptIdentity = identities[4];
     assert.equal(Object.hasOwn(promptIdentity, "content"), false);
-    const dataAssetIdentity = identities[6];
-    const dataElementIdentity = identities[7];
+    const skillIdentity = identities[6];
+    assert.deepEqual(Object.keys(skillIdentity), ["canonicalObject", "skillId"]);
+    const dataAssetIdentity = identities[7];
+    const dataElementIdentity = identities[8];
     assert.equal(dataElementIdentity.dataAssetId, dataAssetIdentity.dataAssetId);
     assert.equal(Object.hasOwn(dataElementIdentity, "dataAsset"), false);
   });
@@ -1311,6 +1431,11 @@ describe("Canonical Contract V1A", () => {
       "EVIDENCE",
       "FINDING",
       "EXECUTION_IDENTITY",
+      "CAPABILITY",
+      "AUTHORIZATION",
+      "SKILL_VERSION",
+      "SIGNATURE",
+      "EVALUATION",
     ]) {
       assert.equal(objectKinds.has(excluded), false, excluded);
     }
@@ -1362,6 +1487,7 @@ describe("Canonical Contract V1A", () => {
       "microsoft",
       "aws",
       "duckdb",
+      "nvidia",
     ]) {
       assert.equal(coreExportNames.includes(vendor), false);
     }
@@ -1779,6 +1905,205 @@ describe("Canonical Contract V1A", () => {
     assert.equal(Object.isFrozen(api.specificationHash), true);
     assert.equal(Object.isFrozen(prompt.contentHash), true);
     assert.equal(Object.isFrozen(knowledgeBase.contentHash), true);
+  });
+
+  it("constructs an allowlisted Skill profile with field-level provenance", () => {
+    const fingerprint = contracts.createTechnicalFingerprint({
+      algorithm: "SHA-256",
+      schemaVersion: "skill-technical/v1",
+      value: "resolved-skill-technical-state",
+    });
+    const artifactHash = {
+      algorithm: "SHA-256",
+      value: "skill-package-integrity",
+    };
+    const declarationSupport = technicalSupport(
+      ["assertion:skill:declaration"],
+      ["evidence:skill:declaration"],
+    );
+    const artifactSupport = technicalSupport(
+      ["assertion:skill:artifact"],
+      ["evidence:skill:artifact"],
+    );
+    const support = {
+      technicalFingerprint: technicalSupport(
+        ["assertion:skill:fingerprint"],
+        ["evidence:skill:fingerprint"],
+      ),
+      declarationReference: declarationSupport,
+      revisionReference: technicalSupport(["assertion:skill:revision"]),
+      artifactHash: artifactSupport,
+      manifestReference: technicalSupport(["assertion:skill:manifest"]),
+      sourceLocator: technicalSupport([], ["evidence:skill:locator"]),
+      arbitraryField: technicalSupport(["assertion:must-not-copy"]),
+    };
+    const sourceLocator = contracts.sanitizeTechnicalLocator(
+      "skills/review/SKILL.md?draft=true#section",
+    );
+    const draft = {
+      skillId: contracts.asSkillId("skill:review"),
+      technicalFingerprint: fingerprint,
+      declarationReference: "skills/review/SKILL.md",
+      revisionReference: "revision:one",
+      artifactHash,
+      manifestReference: "skills/review/package.json",
+      sourceLocator,
+      support,
+      content: "must-not-copy",
+      skillMd: "must-not-copy",
+      rawManifest: { secret: "must-not-copy" },
+      scripts: ["must-not-copy"],
+      assets: ["must-not-copy"],
+      credentials: "must-not-copy",
+      token: "must-not-copy",
+      password: "must-not-copy",
+      apiKey: "must-not-copy",
+      privateKey: "must-not-copy",
+      signatureBlob: "must-not-copy",
+      evaluationDataset: ["must-not-copy"],
+      benchmarkResult: { score: 1 },
+      risk: "must-not-copy",
+      limitations: ["must-not-copy"],
+      owner: "must-not-copy",
+      authorization: "must-not-copy",
+      runtimeEvent: "must-not-copy",
+      nvidiaSkillId: "must-not-copy",
+      canonicalObject: "must-not-copy",
+      organisationId: "must-not-copy",
+    };
+
+    const profile = contracts.createSkillTechnicalProfile(draft);
+
+    assert.deepEqual(Object.keys(profile), [
+      "skillId",
+      "technicalFingerprint",
+      "declarationReference",
+      "revisionReference",
+      "artifactHash",
+      "manifestReference",
+      "sourceLocator",
+      "support",
+    ]);
+    assert.equal(profile.sourceLocator, "skills/review/SKILL.md");
+    assert.deepEqual(profile.technicalFingerprint, {
+      algorithm: "SHA-256",
+      schemaVersion: "skill-technical/v1",
+      value: "resolved-skill-technical-state",
+    });
+    assert.deepEqual(profile.artifactHash, {
+      algorithm: "SHA-256",
+      value: "skill-package-integrity",
+    });
+    assert.equal(Object.hasOwn(profile.artifactHash, "schemaVersion"), false);
+    assert.notEqual(profile.technicalFingerprint, fingerprint);
+    assert.notEqual(profile.artifactHash, artifactHash);
+    assert.equal(Object.isFrozen(profile), true);
+    assert.equal(Object.isFrozen(profile.technicalFingerprint), true);
+    assert.equal(Object.isFrozen(profile.artifactHash), true);
+    assert.equal(Object.isFrozen(profile.support), true);
+    assert.deepEqual(Object.keys(profile.support), [
+      "technicalFingerprint",
+      "declarationReference",
+      "revisionReference",
+      "artifactHash",
+      "manifestReference",
+      "sourceLocator",
+    ]);
+    for (const fieldSupport of Object.values(profile.support)) {
+      assert.equal(Object.isFrozen(fieldSupport), true);
+      assert.equal(Object.isFrozen(fieldSupport.assertionIds), true);
+      assert.equal(Object.isFrozen(fieldSupport.evidenceIds), true);
+    }
+    assert.notEqual(
+      profile.support.declarationReference,
+      profile.support.artifactHash,
+    );
+    assert.deepEqual(profile.support.declarationReference.assertionIds, [
+      "assertion:skill:declaration",
+    ]);
+    assert.deepEqual(profile.support.artifactHash.assertionIds, [
+      "assertion:skill:artifact",
+    ]);
+
+    declarationSupport.assertionIds.push("assertion:input:mutated");
+    artifactSupport.evidenceIds.push("evidence:input:mutated");
+    assert.deepEqual(profile.support.declarationReference.assertionIds, [
+      "assertion:skill:declaration",
+    ]);
+    assert.deepEqual(profile.support.artifactHash.evidenceIds, [
+      "evidence:skill:artifact",
+    ]);
+    assert.equal(Object.isFrozen(draft), false);
+    assert.equal(Object.isFrozen(support), false);
+
+    for (const forbidden of [
+      "content",
+      "skillMd",
+      "rawManifest",
+      "scripts",
+      "assets",
+      "credentials",
+      "token",
+      "password",
+      "apiKey",
+      "privateKey",
+      "signatureBlob",
+      "evaluationDataset",
+      "benchmarkResult",
+      "risk",
+      "limitations",
+      "owner",
+      "authorization",
+      "runtimeEvent",
+      "nvidiaSkillId",
+      "canonicalObject",
+      "organisationId",
+    ]) {
+      assert.equal(Object.hasOwn(profile, forbidden), false, forbidden);
+    }
+    assert.equal(Object.hasOwn(profile.support, "arbitraryField"), false);
+  });
+
+  it("omits absent optional Skill fields while retaining explicit empty support", () => {
+    const profile = contracts.createSkillTechnicalProfile({
+      skillId: contracts.asSkillId("skill:minimal"),
+      technicalFingerprint: contracts.createTechnicalFingerprint({
+        algorithm: "SHA-256",
+        schemaVersion: "skill-technical/v1",
+        value: "minimal-skill-state",
+      }),
+      declarationReference: undefined,
+      revisionReference: undefined,
+      artifactHash: undefined,
+      manifestReference: undefined,
+      sourceLocator: undefined,
+      support: profileSupport(
+        "technicalFingerprint",
+        "declarationReference",
+        "revisionReference",
+        "artifactHash",
+        "manifestReference",
+        "sourceLocator",
+      ),
+    });
+
+    assert.deepEqual(Object.keys(profile), [
+      "skillId",
+      "technicalFingerprint",
+      "support",
+    ]);
+    assert.deepEqual(Object.keys(profile.support), [
+      "technicalFingerprint",
+      "declarationReference",
+      "revisionReference",
+      "artifactHash",
+      "manifestReference",
+      "sourceLocator",
+    ]);
+    for (const fieldSupport of Object.values(profile.support)) {
+      assert.deepEqual(fieldSupport.assertionIds, []);
+      assert.deepEqual(fieldSupport.evidenceIds, []);
+    }
   });
 
   it("keeps optional target fields omitted and field support independent", () => {
