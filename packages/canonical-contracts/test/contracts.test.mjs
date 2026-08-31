@@ -56,6 +56,39 @@ function mergeDraft({ id, organisationId, kind, contributors, decisionId }) {
   };
 }
 
+function technicalSupport(assertionIds = [], evidenceIds = []) {
+  return {
+    assertionIds: assertionIds.map(contracts.asSourceAssertionId),
+    evidenceIds: evidenceIds.map(contracts.asEvidenceId),
+  };
+}
+
+function dataTypeSupport(overrides = {}) {
+  const empty = technicalSupport();
+  return {
+    normalizedFamily: empty,
+    nativeType: empty,
+    length: empty,
+    precision: empty,
+    scale: empty,
+    timeZoneSemantics: empty,
+    ...overrides,
+  };
+}
+
+function dataElementSupport(overrides = {}) {
+  const empty = technicalSupport();
+  return {
+    technicalName: empty,
+    ordinalPosition: empty,
+    dataType: dataTypeSupport(),
+    nullability: empty,
+    defaultState: empty,
+    generationState: empty,
+    ...overrides,
+  };
+}
+
 describe("Canonical Contract V1A", () => {
   it("preserves provider-specific identifiers as opaque external strings", () => {
     assert.equal(
@@ -536,6 +569,575 @@ describe("Canonical Contract V1A", () => {
       contracts.sourceObjectIdentityKey(first),
       contracts.sourceObjectIdentityKey(second),
     );
+  });
+
+  it("exposes only the approved Data Grain vocabularies and explicit states", () => {
+    assert.deepEqual(Object.values(contracts.DATA_ASSET_STRUCTURAL_KIND), [
+      "TABLE",
+      "VIEW",
+      "MATERIALIZED_VIEW",
+      "DATASET",
+      "FILE",
+      "STREAM",
+      "COLLECTION",
+      "OTHER",
+    ]);
+    assert.deepEqual(Object.values(contracts.NORMALIZED_DATA_TYPE_FAMILY), [
+      "UNKNOWN",
+      "BOOLEAN",
+      "INTEGER",
+      "DECIMAL",
+      "FLOAT",
+      "STRING",
+      "BINARY",
+      "DATE",
+      "TIME",
+      "TIMESTAMP",
+      "INTERVAL",
+      "IDENTIFIER",
+      "SEMI_STRUCTURED",
+      "ARRAY",
+      "MAP",
+      "STRUCT",
+      "VECTOR",
+      "OTHER",
+    ]);
+    assert.deepEqual(Object.values(contracts.NULLABILITY_STATE), [
+      "UNKNOWN",
+      "NULLABLE",
+      "NOT_NULLABLE",
+    ]);
+    assert.deepEqual(Object.values(contracts.DEFAULT_VALUE_STATE), [
+      "UNKNOWN",
+      "ABSENT",
+      "PRESENT",
+    ]);
+    assert.deepEqual(Object.values(contracts.VALUE_GENERATION_STATE), [
+      "UNKNOWN",
+      "NOT_GENERATED",
+      "GENERATED",
+    ]);
+    assert.deepEqual(Object.values(contracts.DATA_KEY_TYPE), [
+      "PRIMARY_KEY",
+      "UNIQUE_KEY",
+    ]);
+  });
+
+  it("constructs an allowlisted immutable DataAsset technical profile", () => {
+    const structuralKindSupport = technicalSupport(
+      ["assertion:asset:kind"],
+      ["evidence:asset:kind"],
+    );
+    const technicalNameSupport = technicalSupport(
+      ["assertion:asset:name"],
+      ["evidence:asset:name"],
+    );
+    const technicalNamespaceSupport = technicalSupport();
+    const locatorSupport = technicalSupport(
+      ["assertion:asset:locator"],
+      ["evidence:asset:locator"],
+    );
+    const descriptionSupport = technicalSupport(
+      ["assertion:asset:description"],
+    );
+    const widenedDraft = {
+      dataAssetId: contracts.asDataAssetId("asset:factory:customer"),
+      structuralKind: "TABLE",
+      technicalName: "customer",
+      technicalNamespace: undefined,
+      qualifiedTechnicalLocator: "catalog.schema.customer",
+      technicalDescription: "Canonical customer table",
+      support: {
+        structuralKind: structuralKindSupport,
+        technicalName: technicalNameSupport,
+        technicalNamespace: technicalNamespaceSupport,
+        qualifiedTechnicalLocator: locatorSupport,
+        technicalDescription: descriptionSupport,
+        arbitraryField: technicalSupport(["assertion:must-not-copy"]),
+      },
+      canonicalObject: { kind: "DATA_ASSET" },
+      sourceObject: { externalId: "must-not-copy" },
+      organisationId: "must-not-copy",
+      arbitraryMetadata: { vendor: "must-not-copy" },
+    };
+
+    const profile = contracts.createDataAssetTechnicalProfile(widenedDraft);
+
+    assert.deepEqual(profile, {
+      dataAssetId: "asset:factory:customer",
+      structuralKind: "TABLE",
+      technicalName: "customer",
+      qualifiedTechnicalLocator: "catalog.schema.customer",
+      technicalDescription: "Canonical customer table",
+      support: {
+        structuralKind: {
+          assertionIds: ["assertion:asset:kind"],
+          evidenceIds: ["evidence:asset:kind"],
+        },
+        technicalName: {
+          assertionIds: ["assertion:asset:name"],
+          evidenceIds: ["evidence:asset:name"],
+        },
+        technicalNamespace: { assertionIds: [], evidenceIds: [] },
+        qualifiedTechnicalLocator: {
+          assertionIds: ["assertion:asset:locator"],
+          evidenceIds: ["evidence:asset:locator"],
+        },
+        technicalDescription: {
+          assertionIds: ["assertion:asset:description"],
+          evidenceIds: [],
+        },
+      },
+    });
+    assert.equal(Object.hasOwn(profile, "technicalNamespace"), false);
+    for (const forbidden of [
+      "canonicalObject",
+      "sourceObject",
+      "organisationId",
+      "arbitraryMetadata",
+    ]) {
+      assert.equal(Object.hasOwn(profile, forbidden), false, forbidden);
+    }
+    assert.equal(Object.hasOwn(profile.support, "arbitraryField"), false);
+
+    assert.equal(Object.isFrozen(profile), true);
+    assert.equal(Object.isFrozen(profile.support), true);
+    for (const fieldSupport of Object.values(profile.support)) {
+      assert.equal(Object.isFrozen(fieldSupport), true);
+      assert.equal(Object.isFrozen(fieldSupport.assertionIds), true);
+      assert.equal(Object.isFrozen(fieldSupport.evidenceIds), true);
+    }
+
+    assert.notEqual(profile.support.structuralKind, structuralKindSupport);
+    assert.notEqual(
+      profile.support.structuralKind,
+      profile.support.technicalName,
+    );
+    assert.notEqual(
+      profile.support.technicalName,
+      profile.support.qualifiedTechnicalLocator,
+    );
+
+    structuralKindSupport.assertionIds.push("assertion:input:mutated");
+    structuralKindSupport.evidenceIds.push("evidence:input:mutated");
+    assert.deepEqual(profile.support.structuralKind.assertionIds, [
+      "assertion:asset:kind",
+    ]);
+    assert.deepEqual(profile.support.structuralKind.evidenceIds, [
+      "evidence:asset:kind",
+    ]);
+    assert.equal(Object.isFrozen(structuralKindSupport.assertionIds), false);
+  });
+
+  it("keeps technical identity separate and preserves field-level provenance", () => {
+    const repositoryName = technicalSupport(
+      ["assertion:repository:name"],
+      ["evidence:repository:name"],
+    );
+    const catalogType = technicalSupport(
+      ["assertion:catalog:type:one", "assertion:catalog:type:conflict"],
+      ["evidence:catalog:type"],
+    );
+    const runtimeNullability = technicalSupport(
+      ["assertion:runtime:nullability"],
+      ["evidence:runtime:nullability"],
+    );
+    const enterpriseOrdinal = technicalSupport([
+      "assertion:enterprise:ordinal",
+    ]);
+    const empty = technicalSupport();
+    const dataAssetProfile = {
+      dataAssetId: contracts.asDataAssetId("asset:customer"),
+      structuralKind: "TABLE",
+      technicalName: "customer",
+      support: {
+        structuralKind: catalogType,
+        technicalName: repositoryName,
+        technicalNamespace: empty,
+        qualifiedTechnicalLocator: empty,
+        technicalDescription: empty,
+      },
+    };
+
+    assert.equal(Object.hasOwn(dataAssetProfile, "canonicalObject"), false);
+    assert.equal(dataAssetProfile.technicalNamespace, undefined);
+    assert.deepEqual(
+      dataAssetProfile.support.technicalNamespace.assertionIds,
+      [],
+    );
+    assert.notDeepEqual(
+      dataAssetProfile.support.structuralKind,
+      dataAssetProfile.support.technicalName,
+    );
+
+    const dataElementProfile = contracts.createDataElementTechnicalProfile({
+      dataElementId: contracts.asDataElementId("element:customer:id"),
+      technicalName: "customer_id",
+      ordinalPosition: 1,
+      dataType: {
+        normalizedFamily: "DECIMAL",
+        nativeType: "NUMBER(18,4)",
+        precision: 18,
+        scale: 4,
+        timeZoneSemantics: "NOT_APPLICABLE",
+      },
+      nullability: "NOT_NULLABLE",
+      defaultState: "ABSENT",
+      generationState: "NOT_GENERATED",
+      support: dataElementSupport({
+        technicalName: repositoryName,
+        ordinalPosition: enterpriseOrdinal,
+        dataType: dataTypeSupport({
+          normalizedFamily: catalogType,
+          nativeType: catalogType,
+          precision: catalogType,
+          scale: catalogType,
+        }),
+        nullability: runtimeNullability,
+      }),
+    });
+
+    assert.equal(Object.hasOwn(dataElementProfile, "dataAssetId"), false);
+    assert.equal(Object.hasOwn(dataElementProfile, "elementPath"), false);
+    assert.equal(Object.hasOwn(dataElementProfile, "isPrimaryKey"), false);
+    assert.equal(Object.hasOwn(dataElementProfile, "isForeignKey"), false);
+    assert.equal(Object.hasOwn(dataElementProfile, "defaultExpression"), false);
+    assert.equal(dataElementProfile.ordinalPosition, 1);
+    assert.deepEqual(
+      dataElementProfile.support.dataType.normalizedFamily.assertionIds,
+      ["assertion:catalog:type:one", "assertion:catalog:type:conflict"],
+    );
+    assert.deepEqual(
+      dataElementProfile.support.nullability.assertionIds,
+      ["assertion:runtime:nullability"],
+    );
+    assert.notEqual(
+      dataElementProfile.support.technicalName,
+      dataElementProfile.support.nullability,
+    );
+    assert.equal(
+      Object.hasOwn(dataElementProfile.support.technicalName, "trustState"),
+      false,
+    );
+    assert.equal(Object.isFrozen(dataElementProfile), true);
+    assert.equal(Object.isFrozen(dataElementProfile.support.dataType), true);
+  });
+
+  it("validates datatype and ordinal invariants without a recursive type AST", () => {
+    const decimal = contracts.createDataTypeDescriptor({
+      normalizedFamily: "DECIMAL",
+      nativeType: "NUMBER(38,10)",
+      precision: 38,
+      scale: 10,
+      timeZoneSemantics: "NOT_APPLICABLE",
+    });
+    assert.equal(decimal.normalizedFamily, "DECIMAL");
+    assert.equal(decimal.nativeType, "NUMBER(38,10)");
+    assert.equal(Object.isFrozen(decimal), true);
+    assert.equal(Object.hasOwn(decimal, "elementType"), false);
+
+    assert.doesNotThrow(() =>
+      contracts.createDataTypeDescriptor({
+        normalizedFamily: "TIMESTAMP",
+        nativeType: "TIMESTAMP WITH TIME ZONE",
+        timeZoneSemantics: "WITH_TIME_ZONE",
+      }),
+    );
+    assert.throws(
+      () =>
+        contracts.createDataTypeDescriptor({
+          normalizedFamily: "STRING",
+          length: -1,
+          timeZoneSemantics: "NOT_APPLICABLE",
+        }),
+      /length must be a non-negative integer/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataTypeDescriptor({
+          normalizedFamily: "DECIMAL",
+          precision: 4.5,
+          timeZoneSemantics: "NOT_APPLICABLE",
+        }),
+      /precision must be a non-negative integer/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataTypeDescriptor({
+          normalizedFamily: "DECIMAL",
+          precision: 4,
+          scale: 5,
+          timeZoneSemantics: "NOT_APPLICABLE",
+        }),
+      /scale cannot exceed precision/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataTypeDescriptor({
+          normalizedFamily: "STRING",
+          timeZoneSemantics: "WITH_TIME_ZONE",
+        }),
+      /require a TIME or TIMESTAMP/,
+    );
+
+    const elementDraft = {
+      dataElementId: contracts.asDataElementId("element:ordinal"),
+      technicalName: "ordinal_test",
+      dataType: {
+        normalizedFamily: "INTEGER",
+        timeZoneSemantics: "NOT_APPLICABLE",
+      },
+      nullability: "UNKNOWN",
+      defaultState: "UNKNOWN",
+      generationState: "UNKNOWN",
+      support: dataElementSupport(),
+    };
+    assert.throws(
+      () =>
+        contracts.createDataElementTechnicalProfile({
+          ...elementDraft,
+          ordinalPosition: 0,
+        }),
+      /ordinal position must be a positive integer/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataElementTechnicalProfile({
+          ...elementDraft,
+          ordinalPosition: 1.5,
+        }),
+      /ordinal position must be a positive integer/,
+    );
+  });
+
+  it("creates ordered composite primary and unique keys fail-closed", () => {
+    const dataAssetId = contracts.asDataAssetId("asset:customer");
+    const first = contracts.asDataElementId("element:customer:id");
+    const second = contracts.asDataElementId("element:customer:region");
+    const draft = {
+      keyDefinitionId: contracts.asDataKeyDefinitionId("key:customer:primary"),
+      dataAssetId,
+      keyType: "PRIMARY_KEY",
+      technicalName: "customer_pk",
+      members: [
+        { position: 2, dataElementId: second },
+        { position: 1, dataElementId: first },
+      ],
+      support: technicalSupport(["assertion:catalog:primary-key"]),
+    };
+    const primary = contracts.createDataKeyDefinition(draft);
+    const unique = contracts.createDataKeyDefinition({
+      ...draft,
+      keyDefinitionId: contracts.asDataKeyDefinitionId("key:customer:unique"),
+      keyType: "UNIQUE_KEY",
+    });
+
+    assert.deepEqual(primary.members, [
+      { position: 1, dataElementId: first },
+      { position: 2, dataElementId: second },
+    ]);
+    assert.equal(primary.keyType, "PRIMARY_KEY");
+    assert.equal(unique.keyType, "UNIQUE_KEY");
+    assert.equal(Object.isFrozen(primary), true);
+    assert.equal(Object.isFrozen(primary.members), true);
+    assert.equal(primary.members.every(Object.isFrozen), true);
+
+    assert.throws(
+      () => contracts.createDataKeyDefinition({ ...draft, members: [] }),
+      /requires at least one member/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataKeyDefinition({
+          ...draft,
+          members: [
+            { position: 1, dataElementId: first },
+            { position: 1, dataElementId: second },
+          ],
+        }),
+      /positions must be unique/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataKeyDefinition({
+          ...draft,
+          members: [
+            { position: 1, dataElementId: first },
+            { position: 3, dataElementId: second },
+          ],
+        }),
+      /positions must be contiguous/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataKeyDefinition({
+          ...draft,
+          members: [
+            { position: 1, dataElementId: first },
+            { position: 2, dataElementId: first },
+          ],
+        }),
+      /DataElementIds must be unique/,
+    );
+    assert.throws(
+      () =>
+        contracts.createDataKeyDefinition({
+          ...draft,
+          members: [{ position: 0, dataElementId: first }],
+        }),
+      /one-based integers/,
+    );
+  });
+
+  it("creates ordered directional composite foreign keys and permits self references", () => {
+    const orderAsset = contracts.asDataAssetId("asset:order");
+    const customerAsset = contracts.asDataAssetId("asset:customer");
+    const sourceId = contracts.asDataElementId("element:order:customer_id");
+    const sourceRegion = contracts.asDataElementId(
+      "element:order:customer_region",
+    );
+    const targetId = contracts.asDataElementId("element:customer:id");
+    const targetRegion = contracts.asDataElementId("element:customer:region");
+    const draft = {
+      foreignKeyDefinitionId: contracts.asForeignKeyDefinitionId(
+        "foreign-key:order:customer",
+      ),
+      sourceDataAssetId: orderAsset,
+      targetDataAssetId: customerAsset,
+      technicalName: "order_customer_fk",
+      mappings: [
+        {
+          position: 2,
+          sourceDataElementId: sourceRegion,
+          targetDataElementId: targetRegion,
+        },
+        {
+          position: 1,
+          sourceDataElementId: sourceId,
+          targetDataElementId: targetId,
+        },
+      ],
+      support: technicalSupport(["assertion:catalog:foreign-key"]),
+    };
+    const foreignKey = contracts.createForeignKeyDefinition(draft);
+
+    assert.deepEqual(foreignKey.mappings, [
+      {
+        position: 1,
+        sourceDataElementId: sourceId,
+        targetDataElementId: targetId,
+      },
+      {
+        position: 2,
+        sourceDataElementId: sourceRegion,
+        targetDataElementId: targetRegion,
+      },
+    ]);
+    assert.equal(foreignKey.sourceDataAssetId, orderAsset);
+    assert.equal(foreignKey.targetDataAssetId, customerAsset);
+    assert.equal(Object.isFrozen(foreignKey.mappings), true);
+
+    const selfReference = contracts.createForeignKeyDefinition({
+      ...draft,
+      foreignKeyDefinitionId: contracts.asForeignKeyDefinitionId(
+        "foreign-key:customer:parent",
+      ),
+      sourceDataAssetId: customerAsset,
+      targetDataAssetId: customerAsset,
+    });
+    assert.equal(selfReference.sourceDataAssetId, selfReference.targetDataAssetId);
+
+    assert.throws(
+      () => contracts.createForeignKeyDefinition({ ...draft, mappings: [] }),
+      /requires at least one member/,
+    );
+    assert.throws(
+      () =>
+        contracts.createForeignKeyDefinition({
+          ...draft,
+          mappings: [
+            {
+              position: 1,
+              sourceDataElementId: sourceId,
+              targetDataElementId: targetId,
+            },
+            {
+              position: 2,
+              sourceDataElementId: sourceId,
+              targetDataElementId: targetRegion,
+            },
+          ],
+        }),
+      /source DataElementIds must be unique/,
+    );
+    assert.throws(
+      () =>
+        contracts.createForeignKeyDefinition({
+          ...draft,
+          mappings: [
+            {
+              position: 1,
+              sourceDataElementId: sourceId,
+              targetDataElementId: targetId,
+            },
+            {
+              position: 2,
+              sourceDataElementId: sourceRegion,
+              targetDataElementId: targetId,
+            },
+          ],
+        }),
+      /target DataElementIds must be unique/,
+    );
+    assert.throws(
+      () =>
+        contracts.createForeignKeyDefinition({
+          ...draft,
+          mappings: [
+            {
+              position: 1,
+              sourceDataElementId: sourceId,
+              targetDataElementId: targetId,
+            },
+            {
+              position: 3,
+              sourceDataElementId: sourceRegion,
+              targetDataElementId: targetRegion,
+            },
+          ],
+        }),
+      /positions must be contiguous/,
+    );
+  });
+
+  it("keeps structural ownership, lineage, and candidate boundaries unchanged", () => {
+    const identity = {
+      canonicalObject: {
+        organisationId: contracts.asOrganisationId("organisation:data-grain"),
+        objectId: contracts.asCanonicalObjectId("object:data-element"),
+        kind: "DATA_ELEMENT",
+      },
+      dataElementId: contracts.asDataElementId("element:data-grain"),
+      dataAssetId: contracts.asDataAssetId("asset:data-grain"),
+      elementPath: "payload.customer_id",
+    };
+    assert.deepEqual(Object.keys(identity).sort(), [
+      "canonicalObject",
+      "dataAssetId",
+      "dataElementId",
+      "elementPath",
+    ]);
+    assert.equal(
+      Object.values(contracts.CANONICAL_OBJECT_KIND).includes("CONTAINS"),
+      false,
+    );
+    assert.equal(Object.hasOwn(contracts, "DERIVED_FROM"), false);
+
+    const legacyAssetCandidate = githubRepositoryDiscoveryFixture.candidates.find(
+      (candidate) => candidate.candidateKind === "AGENT",
+    );
+    assert.equal(Object.hasOwn(legacyAssetCandidate, "technicalProfile"), false);
+    assert.equal(contracts.CANONICAL_CONTRACT_VERSION, "1.1");
   });
 
   it("keeps SourceAssertion as a provenance envelope without generic fact values", () => {

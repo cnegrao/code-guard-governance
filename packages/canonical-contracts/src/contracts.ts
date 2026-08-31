@@ -7,9 +7,11 @@ import type {
   CanonicalObjectId,
   DataAssetId,
   DataElementId,
+  DataKeyDefinitionId,
   DiscoveryFindingId,
   EvidenceId,
   ExternalId,
+  ForeignKeyDefinitionId,
   IsoTimestamp,
   KnowledgeBaseId,
   McpServerId,
@@ -148,6 +150,81 @@ export type CanonicalObjectKind =
 
 /** RELATIONSHIP is discovery-only and is never a canonical object kind. */
 export type DiscoveryCandidateKind = CanonicalObjectKind | "RELATIONSHIP";
+
+export const DATA_ASSET_STRUCTURAL_KIND = {
+  TABLE: "TABLE",
+  VIEW: "VIEW",
+  MATERIALIZED_VIEW: "MATERIALIZED_VIEW",
+  DATASET: "DATASET",
+  FILE: "FILE",
+  STREAM: "STREAM",
+  COLLECTION: "COLLECTION",
+  OTHER: "OTHER",
+} as const;
+export type DataAssetStructuralKind =
+  (typeof DATA_ASSET_STRUCTURAL_KIND)[keyof typeof DATA_ASSET_STRUCTURAL_KIND];
+
+export const NORMALIZED_DATA_TYPE_FAMILY = {
+  UNKNOWN: "UNKNOWN",
+  BOOLEAN: "BOOLEAN",
+  INTEGER: "INTEGER",
+  DECIMAL: "DECIMAL",
+  FLOAT: "FLOAT",
+  STRING: "STRING",
+  BINARY: "BINARY",
+  DATE: "DATE",
+  TIME: "TIME",
+  TIMESTAMP: "TIMESTAMP",
+  INTERVAL: "INTERVAL",
+  IDENTIFIER: "IDENTIFIER",
+  SEMI_STRUCTURED: "SEMI_STRUCTURED",
+  ARRAY: "ARRAY",
+  MAP: "MAP",
+  STRUCT: "STRUCT",
+  VECTOR: "VECTOR",
+  OTHER: "OTHER",
+} as const;
+export type NormalizedDataTypeFamily =
+  (typeof NORMALIZED_DATA_TYPE_FAMILY)[keyof typeof NORMALIZED_DATA_TYPE_FAMILY];
+
+export const TIME_ZONE_SEMANTICS = {
+  NOT_APPLICABLE: "NOT_APPLICABLE",
+  UNKNOWN: "UNKNOWN",
+  WITHOUT_TIME_ZONE: "WITHOUT_TIME_ZONE",
+  WITH_TIME_ZONE: "WITH_TIME_ZONE",
+} as const;
+export type TimeZoneSemantics =
+  (typeof TIME_ZONE_SEMANTICS)[keyof typeof TIME_ZONE_SEMANTICS];
+
+export const NULLABILITY_STATE = {
+  UNKNOWN: "UNKNOWN",
+  NULLABLE: "NULLABLE",
+  NOT_NULLABLE: "NOT_NULLABLE",
+} as const;
+export type NullabilityState =
+  (typeof NULLABILITY_STATE)[keyof typeof NULLABILITY_STATE];
+
+export const DEFAULT_VALUE_STATE = {
+  UNKNOWN: "UNKNOWN",
+  ABSENT: "ABSENT",
+  PRESENT: "PRESENT",
+} as const;
+export type DefaultValueState =
+  (typeof DEFAULT_VALUE_STATE)[keyof typeof DEFAULT_VALUE_STATE];
+
+export const VALUE_GENERATION_STATE = {
+  UNKNOWN: "UNKNOWN",
+  NOT_GENERATED: "NOT_GENERATED",
+  GENERATED: "GENERATED",
+} as const;
+export type ValueGenerationState =
+  (typeof VALUE_GENERATION_STATE)[keyof typeof VALUE_GENERATION_STATE];
+
+export const DATA_KEY_TYPE = {
+  PRIMARY_KEY: "PRIMARY_KEY",
+  UNIQUE_KEY: "UNIQUE_KEY",
+} as const;
+export type DataKeyType = (typeof DATA_KEY_TYPE)[keyof typeof DATA_KEY_TYPE];
 
 export type SourceAttributeValue =
   | string
@@ -424,6 +501,397 @@ export interface DataElementIdentity {
   readonly dataElementId: DataElementId;
   readonly dataAssetId: DataAssetId;
   readonly elementPath: string;
+}
+
+/**
+ * Leaf-level provenance references for one explicitly typed technical field.
+ * Arrays are domain transport convenience; future persistence remains 3NF.
+ */
+export interface TechnicalMetadataSupport {
+  readonly assertionIds: readonly SourceAssertionId[];
+  readonly evidenceIds: readonly EvidenceId[];
+}
+
+export interface DataAssetTechnicalProfileSupport {
+  readonly structuralKind: TechnicalMetadataSupport;
+  readonly technicalName: TechnicalMetadataSupport;
+  readonly technicalNamespace: TechnicalMetadataSupport;
+  readonly qualifiedTechnicalLocator: TechnicalMetadataSupport;
+  readonly technicalDescription: TechnicalMetadataSupport;
+}
+
+/** Mutable technical metadata, deliberately separate from canonical identity. */
+export interface DataAssetTechnicalProfile {
+  readonly dataAssetId: DataAssetId;
+  readonly structuralKind: DataAssetStructuralKind;
+  readonly technicalName: string;
+  readonly technicalNamespace?: string;
+  readonly qualifiedTechnicalLocator?: string;
+  readonly technicalDescription?: string;
+  readonly support: DataAssetTechnicalProfileSupport;
+}
+
+/** Copies, allowlists, and freezes an explicitly typed DataAsset profile. */
+export function createDataAssetTechnicalProfile(
+  draft: DataAssetTechnicalProfile,
+): DataAssetTechnicalProfile {
+  const support = Object.freeze({
+    structuralKind: freezeTechnicalMetadataSupport(
+      draft.support.structuralKind,
+    ),
+    technicalName: freezeTechnicalMetadataSupport(draft.support.technicalName),
+    technicalNamespace: freezeTechnicalMetadataSupport(
+      draft.support.technicalNamespace,
+    ),
+    qualifiedTechnicalLocator: freezeTechnicalMetadataSupport(
+      draft.support.qualifiedTechnicalLocator,
+    ),
+    technicalDescription: freezeTechnicalMetadataSupport(
+      draft.support.technicalDescription,
+    ),
+  });
+
+  return Object.freeze({
+    dataAssetId: draft.dataAssetId,
+    structuralKind: draft.structuralKind,
+    technicalName: draft.technicalName,
+    ...(draft.technicalNamespace === undefined
+      ? {}
+      : { technicalNamespace: draft.technicalNamespace }),
+    ...(draft.qualifiedTechnicalLocator === undefined
+      ? {}
+      : { qualifiedTechnicalLocator: draft.qualifiedTechnicalLocator }),
+    ...(draft.technicalDescription === undefined
+      ? {}
+      : { technicalDescription: draft.technicalDescription }),
+    support,
+  });
+}
+
+export interface DataTypeDescriptor {
+  readonly normalizedFamily: NormalizedDataTypeFamily;
+  /** Opaque source-native syntax; it is technical metadata, not identity. */
+  readonly nativeType?: string;
+  readonly length?: number;
+  readonly precision?: number;
+  readonly scale?: number;
+  readonly timeZoneSemantics: TimeZoneSemantics;
+}
+
+export interface DataTypeDescriptorSupport {
+  readonly normalizedFamily: TechnicalMetadataSupport;
+  readonly nativeType: TechnicalMetadataSupport;
+  readonly length: TechnicalMetadataSupport;
+  readonly precision: TechnicalMetadataSupport;
+  readonly scale: TechnicalMetadataSupport;
+  readonly timeZoneSemantics: TechnicalMetadataSupport;
+}
+
+export interface DataElementTechnicalProfileSupport {
+  readonly technicalName: TechnicalMetadataSupport;
+  readonly ordinalPosition: TechnicalMetadataSupport;
+  readonly dataType: DataTypeDescriptorSupport;
+  readonly nullability: TechnicalMetadataSupport;
+  readonly defaultState: TechnicalMetadataSupport;
+  readonly generationState: TechnicalMetadataSupport;
+}
+
+/** Technical field state only; ownership remains on DataElementIdentity. */
+export interface DataElementTechnicalProfile {
+  readonly dataElementId: DataElementId;
+  readonly technicalName: string;
+  readonly ordinalPosition?: number;
+  readonly dataType: DataTypeDescriptor;
+  readonly nullability: NullabilityState;
+  readonly defaultState: DefaultValueState;
+  readonly generationState: ValueGenerationState;
+  readonly support: DataElementTechnicalProfileSupport;
+}
+
+function freezeTechnicalMetadataSupport(
+  support: TechnicalMetadataSupport,
+): TechnicalMetadataSupport {
+  return Object.freeze({
+    assertionIds: Object.freeze([...support.assertionIds]),
+    evidenceIds: Object.freeze([...support.evidenceIds]),
+  });
+}
+
+function freezeDataTypeDescriptorSupport(
+  support: DataTypeDescriptorSupport,
+): DataTypeDescriptorSupport {
+  return Object.freeze({
+    normalizedFamily: freezeTechnicalMetadataSupport(support.normalizedFamily),
+    nativeType: freezeTechnicalMetadataSupport(support.nativeType),
+    length: freezeTechnicalMetadataSupport(support.length),
+    precision: freezeTechnicalMetadataSupport(support.precision),
+    scale: freezeTechnicalMetadataSupport(support.scale),
+    timeZoneSemantics: freezeTechnicalMetadataSupport(
+      support.timeZoneSemantics,
+    ),
+  });
+}
+
+function assertNonNegativeInteger(
+  value: number | undefined,
+  field: string,
+): void {
+  if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+    throw new TypeError(`${field} must be a non-negative integer`);
+  }
+}
+
+/** Validates only portable, locally provable datatype invariants. */
+export function createDataTypeDescriptor(
+  draft: DataTypeDescriptor,
+): DataTypeDescriptor {
+  assertNonNegativeInteger(draft.length, "Data type length");
+  assertNonNegativeInteger(draft.precision, "Data type precision");
+  assertNonNegativeInteger(draft.scale, "Data type scale");
+
+  if (
+    draft.precision !== undefined &&
+    draft.scale !== undefined &&
+    draft.scale > draft.precision
+  ) {
+    throw new TypeError("Data type scale cannot exceed precision");
+  }
+
+  const hasTimeZoneSemantics =
+    draft.timeZoneSemantics === TIME_ZONE_SEMANTICS.WITH_TIME_ZONE ||
+    draft.timeZoneSemantics === TIME_ZONE_SEMANTICS.WITHOUT_TIME_ZONE;
+  const isTimeZoneCompatible =
+    draft.normalizedFamily === NORMALIZED_DATA_TYPE_FAMILY.TIME ||
+    draft.normalizedFamily === NORMALIZED_DATA_TYPE_FAMILY.TIMESTAMP;
+
+  if (hasTimeZoneSemantics && !isTimeZoneCompatible) {
+    throw new TypeError(
+      "Time zone semantics require a TIME or TIMESTAMP normalized family",
+    );
+  }
+
+  return Object.freeze({
+    normalizedFamily: draft.normalizedFamily,
+    ...(draft.nativeType === undefined ? {} : { nativeType: draft.nativeType }),
+    ...(draft.length === undefined ? {} : { length: draft.length }),
+    ...(draft.precision === undefined ? {} : { precision: draft.precision }),
+    ...(draft.scale === undefined ? {} : { scale: draft.scale }),
+    timeZoneSemantics: draft.timeZoneSemantics,
+  });
+}
+
+/** Copies and freezes an explicitly typed DataElement technical profile. */
+export function createDataElementTechnicalProfile(
+  draft: DataElementTechnicalProfile,
+): DataElementTechnicalProfile {
+  if (
+    draft.ordinalPosition !== undefined &&
+    (!Number.isInteger(draft.ordinalPosition) || draft.ordinalPosition < 1)
+  ) {
+    throw new TypeError("Data element ordinal position must be a positive integer");
+  }
+
+  const support = Object.freeze({
+    technicalName: freezeTechnicalMetadataSupport(draft.support.technicalName),
+    ordinalPosition: freezeTechnicalMetadataSupport(
+      draft.support.ordinalPosition,
+    ),
+    dataType: freezeDataTypeDescriptorSupport(draft.support.dataType),
+    nullability: freezeTechnicalMetadataSupport(draft.support.nullability),
+    defaultState: freezeTechnicalMetadataSupport(draft.support.defaultState),
+    generationState: freezeTechnicalMetadataSupport(
+      draft.support.generationState,
+    ),
+  });
+
+  return Object.freeze({
+    dataElementId: draft.dataElementId,
+    technicalName: draft.technicalName,
+    ...(draft.ordinalPosition === undefined
+      ? {}
+      : { ordinalPosition: draft.ordinalPosition }),
+    dataType: createDataTypeDescriptor(draft.dataType),
+    nullability: draft.nullability,
+    defaultState: draft.defaultState,
+    generationState: draft.generationState,
+    support,
+  });
+}
+
+export interface DataKeyMember {
+  /** One-based order inside the key definition. */
+  readonly position: number;
+  readonly dataElementId: DataElementId;
+}
+
+export type NonEmptyDataKeyMembers = readonly [
+  DataKeyMember,
+  ...DataKeyMember[],
+];
+
+export interface DataKeyDefinition {
+  readonly keyDefinitionId: DataKeyDefinitionId;
+  readonly dataAssetId: DataAssetId;
+  readonly keyType: DataKeyType;
+  readonly technicalName?: string;
+  readonly members: NonEmptyDataKeyMembers;
+  /** Definition-level support; member-level provenance is out of V1A.1c. */
+  readonly support: TechnicalMetadataSupport;
+}
+
+export interface DataKeyDefinitionDraft {
+  readonly keyDefinitionId: DataKeyDefinitionId;
+  readonly dataAssetId: DataAssetId;
+  readonly keyType: DataKeyType;
+  readonly technicalName?: string;
+  readonly members: readonly DataKeyMember[];
+  readonly support: TechnicalMetadataSupport;
+}
+
+export interface ForeignKeyElementMapping {
+  /** One-based order; the directional pair must remain intact. */
+  readonly position: number;
+  readonly sourceDataElementId: DataElementId;
+  readonly targetDataElementId: DataElementId;
+}
+
+export type NonEmptyForeignKeyMappings = readonly [
+  ForeignKeyElementMapping,
+  ...ForeignKeyElementMapping[],
+];
+
+export interface ForeignKeyDefinition {
+  readonly foreignKeyDefinitionId: ForeignKeyDefinitionId;
+  readonly sourceDataAssetId: DataAssetId;
+  readonly targetDataAssetId: DataAssetId;
+  readonly referencedKeyDefinitionId?: DataKeyDefinitionId;
+  readonly technicalName?: string;
+  readonly mappings: NonEmptyForeignKeyMappings;
+  /** Definition-level support; member-level provenance is out of V1A.1c. */
+  readonly support: TechnicalMetadataSupport;
+}
+
+export interface ForeignKeyDefinitionDraft {
+  readonly foreignKeyDefinitionId: ForeignKeyDefinitionId;
+  readonly sourceDataAssetId: DataAssetId;
+  readonly targetDataAssetId: DataAssetId;
+  readonly referencedKeyDefinitionId?: DataKeyDefinitionId;
+  readonly technicalName?: string;
+  readonly mappings: readonly ForeignKeyElementMapping[];
+  readonly support: TechnicalMetadataSupport;
+}
+
+function sortAndValidatePositions<T extends { readonly position: number }>(
+  items: readonly T[],
+  subject: string,
+): T[] {
+  if (items.length === 0) {
+    throw new TypeError(`${subject} requires at least one member`);
+  }
+
+  const positions = new Set<number>();
+  for (const item of items) {
+    if (!Number.isInteger(item.position) || item.position < 1) {
+      throw new TypeError(`${subject} positions must be one-based integers`);
+    }
+    if (positions.has(item.position)) {
+      throw new TypeError(`${subject} positions must be unique`);
+    }
+    positions.add(item.position);
+  }
+
+  const ordered = [...items].sort((left, right) => left.position - right.position);
+  if (ordered.some((item, index) => item.position !== index + 1)) {
+    throw new TypeError(`${subject} positions must be contiguous`);
+  }
+
+  return ordered;
+}
+
+/** Enforces local key structure without claiming tenant or FK validation. */
+export function createDataKeyDefinition(
+  draft: DataKeyDefinitionDraft,
+): DataKeyDefinition {
+  const ordered = sortAndValidatePositions(draft.members, "Data key member");
+  const elementIds = new Set<DataElementId>();
+
+  for (const member of ordered) {
+    if (elementIds.has(member.dataElementId)) {
+      throw new TypeError("Data key member DataElementIds must be unique");
+    }
+    elementIds.add(member.dataElementId);
+  }
+
+  const members = Object.freeze(
+    ordered.map((member) =>
+      Object.freeze({
+        position: member.position,
+        dataElementId: member.dataElementId,
+      }),
+    ),
+  ) as unknown as NonEmptyDataKeyMembers;
+
+  return Object.freeze({
+    keyDefinitionId: draft.keyDefinitionId,
+    dataAssetId: draft.dataAssetId,
+    keyType: draft.keyType,
+    ...(draft.technicalName === undefined
+      ? {}
+      : { technicalName: draft.technicalName }),
+    members,
+    support: freezeTechnicalMetadataSupport(draft.support),
+  });
+}
+
+/** Enforces ordered directional pairs without resolving external identities. */
+export function createForeignKeyDefinition(
+  draft: ForeignKeyDefinitionDraft,
+): ForeignKeyDefinition {
+  const ordered = sortAndValidatePositions(
+    draft.mappings,
+    "Foreign key mapping",
+  );
+  const sourceIds = new Set<DataElementId>();
+  const targetIds = new Set<DataElementId>();
+
+  for (const mapping of ordered) {
+    if (sourceIds.has(mapping.sourceDataElementId)) {
+      throw new TypeError(
+        "Foreign key source DataElementIds must be unique",
+      );
+    }
+    if (targetIds.has(mapping.targetDataElementId)) {
+      throw new TypeError(
+        "Foreign key target DataElementIds must be unique",
+      );
+    }
+    sourceIds.add(mapping.sourceDataElementId);
+    targetIds.add(mapping.targetDataElementId);
+  }
+
+  const mappings = Object.freeze(
+    ordered.map((mapping) =>
+      Object.freeze({
+        position: mapping.position,
+        sourceDataElementId: mapping.sourceDataElementId,
+        targetDataElementId: mapping.targetDataElementId,
+      }),
+    ),
+  ) as unknown as NonEmptyForeignKeyMappings;
+
+  return Object.freeze({
+    foreignKeyDefinitionId: draft.foreignKeyDefinitionId,
+    sourceDataAssetId: draft.sourceDataAssetId,
+    targetDataAssetId: draft.targetDataAssetId,
+    ...(draft.referencedKeyDefinitionId === undefined
+      ? {}
+      : { referencedKeyDefinitionId: draft.referencedKeyDefinitionId }),
+    ...(draft.technicalName === undefined
+      ? {}
+      : { technicalName: draft.technicalName }),
+    mappings,
+    support: freezeTechnicalMetadataSupport(draft.support),
+  });
 }
 
 export type PreCanonicalObjectReference<

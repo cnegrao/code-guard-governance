@@ -6,10 +6,16 @@ import {
   type CanonicalObjectKind,
   type CreateNewReconciliationDecision,
   type DataAssetIdentity,
+  type DataAssetTechnicalProfile,
+  type DataAssetTechnicalProfileSupport,
   type DataElementIdentity,
+  type DataElementTechnicalProfile,
+  type DataKeyDefinition,
+  type DataTypeDescriptor,
   type DeferReconciliationDecision,
   type DiscoveryFinding,
   type Evidence,
+  type ForeignKeyDefinition,
   type InboundAdapterEnvelope,
   type KnowledgeBaseIdentity,
   type MatchExistingReconciliationDecision,
@@ -33,6 +39,7 @@ import {
   type ReconciliationSubjectReference,
   type RejectReconciliationDecision,
   type SourceAssertion,
+  type TechnicalMetadataSupport,
   type TrustedSingleSourceCandidateContributor,
   type ToolIdentity,
 } from "./contracts.ts";
@@ -43,6 +50,7 @@ import {
   asCanonicalObjectId,
   asDataAssetId,
   asDataElementId,
+  asDataKeyDefinitionId,
   asKnowledgeBaseId,
   asMcpServerId,
   asModelId,
@@ -53,6 +61,7 @@ import {
   asReconciliationDecisionId,
   asDiscoveryFindingId,
   asEvidenceId,
+  asForeignKeyDefinitionId,
   asIsoTimestamp,
   asSourceAssertionId,
   asToolId,
@@ -564,3 +573,232 @@ const evidenceCannotStoreRawSecrets: Evidence = {
   rawSensitiveValue: "must-not-exist",
 };
 void evidenceCannotStoreRawSecrets;
+
+const emptyTechnicalSupport: TechnicalMetadataSupport = {
+  assertionIds: [],
+  evidenceIds: [],
+};
+const repositoryNameSupport: TechnicalMetadataSupport = {
+  assertionIds: [asSourceAssertionId("assertion:repository:technical-name")],
+  evidenceIds: [asEvidenceId("evidence:repository:technical-name")],
+};
+const catalogTypeSupport: TechnicalMetadataSupport = {
+  assertionIds: [
+    asSourceAssertionId("assertion:catalog:data-type:one"),
+    asSourceAssertionId("assertion:catalog:data-type:conflicting"),
+  ],
+  evidenceIds: [asEvidenceId("evidence:catalog:data-type")],
+};
+
+const dataAssetProfileSupport: DataAssetTechnicalProfileSupport = {
+  structuralKind: emptyTechnicalSupport,
+  technicalName: repositoryNameSupport,
+  technicalNamespace: emptyTechnicalSupport,
+  qualifiedTechnicalLocator: emptyTechnicalSupport,
+  technicalDescription: emptyTechnicalSupport,
+};
+const dataAssetProfile: DataAssetTechnicalProfile = {
+  dataAssetId: dataAssetIdentity.dataAssetId,
+  structuralKind: "TABLE",
+  technicalName: "customer",
+  support: dataAssetProfileSupport,
+};
+void dataAssetProfile;
+
+const dataAssetProfileCannotContainIdentity: DataAssetTechnicalProfile = {
+  ...dataAssetProfile,
+  // @ts-expect-error Canonical identity remains separate from its profile.
+  canonicalObject: dataAssetIdentity.canonicalObject,
+};
+void dataAssetProfileCannotContainIdentity;
+
+const dataAssetSupportCannotUseArbitraryKeys: DataAssetTechnicalProfileSupport = {
+  ...dataAssetProfileSupport,
+  // @ts-expect-error Profile support keys are explicit, never metadata/EAV keys.
+  arbitraryField: emptyTechnicalSupport,
+};
+void dataAssetSupportCannotUseArbitraryKeys;
+
+const supportCannotClaimTrust: TechnicalMetadataSupport = {
+  ...emptyTechnicalSupport,
+  // @ts-expect-error Trust belongs to SourceAssertion.
+  trustState: "VALIDATED",
+};
+void supportCannotClaimTrust;
+
+const supportCannotStorePredicate: TechnicalMetadataSupport = {
+  ...emptyTechnicalSupport,
+  // @ts-expect-error Support references provenance; it is not EAV.
+  predicate: "technicalName",
+};
+void supportCannotStorePredicate;
+
+const supportCannotStoreValue: TechnicalMetadataSupport = {
+  ...emptyTechnicalSupport,
+  // @ts-expect-error The typed profile field owns the canonical value.
+  value: "customer",
+};
+void supportCannotStoreValue;
+
+const supportCannotStoreFactName: TechnicalMetadataSupport = {
+  ...emptyTechnicalSupport,
+  // @ts-expect-error Support is not a generic fact bag.
+  factName: "technical_name",
+};
+void supportCannotStoreFactName;
+
+const decimalDataType: DataTypeDescriptor = {
+  normalizedFamily: "DECIMAL",
+  nativeType: "NUMBER(18,4)",
+  precision: 18,
+  scale: 4,
+  timeZoneSemantics: "NOT_APPLICABLE",
+};
+const dataElementProfile: DataElementTechnicalProfile = {
+  dataElementId: dataElementIdentity.dataElementId,
+  technicalName: "customer_id",
+  ordinalPosition: 1,
+  dataType: decimalDataType,
+  nullability: "NOT_NULLABLE",
+  defaultState: "ABSENT",
+  generationState: "NOT_GENERATED",
+  support: {
+    technicalName: repositoryNameSupport,
+    ordinalPosition: {
+      assertionIds: [asSourceAssertionId("assertion:enterprise:ordinal")],
+      evidenceIds: [],
+    },
+    dataType: {
+      normalizedFamily: catalogTypeSupport,
+      nativeType: catalogTypeSupport,
+      length: emptyTechnicalSupport,
+      precision: catalogTypeSupport,
+      scale: catalogTypeSupport,
+      timeZoneSemantics: emptyTechnicalSupport,
+    },
+    nullability: {
+      assertionIds: [asSourceAssertionId("assertion:runtime:nullability")],
+      evidenceIds: [asEvidenceId("evidence:runtime:nullability")],
+    },
+    defaultState: emptyTechnicalSupport,
+    generationState: emptyTechnicalSupport,
+  },
+};
+void dataElementProfile;
+
+const dataElementProfileCannotRepeatParent: DataElementTechnicalProfile = {
+  ...dataElementProfile,
+  // @ts-expect-error Structural ownership remains on DataElementIdentity.
+  dataAssetId: dataElementIdentity.dataAssetId,
+};
+void dataElementProfileCannotRepeatParent;
+
+const dataElementProfileCannotRepeatPath: DataElementTechnicalProfile = {
+  ...dataElementProfile,
+  // @ts-expect-error elementPath remains identity, not profile metadata.
+  elementPath: dataElementIdentity.elementPath,
+};
+void dataElementProfileCannotRepeatPath;
+
+const dataElementCannotUsePrimaryKeyBoolean: DataElementTechnicalProfile = {
+  ...dataElementProfile,
+  // @ts-expect-error Keys are separate composite-capable definitions.
+  isPrimaryKey: true,
+};
+void dataElementCannotUsePrimaryKeyBoolean;
+
+const dataElementCannotUseForeignKeyBoolean: DataElementTechnicalProfile = {
+  ...dataElementProfile,
+  // @ts-expect-error Foreign keys are directional structural definitions.
+  isForeignKey: true,
+};
+void dataElementCannotUseForeignKeyBoolean;
+
+const dataElementCannotStoreRawDefault: DataElementTechnicalProfile = {
+  ...dataElementProfile,
+  // @ts-expect-error Raw default expressions are evidence/source concerns.
+  defaultExpression: "current_user_secret()",
+};
+void dataElementCannotStoreRawDefault;
+
+const invalidNormalizedFamily: DataTypeDescriptor = {
+  ...decimalDataType,
+  // @ts-expect-error Datatype normalization uses the controlled V1A.1c vocabulary.
+  normalizedFamily: "VARCHAR2",
+};
+void invalidNormalizedFamily;
+
+const compositePrimaryKey: DataKeyDefinition = {
+  keyDefinitionId: asDataKeyDefinitionId("key:customer:primary"),
+  dataAssetId: dataAssetIdentity.dataAssetId,
+  keyType: "PRIMARY_KEY",
+  technicalName: "customer_pk",
+  members: [
+    { position: 1, dataElementId: asDataElementId("element:customer:id") },
+    { position: 2, dataElementId: asDataElementId("element:customer:region") },
+  ],
+  support: catalogTypeSupport,
+};
+const compositeUniqueKey: DataKeyDefinition = {
+  ...compositePrimaryKey,
+  keyDefinitionId: asDataKeyDefinitionId("key:customer:unique"),
+  keyType: "UNIQUE_KEY",
+};
+void [compositePrimaryKey, compositeUniqueKey];
+
+const finalKeyCannotBeEmpty: DataKeyDefinition = {
+  ...compositePrimaryKey,
+  // @ts-expect-error A persisted domain key definition has at least one member.
+  members: [],
+};
+void finalKeyCannotBeEmpty;
+
+const keyCannotUseForeignKeyId: DataKeyDefinition = {
+  ...compositePrimaryKey,
+  // @ts-expect-error Definition IDs are separately branded.
+  keyDefinitionId: asForeignKeyDefinitionId("foreign-key:wrong-brand"),
+};
+void keyCannotUseForeignKeyId;
+
+const compositeForeignKey: ForeignKeyDefinition = {
+  foreignKeyDefinitionId: asForeignKeyDefinitionId("foreign-key:order:customer"),
+  sourceDataAssetId: asDataAssetId("asset:order"),
+  targetDataAssetId: asDataAssetId("asset:customer"),
+  referencedKeyDefinitionId: compositePrimaryKey.keyDefinitionId,
+  technicalName: "order_customer_fk",
+  mappings: [
+    {
+      position: 1,
+      sourceDataElementId: asDataElementId("element:order:customer_id"),
+      targetDataElementId: asDataElementId("element:customer:id"),
+    },
+    {
+      position: 2,
+      sourceDataElementId: asDataElementId("element:order:customer_region"),
+      targetDataElementId: asDataElementId("element:customer:region"),
+    },
+  ],
+  support: catalogTypeSupport,
+};
+void compositeForeignKey;
+
+const finalForeignKeyCannotBeEmpty: ForeignKeyDefinition = {
+  ...compositeForeignKey,
+  // @ts-expect-error A foreign key definition has at least one mapping.
+  mappings: [],
+};
+void finalForeignKeyCannotBeEmpty;
+
+const dataAssetCandidateCannotContainProfile: NormalizedDataAssetCandidate = {
+  ...dataAssetCandidate,
+  proposedIdentity: {
+    ...dataAssetCandidate.proposedIdentity,
+    // @ts-expect-error Candidates remain minimum identity proposals.
+    technicalProfile: dataAssetProfile,
+  },
+};
+void dataAssetCandidateCannotContainProfile;
+
+// @ts-expect-error CONTAINS is a reconstructable projection, not an object kind.
+const containsCannotBeCanonicalIdentity: CanonicalObjectKind = "CONTAINS";
+void containsCannotBeCanonicalIdentity;
