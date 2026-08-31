@@ -16,6 +16,9 @@ export type PromptId = OpaqueIdentifier<"PromptId">;
 export type KnowledgeBaseId = OpaqueIdentifier<"KnowledgeBaseId">;
 export type DataAssetId = OpaqueIdentifier<"DataAssetId">;
 export type DataElementId = OpaqueIdentifier<"DataElementId">;
+export type DataKeyDefinitionId = OpaqueIdentifier<"DataKeyDefinitionId">;
+export type ForeignKeyDefinitionId =
+  OpaqueIdentifier<"ForeignKeyDefinitionId">;
 export type SourceSystemId = OpaqueIdentifier<"SourceSystemId">;
 export type SourceConnectionId = OpaqueIdentifier<"SourceConnectionId">;
 export type AcquisitionRunId = OpaqueIdentifier<"AcquisitionRunId">;
@@ -67,6 +70,11 @@ export const asDataAssetId = (value: string): DataAssetId =>
   asNonEmptyOpaque(value, "DataAssetId");
 export const asDataElementId = (value: string): DataElementId =>
   asNonEmptyOpaque(value, "DataElementId");
+export const asDataKeyDefinitionId = (value: string): DataKeyDefinitionId =>
+  asNonEmptyOpaque(value, "DataKeyDefinitionId");
+export const asForeignKeyDefinitionId = (
+  value: string,
+): ForeignKeyDefinitionId => asNonEmptyOpaque(value, "ForeignKeyDefinitionId");
 export const asSourceSystemId = (value: string): SourceSystemId =>
   asNonEmptyOpaque(value, "SourceSystemId");
 export const asSourceConnectionId = (value: string): SourceConnectionId =>
