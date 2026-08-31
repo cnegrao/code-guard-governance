@@ -1,10 +1,14 @@
 import {
   CANONICAL_OBJECT_KIND,
   createBehaviorFingerprint,
+  createDataElementSemanticConceptAssignment,
+  createDataElementSemanticConceptAssignmentCandidate,
   createGovernedRelationship,
   createRelationshipReconciliationDecision,
+  createSemanticAssignmentReconciliationDecision,
   createTechnicalFingerprint,
   GOVERNED_RELATIONSHIP_TYPE,
+  SEMANTIC_IDENTITY_KIND,
   type BehaviorBindingConfigurationReference,
   type BehaviorBindingSupport,
   type AgentIdentity,
@@ -15,6 +19,8 @@ import {
   type ApiTechnicalProfile,
   type ApiTechnicalProfileSupport,
   type BehaviorFingerprint,
+  type BusinessDomainIdentity,
+  type BusinessTermIdentity,
   type CandidateMergeRecord,
   type CanonicalObjectIdentity,
   type CanonicalObjectKind,
@@ -25,11 +31,15 @@ import {
   type DataAssetTechnicalProfile,
   type DataAssetTechnicalProfileSupport,
   type DataElementIdentity,
+  type DataElementSemanticConceptAssignment,
+  type DataElementSemanticConceptAssignmentCandidate,
+  type DataElementSemanticConceptAssignmentDraft,
   type DataElementTechnicalProfile,
   type DataKeyDefinition,
   type DataTypeDescriptor,
   type DeferReconciliationDecision,
   type DeferRelationshipReconciliationDecisionDraft,
+  type DeferSemanticAssignmentReconciliationDecisionDraft,
   type DiscoveryFinding,
   type Evidence,
   type EvidenceHash,
@@ -39,6 +49,7 @@ import {
   type GovernedRelationshipType,
   type HandoffToRelationship,
   type InboundAdapterEnvelope,
+  type InformationDomainIdentity,
   type KnowledgeBaseIdentity,
   type KnowledgeBaseTechnicalProfile,
   type KnowledgeBaseTechnicalProfileSupport,
@@ -72,9 +83,12 @@ import {
   type ReconciliationSubjectReference,
   type RejectReconciliationDecision,
   type RejectRelationshipReconciliationDecisionDraft,
+  type RejectSemanticAssignmentReconciliationDecisionDraft,
   type RelationshipMatchReference,
   type RelationshipReconciliationOutcome,
   type RelationshipSupport,
+  type SemanticConceptIdentity,
+  type SemanticIdentityKind,
   type SourceAssertion,
   type SkillIdentity,
   type SkillTechnicalProfile,
@@ -93,9 +107,14 @@ import {
   asApiId,
   asAgentVersionId,
   asCandidateMergeId,
+  asBusinessDomainId,
+  asBusinessTermId,
   asCanonicalObjectId,
   asDataAssetId,
   asDataElementId,
+  asDataElementSemanticConceptAssignmentCandidateId,
+  asDataElementSemanticConceptAssignmentId,
+  asDataElementSemanticConceptAssignmentStateId,
   asDataKeyDefinitionId,
   asKnowledgeBaseId,
   asMcpServerId,
@@ -112,11 +131,17 @@ import {
   asEvidenceId,
   asForeignKeyDefinitionId,
   asIsoTimestamp,
+  asInformationDomainId,
+  asSemanticConceptId,
   asSourceAssertionId,
   asToolId,
   sanitizeTechnicalLocator,
   type RelationshipId,
   type RelationshipStateId,
+  type SemanticConceptId,
+  type BusinessTermId,
+  type BusinessDomainId,
+  type InformationDomainId,
 } from "./identifiers.ts";
 
 const validKinds: readonly CanonicalObjectKind[] = [
@@ -1840,3 +1865,210 @@ const candidateCannotCreateRelationship: HandoffToRelationship =
     handoffDraft,
   );
 void candidateCannotCreateRelationship;
+
+const validSemanticKinds: readonly SemanticIdentityKind[] = [
+  SEMANTIC_IDENTITY_KIND.SEMANTIC_CONCEPT,
+  SEMANTIC_IDENTITY_KIND.BUSINESS_TERM,
+  SEMANTIC_IDENTITY_KIND.BUSINESS_DOMAIN,
+  SEMANTIC_IDENTITY_KIND.INFORMATION_DOMAIN,
+];
+void validSemanticKinds;
+
+// @ts-expect-error Semantic identities are not technical CanonicalObjectKinds.
+const semanticConceptCannotBeCanonicalKind: CanonicalObjectKind =
+  SEMANTIC_IDENTITY_KIND.SEMANTIC_CONCEPT;
+
+const semanticConceptIdentity: SemanticConceptIdentity = {
+  semanticIdentityKind: "SEMANTIC_CONCEPT",
+  organisationId: dataElementIdentity.canonicalObject.organisationId,
+  semanticConceptId: asSemanticConceptId("semantic-concept:contact-email"),
+};
+const businessTermIdentity: BusinessTermIdentity = {
+  semanticIdentityKind: "BUSINESS_TERM",
+  organisationId: semanticConceptIdentity.organisationId,
+  businessTermId: asBusinessTermId("business-term:customer-email"),
+};
+const businessDomainIdentity: BusinessDomainIdentity = {
+  semanticIdentityKind: "BUSINESS_DOMAIN",
+  organisationId: semanticConceptIdentity.organisationId,
+  businessDomainId: asBusinessDomainId("business-domain:customer"),
+};
+const informationDomainIdentity: InformationDomainIdentity = {
+  semanticIdentityKind: "INFORMATION_DOMAIN",
+  organisationId: semanticConceptIdentity.organisationId,
+  informationDomainId: asInformationDomainId(
+    "information-domain:contact-information",
+  ),
+};
+const semanticConceptCannotContainCode: SemanticConceptIdentity = {
+  ...semanticConceptIdentity,
+  // @ts-expect-error Descriptive codes do not belong to semantic identity.
+  conceptCode: "CONTACT_EMAIL",
+};
+const semanticConceptCannotUseBusinessTermId: SemanticConceptIdentity = {
+  ...semanticConceptIdentity,
+  // @ts-expect-error SemanticConceptId and BusinessTermId are nominally distinct.
+  semanticConceptId: businessTermIdentity.businessTermId,
+};
+// @ts-expect-error BusinessDomain and InformationDomain are distinct grains.
+const informationDomainCannotBeBusinessDomain: BusinessDomainIdentity =
+  informationDomainIdentity;
+// @ts-expect-error Branded semantic IDs are not interchangeable.
+const semanticConceptIdCannotBeTermId: BusinessTermId =
+  semanticConceptIdentity.semanticConceptId;
+// @ts-expect-error Branded semantic IDs are not interchangeable.
+const businessTermIdCannotBeDomainId: BusinessDomainId =
+  businessTermIdentity.businessTermId;
+// @ts-expect-error Branded semantic IDs are not interchangeable.
+const businessDomainIdCannotBeInformationDomainId: InformationDomainId =
+  businessDomainIdentity.businessDomainId;
+// @ts-expect-error Branded semantic IDs are not interchangeable.
+const informationDomainIdCannotBeConceptId: SemanticConceptId =
+  informationDomainIdentity.informationDomainId;
+void [
+  semanticConceptCannotBeCanonicalKind,
+  semanticConceptIdentity,
+  businessTermIdentity,
+  businessDomainIdentity,
+  informationDomainIdentity,
+  semanticConceptCannotContainCode,
+  semanticConceptCannotUseBusinessTermId,
+  informationDomainCannotBeBusinessDomain,
+  semanticConceptIdCannotBeTermId,
+  businessTermIdCannotBeDomainId,
+  businessDomainIdCannotBeInformationDomainId,
+  informationDomainIdCannotBeConceptId,
+];
+
+const semanticAssignmentCandidate =
+  createDataElementSemanticConceptAssignmentCandidate({
+    candidateId: asDataElementSemanticConceptAssignmentCandidateId(
+      "semantic-assignment-candidate:type-test",
+    ),
+    candidateKind: "DATA_ELEMENT_SEMANTIC_CONCEPT_ASSIGNMENT",
+    dataElement: dataElementIdentity,
+    sourceObject: candidateSourceObject,
+    sourceSignal: { sourceCode: "correo_electronico" },
+    assertionIds: [candidateAssertionId],
+    evidenceIds: [candidateEvidenceId],
+    confidence: 1,
+    inferredAt: asIsoTimestamp("2026-08-31T15:00:00.000Z"),
+    requiresDecision: true,
+    createsAssignment: false,
+  });
+const semanticCandidateCannotClaimTrust: DataElementSemanticConceptAssignmentCandidate = {
+  ...semanticAssignmentCandidate,
+  // @ts-expect-error Trust belongs to SourceAssertion, never the candidate.
+  trustState: "VALIDATED",
+};
+const semanticCandidateCannotContainCanonicalTarget: DataElementSemanticConceptAssignmentCandidate = {
+  ...semanticAssignmentCandidate,
+  // @ts-expect-error Candidate inference cannot create or contain canonical truth.
+  semanticConcept: semanticConceptIdentity,
+};
+
+const semanticAssignmentDraft: DataElementSemanticConceptAssignmentDraft = {
+  assignmentId: asDataElementSemanticConceptAssignmentId(
+    "semantic-assignment:type-test",
+  ),
+  assignmentStateId: asDataElementSemanticConceptAssignmentStateId(
+    "semantic-assignment-state:type-test",
+  ),
+  organisationId: semanticConceptIdentity.organisationId,
+  dataElement: dataElementIdentity,
+  semanticConcept: semanticConceptIdentity,
+  support: {
+    assertionIds: [candidateAssertionId],
+    evidenceIds: [candidateEvidenceId],
+  },
+  validFrom: asIsoTimestamp("2026-08-31T16:00:00.000Z"),
+  recordedAt: asIsoTimestamp("2026-08-31T16:01:00.000Z"),
+};
+const businessTermCannotBeAssignmentTarget: DataElementSemanticConceptAssignmentDraft = {
+  ...semanticAssignmentDraft,
+  // @ts-expect-error Only SemanticConcept is an assignment target in V1A.1f.
+  semanticConcept: businessTermIdentity,
+};
+const {
+  semanticConcept: omittedSemanticConcept,
+  ...assignmentWithoutSemanticConceptValue
+} = semanticAssignmentDraft;
+// @ts-expect-error A semantic assignment requires a SemanticConcept target.
+const assignmentWithoutSemanticConcept: DataElementSemanticConceptAssignmentDraft =
+  assignmentWithoutSemanticConceptValue;
+const assignmentCannotAggregateConfidence: DataElementSemanticConceptAssignmentDraft = {
+  ...semanticAssignmentDraft,
+  // @ts-expect-error Confidence remains on the candidate/source mapping inference.
+  confidence: 1,
+};
+const assignmentCannotContainMetadata: DataElementSemanticConceptAssignmentDraft = {
+  ...semanticAssignmentDraft,
+  // @ts-expect-error Generic metadata bags are outside the semantic contract.
+  metadata: { privacy: "PII", capability: "READ", authorization: "ALLOW" },
+};
+
+const semanticDecisionBase = {
+  decisionId: asReconciliationDecisionId("semantic-decision:type-test"),
+  organisationId: semanticConceptIdentity.organisationId,
+  assignmentCandidateId: semanticAssignmentCandidate.candidateId,
+  assignmentCandidate: semanticAssignmentCandidate,
+  authority: { authorityKind: "HUMAN", actorReference: "reviewer:type-test" },
+  reasonCode: "HUMAN_REVIEW",
+  assertionIds: [candidateAssertionId],
+  evidenceIds: [candidateEvidenceId],
+  decidedAt: asIsoTimestamp("2026-08-31T17:00:00.000Z"),
+} as const;
+const createSemanticAssignmentDecision =
+  createSemanticAssignmentReconciliationDecision({
+    ...semanticDecisionBase,
+    outcome: "CREATE_NEW",
+    authorizedState: semanticAssignmentDraft,
+  });
+const governedSemanticAssignment: DataElementSemanticConceptAssignment =
+  createDataElementSemanticConceptAssignment(
+    createSemanticAssignmentDecision,
+    semanticAssignmentDraft,
+  );
+const candidateCannotMaterializeSemanticAssignment: DataElementSemanticConceptAssignment =
+  createDataElementSemanticConceptAssignment(
+    // @ts-expect-error A candidate cannot bypass the governed assignment decision.
+    semanticAssignmentCandidate,
+    semanticAssignmentDraft,
+  );
+const rejectSemanticAssignmentDraft: RejectSemanticAssignmentReconciliationDecisionDraft = {
+  ...semanticDecisionBase,
+  outcome: "REJECT",
+};
+const deferSemanticAssignmentDraft: DeferSemanticAssignmentReconciliationDecisionDraft = {
+  ...semanticDecisionBase,
+  outcome: "DEFER",
+};
+const rejectSemanticAssignmentCannotCarryState: RejectSemanticAssignmentReconciliationDecisionDraft = {
+  ...rejectSemanticAssignmentDraft,
+  // @ts-expect-error Negative decisions cannot contain an authorized state.
+  authorizedState: semanticAssignmentDraft,
+};
+const deferSemanticAssignmentCannotCarryStateId: DeferSemanticAssignmentReconciliationDecisionDraft = {
+  ...deferSemanticAssignmentDraft,
+  // @ts-expect-error Negative decisions cannot reference assignment state IDs.
+  assignmentStateId: semanticAssignmentDraft.assignmentStateId,
+};
+const finalDecisionCannotExposeCandidate =
+  // @ts-expect-error The final decision retains minimal binding, not the candidate.
+  createSemanticAssignmentDecision.assignmentCandidate;
+void [
+  semanticCandidateCannotClaimTrust,
+  semanticCandidateCannotContainCanonicalTarget,
+  businessTermCannotBeAssignmentTarget,
+  omittedSemanticConcept,
+  assignmentWithoutSemanticConcept,
+  assignmentCannotAggregateConfidence,
+  assignmentCannotContainMetadata,
+  governedSemanticAssignment,
+  candidateCannotMaterializeSemanticAssignment,
+  rejectSemanticAssignmentDraft,
+  deferSemanticAssignmentDraft,
+  rejectSemanticAssignmentCannotCarryState,
+  deferSemanticAssignmentCannotCarryStateId,
+  finalDecisionCannotExposeCandidate,
+];
