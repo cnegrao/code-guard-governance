@@ -23,6 +23,7 @@ import type {
   ReconciliationDecisionId,
   SanitizedEvidenceLocator,
   SanitizedTechnicalLocator,
+  SkillId,
   SourceAssertionId,
   SourceConnectionId,
   SourceSnapshotId,
@@ -133,7 +134,7 @@ export const OBJECT_SOURCE_MATCH_METHOD = {
 export type ObjectSourceMatchMethod =
   (typeof OBJECT_SOURCE_MATCH_METHOD)[keyof typeof OBJECT_SOURCE_MATCH_METHOD];
 
-/** V1A.1 is deliberately closed to these ten governed technical kinds. */
+/** V1A.1 is deliberately closed to these eleven governed technical kinds. */
 export const CANONICAL_OBJECT_KIND = {
   AGENT: "AGENT",
   AGENT_VERSION: "AGENT_VERSION",
@@ -145,6 +146,7 @@ export const CANONICAL_OBJECT_KIND = {
   KNOWLEDGE_BASE: "KNOWLEDGE_BASE",
   DATA_ASSET: "DATA_ASSET",
   DATA_ELEMENT: "DATA_ELEMENT",
+  SKILL: "SKILL",
 } as const;
 export type CanonicalObjectKind =
   (typeof CANONICAL_OBJECT_KIND)[keyof typeof CANONICAL_OBJECT_KIND];
@@ -608,6 +610,16 @@ export interface PromptIdentity {
 export interface KnowledgeBaseIdentity {
   readonly canonicalObject: CanonicalObjectIdentity<"KNOWLEDGE_BASE">;
   readonly knowledgeBaseId: KnowledgeBaseId;
+}
+
+/**
+ * Stable opaque Skill identity. It is assigned by reconciliation and is never
+ * derived from a name, path, declaration artifact, artifact hash, or external
+ * provider identifier.
+ */
+export interface SkillIdentity {
+  readonly canonicalObject: CanonicalObjectIdentity<"SKILL">;
+  readonly skillId: SkillId;
 }
 
 export interface DataAssetIdentity {
@@ -1170,6 +1182,43 @@ export interface KnowledgeBaseTechnicalProfile {
   readonly support: KnowledgeBaseTechnicalProfileSupport;
 }
 
+/**
+ * A Skill is a portable, governable capability/procedure artifact. It may
+ * contain or reference instructions, operational guidance, supporting scripts
+ * and assets, dependency information, and behavioral boundaries. It is not a
+ * Prompt, Tool, Agent, Knowledge Base, capability grant, authorization, or
+ * runtime execution. A Skill may contribute to multiple capabilities; binding
+ * it never grants authorization, and bundled scripts are not automatically
+ * Tools.
+ *
+ * External declaration artifacts remain source observations. Package
+ * directories and dependency manifests may contribute source references,
+ * artifact integrity, and fingerprint inputs. Descriptive cards map to
+ * assertions/evidence and later governance, signatures to evidence and future
+ * verification, and evaluations/benchmarks to a future evaluation grain. None
+ * is copied wholesale into this profile.
+ */
+export interface SkillTechnicalProfileSupport {
+  readonly technicalFingerprint: TechnicalMetadataSupport;
+  readonly declarationReference: TechnicalMetadataSupport;
+  readonly revisionReference: TechnicalMetadataSupport;
+  readonly artifactHash: TechnicalMetadataSupport;
+  readonly manifestReference: TechnicalMetadataSupport;
+  readonly sourceLocator: TechnicalMetadataSupport;
+}
+
+export interface SkillTechnicalProfile {
+  readonly skillId: SkillId;
+  readonly technicalFingerprint: TechnicalFingerprint;
+  readonly declarationReference?: string;
+  readonly revisionReference?: string;
+  /** Artifact integrity only; it is not technical-state identity. */
+  readonly artifactHash?: EvidenceHash;
+  readonly manifestReference?: string;
+  readonly sourceLocator?: SanitizedTechnicalLocator;
+  readonly support: SkillTechnicalProfileSupport;
+}
+
 function freezeEvidenceHash(hash: EvidenceHash): EvidenceHash {
   return Object.freeze({ algorithm: hash.algorithm, value: hash.value });
 }
@@ -1292,6 +1341,27 @@ function freezeKnowledgeBaseTechnicalProfileSupport(
     retrievalConfigurationReference: freezeTechnicalMetadataSupport(
       support.retrievalConfigurationReference,
     ),
+  });
+}
+
+function freezeSkillTechnicalProfileSupport(
+  support: SkillTechnicalProfileSupport,
+): SkillTechnicalProfileSupport {
+  return Object.freeze({
+    technicalFingerprint: freezeTechnicalMetadataSupport(
+      support.technicalFingerprint,
+    ),
+    declarationReference: freezeTechnicalMetadataSupport(
+      support.declarationReference,
+    ),
+    revisionReference: freezeTechnicalMetadataSupport(
+      support.revisionReference,
+    ),
+    artifactHash: freezeTechnicalMetadataSupport(support.artifactHash),
+    manifestReference: freezeTechnicalMetadataSupport(
+      support.manifestReference,
+    ),
+    sourceLocator: freezeTechnicalMetadataSupport(support.sourceLocator),
   });
 }
 
@@ -1466,6 +1536,39 @@ export function createKnowledgeBaseTechnicalProfile(
   });
 }
 
+/**
+ * Copies the explicit Skill technical allowlist into a frozen current view.
+ * A future AgentVersion USES_SKILL binding must pin this exact
+ * TechnicalFingerprint. Adopting a changed fingerprint requires a new
+ * AgentVersion; this contract does not implement that relationship.
+ */
+export function createSkillTechnicalProfile(
+  draft: SkillTechnicalProfile,
+): SkillTechnicalProfile {
+  return Object.freeze({
+    skillId: draft.skillId,
+    technicalFingerprint: createTechnicalFingerprint(
+      draft.technicalFingerprint,
+    ),
+    ...(draft.declarationReference === undefined
+      ? {}
+      : { declarationReference: draft.declarationReference }),
+    ...(draft.revisionReference === undefined
+      ? {}
+      : { revisionReference: draft.revisionReference }),
+    ...(draft.artifactHash === undefined
+      ? {}
+      : { artifactHash: freezeEvidenceHash(draft.artifactHash) }),
+    ...(draft.manifestReference === undefined
+      ? {}
+      : { manifestReference: draft.manifestReference }),
+    ...(draft.sourceLocator === undefined
+      ? {}
+      : { sourceLocator: draft.sourceLocator }),
+    support: freezeSkillTechnicalProfileSupport(draft.support),
+  });
+}
+
 export type PreCanonicalObjectReference<
   Kind extends CanonicalObjectKind = CanonicalObjectKind,
 > =
@@ -1560,6 +1663,19 @@ export interface NormalizedKnowledgeBaseCandidate
   };
 }
 
+/**
+ * A Skill finding remains a reconciliation candidate. Declaration reference,
+ * display name, revision, locator, or hashes are only reconciliation signals;
+ * no one signal proves canonical equality across sources.
+ */
+export interface NormalizedSkillCandidate
+  extends NormalizedCandidateBase<"SKILL"> {
+  readonly proposedIdentity: {
+    readonly declarationReference?: string;
+    readonly displayName?: string;
+  };
+}
+
 export interface NormalizedDataAssetCandidate
   extends NormalizedCandidateBase<"DATA_ASSET"> {
   readonly proposedIdentity: {
@@ -1594,6 +1710,7 @@ export type NormalizedObjectCandidate =
   | NormalizedApiCandidate
   | NormalizedPromptCandidate
   | NormalizedKnowledgeBaseCandidate
+  | NormalizedSkillCandidate
   | NormalizedDataAssetCandidate
   | NormalizedDataElementCandidate;
 
