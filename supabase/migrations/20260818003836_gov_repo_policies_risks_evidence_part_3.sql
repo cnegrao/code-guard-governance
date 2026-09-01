@@ -1,0 +1,15 @@
+create index idx_evidence_retention on gov_repo.evidence (retention_until) where status not in ('expired','superseded','rejected');
+create index idx_evidence_collector on gov_repo.evidence (collected_by);
+alter table gov_repo.evidence enable row level security;
+create policy "Service role has full access to evidence" on gov_repo.evidence for all to service_role using (true) with check (true);
+create policy "Org-scoped access to evidence" on gov_repo.evidence for select to authenticated using (organisation_id=(select organisation_id from gov_repo.governance_users where email=auth.email() limit 1));
+create policy "Regulator cannot read restricted evidence" on gov_repo.evidence for select to authenticated using (classification <> 'restricted');
+create table gov_repo.evidence_files (file_id uuid primary key default uuid_generate_v4(), evidence_id uuid not null references gov_repo.evidence(evidence_id) on delete cascade, filename varchar(500) not null, mime_type varchar(100) not null, file_size_bytes bigint not null, storage_path text not null, content_hash char(64) not null, encryption_key_ref varchar(255) not null, uploaded_by uuid not null references gov_repo.governance_users(user_id), uploaded_at timestamptz not null default now(), is_primary boolean not null default false, virus_scan_status varchar(20) not null default 'pending' check(virus_scan_status in ('pending','clean','quarantined')), virus_scan_at timestamptz);
+comment on table gov_repo.evidence_files is 'Physical files attached to evidence records. Stored encrypted in object storage. Files are NEVER deleted — only marked expired/superseded via parent evidence record.';
+comment on column gov_repo.evidence_files.storage_path is 'Opaque encrypted storage path. NOT a public URL. Access via signed URL API only.';
+comment on column gov_repo.evidence_files.encryption_key_ref is 'Reference to encryption key in on-premises HSM (FIPS 140-2 Level 3).';
+create index idx_evidence_files_evidence on gov_repo.evidence_files(evidence_id);
+create index idx_evidence_files_primary on gov_repo.evidence_files(evidence_id,is_primary) where is_primary=true;
+alter table gov_repo.evidence_files enable row level security;
+create policy "Service role has full access to evidence_files" on gov_repo.evidence_files for all to service_role using (true) with check (true);
+create policy "Org-scoped access to evidence_files via parent evidence" on gov_repo.evidence_files for select to authenticated using (evidence_id in (select evidence_id from gov_repo.evidence where organisation_id=(select organisation_id from gov_repo.governance_users where email=auth.email() limit 1)));;
