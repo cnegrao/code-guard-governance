@@ -1,0 +1,18 @@
+create trigger trg_reg_changes_updated_at before update on gov_repo.regulatory_changes for each row execute function gov_repo.set_updated_at();
+create or replace view gov_repo.v_ai_systems_inventory as select sys.organisation_id,sys.system_id,sys.system_code,sys.name as system_name,sys.risk_class,sys.status,sys.eu_ai_db_registered,u.full_name as owner_name,(select count(*) from gov_repo.agents a where a.ai_system_id=sys.system_id and a.status!='decommissioned') as active_agents_count,(select count(*) from gov_repo.ai_serious_incidents i where i.system_id=sys.system_id) as total_serious_incidents from gov_repo.ai_systems sys left join gov_repo.governance_users u on u.user_id=sys.owner_user_id;
+create or replace view gov_repo.v_dora_third_party_concentration as select p.organisation_id,p.provider_code,p.name as provider_name,p.service_type,p.dora_criticality,p.status,(select count(*) from gov_repo.agent_resource_links rl where rl.provider_id=p.provider_id and rl.is_active=true) as linked_resources_count,(select count(distinct a.ai_system_id) from gov_repo.agent_resource_links rl join gov_repo.agents a on a.agent_id=rl.agent_id where rl.provider_id=p.provider_id and rl.is_active=true) as impacted_systems_count from gov_repo.third_party_providers p;
+alter table gov_repo.ai_systems enable row level security;
+alter table gov_repo.third_party_providers enable row level security;
+alter table gov_repo.ict_incidents enable row level security;
+alter table gov_repo.ai_serious_incidents enable row level security;
+alter table gov_repo.regulatory_changes enable row level security;
+create policy "Service role full access ai_systems" on gov_repo.ai_systems for all to service_role using(true) with check(true);
+create policy "Org-scoped ai_systems" on gov_repo.ai_systems for select to authenticated using(organisation_id=(select organisation_id from gov_repo.governance_users where email=auth.email() limit 1));
+create policy "Service role full access third_party_providers" on gov_repo.third_party_providers for all to service_role using(true) with check(true);
+create policy "Org-scoped third_party_providers" on gov_repo.third_party_providers for select to authenticated using(organisation_id=(select organisation_id from gov_repo.governance_users where email=auth.email() limit 1));
+create policy "Service role full access ict_incidents" on gov_repo.ict_incidents for all to service_role using(true) with check(true);
+create policy "Org-scoped ict_incidents" on gov_repo.ict_incidents for select to authenticated using(organisation_id=(select organisation_id from gov_repo.governance_users where email=auth.email() limit 1));
+create policy "Service role full access ai_serious_incidents" on gov_repo.ai_serious_incidents for all to service_role using(true) with check(true);
+create policy "Org-scoped ai_serious_incidents" on gov_repo.ai_serious_incidents for select to authenticated using(organisation_id=(select organisation_id from gov_repo.governance_users where email=auth.email() limit 1));
+create policy "Service role full access regulatory_changes" on gov_repo.regulatory_changes for all to service_role using(true) with check(true);
+create policy "Org-scoped regulatory_changes" on gov_repo.regulatory_changes for select to authenticated using(organisation_id=(select organisation_id from gov_repo.governance_users where email=auth.email() limit 1));;
