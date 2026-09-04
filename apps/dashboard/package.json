@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx seed.ts",
-    "validate:repo": "tsx scripts/validate-repository.ts"
+    "validate:repo": "tsx scripts/validate-repository.ts",
+    "test": "node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
@@ -31,6 +32,7 @@
     "@types/pdfkit": "^0.13.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "server-only": "^0.0.1",
     "tailwindcss": "^4.1.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"

@@ -1,29 +1,38 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { loginSchema } from "@/lib/validation";
 import { setTokenCookie } from "@/lib/auth";
 import * as authService from "@/services/auth";
+import { AuthPublicError, GENERIC_AUTH_ERROR_MESSAGE } from "@/lib/auth/errors";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const input = loginSchema.parse(body);
 
-    const session = await authService.login(input.email, input.password);
+    const result = await authService.login(input.email, input.password);
 
-    const response = NextResponse.json({ session });
-    response.headers.set("Set-Cookie", setTokenCookie(session.token));
+    if (!result.session) {
+      return NextResponse.json({ error: GENERIC_AUTH_ERROR_MESSAGE }, { status: 500 });
+    }
+
+    const response = NextResponse.json({
+      success: true,
+      user: result.session.user,
+      org: result.session.org,
+    });
+    response.headers.set("Set-Cookie", setTokenCookie(result.session.token));
     return response;
   } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message === "Invalid email or password" ||
-        error.message === "Account is not active")
-    ) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: error.issues[0]?.message ?? "Invalid request" },
+        { status: 400 }
+      );
     }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Login failed" },
-      { status: 400 }
-    );
+    if (error instanceof AuthPublicError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: GENERIC_AUTH_ERROR_MESSAGE }, { status: 500 });
   }
 }
