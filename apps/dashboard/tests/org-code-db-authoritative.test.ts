@@ -22,6 +22,7 @@ function readMigration(): string {
 // fooled by prose mentioning words like "loop" or "rollback" in documentation.
 function stripSqlComments(sql: string): string {
   return sql
+    .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((line) => line.replace(/--.*$/, ""))
     .join("\n");
@@ -305,4 +306,16 @@ test("SQL: password hash is write-only input, never returned, external_id never 
   assert.doesNotMatch(returnQuery, /external_id/);
   assert.doesNotMatch(returnQuery.toLowerCase(), /password/);
   assert.match(sql, /p_password_hash varchar/, "password hash is still accepted as an already-hashed credential input");
+});
+
+test("stripSqlComments: LF and CRLF input produce identical parsed output", () => {
+  const lfSql = "SELECT 1; -- comment one\nINSERT INTO foo (a, b) -- comment two\nVALUES (1, 2);\n";
+  const crlfSql = lfSql.replace(/\n/g, "\r\n");
+
+  const strippedLf = stripSqlComments(lfSql);
+  const strippedCrlf = stripSqlComments(crlfSql);
+
+  assert.equal(strippedCrlf.replace(/\r\n/g, "\n"), strippedLf, "CRLF input must strip comments equivalently to LF input");
+  assert.doesNotMatch(strippedLf, /comment one|comment two/);
+  assert.doesNotMatch(strippedCrlf, /comment one|comment two/);
 });
