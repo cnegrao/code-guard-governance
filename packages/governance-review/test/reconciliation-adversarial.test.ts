@@ -6,9 +6,11 @@ import {
   RECONCILIATION_OUTCOME,
 } from "@council/canonical-contracts";
 
+import * as governanceReview from "../src/index.ts";
 import {
   AuthorizationScopeMismatchError,
   CanonicalReconciliationRejectedError,
+  ContextMismatchError,
   IdempotencyConflictError,
   MachineAuthorityForbiddenError,
   REVIEW_STATE,
@@ -30,6 +32,7 @@ import {
   ORG_A,
   ORG_B,
   makeAgentFinding,
+  makeAllowingAuthorizationPort,
   makeCanonicalObjectIdentity,
   makeFixedResultAuthorizationPort,
   makeObjectCandidate,
@@ -573,5 +576,116 @@ describe("adversarial: bypass of the authorization Port", () => {
         }),
       /simulated authorization infrastructure failure/,
     );
+  });
+});
+
+describe("adversarial: canonical object reconciliation factory boundary", () => {
+  it("a forged outcome value that bypasses TypeScript is rejected by the canonical factory, not silently accepted", async () => {
+    const { finding, candidate, subject } = certifiedAgent("adv-forged-outcome");
+    const forgedOutcome = "APPROVED_WITHOUT_REVIEW" as unknown as "CREATE_NEW";
+    const port = makeAllowingAuthorizationPort({
+      organisationId: ORG_A,
+      subject: { subjectKind: "CANDIDATE", candidateId: candidate.candidateId },
+      requestedAction: forgedOutcome,
+      actor: HUMAN_ALICE,
+    });
+
+    await assert.rejects(
+      () =>
+        invokeObjectReconciliation({
+          commandId: "cmd:adv-forged-outcome:reconcile",
+          organisationId: ORG_A,
+          reviewSubject: subject,
+          finding,
+          candidate,
+          actor: HUMAN_ALICE,
+          authorizationPort: port,
+          reasonCode: "ATTEMPT",
+          requestedAt: LATER_AT,
+          requestedDecision: {
+            outcome: forgedOutcome,
+            subject: { subjectKind: "CANDIDATE", candidateId: candidate.candidateId, candidateKind: "AGENT" },
+            canonicalObject: makeCanonicalObjectIdentity(ORG_A, CANONICAL_OBJECT_KIND.AGENT, "adv-forged-outcome"),
+          } as never,
+        }),
+      CanonicalReconciliationRejectedError,
+    );
+  });
+
+  it("a CREATE_NEW request cannot smuggle a MATCH_EXISTING-shaped extra field onto the resulting decision", async () => {
+    const { finding, candidate, subject } = certifiedAgent("adv-mixed-fields");
+    const port = makeAllowingAuthorizationPort({
+      organisationId: ORG_A,
+      subject: { subjectKind: "CANDIDATE", candidateId: candidate.candidateId },
+      requestedAction: RECONCILIATION_OUTCOME.CREATE_NEW,
+      actor: HUMAN_ALICE,
+    });
+
+    // The gate only ever reads the outcome/subject/canonicalObject fields it
+    // knows about when building the canonical draft, so a forged extra field
+    // never survives to reach - let alone pass - the canonical factory.
+    const result = await invokeObjectReconciliation({
+      commandId: "cmd:adv-mixed-fields:reconcile",
+      organisationId: ORG_A,
+      reviewSubject: subject,
+      finding,
+      candidate,
+      actor: HUMAN_ALICE,
+      authorizationPort: port,
+      reasonCode: "ATTEMPT",
+      requestedAt: LATER_AT,
+      requestedDecision: {
+        outcome: "CREATE_NEW",
+        subject: { subjectKind: "CANDIDATE", candidateId: candidate.candidateId, candidateKind: "AGENT" },
+        canonicalObject: makeCanonicalObjectIdentity(ORG_A, CANONICAL_OBJECT_KIND.AGENT, "adv-mixed-fields"),
+        matchedState: { forged: "this must never appear on CREATE_NEW" },
+      } as never,
+    });
+
+    assert.equal(result.kind, "APPLIED");
+    assert.equal(Object.hasOwn(result.decision, "matchedState"), false);
+  });
+
+  it("a canonical target identity forged into another tenant is rejected before it ever reaches the canonical factory", async () => {
+    const { finding, candidate, subject } = certifiedAgent("adv-fake-target-tenant");
+    const port = makeAllowingAuthorizationPort({
+      organisationId: ORG_A,
+      subject: { subjectKind: "CANDIDATE", candidateId: candidate.candidateId },
+      requestedAction: RECONCILIATION_OUTCOME.MATCH_EXISTING,
+      actor: HUMAN_ALICE,
+    });
+
+    await assert.rejects(
+      () =>
+        invokeObjectReconciliation({
+          commandId: "cmd:adv-fake-target-tenant:reconcile",
+          organisationId: ORG_A,
+          reviewSubject: subject,
+          finding,
+          candidate,
+          actor: HUMAN_ALICE,
+          authorizationPort: port,
+          reasonCode: "ATTEMPT",
+          requestedAt: LATER_AT,
+          requestedDecision: {
+            outcome: "MATCH_EXISTING",
+            subject: { subjectKind: "CANDIDATE", candidateId: candidate.candidateId, candidateKind: "AGENT" },
+            canonicalObject: makeCanonicalObjectIdentity(ORG_B, CANONICAL_OBJECT_KIND.AGENT, "adv-fake-target-tenant"),
+          },
+        }),
+      ContextMismatchError,
+    );
+  });
+
+  it("governance-review exposes no direct constructor for a ReconciliationDecision - only the invocation gates", () => {
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(governanceReview, "createObjectReconciliationDecision"),
+      false,
+    );
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(governanceReview, "rehydrateObjectReconciliationDecision"),
+      false,
+    );
+    assert.equal(typeof governanceReview.invokeObjectReconciliation, "function");
   });
 });

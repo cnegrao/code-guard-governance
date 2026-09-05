@@ -4887,4 +4887,316 @@ describe("Canonical Contract V1A", () => {
       );
     }
   });
+
+  describe("object reconciliation decision factory", () => {
+    const objectOrganisationId = contracts.asOrganisationId(
+      "organisation:object-reconciliation",
+    );
+
+    function objectDecisionBase({ decisionSuffix, ...overrides } = {}) {
+      return {
+        decisionId: contracts.asReconciliationDecisionId(
+          decisionSuffix
+            ? `decision:object:${decisionSuffix}`
+            : "decision:object:base",
+        ),
+        organisationId: objectOrganisationId,
+        candidateKind: "AGENT",
+        authority: { authorityKind: "HUMAN", actorReference: "reviewer:one" },
+        reasonCode: "HUMAN_REVIEW",
+        assertionIds: [contracts.asSourceAssertionId("assertion:object:one")],
+        evidenceIds: [contracts.asEvidenceId("evidence:object:one")],
+        decidedAt: reconciliationTimestamp,
+        ...overrides,
+      };
+    }
+
+    function objectSubject(candidateIdSuffix, candidateKind = "AGENT") {
+      return {
+        subjectKind: "CANDIDATE",
+        candidateId: contracts.asNormalizedCandidateId(
+          `candidate:object:${candidateIdSuffix}`,
+        ),
+        candidateKind,
+      };
+    }
+
+    function objectCanonicalIdentity(objectIdSuffix, kind = "AGENT") {
+      return {
+        organisationId: objectOrganisationId,
+        objectId: contracts.asCanonicalObjectId(
+          `canonical-object:${objectIdSuffix}`,
+        ),
+        kind,
+      };
+    }
+
+    it("creates all four valid object reconciliation outcomes", () => {
+      const createDraft = {
+        ...objectDecisionBase({ decisionSuffix: "create" }),
+        outcome: "CREATE_NEW",
+        subject: objectSubject("create"),
+        canonicalObject: objectCanonicalIdentity("create"),
+      };
+      const created = contracts.createObjectReconciliationDecision(createDraft);
+      assert.equal(created.outcome, "CREATE_NEW");
+      assert.equal(created.canonicalObject.objectId, createDraft.canonicalObject.objectId);
+      assert.equal(Object.isFrozen(created), true);
+      assert.equal(Object.isFrozen(created.subject), true);
+      assert.equal(Object.isFrozen(created.canonicalObject), true);
+      assert.equal(Object.isFrozen(created.assertionIds), true);
+      assert.equal(Object.isFrozen(created.evidenceIds), true);
+
+      const matchDraft = {
+        ...objectDecisionBase({ decisionSuffix: "match" }),
+        outcome: "MATCH_EXISTING",
+        subject: {
+          subjectKind: "CANDIDATE_MERGE",
+          candidateMergeId: contracts.asCandidateMergeId("candidate-merge:object:match"),
+          candidateKind: "AGENT",
+        },
+        canonicalObject: objectCanonicalIdentity("match"),
+      };
+      const matched = contracts.createObjectReconciliationDecision(matchDraft);
+      assert.equal(matched.outcome, "MATCH_EXISTING");
+      assert.equal(matched.subject.subjectKind, "CANDIDATE_MERGE");
+
+      for (const outcome of ["REJECT", "DEFER"]) {
+        const negativeDraft = {
+          ...objectDecisionBase({ decisionSuffix: outcome.toLowerCase() }),
+          outcome,
+          subject: objectSubject(outcome.toLowerCase()),
+        };
+        const negative = contracts.createObjectReconciliationDecision(negativeDraft);
+        assert.equal(negative.outcome, outcome);
+        assert.equal(Object.hasOwn(negative, "canonicalObject"), false);
+        assert.equal(Object.isFrozen(negative), true);
+      }
+    });
+
+    it("rejects machine authority for object reconciliation decisions", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "machine-authority" }),
+        outcome: "REJECT",
+        subject: objectSubject("machine-authority"),
+        authority: {
+          authorityKind: "DETERMINISTIC_RULE",
+          ruleCode: "AUTO_REJECT",
+          ruleVersion: "1",
+        },
+      };
+      assert.throws(
+        () => contracts.createObjectReconciliationDecision(draft),
+        /requires HUMAN authority/,
+      );
+    });
+
+    it("rejects malformed HUMAN authority (blank actorReference)", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "blank-actor" }),
+        outcome: "REJECT",
+        subject: objectSubject("blank-actor"),
+        authority: { authorityKind: "HUMAN", actorReference: "   " },
+      };
+      assert.throws(
+        () => contracts.createObjectReconciliationDecision(draft),
+        /actorReference must be a non-empty string/,
+      );
+    });
+
+    it("rejects wrong organisation context on the canonical target identity", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "wrong-org" }),
+        outcome: "MATCH_EXISTING",
+        subject: objectSubject("wrong-org"),
+        canonicalObject: {
+          organisationId: contracts.asOrganisationId("organisation:different-tenant"),
+          objectId: contracts.asCanonicalObjectId("canonical-object:wrong-org"),
+          kind: "AGENT",
+        },
+      };
+      assert.throws(
+        () => contracts.createObjectReconciliationDecision(draft),
+        /organisationId must match the reconciliation decision organisationId/,
+      );
+    });
+
+    it("rejects an invalid or unknown reconciliation outcome", () => {
+      for (const outcome of ["MERGE_CANDIDATES", "APPROVED", ""]) {
+        const draft = {
+          ...objectDecisionBase({ decisionSuffix: "unknown-outcome" }),
+          outcome,
+          subject: objectSubject("unknown-outcome"),
+        };
+        assert.throws(
+          () => contracts.rehydrateObjectReconciliationDecision(draft),
+          /Unknown object reconciliation outcome/,
+        );
+      }
+    });
+
+    it("rejects CREATE_NEW carrying forbidden fields outside its allowlisted shape", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "forbidden-field" }),
+        outcome: "CREATE_NEW",
+        subject: objectSubject("forbidden-field"),
+        canonicalObject: objectCanonicalIdentity("forbidden-field"),
+        matchedState: { anything: "forged" },
+      };
+      assert.throws(
+        () => contracts.createObjectReconciliationDecision(draft),
+        /cannot include field "matchedState"/,
+      );
+    });
+
+    it("rejects MATCH_EXISTING without the required canonical target identity", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "match-missing-target" }),
+        outcome: "MATCH_EXISTING",
+        subject: objectSubject("match-missing-target"),
+      };
+      assert.throws(
+        () => contracts.createObjectReconciliationDecision(draft),
+        /requires a canonicalObject identity/,
+      );
+    });
+
+    it("rejects MATCH_EXISTING with a canonical target identity of the wrong kind", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "match-wrong-kind" }),
+        outcome: "MATCH_EXISTING",
+        subject: objectSubject("match-wrong-kind"),
+        canonicalObject: objectCanonicalIdentity("match-wrong-kind", "MODEL"),
+      };
+      assert.throws(
+        () => contracts.createObjectReconciliationDecision(draft),
+        /kind must match the decision candidateKind/,
+      );
+    });
+
+    it("rejects REJECT and DEFER decisions carrying a materialization identity", () => {
+      for (const outcome of ["REJECT", "DEFER"]) {
+        const draft = {
+          ...objectDecisionBase({ decisionSuffix: `${outcome.toLowerCase()}-with-target` }),
+          outcome,
+          subject: objectSubject(`${outcome.toLowerCase()}-with-target`),
+          canonicalObject: objectCanonicalIdentity(`${outcome.toLowerCase()}-with-target`),
+        };
+        assert.throws(
+          () => contracts.createObjectReconciliationDecision(draft),
+          /cannot include field "canonicalObject"/,
+        );
+      }
+    });
+
+    it("rejects malformed evidence/support arrays", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "malformed-support" }),
+        outcome: "REJECT",
+        subject: objectSubject("malformed-support"),
+        assertionIds: "not-an-array",
+      };
+      assert.throws(
+        () => contracts.createObjectReconciliationDecision(draft),
+        /assertionIds must be an array/,
+      );
+    });
+
+    it("fails closed on a widened or forged runtime object", () => {
+      const forgedTopLevel = {
+        ...objectDecisionBase({ decisionSuffix: "widened" }),
+        outcome: "REJECT",
+        subject: objectSubject("widened"),
+        injectedField: "should never pass through",
+      };
+      assert.throws(
+        () => contracts.rehydrateObjectReconciliationDecision(forgedTopLevel),
+        /cannot include field "injectedField"/,
+      );
+
+      const forgedSubject = {
+        ...objectDecisionBase({ decisionSuffix: "widened-subject" }),
+        outcome: "REJECT",
+        subject: { subjectKind: "BOGUS", candidateKind: "AGENT" },
+      };
+      assert.throws(
+        () => contracts.rehydrateObjectReconciliationDecision(forgedSubject),
+        /must be a CANDIDATE or CANDIDATE_MERGE reference/,
+      );
+
+      const forgedCandidateKind = {
+        ...objectDecisionBase({ decisionSuffix: "widened-kind" }),
+        candidateKind: "NOT_A_REAL_KIND",
+        outcome: "REJECT",
+        subject: objectSubject("widened-kind"),
+      };
+      assert.throws(
+        () => contracts.rehydrateObjectReconciliationDecision(forgedCandidateKind),
+        /candidateKind must be a canonical object kind/,
+      );
+    });
+
+    it("returns an immutable decision that rejects mutation attempts", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "immutable" }),
+        outcome: "CREATE_NEW",
+        subject: objectSubject("immutable"),
+        canonicalObject: objectCanonicalIdentity("immutable"),
+      };
+      const decision = contracts.createObjectReconciliationDecision(draft);
+      assert.throws(() => {
+        decision.reasonCode = "TAMPERED";
+      }, TypeError);
+      assert.equal(decision.reasonCode, "HUMAN_REVIEW");
+    });
+
+    it("produces deterministic equivalent decisions for equivalent input", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "deterministic" }),
+        outcome: "CREATE_NEW",
+        subject: objectSubject("deterministic"),
+        canonicalObject: objectCanonicalIdentity("deterministic"),
+      };
+      const first = contracts.createObjectReconciliationDecision({ ...draft });
+      const second = contracts.createObjectReconciliationDecision({ ...draft });
+      assert.deepEqual(first, second);
+      assert.notEqual(first, second);
+    });
+
+    it("rehydrates a serialized object reconciliation decision across a runtime boundary", () => {
+      const draft = {
+        ...objectDecisionBase({ decisionSuffix: "rehydrate" }),
+        outcome: "MATCH_EXISTING",
+        subject: objectSubject("rehydrate"),
+        canonicalObject: objectCanonicalIdentity("rehydrate"),
+      };
+      const decision = contracts.createObjectReconciliationDecision(draft);
+      const serialized = JSON.parse(JSON.stringify(decision));
+      const rehydrated = contracts.rehydrateObjectReconciliationDecision(serialized);
+
+      assert.deepEqual(rehydrated, decision);
+      assert.equal(Object.isFrozen(rehydrated), true);
+      assert.equal(Object.isFrozen(rehydrated.canonicalObject), true);
+
+      for (const field of [
+        "decisionId",
+        "organisationId",
+        "outcome",
+        "candidateKind",
+        "authority",
+        "reasonCode",
+        "decidedAt",
+        "subject",
+        "canonicalObject",
+      ]) {
+        const forged = { ...serialized };
+        delete forged[field];
+        assert.throws(
+          () => contracts.rehydrateObjectReconciliationDecision(forged),
+          TypeError,
+          `missing ${field}`,
+        );
+      }
+    });
+  });
 });

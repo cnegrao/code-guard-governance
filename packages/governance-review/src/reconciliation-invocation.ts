@@ -5,6 +5,7 @@ import {
   RECONCILIATION_OUTCOME,
   asReconciliationDecisionId,
   createCandidateMergeRecord,
+  createObjectReconciliationDecision,
   createRelationshipReconciliationDecision,
   sourceObjectIdentityKey,
   type CandidateMergeId,
@@ -20,6 +21,7 @@ import {
   type MergeCandidatesReconciliationDecision,
   type NormalizedObjectCandidate,
   type NormalizedRelationshipCandidate,
+  type ObjectReconciliationDecisionDraft,
   type OrganisationId,
   type ReconciliationAuthority,
   type ReconciliationDecision,
@@ -388,14 +390,15 @@ function assertCanonicalObjectMatchesContext(
 }
 
 /**
- * Object-candidate reconciliation gate. canonical-contracts defines the
- * CreateNew/MatchExisting/Reject/Defer ReconciliationDecision shapes as plain
- * (unbranded) structural types with no dedicated factory - unlike the
- * relationship and semantic-assignment variants - so this function is the
- * acceptance boundary (check K) for this candidate family: it validates every
- * field against trusted context before freezing a value of the exact
- * existing canonical ReconciliationDecision type. It never invents a
- * parallel decision model.
+ * Object-candidate reconciliation gate. This function proves check K's
+ * caller-scoped bindings (the requested subject/canonicalObject match the
+ * exact certified candidate and command context) and then delegates
+ * construction and structural/tenant validation of the
+ * CreateNew/MatchExisting/Reject/Defer ReconciliationDecision itself to
+ * canonical-contracts' createObjectReconciliationDecision - mirroring the
+ * relationship and semantic-assignment variants. It never constructs a
+ * ReconciliationDecision directly and never invents a parallel decision
+ * model.
  */
 export async function invokeObjectReconciliation<Kind extends CanonicalObjectKind>(
   command: ObjectReconciliationInvocationCommand<Kind>,
@@ -467,7 +470,7 @@ export async function invokeObjectReconciliation<Kind extends CanonicalObjectKin
   const decisionId = newDecisionId([organisationId, reviewSubject.reviewSubjectId, commandId]);
   const decidedEvidenceIds = Object.freeze([...(evidenceIds ?? reviewSubject.evidenceIds)]);
 
-  const base = {
+  const decisionBase = {
     decisionId,
     organisationId,
     candidateKind: candidate.candidateKind,
@@ -478,20 +481,25 @@ export async function invokeObjectReconciliation<Kind extends CanonicalObjectKin
     decidedAt: requestedAt,
   };
 
+  const decisionDraft: ObjectReconciliationDecisionDraft =
+    requestedDecision.outcome === "CREATE_NEW" || requestedDecision.outcome === "MATCH_EXISTING"
+      ? ({
+          ...decisionBase,
+          outcome: requestedDecision.outcome,
+          subject: requestedDecision.subject,
+          canonicalObject: requestedDecision.canonicalObject,
+        } as ObjectReconciliationDecisionDraft)
+      : ({
+          ...decisionBase,
+          outcome: requestedDecision.outcome,
+          subject: requestedDecision.subject,
+        } as ObjectReconciliationDecisionDraft);
+
   let decision: ReconciliationDecision;
-  if (requestedDecision.outcome === "CREATE_NEW" || requestedDecision.outcome === "MATCH_EXISTING") {
-    decision = Object.freeze({
-      ...base,
-      outcome: requestedDecision.outcome,
-      subject: requestedDecision.subject,
-      canonicalObject: requestedDecision.canonicalObject,
-    }) as ReconciliationDecision;
-  } else {
-    decision = Object.freeze({
-      ...base,
-      outcome: requestedDecision.outcome,
-      subject: requestedDecision.subject,
-    }) as ReconciliationDecision;
+  try {
+    decision = createObjectReconciliationDecision(decisionDraft);
+  } catch (cause) {
+    throw new CanonicalReconciliationRejectedError(cause);
   }
 
   const audit = buildAuditEvent({
