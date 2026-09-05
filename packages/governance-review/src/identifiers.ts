@@ -14,6 +14,9 @@ type OpaqueIdentifier<Name extends string> = string & {
 
 export type ReviewSubjectId = OpaqueIdentifier<"ReviewSubjectId">;
 export type ReviewTransitionId = OpaqueIdentifier<"ReviewTransitionId">;
+/** Identifies one reconciliation invocation audit envelope (see reconciliation-invocation.ts), never a canonical-contracts identity. */
+export type ReconciliationInvocationId =
+  OpaqueIdentifier<"ReconciliationInvocationId">;
 
 function asNonEmptyOpaque<Name extends string>(
   value: string,
@@ -30,3 +33,8 @@ export const asReviewSubjectId = (value: string): ReviewSubjectId =>
 
 export const asReviewTransitionId = (value: string): ReviewTransitionId =>
   asNonEmptyOpaque(value, "ReviewTransitionId");
+
+export const asReconciliationInvocationId = (
+  value: string,
+): ReconciliationInvocationId =>
+  asNonEmptyOpaque(value, "ReconciliationInvocationId");

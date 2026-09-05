@@ -13,3 +13,5 @@ export * from "./errors.ts";
 export * from "./review-subject.ts";
 export * from "./transitions.ts";
 export * from "./semantic-proposal-strategy.ts";
+export * from "./reconciliation-authorization.ts";
+export * from "./reconciliation-invocation.ts";
