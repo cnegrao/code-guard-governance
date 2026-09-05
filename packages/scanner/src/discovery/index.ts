@@ -17,6 +17,12 @@ export { ModelReferenceDeclarationSpecification } from './strategies/model-refer
 export type { DiscoveryCandidate } from './evidence-assembly';
 export { assembleDiscoveryCandidate } from './evidence-assembly';
 
+export type { RelationshipCorrelationResult } from './relationship-correlation';
+export {
+  RelationshipCorrelationStrategy,
+  correlateAgentUsesModelRelationships,
+} from './relationship-correlation';
+
 export type {
   DiscoveryPipelineOptions,
   DiscoveryRunResult,
