@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "scenarioId": "05-false-positives",
+  "description": "Hard-negative generic Agent terminology without any real AI Agent.",
+  "targetRound": 1,
+  "discoveryLayers": ["L0", "L4"],
+  "agents": [],
+  "dataAssets": [],
+  "dataElements": [],
+  "models": [],
+  "tools": [],
+  "mcpServers": [],
+  "apis": [],
+  "prompts": [],
+  "knowledgeBases": [],
+  "relationships": [],
+  "evidenceRequirements": [],
+  "prohibited": [
+    {
+      "key": "prohibited:user-agent-header",
+      "requiredFromRound": 1,
+      "category": "AGENT",
+      "comparisonKey": "[\"AGENT\",\"src/http-client.ts\",\"userAgent\"]",
+      "description": "An HTTP User-Agent header is not an AI Agent.",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "prohibited:agent-record-type",
+      "requiredFromRound": 1,
+      "category": "AGENT",
+      "comparisonKey": "[\"AGENT\",\"src/agent-record.ts\",\"AgentRecord\"]",
+      "description": "A domain record named AgentRecord is not an AI Agent.",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "prohibited:pipeline-handler",
+      "requiredFromRound": 1,
+      "category": "AGENT",
+      "comparisonKey": "[\"AGENT\",\"src/pipeline-handler.ts\",\"pipelineHandler\"]",
+      "description": "A service pipeline handler is not an AI Agent.",
+      "discoveryLayers": ["L4"]
+    }
+  ],
+  "semanticConcepts": []
+}

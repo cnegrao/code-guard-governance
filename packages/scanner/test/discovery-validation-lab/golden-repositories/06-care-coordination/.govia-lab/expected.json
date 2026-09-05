@@ -1,0 +1,288 @@
+{
+  "schemaVersion": "1.0",
+  "scenarioId": "06-care-coordination",
+  "description": "One care coordination Agent with model, tools, prompt, RAG source, API, HITL gate, and patient schema.",
+  "targetRound": 1,
+  "discoveryLayers": ["L0", "L3", "L4", "L6", "L9"],
+  "agents": [
+    {
+      "key": "agent:care-coordination",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/care_agent.py",
+      "declarationKey": "CareCoordinationAgent",
+      "displayName": "Care Coordination Agent"
+    }
+  ],
+  "dataAssets": [
+    {
+      "key": "asset:patients",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "sourceIdentity": "public.patients",
+      "sourcePath": "db/schema.sql",
+      "displayName": "patients"
+    }
+  ],
+  "dataElements": [
+    {
+      "key": "element:patients.person-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:patients",
+      "elementPath": "person_id",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:patients.contact-email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:patients",
+      "elementPath": "contact_email",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:patients.diagnosis",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:patients",
+      "elementPath": "diagnosis",
+      "sourcePath": "db/schema.sql"
+    },
+    {
+      "key": "element:patients.birth-date",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L3"],
+      "parentDataAssetKey": "asset:patients",
+      "elementPath": "birth_date",
+      "sourcePath": "db/schema.sql"
+    }
+  ],
+  "models": [
+    {
+      "key": "model:care-coordination-v1",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "provider": "synthetic-ai",
+      "modelReference": "care-coordination-model-v1",
+      "sourcePath": "src/care_agent.py",
+      "declarationKey": "MODEL_REFERENCE"
+    }
+  ],
+  "tools": [
+    {
+      "key": "tool:load-patient-record",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/tools.py",
+      "declarationKey": "load_patient_record"
+    },
+    {
+      "key": "tool:draft-care-plan",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/tools.py",
+      "declarationKey": "draft_care_plan"
+    },
+    {
+      "key": "tool:require-human-approval",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/approval.py",
+      "declarationKey": "require_human_approval"
+    }
+  ],
+  "mcpServers": [],
+  "apis": [
+    {
+      "key": "api:care-network",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "apiIdentity": "care-network-api",
+      "sourcePath": "src/care_agent.py"
+    }
+  ],
+  "prompts": [
+    {
+      "key": "prompt:care-coordination",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/care_agent.py",
+      "declarationKey": "CARE_PROMPT"
+    }
+  ],
+  "knowledgeBases": [
+    {
+      "key": "knowledge-base:approved-care-handbook",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourceIdentity": "approved-care-handbook",
+      "sourcePath": "config/knowledge-base.yaml"
+    }
+  ],
+  "relationships": [
+    {
+      "key": "relationship:agent-uses-model",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_MODEL",
+      "sourceKey": "agent:care-coordination",
+      "targetKey": "model:care-coordination-v1"
+    },
+    {
+      "key": "relationship:agent-uses-load-patient-record",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_TOOL",
+      "sourceKey": "agent:care-coordination",
+      "targetKey": "tool:load-patient-record"
+    },
+    {
+      "key": "relationship:agent-uses-draft-care-plan",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_TOOL",
+      "sourceKey": "agent:care-coordination",
+      "targetKey": "tool:draft-care-plan"
+    },
+    {
+      "key": "relationship:agent-uses-human-approval",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_TOOL",
+      "sourceKey": "agent:care-coordination",
+      "targetKey": "tool:require-human-approval"
+    },
+    {
+      "key": "relationship:agent-uses-knowledge-base",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "USES_KNOWLEDGE_BASE",
+      "sourceKey": "agent:care-coordination",
+      "targetKey": "knowledge-base:approved-care-handbook"
+    },
+    {
+      "key": "relationship:agent-invokes-care-network",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "INVOKES",
+      "sourceKey": "agent:care-coordination",
+      "targetKey": "api:care-network"
+    },
+    {
+      "key": "relationship:patients-contains-person-id",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:patients",
+      "targetKey": "element:patients.person-id"
+    },
+    {
+      "key": "relationship:patients-contains-contact-email",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:patients",
+      "targetKey": "element:patients.contact-email"
+    },
+    {
+      "key": "relationship:patients-contains-diagnosis",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:patients",
+      "targetKey": "element:patients.diagnosis"
+    },
+    {
+      "key": "relationship:patients-contains-birth-date",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "asset:patients",
+      "targetKey": "element:patients.birth-date"
+    }
+  ],
+  "evidenceRequirements": [
+    {
+      "key": "evidence:care-agent",
+      "requiredFromRound": 1,
+      "subjectKey": "agent:care-coordination",
+      "sourceLocator": "src/care_agent.py",
+      "methodCode": "PYTHON_AGENT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:care-model",
+      "requiredFromRound": 1,
+      "subjectKey": "model:care-coordination-v1",
+      "sourceLocator": "src/care_agent.py",
+      "methodCode": "MODEL_REFERENCE",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:load-patient-record",
+      "requiredFromRound": 1,
+      "subjectKey": "tool:load-patient-record",
+      "sourceLocator": "src/tools.py",
+      "methodCode": "PYTHON_FUNCTION_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:draft-care-plan",
+      "requiredFromRound": 1,
+      "subjectKey": "tool:draft-care-plan",
+      "sourceLocator": "src/tools.py",
+      "methodCode": "PYTHON_FUNCTION_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:human-approval",
+      "requiredFromRound": 1,
+      "subjectKey": "tool:require-human-approval",
+      "sourceLocator": "src/approval.py",
+      "methodCode": "HUMAN_APPROVAL_GATE",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:care-api",
+      "requiredFromRound": 1,
+      "subjectKey": "api:care-network",
+      "sourceLocator": "src/care_agent.py",
+      "methodCode": "EXTERNAL_API_REFERENCE",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:care-prompt",
+      "requiredFromRound": 1,
+      "subjectKey": "prompt:care-coordination",
+      "sourceLocator": "src/care_agent.py",
+      "methodCode": "PROMPT_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:care-knowledge-base",
+      "requiredFromRound": 1,
+      "subjectKey": "knowledge-base:approved-care-handbook",
+      "sourceLocator": "config/knowledge-base.yaml",
+      "methodCode": "KNOWLEDGE_BASE_CONFIG",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:patients-schema",
+      "requiredFromRound": 1,
+      "subjectKey": "asset:patients",
+      "sourceLocator": "db/schema.sql",
+      "methodCode": "SQL_DDL",
+      "discoveryLayers": ["L3"]
+    }
+  ],
+  "prohibited": [],
+  "semanticConcepts": [
+    {
+      "code": "CONTACT_EMAIL",
+      "requiredFromRound": 3,
+      "description": "Sensitive-domain semantic signal without a privacy classification assertion.",
+      "memberDataElementKeys": ["element:patients.contact-email"]
+    }
+  ]
+}

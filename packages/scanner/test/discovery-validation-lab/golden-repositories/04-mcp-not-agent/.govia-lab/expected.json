@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "scenarioId": "04-mcp-not-agent",
+  "description": "An MCP server with tools and explicitly zero Agents.",
+  "targetRound": 1,
+  "discoveryLayers": ["L0", "L4", "L9"],
+  "agents": [],
+  "dataAssets": [],
+  "dataElements": [],
+  "models": [],
+  "tools": [
+    {
+      "key": "tool:lookup-catalog",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/server.ts",
+      "declarationKey": "lookupCatalog"
+    },
+    {
+      "key": "tool:list-policies",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "sourcePath": "src/server.ts",
+      "declarationKey": "listPolicies"
+    }
+  ],
+  "mcpServers": [
+    {
+      "key": "mcp:synthetic-catalog",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L4"],
+      "serverIdentity": "synthetic-catalog-mcp",
+      "sourcePath": "mcp.json"
+    }
+  ],
+  "apis": [],
+  "prompts": [],
+  "knowledgeBases": [],
+  "relationships": [
+    {
+      "key": "relationship:mcp-contains-lookup-catalog",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "mcp:synthetic-catalog",
+      "targetKey": "tool:lookup-catalog"
+    },
+    {
+      "key": "relationship:mcp-contains-list-policies",
+      "requiredFromRound": 1,
+      "discoveryLayers": ["L9"],
+      "relationshipType": "CONTAINS",
+      "sourceKey": "mcp:synthetic-catalog",
+      "targetKey": "tool:list-policies"
+    }
+  ],
+  "evidenceRequirements": [
+    {
+      "key": "evidence:mcp-config",
+      "requiredFromRound": 1,
+      "subjectKey": "mcp:synthetic-catalog",
+      "sourceLocator": "mcp.json",
+      "methodCode": "MCP_CONFIG",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:lookup-catalog",
+      "requiredFromRound": 1,
+      "subjectKey": "tool:lookup-catalog",
+      "sourceLocator": "src/server.ts",
+      "methodCode": "MCP_TOOL_DECLARATION",
+      "discoveryLayers": ["L4"]
+    },
+    {
+      "key": "evidence:list-policies",
+      "requiredFromRound": 1,
+      "subjectKey": "tool:list-policies",
+      "sourceLocator": "src/server.ts",
+      "methodCode": "MCP_TOOL_DECLARATION",
+      "discoveryLayers": ["L4"]
+    }
+  ],
+  "prohibited": [
+    {
+      "key": "prohibited:mcp-server-as-agent",
+      "requiredFromRound": 1,
+      "category": "AGENT",
+      "comparisonKey": "[\"AGENT\",\"src/server.ts\",\"customerMcpServer\"]",
+      "description": "An MCP server declaration is not an Agent declaration.",
+      "discoveryLayers": ["L4"]
+    }
+  ],
+  "semanticConcepts": []
+}

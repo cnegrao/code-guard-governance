@@ -1,0 +1,5 @@
+{
+  "serverIdentity": "synthetic-catalog-mcp",
+  "entrypoint": "src/server.ts",
+  "tools": ["lookup_catalog", "list_policies"]
+}
