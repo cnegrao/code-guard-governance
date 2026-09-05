@@ -13,6 +13,7 @@ export { LocalRepositoryAdapter } from './adapters/local-repository-adapter';
 export type { DetectionMatch, DetectionSpecification } from './detection-specification';
 export { AgentKindDeclarationSpecification } from './strategies/agent-kind-declaration';
 export { ModelReferenceDeclarationSpecification } from './strategies/model-reference-declaration';
+export { ToolListDeclarationSpecification } from './strategies/tool-list-declaration';
 
 export type { DiscoveryCandidate } from './evidence-assembly';
 export { assembleDiscoveryCandidate } from './evidence-assembly';
@@ -21,6 +22,7 @@ export type { RelationshipCorrelationResult } from './relationship-correlation';
 export {
   RelationshipCorrelationStrategy,
   correlateAgentUsesModelRelationships,
+  correlateAgentUsesToolRelationships,
 } from './relationship-correlation';
 
 export type {
