@@ -113,3 +113,106 @@ export class IneligibleFindingError extends ReviewLifecycleError {
     this.name = "IneligibleFindingError";
   }
 }
+
+/**
+ * Raised when the reconciliation gate is invoked against a ReviewSubject that
+ * is not CERTIFIED. CERTIFIED is necessary but never sufficient on its own -
+ * see AuthorizationPortRequiredError and AuthorizationDeniedError below.
+ */
+export class ReviewSubjectNotCertifiedError extends ReviewLifecycleError {
+  readonly code = "REVIEW_SUBJECT_NOT_CERTIFIED";
+  readonly actualState: ReviewState;
+
+  constructor(actualState: ReviewState) {
+    super(
+      `Reconciliation requires a CERTIFIED review subject, but found ${actualState}`,
+    );
+    this.name = "ReviewSubjectNotCertifiedError";
+    this.actualState = actualState;
+  }
+}
+
+/**
+ * Raised when a non-HUMAN (or otherwise absent) actor attempts to invoke
+ * reconciliation. Machine authority can never authorize canonical
+ * reconciliation, regardless of what a reasonCode or authorization result
+ * claims.
+ */
+export class MachineAuthorityForbiddenError extends ReviewLifecycleError {
+  readonly code = "MACHINE_AUTHORITY_FORBIDDEN";
+
+  constructor() {
+    super("Canonical reconciliation requires an explicit HUMAN actor; machine/deterministic-rule authority is never sufficient");
+    this.name = "MachineAuthorityForbiddenError";
+  }
+}
+
+/** Raised when no ReconciliationAuthorizationPort is supplied, or the port returns no usable result. Missing authorization always fails closed. */
+export class AuthorizationPortRequiredError extends ReviewLifecycleError {
+  readonly code = "AUTHORIZATION_PORT_REQUIRED";
+
+  constructor() {
+    super("Reconciliation requires a ReconciliationAuthorizationPort; there is no permissive default");
+    this.name = "AuthorizationPortRequiredError";
+  }
+}
+
+/** Raised when the authorization port returns an explicit DENY, or a result this gate cannot treat as an ALLOW. */
+export class AuthorizationDeniedError extends ReviewLifecycleError {
+  readonly code = "AUTHORIZATION_DENIED";
+
+  constructor(message = "Reconciliation authorization was not granted") {
+    super(message);
+    this.name = "AuthorizationDeniedError";
+  }
+}
+
+/** Raised when an ALLOW result's organisation/action/subject does not match what was actually requested - an ALLOW for a different scope is not an ALLOW here. */
+export class AuthorizationScopeMismatchError extends ReviewLifecycleError {
+  readonly code = "AUTHORIZATION_SCOPE_MISMATCH";
+  readonly field: string;
+
+  constructor(field: string) {
+    super(`Authorization result ${field} does not match the requested reconciliation scope`);
+    this.name = "AuthorizationScopeMismatchError";
+    this.field = field;
+  }
+}
+
+/** Raised when an ALLOW result's actorReference does not match the actor presented on the reconciliation command - identity alone is never authorization. */
+export class ActorAuthorizationMismatchError extends ReviewLifecycleError {
+  readonly code = "ACTOR_AUTHORIZATION_MISMATCH";
+
+  constructor() {
+    super("Authorization result actorReference does not match the reconciliation command's actor");
+    this.name = "ActorAuthorizationMismatchError";
+  }
+}
+
+/** Raised when a commandId is reused with materially different reconciliation content - idempotency keys must not be reused across differing commands. */
+export class IdempotencyConflictError extends ReviewLifecycleError {
+  readonly code = "IDEMPOTENCY_CONFLICT";
+  readonly commandId: string;
+
+  constructor(commandId: string) {
+    super(`commandId ${commandId} was already used for a different reconciliation command`);
+    this.name = "IdempotencyConflictError";
+    this.commandId = commandId;
+  }
+}
+
+/** Wraps a rejection from a canonical-contracts reconciliation validator/factory. Canonical validators remain authoritative; this package never overrides their verdict. */
+export class CanonicalReconciliationRejectedError extends ReviewLifecycleError {
+  readonly code = "CANONICAL_RECONCILIATION_REJECTED";
+  override readonly cause?: unknown;
+
+  constructor(cause: unknown) {
+    super(
+      `Canonical reconciliation contract rejected the requested decision: ${
+        cause instanceof Error ? cause.message : String(cause)
+      }`,
+    );
+    this.name = "CanonicalReconciliationRejectedError";
+    this.cause = cause;
+  }
+}
