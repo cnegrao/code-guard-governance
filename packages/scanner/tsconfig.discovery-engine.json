@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/discovery/**/*.ts", "test/discovery-engine/**/*.ts"]
+}

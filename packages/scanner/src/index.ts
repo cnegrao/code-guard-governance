@@ -66,3 +66,33 @@ export { buildKnowledgeGraph } from './codeguard/repo-knowledge-graph';
 export type { KnowledgeGraph, KnowledgeGraphNode, KnowledgeGraphEdge } from './codeguard/repo-knowledge-graph';
 export { generateRepoIntelligence } from './codeguard/repo-intelligence';
 export type { RepoIntelligence, RepoFileInfo, AgentReference } from './codeguard/repo-intelligence/types';
+
+// Discovery Engine v1 (source-agnostic runtime: adapter -> pipeline -> evidence-backed candidate)
+export { isDiscoveryPathExcluded } from './discovery/path-policy';
+export type {
+  ReadArtifactOutcome,
+  SourceAdapter,
+  SourceArtifactContent,
+  SourceArtifactRef,
+  SourceDescriptor,
+} from './discovery/source-adapter';
+export { LocalRepositoryAdapter } from './discovery/adapters/local-repository-adapter';
+export type { DetectionMatch, DetectionSpecification } from './discovery/detection-specification';
+export { AgentKindDeclarationSpecification } from './discovery/strategies/agent-kind-declaration';
+export { ModelReferenceDeclarationSpecification } from './discovery/strategies/model-reference-declaration';
+export type { DiscoveryCandidate } from './discovery/evidence-assembly';
+export { assembleDiscoveryCandidate } from './discovery/evidence-assembly';
+export type {
+  DiscoveryPipelineOptions,
+  DiscoveryRunResult,
+  DiscoveryRunWarning,
+} from './discovery/pipeline';
+export { DiscoveryPipeline } from './discovery/pipeline';
+export type { ProvenanceClock } from './discovery/provenance';
+export {
+  completeAcquisitionRun,
+  createSourceConnection,
+  createSourceSystem,
+  startAcquisitionRun,
+  systemClock,
+} from './discovery/provenance';
