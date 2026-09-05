@@ -9,6 +9,7 @@ import {
   asAgentVersionId,
   asRelationshipId,
   asRelationshipStateId,
+  rehydrateObjectReconciliationDecision,
   type AgentIdentity,
   type AgentVersionIdentity,
   type GovernedRelationshipDraft,
@@ -19,6 +20,7 @@ import {
   AuthorizationDeniedError,
   AuthorizationPortRequiredError,
   AuthorizationScopeMismatchError,
+  CanonicalReconciliationRejectedError,
   ContextMismatchError,
   IdempotencyConflictError,
   MachineAuthorityForbiddenError,
@@ -628,5 +630,57 @@ describe("idempotency", () => {
         }),
       IdempotencyConflictError,
     );
+  });
+});
+
+describe("object reconciliation delegates to the canonical factory", () => {
+  it("a returned CREATE_NEW decision round-trips through canonical-contracts' own rehydration boundary", async () => {
+    const command = baseObjectCommand("canonical-delegation-create");
+    const result = await invokeObjectReconciliation(command);
+
+    assert.equal(result.kind, "APPLIED");
+    const serialized = JSON.parse(JSON.stringify(result.decision));
+    const rehydrated = rehydrateObjectReconciliationDecision(serialized);
+    assert.deepEqual(rehydrated, result.decision);
+    assert.equal(Object.isFrozen(result.decision), true);
+  });
+
+  it("an empty reasonCode is rejected by canonical-contracts, not merely accepted", async () => {
+    const command = baseObjectCommand("canonical-delegation-empty-reason");
+    await assert.rejects(
+      () => invokeObjectReconciliation({ ...command, reasonCode: "" }),
+      CanonicalReconciliationRejectedError,
+    );
+  });
+
+  it("MATCH_EXISTING, REJECT, and DEFER decisions are all constructed by the canonical factory", async () => {
+    for (const outcome of ["MATCH_EXISTING", "REJECT", "DEFER"] as const) {
+      const command = baseObjectCommand(`canonical-delegation-${outcome.toLowerCase()}`);
+      const port = makeAllowingAuthorizationPort({
+        organisationId: ORG_A,
+        subject: { subjectKind: "CANDIDATE", candidateId: command.candidate.candidateId },
+        requestedAction: outcome,
+        actor: HUMAN_ALICE,
+      });
+      const requestedDecision =
+        outcome === "MATCH_EXISTING"
+          ? {
+              outcome,
+              subject: { subjectKind: "CANDIDATE" as const, candidateId: command.candidate.candidateId, candidateKind: "AGENT" as const },
+              canonicalObject: makeCanonicalObjectIdentity(ORG_A, CANONICAL_OBJECT_KIND.AGENT, `delegation-${outcome}`),
+            }
+          : {
+              outcome,
+              subject: { subjectKind: "CANDIDATE" as const, candidateId: command.candidate.candidateId, candidateKind: "AGENT" as const },
+            };
+
+      const result = await invokeObjectReconciliation({ ...command, authorizationPort: port, requestedDecision });
+      assert.equal(result.kind, "APPLIED");
+      assert.equal(result.decision.outcome, outcome);
+      const rehydrated = rehydrateObjectReconciliationDecision(
+        JSON.parse(JSON.stringify(result.decision)),
+      );
+      assert.deepEqual(rehydrated, result.decision);
+    }
   });
 });

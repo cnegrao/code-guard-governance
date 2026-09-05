@@ -4269,6 +4269,248 @@ export type ReconciliationDecision =
   | RejectReconciliationDecision
   | DeferReconciliationDecision;
 
+/**
+ * MERGE_CANDIDATES is deliberately out of scope here: it is only ever produced
+ * from createCandidateMergeRecord, never through this factory.
+ */
+export type ObjectReconciliationDecisionDraft =
+  | CreateNewReconciliationDecision
+  | MatchExistingReconciliationDecision
+  | RejectReconciliationDecision
+  | DeferReconciliationDecision;
+
+const OBJECT_RECONCILIATION_OUTCOMES = [
+  RECONCILIATION_OUTCOME.CREATE_NEW,
+  RECONCILIATION_OUTCOME.MATCH_EXISTING,
+  RECONCILIATION_OUTCOME.REJECT,
+  RECONCILIATION_OUTCOME.DEFER,
+] as const;
+type ObjectReconciliationOutcome = (typeof OBJECT_RECONCILIATION_OUTCOMES)[number];
+
+const OBJECT_RECONCILIATION_BASE_FIELDS = [
+  "decisionId",
+  "organisationId",
+  "outcome",
+  "candidateKind",
+  "authority",
+  "reasonCode",
+  "assertionIds",
+  "evidenceIds",
+  "decidedAt",
+  "subject",
+] as const;
+
+function assertOnlyAllowedReconciliationFields(
+  input: Readonly<Record<string, unknown>>,
+  allowed: readonly string[],
+  outcome: string,
+): void {
+  const allowedFields = new Set(allowed);
+  for (const key of Object.keys(input)) {
+    if (!allowedFields.has(key)) {
+      throw new TypeError(
+        `${outcome} object reconciliation decision cannot include field "${key}"`,
+      );
+    }
+  }
+}
+
+function copyReconciliationSubjectReference(
+  value: unknown,
+  candidateKind: CanonicalObjectKind,
+  label = "Object reconciliation decision subject",
+): ReconciliationSubjectReference {
+  const subject = asObjectRecord(value, label);
+  const subjectCandidateKind = requiredString(
+    subject.candidateKind,
+    `${label} candidateKind`,
+  );
+  if (
+    !isCanonicalObjectKind(subjectCandidateKind) ||
+    subjectCandidateKind !== candidateKind
+  ) {
+    throw new TypeError(
+      `${label} candidateKind must match the decision candidateKind`,
+    );
+  }
+
+  if (subject.subjectKind === "CANDIDATE") {
+    return Object.freeze({
+      subjectKind: "CANDIDATE",
+      candidateId: requiredString(
+        subject.candidateId,
+        `${label} candidateId`,
+      ) as NormalizedCandidateId,
+      candidateKind: subjectCandidateKind,
+    });
+  }
+  if (subject.subjectKind === "CANDIDATE_MERGE") {
+    return Object.freeze({
+      subjectKind: "CANDIDATE_MERGE",
+      candidateMergeId: requiredString(
+        subject.candidateMergeId,
+        `${label} candidateMergeId`,
+      ) as CandidateMergeId,
+      candidateKind: subjectCandidateKind,
+    });
+  }
+  throw new TypeError(`${label} must be a CANDIDATE or CANDIDATE_MERGE reference`);
+}
+
+function copyReconciliationCanonicalObjectIdentity(
+  value: unknown,
+  organisationId: OrganisationId,
+  candidateKind: CanonicalObjectKind,
+  label = "Object reconciliation decision canonicalObject",
+): CanonicalObjectIdentity {
+  const identity = asObjectRecord(value, label);
+  const kind = requiredString(identity.kind, `${label} kind`);
+  if (!isCanonicalObjectKind(kind) || kind !== candidateKind) {
+    throw new TypeError(
+      `${label} kind must match the decision candidateKind`,
+    );
+  }
+  const identityOrganisationId = requiredString(
+    identity.organisationId,
+    `${label} organisationId`,
+  );
+  if (identityOrganisationId !== organisationId) {
+    throw new TypeError(
+      `${label} organisationId must match the reconciliation decision organisationId`,
+    );
+  }
+  return Object.freeze({
+    organisationId: identityOrganisationId as OrganisationId,
+    objectId: requiredString(identity.objectId, `${label} objectId`) as CanonicalObjectId,
+    kind,
+  });
+}
+
+function copyObjectReconciliationDecisionBase(
+  input: Readonly<Record<string, unknown>>,
+  outcome: ObjectReconciliationOutcome,
+): ReconciliationDecisionBase<ObjectReconciliationOutcome> {
+  const authority = copyReconciliationAuthority(input.authority);
+  if (authority.authorityKind !== "HUMAN") {
+    throw new TypeError(
+      "Object reconciliation decision requires HUMAN authority",
+    );
+  }
+  const candidateKind = requiredString(
+    input.candidateKind,
+    "Object reconciliation decision candidateKind",
+  );
+  if (!isCanonicalObjectKind(candidateKind)) {
+    throw new TypeError(
+      "Object reconciliation decision candidateKind must be a canonical object kind",
+    );
+  }
+  const provenance = copyRelationshipSupport(
+    { assertionIds: input.assertionIds, evidenceIds: input.evidenceIds },
+    "Object reconciliation decision provenance",
+  );
+  return {
+    decisionId: requiredString(
+      input.decisionId,
+      "Object reconciliation decision ID",
+    ) as ReconciliationDecisionId,
+    organisationId: requiredString(
+      input.organisationId,
+      "Object reconciliation decision organisationId",
+    ) as OrganisationId,
+    outcome,
+    candidateKind,
+    authority,
+    reasonCode: requiredString(
+      input.reasonCode,
+      "Object reconciliation decision reasonCode",
+    ),
+    assertionIds: provenance.assertionIds,
+    evidenceIds: provenance.evidenceIds,
+    decidedAt: requiredTimestamp(
+      input.decidedAt,
+      "Object reconciliation decision decidedAt",
+    ),
+  };
+}
+
+/**
+ * Rebuilds a serialized or untrusted runtime object-reconciliation decision
+ * through a complete structural allowlist, mirroring the relationship and
+ * semantic-assignment rehydration pattern. It never accepts MERGE_CANDIDATES
+ * (that outcome is only ever produced by createCandidateMergeRecord) and
+ * fails closed on any field not defined by the exact outcome's shape.
+ */
+export function rehydrateObjectReconciliationDecision(
+  value: unknown,
+): ReconciliationDecision {
+  const input = asObjectRecord(value, "Object reconciliation decision");
+
+  if (
+    typeof input.outcome !== "string" ||
+    !(OBJECT_RECONCILIATION_OUTCOMES as readonly string[]).includes(
+      input.outcome,
+    )
+  ) {
+    throw new TypeError("Unknown object reconciliation outcome");
+  }
+  const outcome = input.outcome as ObjectReconciliationOutcome;
+
+  const materializes = outcome === "CREATE_NEW" || outcome === "MATCH_EXISTING";
+  assertOnlyAllowedReconciliationFields(
+    input,
+    materializes
+      ? [...OBJECT_RECONCILIATION_BASE_FIELDS, "canonicalObject"]
+      : OBJECT_RECONCILIATION_BASE_FIELDS,
+    outcome,
+  );
+
+  const base = copyObjectReconciliationDecisionBase(input, outcome);
+  const subject = copyReconciliationSubjectReference(
+    input.subject,
+    base.candidateKind,
+  );
+
+  if (materializes) {
+    if (!Object.prototype.hasOwnProperty.call(input, "canonicalObject")) {
+      throw new TypeError(
+        `${outcome} object reconciliation decision requires a canonicalObject identity`,
+      );
+    }
+    const canonicalObject = copyReconciliationCanonicalObjectIdentity(
+      input.canonicalObject,
+      base.organisationId,
+      base.candidateKind,
+    );
+    return Object.freeze({ ...base, outcome, subject, canonicalObject }) as
+      | CreateNewReconciliationDecision
+      | MatchExistingReconciliationDecision;
+  }
+
+  return Object.freeze({ ...base, outcome, subject }) as
+    | RejectReconciliationDecision
+    | DeferReconciliationDecision;
+}
+
+export function createObjectReconciliationDecision(
+  draft: CreateNewReconciliationDecision,
+): CreateNewReconciliationDecision;
+export function createObjectReconciliationDecision(
+  draft: MatchExistingReconciliationDecision,
+): MatchExistingReconciliationDecision;
+export function createObjectReconciliationDecision(
+  draft: RejectReconciliationDecision,
+): RejectReconciliationDecision;
+export function createObjectReconciliationDecision(
+  draft: DeferReconciliationDecision,
+): DeferReconciliationDecision;
+export function createObjectReconciliationDecision(
+  draft: ObjectReconciliationDecisionDraft,
+): ReconciliationDecision;
+export function createObjectReconciliationDecision(draft: unknown): unknown {
+  return rehydrateObjectReconciliationDecision(draft);
+}
+
 /** Created by trusted reconciliation, never accepted from an adapter payload. */
 export interface ObjectSourceMapping {
   readonly mappingId: ObjectSourceMappingId;
