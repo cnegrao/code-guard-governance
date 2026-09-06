@@ -20,7 +20,11 @@
       "@council/scanner": ["../../packages/scanner/src"],
       "@council/scanner/*": ["../../packages/scanner/src/*"],
       "@council/graphos": ["../../packages/graphos/src"],
-      "@council/graphos/*": ["../../packages/graphos/src/*"]
+      "@council/graphos/*": ["../../packages/graphos/src/*"],
+      "@council/governance-review": ["../../packages/governance-review/src"],
+      "@council/governance-review/*": ["../../packages/governance-review/src/*"],
+      "@council/canonical-contracts": ["../../packages/canonical-contracts/src"],
+      "@council/canonical-contracts/*": ["../../packages/canonical-contracts/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
