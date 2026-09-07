@@ -271,12 +271,49 @@ prior evidence docs) and is not a regression introduced by this milestone.
 **Not deployed.** No production migration was applied. `bbisimozudihadfozyfz`
 was never touched at any point in this milestone.
 
+## What This Milestone Does and Does Not Unblock
+
+This milestone establishes durable Finding continuity for **every** current
+Discovery finding (object and relationship alike), and durable Finding +
+Candidate continuity for **RELATIONSHIP** kind specifically, since that is
+the only kind Discovery Intake produces a real `NormalizedCandidate` for
+today:
+
+- A CERTIFIED RELATIONSHIP ReviewSubject's original Finding and Candidate can
+  now be durably recovered and fed **unchanged** into the existing
+  `invokeRelationshipReconciliation` gate — this path is technically
+  unblocked.
+- A CERTIFIED OBJECT ReviewSubject (AGENT/MODEL/TOOL/etc.) recovers as
+  `FINDING_ONLY` — its Finding is durable, but no `NormalizedObjectCandidate`
+  exists to recover, because no production code anywhere in this repository
+  constructs one yet. This milestone deliberately does **not** fabricate,
+  reconstruct, or infer one to make `invokeObjectReconciliation` appear
+  unblocked; it is not.
+- A pre-milestone (historical) ReviewSubject of any kind recovers as
+  `INPUT_UNAVAILABLE` — no durable Finding was ever recorded for it, and none
+  was backfilled.
+
+**Full Decision-to-Truth reconciliation is unblocked for RELATIONSHIP kind
+only. It is NOT yet unblocked for OBJECT kinds**, and Reconciliation &
+Materialization Workspace V1 should not be described as fully unblocked until
+the next prerequisite below is merged.
+
 ## Next Product Milestone
 
-Reconciliation & Materialization Workspace V1 is now unblocked: a CERTIFIED
-ReviewSubject's original Finding/Candidate can be durably recovered and fed
-unchanged into the existing `invokeObjectReconciliation` /
-`invokeRelationshipReconciliation` gates. Object-candidate normalization
-(giving `invokeObjectReconciliation` a real, discovery-produced
-`NormalizedObjectCandidate` for AGENT/MODEL/TOOL/etc.) remains a distinct,
-unstarted future milestone.
+**OBJECT CANDIDATE NORMALIZATION V1** — the real gap this milestone exposed
+rather than papered over. Goal:
+
+```
+real object DiscoveryFinding
+  → deterministic NormalizedObjectCandidate
+  → durable candidate persistence (this milestone's discovery_candidates
+    table and recordNormalizedCandidate/getNormalizedCandidateForFinding
+    port methods already support this without further schema change)
+  → exact recovery (recoverReconciliationInput already returns
+    OBJECT_INPUT_AVAILABLE once a candidate exists — proven today only via
+    test fixtures, not live production data)
+  → existing invokeObjectReconciliation contract, unchanged
+```
+
+Only after that milestone is merged should Reconciliation & Materialization
+Workspace V1 resume, at which point it would be unblocked for both kinds.
