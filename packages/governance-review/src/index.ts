@@ -16,3 +16,5 @@ export * from "./semantic-proposal-strategy.ts";
 export * from "./reconciliation-authorization.ts";
 export * from "./reconciliation-invocation.ts";
 export * from "./persistence-port.ts";
+export * from "./materialization-port.ts";
+export * from "./materialization-invocation.ts";
