@@ -747,7 +747,7 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
 });
 
 describe("Discovery Governance Input Persistence V1: durable Finding/Candidate continuity into reconciliation input recovery", () => {
-  test("a real scan durably persists the exact Finding for every object AND relationship candidate, and the exact Candidate only for relationships", async () => {
+  test("a real scan durably persists the exact Finding for every object AND relationship candidate, and the exact Candidate for every one Object Candidate Normalization V1 can safely normalize (MODEL/TOOL) plus both relationships", async () => {
     await withFixtureRepository(async (root) => {
       const ports = makePorts();
       await runGovernanceDiscoveryScan(
@@ -757,9 +757,12 @@ describe("Discovery Governance Input Persistence V1: durable Finding/Candidate c
 
       // 3 object findings (AGENT/MODEL/TOOL) + 2 relationship findings (USES_MODEL/USES_TOOL) = 5.
       assert.equal(ports.intake.findings.size, 5);
-      // Only the 2 relationship findings ever get a durable candidate — no
-      // NormalizedObjectCandidate producer exists anywhere in this repository.
-      assert.equal(ports.intake.candidatesByFinding.size, 2);
+      // MODEL + TOOL now normalize (Object Candidate Normalization V1) plus
+      // both relationship candidates = 4. AGENT still has no safe,
+      // evidence-backed identity to normalize (see
+      // object-candidate-normalization.ts) and stays without a durable
+      // candidate.
+      assert.equal(ports.intake.candidatesByFinding.size, 4);
 
       for (const subject of ports.review.subjects.values()) {
         const finding = await ports.intake.getDiscoveryFinding(ORG_A, subject.findingId);
@@ -770,8 +773,11 @@ describe("Discovery Governance Input Persistence V1: durable Finding/Candidate c
         const recovered = recoverReconciliationInput({ reviewSubject: subject, finding, candidate });
         if (subject.candidateKind === "RELATIONSHIP") {
           assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE);
+        } else if (subject.candidateKind === "MODEL" || subject.candidateKind === "TOOL") {
+          assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.OBJECT_INPUT_AVAILABLE);
         } else {
-          assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.FINDING_ONLY, "no OBJECT candidate producer exists yet — this is real, not unavailable");
+          assert.equal(subject.candidateKind, "AGENT");
+          assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.FINDING_ONLY, "AGENT identity is not safely derivable from current evidence — this is real, not unavailable");
         }
       }
     });

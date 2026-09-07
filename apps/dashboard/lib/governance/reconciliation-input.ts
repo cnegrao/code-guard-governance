@@ -13,10 +13,9 @@ import { discoveryIntakePersistence } from "./discovery-intake-persistence";
 /**
  * Discovery Governance Input Persistence V1 — server-only composition
  * boundary (Reconciliation Input Recovery). Reads the exact durable
- * DiscoveryFinding (and, when Discovery Intake actually produced one —
- * today only for RELATIONSHIP kind, see discovery-intake-port.ts)
- * NormalizedCandidate backing a ReviewSubject, and hands them to
- * governance-review's pure recoverReconciliationInput for the
+ * DiscoveryFinding (and, when Discovery Intake actually produced one — see
+ * discovery-intake-port.ts) NormalizedCandidate backing a ReviewSubject, and
+ * hands them to governance-review's pure recoverReconciliationInput for the
  * identity/kind/association cross-checks. The result is usable directly as
  * the finding/candidate fields of an ObjectReconciliationInvocationCommand or
  * RelationshipReconciliationInvocationCommand, with no fabricated or

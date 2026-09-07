@@ -23,9 +23,9 @@ import type { ReviewSubject } from "./review-subject";
  * recomputes or trusts an envelope hash (that is the adapter's job, before
  * this function is ever called), and never fabricates a missing candidate.
  *
- * FINDING_ONLY is a normal, expected outcome for every OBJECT-kind
- * ReviewSubject today (no NormalizedObjectCandidate producer exists yet —
- * see discovery-intake-port.ts) and must never be confused with
+ * FINDING_ONLY is a normal, expected outcome for an OBJECT-kind ReviewSubject
+ * whose finding could not be safely normalized (today: AGENT — see
+ * object-candidate-normalization.ts) and must never be confused with
  * INPUT_UNAVAILABLE, which means no durable Finding was ever recorded at all
  * (exclusively a pre-milestone ReviewSubject; see docs on legacy policy).
  */

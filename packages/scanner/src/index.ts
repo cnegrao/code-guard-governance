@@ -83,6 +83,18 @@ export { ModelReferenceDeclarationSpecification } from './discovery/strategies/m
 export { ToolListDeclarationSpecification } from './discovery/strategies/tool-list-declaration';
 export type { DiscoveryCandidate } from './discovery/evidence-assembly';
 export { assembleDiscoveryCandidate } from './discovery/evidence-assembly';
+export type {
+  ObjectCandidateNormalizationResult,
+  ObjectCandidateNormalizationStrategy,
+  ObjectNormalizationReasonCode,
+} from './discovery/object-candidate-normalization';
+export {
+  AgentCandidateNormalizationStrategy,
+  ModelCandidateNormalizationStrategy,
+  OBJECT_NORMALIZATION_REASON_CODE,
+  ToolCandidateNormalizationStrategy,
+  normalizeObjectCandidate,
+} from './discovery/object-candidate-normalization';
 export type { RelationshipCorrelationResult } from './discovery/relationship-correlation';
 export {
   RelationshipCorrelationStrategy,

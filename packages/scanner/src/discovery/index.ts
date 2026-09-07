@@ -18,6 +18,19 @@ export { ToolListDeclarationSpecification } from './strategies/tool-list-declara
 export type { DiscoveryCandidate } from './evidence-assembly';
 export { assembleDiscoveryCandidate } from './evidence-assembly';
 
+export type {
+  ObjectCandidateNormalizationResult,
+  ObjectCandidateNormalizationStrategy,
+  ObjectNormalizationReasonCode,
+} from './object-candidate-normalization';
+export {
+  AgentCandidateNormalizationStrategy,
+  ModelCandidateNormalizationStrategy,
+  OBJECT_NORMALIZATION_REASON_CODE,
+  ToolCandidateNormalizationStrategy,
+  normalizeObjectCandidate,
+} from './object-candidate-normalization';
+
 export type { RelationshipCorrelationResult } from './relationship-correlation';
 export {
   RelationshipCorrelationStrategy,
