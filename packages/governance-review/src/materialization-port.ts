@@ -71,6 +71,19 @@ export interface RelationshipMaterializationResult {
   readonly relationshipId: string;
 }
 
+export interface ObjectSourceMappingLookupInput {
+  readonly organisationId: OrganisationId;
+  readonly sourceConnectionId: string;
+  readonly sourceExternalType: string;
+  readonly sourceExternalId: string;
+}
+
+export interface ActiveObjectSourceMapping {
+  readonly mappingId: string;
+  readonly canonicalObjectId: string;
+  readonly canonicalObjectKind: CanonicalObjectKind;
+}
+
 export interface MaterializationPersistencePort {
   /**
    * Materializes a governed canonical object (CREATE_NEW) or binds a new
@@ -89,4 +102,18 @@ export interface MaterializationPersistencePort {
   materializeRelationshipReconciliation(
     input: RelationshipMaterializationInput,
   ): Promise<RelationshipMaterializationResult>;
+
+  /**
+   * Read-only lookup of the currently active (never superseded) source
+   * mapping for one tenant-scoped SourceObjectIdentity, if any. Discovery
+   * Intake uses this to recognize "this discovered thing is already a
+   * governed canonical object" (ALREADY_GOVERNED) and avoid proposing a
+   * duplicate object ReviewSubject for it. Always scoped by organisationId:
+   * a mapping recorded for a different tenant is never returned, and never
+   * suppresses this tenant's own finding. This lookup is read-only — it
+   * never creates, mutates, or supersedes a mapping.
+   */
+  findActiveObjectSourceMapping(
+    input: ObjectSourceMappingLookupInput,
+  ): Promise<ActiveObjectSourceMapping | undefined>;
 }
