@@ -1,9 +1,12 @@
 import "server-only";
 
+import type { CanonicalObjectKind } from "@council/canonical-contracts";
 import type {
+  ActiveObjectSourceMapping,
   MaterializationPersistencePort,
   ObjectMaterializationInput,
   ObjectMaterializationResult,
+  ObjectSourceMappingLookupInput,
   RelationshipMaterializationInput,
   RelationshipMaterializationResult,
 } from "@council/governance-review";
@@ -88,6 +91,33 @@ export const materializationPersistence: MaterializationPersistencePort = {
       replay: row.replay,
       status: row.status,
       relationshipId: row.relationship_id,
+    };
+  },
+
+  async findActiveObjectSourceMapping(
+    input: ObjectSourceMappingLookupInput,
+  ): Promise<ActiveObjectSourceMapping | undefined> {
+    const { data, error } = await privilegedDb
+      .from("canonical_object_source_mappings")
+      .select("mapping_id, canonical_object_id, canonical_object_kind")
+      .eq("organisation_id", input.organisationId)
+      .eq("source_connection_id", input.sourceConnectionId)
+      .eq("source_external_type", input.sourceExternalType)
+      .eq("source_external_id", input.sourceExternalId)
+      .is("valid_to", null)
+      .maybeSingle();
+    if (error) throw new Error(`canonical_object_source_mappings lookup failed: ${error.message}`);
+    if (!data) return undefined;
+
+    const row = data as {
+      mapping_id: string;
+      canonical_object_id: string;
+      canonical_object_kind: CanonicalObjectKind;
+    };
+    return {
+      mappingId: row.mapping_id,
+      canonicalObjectId: row.canonical_object_id,
+      canonicalObjectKind: row.canonical_object_kind,
     };
   },
 };

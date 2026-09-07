@@ -80,8 +80,15 @@ export { LocalRepositoryAdapter } from './discovery/adapters/local-repository-ad
 export type { DetectionMatch, DetectionSpecification } from './discovery/detection-specification';
 export { AgentKindDeclarationSpecification } from './discovery/strategies/agent-kind-declaration';
 export { ModelReferenceDeclarationSpecification } from './discovery/strategies/model-reference-declaration';
+export { ToolListDeclarationSpecification } from './discovery/strategies/tool-list-declaration';
 export type { DiscoveryCandidate } from './discovery/evidence-assembly';
 export { assembleDiscoveryCandidate } from './discovery/evidence-assembly';
+export type { RelationshipCorrelationResult } from './discovery/relationship-correlation';
+export {
+  RelationshipCorrelationStrategy,
+  correlateAgentUsesModelRelationships,
+  correlateAgentUsesToolRelationships,
+} from './discovery/relationship-correlation';
 export type {
   DiscoveryPipelineOptions,
   DiscoveryRunResult,

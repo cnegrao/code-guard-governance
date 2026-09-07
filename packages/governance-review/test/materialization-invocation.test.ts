@@ -11,6 +11,7 @@ import {
   asRelationshipId,
   asRelationshipStateId,
   type AgentIdentity,
+  type CanonicalObjectKind,
   type AgentVersionIdentity,
   type GovernedRelationshipDraft,
   type MergeCandidatesReconciliationDecision,
@@ -374,6 +375,17 @@ function makeFakeMaterializationPort(): { port: MaterializationPersistencePort; 
       };
       state.operations.set(opKey, { fingerprint: input.idempotencyFingerprint, result });
       return { replay: false, ...result };
+    },
+
+    async findActiveObjectSourceMapping(input) {
+      const sourceKey = `${input.organisationId}:${input.sourceConnectionId}:${input.sourceExternalType}:${input.sourceExternalId}`;
+      const canonicalObjectId = state.sourceMappings.get(sourceKey);
+      if (canonicalObjectId === undefined) return undefined;
+      const canonicalObjectKind = state.canonicalObjects.get(`${input.organisationId}:${canonicalObjectId}`) as
+        | CanonicalObjectKind
+        | undefined;
+      if (canonicalObjectKind === undefined) return undefined;
+      return { mappingId: `mapping:${sourceKey}`, canonicalObjectId, canonicalObjectKind };
     },
   };
 
