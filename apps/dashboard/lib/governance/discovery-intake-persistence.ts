@@ -252,12 +252,15 @@ const OBJECT_CANDIDATE_EXTRA_FIELDS = ["proposedIdentity"] as const;
  * proposedIdentity varies per CanonicalObjectKind (11 distinct shapes in
  * canonical-contracts), but every field across every kind is either an
  * optional display/reference string or a nested PreCanonicalObjectReference
- * (AGENT_VERSION's `agent`, DATA_ELEMENT's `parentDataAsset`). No production
- * code constructs a NormalizedObjectCandidate anywhere in this repository
- * today (see discovery-intake-port.ts's own doc comment) — this validator
- * exists so the persistence layer is ready for that future producer without
- * a schema/rehydration redesign, and is exercised today only by tests using
- * the same fixture shapes as packages/governance-review/test/fixtures.ts.
+ * (AGENT_VERSION's `agent`, DATA_ELEMENT's `parentDataAsset`). Object
+ * Candidate Normalization V1 (packages/scanner/src/discovery/
+ * object-candidate-normalization.ts) is the real production producer for
+ * MODEL and TOOL today (see discovery-intake-port.ts's own doc comment); this
+ * validator accepts every kind's allowed field shape so the persistence layer
+ * needs no schema/rehydration redesign as further kinds gain a real
+ * normalization strategy, and remains exercised for the not-yet-produced
+ * kinds only by tests using the same fixture shapes as
+ * packages/governance-review/test/fixtures.ts.
  */
 const PROPOSED_IDENTITY_OPTIONAL_STRING_FIELDS = [
   "agentCode",

@@ -10,6 +10,7 @@ import {
   ToolListDeclarationSpecification,
   createSourceConnection,
   createSourceSystem,
+  normalizeObjectCandidate,
   type DiscoveryCandidate,
   type DiscoveryRunResult,
   type RelationshipCorrelationResult,
@@ -62,12 +63,13 @@ import { discoveryIntakePersistence } from "./discovery-intake-persistence";
  *     are themselves already durable (see discovery-intake-persistence.ts and
  *     the DB-level hard gate added by the accompanying migration);
  *   - never persists a ReviewSubject before its exact backing DiscoveryFinding
- *     (and, when one exists — today only for RELATIONSHIP kind —
- *     NormalizedCandidate) is itself already durable (Discovery Governance
- *     Input Persistence V1; see review_subjects_finding_fkey and
- *     ensureReviewSubjectAndPropose below). This is what lets a CERTIFIED
- *     ReviewSubject's exact original reconciliation input be recovered later,
- *     rather than existing only in this call's TypeScript memory.
+ *     (and, when Object Candidate Normalization V1 or relationship
+ *     correlation actually produced one, its NormalizedCandidate) is itself
+ *     already durable (Discovery Governance Input Persistence V1; see
+ *     review_subjects_finding_fkey and ensureReviewSubjectAndPropose below).
+ *     This is what lets a CERTIFIED ReviewSubject's exact original
+ *     reconciliation input be recovered later, rather than existing only in
+ *     this call's TypeScript memory.
  */
 
 // ---------------------------------------------------------------------------
@@ -307,7 +309,16 @@ async function processObjectCandidate(
       return;
     }
 
-    await ensureReviewSubjectAndPropose(finding, undefined, acquisitionRunId, ctx, ports, tally, "object");
+    // Object Candidate Normalization V1: the scanner's normalizeObjectCandidate
+    // is the sole producer of a NormalizedObjectCandidate — this call site
+    // never invents identity itself. A NOT_SAFELY_NORMALIZABLE result (today,
+    // every AGENT finding — see object-candidate-normalization.ts) passes no
+    // candidate through, preserving the existing FINDING_ONLY recovery outcome
+    // exactly as before this milestone.
+    const normalization = normalizeObjectCandidate(candidate);
+    const normalizedCandidate = normalization.status === "NORMALIZED" ? normalization.candidate : undefined;
+
+    await ensureReviewSubjectAndPropose(finding, normalizedCandidate, acquisitionRunId, ctx, ports, tally, "object");
   } catch (error) {
     tally.failures.push({
       findingId: finding.findingId,

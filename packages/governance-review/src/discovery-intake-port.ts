@@ -38,12 +38,15 @@ import type {
  * these are the exact objects invokeObjectReconciliation /
  * invokeRelationshipReconciliation require; without durable storage of them
  * here, that content only ever existed in the TypeScript memory of the
- * original intake call. recordNormalizedCandidate is never called for an
- * object-kind finding today: no NormalizedObjectCandidate producer exists yet
- * anywhere in this repository (object identity normalization is a distinct,
- * out-of-scope future milestone) — only RelationshipCorrelationStrategy
- * produces a real NormalizedRelationshipCandidate, always 1:1 with its
- * finding. This Port never fabricates a candidate to fill that gap.
+ * original intake call. recordNormalizedCandidate is called for an
+ * object-kind finding whenever Object Candidate Normalization V1
+ * (packages/scanner/src/discovery/object-candidate-normalization.ts)
+ * actually produces a NormalizedObjectCandidate for it (today: MODEL and
+ * TOOL); a finding whose kind has no safe, evidence-backed identity yet
+ * (today: AGENT, and every other CanonicalObjectKind with no detector) is
+ * left without a durable candidate, exactly like RelationshipCorrelationStrategy
+ * always produces a real NormalizedRelationshipCandidate, always 1:1 with its
+ * finding. This Port never fabricates a candidate to fill either gap.
  */
 
 export interface AcquisitionRunPersistenceResult {
