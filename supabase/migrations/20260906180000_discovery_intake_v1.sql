@@ -13,10 +13,20 @@
 -- (Evidence / SourceAssertion / AcquisitionRun) existed only in TypeScript
 -- memory before a ReviewSubject referencing it could be persisted.
 --
+-- Naming note: the new durable Evidence table is named
+-- gov_repo.discovery_evidence, not gov_repo.evidence — this controlled
+-- project's foundational schema (2026-08-18 migrations) already owns
+-- gov_repo.evidence as an unrelated compliance/audit evidence-locker
+-- concept (verification workflow, chain of custody, retention/
+-- classification, referenced by conformity_assessments/ict_incidents/
+-- ai_systems/evidence_files). Discovered only via this migration's own
+-- fail-closed preflight check refusing to apply against the real database;
+-- fixed by renaming the new table, never by touching the pre-existing one.
+--
 -- Hard gate enforced here: gov_repo.review_subject_assertions and
 -- gov_repo.review_subject_evidence (Governance Persistence V1) gain composite
--- FKs into the new gov_repo.source_assertions / gov_repo.evidence tables, so
--- gov_repo.create_review_subject can never durably succeed for an
+-- FKs into the new gov_repo.source_assertions / gov_repo.discovery_evidence
+-- tables, so gov_repo.create_review_subject can never durably succeed for an
 -- assertionId/evidenceId that was not itself already durably persisted.
 --
 -- Machine discovery authority ceiling is unchanged by this migration: it adds
@@ -52,7 +62,7 @@ begin
   end if;
 
   if to_regclass('gov_repo.acquisition_runs') is not null
-     or to_regclass('gov_repo.evidence') is not null
+     or to_regclass('gov_repo.discovery_evidence') is not null
      or to_regclass('gov_repo.source_assertions') is not null
      or to_regclass('gov_repo.source_assertion_evidence') is not null
   then
@@ -121,13 +131,16 @@ create trigger trg_acquisition_runs_updated_at
   for each row execute function gov_repo.set_updated_at();
 
 -- -----------------------------------------------------------------------------
--- B. EVIDENCE — durable content for canonical-contracts' Evidence, immutable
---    once written. Closes the gap Governance Persistence V1 left open: that
---    migration persists only EvidenceId membership (review_subject_evidence),
---    never the Evidence content itself.
+-- B. DISCOVERY EVIDENCE — durable content for canonical-contracts' Evidence,
+--    immutable once written. Closes the gap Governance Persistence V1 left
+--    open: that migration persists only EvidenceId membership
+--    (review_subject_evidence), never the Evidence content itself. Named
+--    discovery_evidence (not evidence) because this controlled project's
+--    foundational schema already owns gov_repo.evidence as an unrelated
+--    compliance/audit evidence-locker concept.
 -- -----------------------------------------------------------------------------
 
-create table gov_repo.evidence (
+create table gov_repo.discovery_evidence (
   organisation_id   uuid        not null references gov_repo.organisations (organisation_id),
   evidence_id       text        not null,
   handling          text        not null,
@@ -137,15 +150,15 @@ create table gov_repo.evidence (
   envelope          jsonb       not null,
   envelope_hash     char(64)    not null,
   created_at        timestamptz not null default now(),
-  constraint evidence_pkey primary key (organisation_id, evidence_id),
-  constraint evidence_handling_check check (handling in ('HASH_ONLY','REDACTED','NON_SENSITIVE')),
-  constraint evidence_envelope_hash_format_check check (envelope_hash ~ '^[0-9a-f]{64}$')
+  constraint discovery_evidence_pkey primary key (organisation_id, evidence_id),
+  constraint discovery_evidence_handling_check check (handling in ('HASH_ONLY','REDACTED','NON_SENSITIVE')),
+  constraint discovery_evidence_envelope_hash_format_check check (envelope_hash ~ '^[0-9a-f]{64}$')
 );
 
-comment on table gov_repo.evidence is
-  'IMMUTABLE durable content for one canonical-contracts Evidence (packages/canonical-contracts Evidence). Primary key is (organisation_id, evidence_id) rather than a bare evidence_id: evidenceId is a scanner-generated content hash with no tenant concept at all (packages/scanner is intentionally organisation-agnostic), so two different tenants scanning structurally identical content can legitimately produce the identical evidenceId — a bare global primary key would let one tenant''s write silently collide with another''s. envelope is the authoritative full Evidence object; the adapter recomputes envelope_hash on every read and rejects a mismatch, matching gov_repo.reconciliation_decisions'' own re-verification discipline. Never referenced by a ReviewSubject before this row exists (see review_subject_evidence_evidence_fkey below).';
+comment on table gov_repo.discovery_evidence is
+  'IMMUTABLE durable content for one canonical-contracts Evidence (packages/canonical-contracts Evidence), scoped to Discovery Intake findings only — distinct from the pre-existing gov_repo.evidence compliance/audit evidence-locker table. Primary key is (organisation_id, evidence_id) rather than a bare evidence_id: evidenceId is a scanner-generated content hash with no tenant concept at all (packages/scanner is intentionally organisation-agnostic), so two different tenants scanning structurally identical content can legitimately produce the identical evidenceId — a bare global primary key would let one tenant''s write silently collide with another''s. envelope is the authoritative full Evidence object; the adapter recomputes envelope_hash on every read and rejects a mismatch, matching gov_repo.reconciliation_decisions'' own re-verification discipline. Never referenced by a ReviewSubject before this row exists (see review_subject_evidence_evidence_fkey below).';
 
-create index idx_evidence_org on gov_repo.evidence (organisation_id);
+create index idx_discovery_evidence_org on gov_repo.discovery_evidence (organisation_id);
 
 -- -----------------------------------------------------------------------------
 -- C. SOURCE ASSERTIONS — durable content for canonical-contracts'
@@ -189,7 +202,7 @@ create table gov_repo.source_assertions (
 );
 
 comment on table gov_repo.source_assertions is
-  'IMMUTABLE durable content for one canonical-contracts SourceAssertion (packages/canonical-contracts SourceAssertion). Primary key is (organisation_id, assertion_id) for the same reason as gov_repo.evidence: assertionId is a scanner-generated content hash with no tenant concept, so a bare global primary key would risk a cross-tenant collision. envelope is the authoritative full SourceAssertion object (including snapshot/effectivePeriod/sourceAttribute/validation where present); envelope_hash is independently reverified on every read. Every assertion belongs to exactly one already-durable gov_repo.acquisition_runs row, never a run that exists only in memory.';
+  'IMMUTABLE durable content for one canonical-contracts SourceAssertion (packages/canonical-contracts SourceAssertion). Primary key is (organisation_id, assertion_id) for the same reason as gov_repo.discovery_evidence: assertionId is a scanner-generated content hash with no tenant concept, so a bare global primary key would risk a cross-tenant collision. envelope is the authoritative full SourceAssertion object (including snapshot/effectivePeriod/sourceAttribute/validation where present); envelope_hash is independently reverified on every read. Every assertion belongs to exactly one already-durable gov_repo.acquisition_runs row, never a run that exists only in memory.';
 
 create index idx_source_assertions_org on gov_repo.source_assertions (organisation_id);
 create index idx_source_assertions_run on gov_repo.source_assertions (organisation_id, run_id);
@@ -201,17 +214,18 @@ create table gov_repo.source_assertion_evidence (
   assertion_id    text not null,
   evidence_id     text not null,
   -- organisation_id is part of the primary key (not just assertion_id +
-  -- evidence_id) for the same tenant-collision reason as gov_repo.evidence /
-  -- gov_repo.source_assertions: neither assertion_id nor evidence_id alone
-  -- carries any tenant concept, so two different tenants could otherwise
-  -- collide on the identical (assertion_id, evidence_id) membership pair.
+  -- evidence_id) for the same tenant-collision reason as
+  -- gov_repo.discovery_evidence / gov_repo.source_assertions: neither
+  -- assertion_id nor evidence_id alone carries any tenant concept, so two
+  -- different tenants could otherwise collide on the identical
+  -- (assertion_id, evidence_id) membership pair.
   constraint source_assertion_evidence_pkey primary key (organisation_id, assertion_id, evidence_id),
   constraint source_assertion_evidence_assertion_fkey
     foreign key (organisation_id, assertion_id)
     references gov_repo.source_assertions (organisation_id, assertion_id),
   constraint source_assertion_evidence_evidence_fkey
     foreign key (organisation_id, evidence_id)
-    references gov_repo.evidence (organisation_id, evidence_id)
+    references gov_repo.discovery_evidence (organisation_id, evidence_id)
 );
 comment on table gov_repo.source_assertion_evidence is
   'Normalized EvidenceId membership for one immutable SourceAssertion. The evidence_id FK means an assertion can never durably cite evidence that was not itself already durably persisted.';
@@ -222,26 +236,38 @@ create index idx_source_assertion_evidence_org on gov_repo.source_assertion_evid
 --    or SourceAssertionId that exists only in TypeScript memory. Adds
 --    composite FKs to the two Governance Persistence V1 membership tables
 --    (never editing that historical migration file); this is a pure ADD
---    CONSTRAINT, so it does not affect any row already written today (no
---    review_subject_assertions/review_subject_evidence rows exist yet in any
---    environment this migration has ever run in) and requires no destructive
---    statement of any kind.
+--    CONSTRAINT, never a destructive statement of any kind.
+--
+--    Added NOT VALID: this controlled project already carries real
+--    review_subject_assertions/review_subject_evidence rows from the prior
+--    Governance Persistence V1 / Canonical Materialization V1 controlled
+--    runtime validations, referencing synthetic test assertion/evidence ids
+--    that predate this migration and were never meant to be durable
+--    Evidence/SourceAssertion content. NOT VALID enforces this FK for every
+--    row inserted or updated from this migration forward (a real,
+--    unconditional hard gate for all new Discovery Intake activity) without
+--    requiring that pre-existing, unrelated historical test data satisfy an
+--    invariant introduced after it was written. Deleting that prior
+--    milestones' test/audit data was deliberately avoided rather than done
+--    silently as a side effect of this migration.
 -- -----------------------------------------------------------------------------
 
 alter table gov_repo.review_subject_assertions
   add constraint review_subject_assertions_assertion_fkey
   foreign key (organisation_id, assertion_id)
-  references gov_repo.source_assertions (organisation_id, assertion_id);
+  references gov_repo.source_assertions (organisation_id, assertion_id)
+  not valid;
 
 alter table gov_repo.review_subject_evidence
   add constraint review_subject_evidence_evidence_fkey
   foreign key (organisation_id, evidence_id)
-  references gov_repo.evidence (organisation_id, evidence_id);
+  references gov_repo.discovery_evidence (organisation_id, evidence_id)
+  not valid;
 
 comment on constraint review_subject_assertions_assertion_fkey on gov_repo.review_subject_assertions is
   'Discovery Intake V1 hard gate: gov_repo.create_review_subject can only durably succeed for an assertionId that is already a row in gov_repo.source_assertions. No assertion may exist only in TypeScript memory once referenced by a persisted ReviewSubject.';
 comment on constraint review_subject_evidence_evidence_fkey on gov_repo.review_subject_evidence is
-  'Discovery Intake V1 hard gate: gov_repo.create_review_subject can only durably succeed for an evidenceId that is already a row in gov_repo.evidence. No evidence may exist only in TypeScript memory once referenced by a persisted ReviewSubject.';
+  'Discovery Intake V1 hard gate: gov_repo.create_review_subject can only durably succeed for an evidenceId that is already a row in gov_repo.discovery_evidence. No evidence may exist only in TypeScript memory once referenced by a persisted ReviewSubject.';
 
 -- -----------------------------------------------------------------------------
 -- E. IMMUTABILITY — Evidence, SourceAssertion, and their membership are
@@ -251,10 +277,10 @@ comment on constraint review_subject_evidence_evidence_fkey on gov_repo.review_s
 --    gov_repo.review_subjects itself.
 -- -----------------------------------------------------------------------------
 
-create or replace rule evidence_no_update as
-  on update to gov_repo.evidence do instead nothing;
-create or replace rule evidence_no_delete as
-  on delete to gov_repo.evidence do instead nothing;
+create or replace rule discovery_evidence_no_update as
+  on update to gov_repo.discovery_evidence do instead nothing;
+create or replace rule discovery_evidence_no_delete as
+  on delete to gov_repo.discovery_evidence do instead nothing;
 
 create or replace rule source_assertions_no_update as
   on update to gov_repo.source_assertions do instead nothing;
@@ -274,19 +300,19 @@ create or replace rule source_assertion_evidence_no_delete as
 -- -----------------------------------------------------------------------------
 
 alter table gov_repo.acquisition_runs enable row level security;
-alter table gov_repo.evidence enable row level security;
+alter table gov_repo.discovery_evidence enable row level security;
 alter table gov_repo.source_assertions enable row level security;
 alter table gov_repo.source_assertion_evidence enable row level security;
 
 revoke all on table
   gov_repo.acquisition_runs,
-  gov_repo.evidence,
+  gov_repo.discovery_evidence,
   gov_repo.source_assertions,
   gov_repo.source_assertion_evidence
 from public, anon, authenticated;
 
 create policy "Service role has full access to acquisition_runs" on gov_repo.acquisition_runs for all to service_role using (true) with check (true);
-create policy "Service role has full access to evidence" on gov_repo.evidence for all to service_role using (true) with check (true);
+create policy "Service role has full access to discovery_evidence" on gov_repo.discovery_evidence for all to service_role using (true) with check (true);
 create policy "Service role has full access to source_assertions" on gov_repo.source_assertions for all to service_role using (true) with check (true);
 create policy "Service role access to source_assertion_evidence" on gov_repo.source_assertion_evidence for all to service_role using (true) with check (true);
 
@@ -470,9 +496,6 @@ volatile
 security invoker
 set search_path = 'gov_repo', 'pg_catalog'
 as $$
-#variable_conflict use_column
-declare
-  v_inserted gov_repo.evidence%rowtype;
 begin
   if p_evidence_id is null or btrim(p_evidence_id) = '' then
     raise exception using errcode = '22004', message = 'evidence_id is required';
@@ -489,31 +512,37 @@ begin
   -- (organisation_id, evidence_id) is always a no-op replay of the
   -- already-durable row, exactly as gov_repo.review_subjects treats
   -- detected_at as identity-bearing while this table does not.
-  insert into gov_repo.evidence as ev (
-    organisation_id, evidence_id, handling, captured_at, content_hash, contract_version, envelope, envelope_hash
-  ) values (
-    p_organisation_id, p_evidence_id, p_handling, p_captured_at, p_content_hash, p_contract_version, p_envelope, p_envelope_hash
-  )
-  on conflict (organisation_id, evidence_id) do nothing
-  returning ev.* into v_inserted;
-
-  if found then
-    return query select false, v_inserted.evidence_id;
+  --
+  -- gov_repo.discovery_evidence is immutable via a rewrite RULE
+  -- (discovery_evidence_no_update), and PostgreSQL disallows
+  -- INSERT ... ON CONFLICT on any table protected by a rewrite RULE. This
+  -- uses the same check-then-insert-with-exception-handler pattern already
+  -- established in this schema for exactly this situation (see
+  -- gov_repo.record_authorization_decision), instead of ON CONFLICT.
+  begin
+    insert into gov_repo.discovery_evidence (
+      organisation_id, evidence_id, handling, captured_at, content_hash, contract_version, envelope, envelope_hash
+    ) values (
+      p_organisation_id, p_evidence_id, p_handling, p_captured_at, p_content_hash, p_contract_version, p_envelope, p_envelope_hash
+    );
+    return query select false, p_evidence_id;
     return;
-  end if;
-
-  return query select true, p_evidence_id;
+  exception
+    when unique_violation then
+      return query select true, p_evidence_id;
+      return;
+  end;
 end;
 $$;
 
 comment on function gov_repo.record_discovery_evidence is
-  'Idempotent durable persistence of one canonical-contracts Evidence, tenant-scoped by (organisation_id, evidence_id). A reused evidence_id for the same tenant always replays (first insert wins; the wall-clock captured_at is not identity-bearing) — a different tenant reusing the identical tenant-agnostic evidence_id gets its own independent row rather than any conflict or collision. SECURITY INVOKER, service_role only.';
+  'Idempotent durable persistence of one canonical-contracts Evidence, tenant-scoped by (organisation_id, evidence_id). A reused evidence_id for the same tenant always replays (first insert wins; the wall-clock captured_at is not identity-bearing) — a different tenant reusing the identical tenant-agnostic evidence_id gets its own independent row rather than any conflict or collision. Uses a check-then-insert-with-exception-handler (not ON CONFLICT) because the table is immutable via a rewrite RULE. SECURITY INVOKER, service_role only.';
 
 -- G.4 — Idempotent durable persistence of one SourceAssertion plus its
 -- normalized evidence membership. Every cited evidence_id must already exist
--- in gov_repo.evidence (source_assertion_evidence_evidence_fkey), so this
--- call must always follow gov_repo.record_discovery_evidence for the same
--- item, never precede or replace it.
+-- in gov_repo.discovery_evidence (source_assertion_evidence_evidence_fkey),
+-- so this call must always follow gov_repo.record_discovery_evidence for the
+-- same item, never precede or replace it.
 create or replace function gov_repo.record_discovery_source_assertion(
   p_assertion_id            text,
   p_organisation_id         uuid,
@@ -546,9 +575,6 @@ volatile
 security invoker
 set search_path = 'gov_repo', 'pg_catalog'
 as $$
-#variable_conflict use_column
-declare
-  v_inserted gov_repo.source_assertions%rowtype;
 begin
   if p_assertion_id is null or btrim(p_assertion_id) = '' then
     raise exception using errcode = '22004', message = 'assertion_id is required';
@@ -559,35 +585,45 @@ begin
   -- own identity, so a rescan of unchanged content reproduces the same
   -- assertion_id with different wall-clock fields — a plain replay, not a
   -- conflict. Tenant-scoped by (organisation_id, assertion_id).
-  insert into gov_repo.source_assertions as sa (
-    organisation_id, assertion_id, run_id, source_connection_id, source_external_type, source_external_id,
-    snapshot_id, snapshot_content_hash, snapshot_observed_at, snapshot_source_version,
-    method_code, method_version, trust_state, confidence, observed_at, synced_at, recorded_at,
-    contract_version, envelope, envelope_hash
-  ) values (
-    p_organisation_id, p_assertion_id, p_run_id, p_source_connection_id, p_source_external_type, p_source_external_id,
-    p_snapshot_id, p_snapshot_content_hash, p_snapshot_observed_at, p_snapshot_source_version,
-    p_method_code, p_method_version, p_trust_state, p_confidence, p_observed_at, p_synced_at, p_recorded_at,
-    p_contract_version, p_envelope, p_envelope_hash
-  )
-  on conflict (organisation_id, assertion_id) do nothing
-  returning sa.* into v_inserted;
+  --
+  -- gov_repo.source_assertions is immutable via a rewrite RULE
+  -- (source_assertions_no_update), and PostgreSQL disallows
+  -- INSERT ... ON CONFLICT on any table protected by a rewrite RULE. Uses
+  -- the same check-then-insert-with-exception-handler pattern as
+  -- gov_repo.record_discovery_evidence / gov_repo.record_authorization_decision
+  -- instead of ON CONFLICT. The membership insert only ever runs alongside
+  -- the winning (non-replayed) insert, inside the same nested block: on a
+  -- genuine replay, unique_violation is raised by the assertion insert
+  -- itself before the membership insert is ever reached.
+  begin
+    insert into gov_repo.source_assertions (
+      organisation_id, assertion_id, run_id, source_connection_id, source_external_type, source_external_id,
+      snapshot_id, snapshot_content_hash, snapshot_observed_at, snapshot_source_version,
+      method_code, method_version, trust_state, confidence, observed_at, synced_at, recorded_at,
+      contract_version, envelope, envelope_hash
+    ) values (
+      p_organisation_id, p_assertion_id, p_run_id, p_source_connection_id, p_source_external_type, p_source_external_id,
+      p_snapshot_id, p_snapshot_content_hash, p_snapshot_observed_at, p_snapshot_source_version,
+      p_method_code, p_method_version, p_trust_state, p_confidence, p_observed_at, p_synced_at, p_recorded_at,
+      p_contract_version, p_envelope, p_envelope_hash
+    );
 
-  if found then
     insert into gov_repo.source_assertion_evidence (organisation_id, assertion_id, evidence_id)
     select p_organisation_id, p_assertion_id, unnested.value
     from unnest(coalesce(p_evidence_ids, '{}')) as unnested(value);
 
-    return query select false, v_inserted.assertion_id;
+    return query select false, p_assertion_id;
     return;
-  end if;
-
-  return query select true, p_assertion_id;
+  exception
+    when unique_violation then
+      return query select true, p_assertion_id;
+      return;
+  end;
 end;
 $$;
 
 comment on function gov_repo.record_discovery_source_assertion is
-  'Idempotent durable persistence of one canonical-contracts SourceAssertion plus normalized evidence membership, tenant-scoped by (organisation_id, assertion_id). A reused assertion_id for the same tenant always replays (first insert wins, evidence membership is only ever inserted once, alongside the winning insert). Every evidence_id must already exist in gov_repo.evidence for this tenant. SECURITY INVOKER, service_role only.';
+  'Idempotent durable persistence of one canonical-contracts SourceAssertion plus normalized evidence membership, tenant-scoped by (organisation_id, assertion_id). A reused assertion_id for the same tenant always replays (first insert wins, evidence membership is only ever inserted once, alongside the winning insert). Every evidence_id must already exist in gov_repo.discovery_evidence for this tenant. Uses a check-then-insert-with-exception-handler (not ON CONFLICT) because the table is immutable via a rewrite RULE. SECURITY INVOKER, service_role only.';
 
 -- -----------------------------------------------------------------------------
 -- H. PERMISSIONS — EXECUTE revoked from PUBLIC/anon/authenticated, granted

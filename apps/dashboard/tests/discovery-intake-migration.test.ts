@@ -34,8 +34,8 @@ function stripSqlComments(sql: string): string {
     .join("\n");
 }
 
-const NEW_TABLES = ["acquisition_runs", "evidence", "source_assertions", "source_assertion_evidence"];
-const IMMUTABLE_TABLES = ["evidence", "source_assertions", "source_assertion_evidence"];
+const NEW_TABLES = ["acquisition_runs", "discovery_evidence", "source_assertions", "source_assertion_evidence"];
+const IMMUTABLE_TABLES = ["discovery_evidence", "source_assertions", "source_assertion_evidence"];
 const MUTABLE_TABLES = ["acquisition_runs"];
 const NEW_FUNCTIONS = [
   "start_acquisition_run",
@@ -87,15 +87,15 @@ test("SQL: composite tenant-aware FKs are used for every child table referencing
   assert.ok(matches.length >= 5, `expected at least 5 composite (organisation_id, id) FKs, found ${matches.length}`);
 });
 
-test("SQL: hard gate — review_subject_assertions/review_subject_evidence gain composite FKs into the new durable tables (never editing the historical migration file)", () => {
+test("SQL: hard gate — review_subject_assertions/review_subject_evidence gain composite FKs into the new durable tables, added NOT VALID (enforced for every future write; historical controlled-project test data predating this migration is never required to retroactively satisfy it), never editing the historical migration file", () => {
   const code = stripSqlComments(readMigration());
   assert.match(
     code,
-    /alter table gov_repo\.review_subject_assertions\s*\n\s*add constraint review_subject_assertions_assertion_fkey\s*\n\s*foreign key \(organisation_id, assertion_id\)\s*\n\s*references gov_repo\.source_assertions \(organisation_id, assertion_id\);/
+    /alter table gov_repo\.review_subject_assertions\s*\n\s*add constraint review_subject_assertions_assertion_fkey\s*\n\s*foreign key \(organisation_id, assertion_id\)\s*\n\s*references gov_repo\.source_assertions \(organisation_id, assertion_id\)\s*\n\s*not valid;/
   );
   assert.match(
     code,
-    /alter table gov_repo\.review_subject_evidence\s*\n\s*add constraint review_subject_evidence_evidence_fkey\s*\n\s*foreign key \(organisation_id, evidence_id\)\s*\n\s*references gov_repo\.evidence \(organisation_id, evidence_id\);/
+    /alter table gov_repo\.review_subject_evidence\s*\n\s*add constraint review_subject_evidence_evidence_fkey\s*\n\s*foreign key \(organisation_id, evidence_id\)\s*\n\s*references gov_repo\.discovery_evidence \(organisation_id, evidence_id\)\s*\n\s*not valid;/
   );
 
   // And the historical migration itself is byte-for-byte untouched.
@@ -194,38 +194,48 @@ test("SQL: complete_acquisition_run fails closed on cross-tenant completion befo
   assert.ok(crossTenantIndex > -1 && crossTenantIndex < updateIndex);
 });
 
-test("SQL: record_discovery_evidence and record_discovery_source_assertion use ON CONFLICT DO NOTHING with the #variable_conflict use_column pragma declared first", () => {
+test("SQL: start_acquisition_run uses ON CONFLICT DO NOTHING with the #variable_conflict use_column pragma declared first (acquisition_runs carries no rewrite rule, so ON CONFLICT is legal there)", () => {
   const code = stripSqlComments(readMigration());
-  for (const fn of ["record_discovery_evidence", "record_discovery_source_assertion", "start_acquisition_run"]) {
+  const fnBody = code.match(/create or replace function gov_repo\.start_acquisition_run\(([\s\S]*?)\$\$;/)?.[0] ?? "";
+  assert.match(fnBody, /on conflict/, "expected start_acquisition_run to use ON CONFLICT");
+  const pragmaIndex = fnBody.indexOf("#variable_conflict use_column");
+  const conflictIndex = fnBody.indexOf("on conflict");
+  assert.ok(pragmaIndex > -1 && pragmaIndex < conflictIndex, "start_acquisition_run must declare the pragma before its ON CONFLICT clause");
+});
+
+test("SQL: record_discovery_evidence / record_discovery_source_assertion do NOT use ON CONFLICT — gov_repo.discovery_evidence and gov_repo.source_assertions are immutable via a rewrite RULE, and PostgreSQL disallows ON CONFLICT on such a table (a real defect found and fixed via the controlled runtime gate: 'INSERT with ON CONFLICT clause cannot be used with table that has INSERT or UPDATE rules'). Both use a check-then-insert-with-exception-handler instead, matching gov_repo.record_authorization_decision's established precedent.", () => {
+  const code = stripSqlComments(readMigration());
+  for (const fn of ["record_discovery_evidence", "record_discovery_source_assertion"]) {
     const fnBody = code.match(new RegExp(`create or replace function gov_repo\\.${fn}\\(([\\s\\S]*?)\\$\\$;`))?.[0] ?? "";
-    assert.match(fnBody, /on conflict/, `expected ${fn} to use ON CONFLICT`);
-    const pragmaIndex = fnBody.indexOf("#variable_conflict use_column");
-    const conflictIndex = fnBody.indexOf("on conflict");
-    assert.ok(pragmaIndex > -1 && pragmaIndex < conflictIndex, `${fn} must declare the pragma before its ON CONFLICT clause`);
+    assert.ok(fnBody, `expected to find function body for ${fn}`);
+    assert.doesNotMatch(fnBody, /on conflict/, `${fn} must not use ON CONFLICT`);
+    assert.match(fnBody, /exception\s*\n\s*when unique_violation then/, `${fn} must catch unique_violation`);
+    const insertIndex = fnBody.indexOf("insert into");
+    const exceptionIndex = fnBody.indexOf("when unique_violation");
+    assert.ok(insertIndex > -1 && insertIndex < exceptionIndex, `${fn}'s insert must precede its exception handler`);
   }
 });
 
-test("SQL: record_discovery_source_assertion inserts evidence membership only on the winning insert (never on a replay)", () => {
+test("SQL: record_discovery_source_assertion inserts evidence membership inside the same winning-insert block (never reached on a replay, since the assertion insert itself raises unique_violation first)", () => {
   const code = stripSqlComments(readMigration());
   const fnBody = code.match(/create or replace function gov_repo\.record_discovery_source_assertion\(([\s\S]*?)\$\$;/)?.[0] ?? "";
-  const insertMembershipIndex = fnBody.indexOf("insert into gov_repo.source_assertion_evidence");
-  const foundBranchIndex = fnBody.indexOf("if found then");
-  assert.ok(insertMembershipIndex > -1 && foundBranchIndex > -1);
-  assert.ok(foundBranchIndex < insertMembershipIndex);
+  const assertionInsertIndex = fnBody.indexOf("insert into gov_repo.source_assertions");
+  const membershipInsertIndex = fnBody.indexOf("insert into gov_repo.source_assertion_evidence");
+  const exceptionIndex = fnBody.indexOf("when unique_violation");
+  assert.ok(assertionInsertIndex > -1 && membershipInsertIndex > -1 && exceptionIndex > -1);
+  assert.ok(assertionInsertIndex < membershipInsertIndex && membershipInsertIndex < exceptionIndex);
 });
 
 test("SQL: evidence/source_assertions are tenant-scoped by a composite (organisation_id, id) primary key, and record_discovery_evidence/record_discovery_source_assertion treat any reused id for the same tenant as a pure replay (no content comparison, since evidenceId/assertionId already exclude the wall-clock capture moment from their own identity)", () => {
   const code = stripSqlComments(readMigration());
-  assert.match(code, /constraint evidence_pkey primary key \(organisation_id, evidence_id\)/);
+  assert.match(code, /constraint discovery_evidence_pkey primary key \(organisation_id, evidence_id\)/);
   assert.match(code, /constraint source_assertions_pkey primary key \(organisation_id, assertion_id\)/);
   assert.match(code, /constraint source_assertion_evidence_pkey primary key \(organisation_id, assertion_id, evidence_id\)/);
 
   const evidenceFn = code.match(/create or replace function gov_repo\.record_discovery_evidence\(([\s\S]*?)\$\$;/)?.[0] ?? "";
-  assert.match(evidenceFn, /on conflict \(organisation_id, evidence_id\) do nothing/);
   assert.doesNotMatch(evidenceFn, /EVIDENCE_ID_CONFLICT/);
 
   const assertionFn = code.match(/create or replace function gov_repo\.record_discovery_source_assertion\(([\s\S]*?)\$\$;/)?.[0] ?? "";
-  assert.match(assertionFn, /on conflict \(organisation_id, assertion_id\) do nothing/);
   assert.doesNotMatch(assertionFn, /SOURCE_ASSERTION_ID_CONFLICT/);
 });
 
@@ -235,9 +245,9 @@ test("SQL: content-conflict still fails closed (23505) on start_acquisition_run 
   assert.match(code, /message = 'ACQUISITION_RUN_COMPLETION_CONFLICT'/);
 });
 
-test("SQL: envelope_hash format is checked as 64 lowercase hex characters on evidence and source_assertions", () => {
+test("SQL: envelope_hash format is checked as 64 lowercase hex characters on discovery_evidence and source_assertions", () => {
   const code = stripSqlComments(readMigration());
-  assert.match(code, /constraint evidence_envelope_hash_format_check check \(envelope_hash ~ '\^\[0-9a-f\]\{64\}\$'\)/);
+  assert.match(code, /constraint discovery_evidence_envelope_hash_format_check check \(envelope_hash ~ '\^\[0-9a-f\]\{64\}\$'\)/);
   assert.match(code, /constraint source_assertions_envelope_hash_format_check check \(envelope_hash ~ '\^\[0-9a-f\]\{64\}\$'\)/);
 });
 
@@ -257,7 +267,7 @@ test("SQL: source_assertion_evidence FKs both to its owning assertion and to the
   );
   assert.match(
     code,
-    /constraint source_assertion_evidence_evidence_fkey\s*\n\s*foreign key \(organisation_id, evidence_id\)\s*\n\s*references gov_repo\.evidence \(organisation_id, evidence_id\)/
+    /constraint source_assertion_evidence_evidence_fkey\s*\n\s*foreign key \(organisation_id, evidence_id\)\s*\n\s*references gov_repo\.discovery_evidence \(organisation_id, evidence_id\)/
   );
 });
 
