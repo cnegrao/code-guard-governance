@@ -60,7 +60,14 @@ import { discoveryIntakePersistence } from "./discovery-intake-persistence";
  *     lookup, never a write;
  *   - never persists a ReviewSubject before its cited Evidence/SourceAssertion
  *     are themselves already durable (see discovery-intake-persistence.ts and
- *     the DB-level hard gate added by the accompanying migration).
+ *     the DB-level hard gate added by the accompanying migration);
+ *   - never persists a ReviewSubject before its exact backing DiscoveryFinding
+ *     (and, when one exists — today only for RELATIONSHIP kind —
+ *     NormalizedCandidate) is itself already durable (Discovery Governance
+ *     Input Persistence V1; see review_subjects_finding_fkey and
+ *     ensureReviewSubjectAndPropose below). This is what lets a CERTIFIED
+ *     ReviewSubject's exact original reconciliation input be recovered later,
+ *     rather than existing only in this call's TypeScript memory.
  */
 
 // ---------------------------------------------------------------------------
@@ -187,11 +194,25 @@ function deriveProposeCommandId(reviewSubjectId: ReviewSubjectId): string {
 async function ensureReviewSubjectAndPropose(
   finding: DiscoveryFinding<DiscoveryCandidateKind>,
   candidate: NormalizedCandidate | undefined,
+  acquisitionRunId: AcquisitionRun["runId"],
   ctx: GovernanceExecutionContext,
   ports: DiscoveryIntakePorts,
   tally: ScanTally,
   countAs: "object" | "relationship",
 ): Promise<void> {
+  // Discovery Governance Input Persistence V1: the exact DiscoveryFinding
+  // (and, when Discovery Intake actually produces one — today only for
+  // RELATIONSHIP kind, see discovery-intake-port.ts) NormalizedCandidate must
+  // be durable before any ReviewSubject can reference them. Both calls are
+  // idempotent (identical content under a reused id replays), so recording
+  // them unconditionally on every scan — even one that later turns out to be
+  // a full ReviewSubject replay — is always safe and keeps this invariant
+  // unconditional rather than dependent on which branch runs below.
+  await ports.intake.recordDiscoveryFinding(ctx.organisationId, finding, acquisitionRunId);
+  if (candidate) {
+    await ports.intake.recordNormalizedCandidate(ctx.organisationId, candidate, acquisitionRunId);
+  }
+
   const reviewSubjectId = deriveReviewSubjectId(ctx.organisationId, finding.findingId);
 
   // Read before create. finding.detectedAt reflects *this* scan's real wall-
@@ -256,6 +277,7 @@ async function ensureReviewSubjectAndPropose(
 
 async function processObjectCandidate(
   candidate: DiscoveryCandidate,
+  acquisitionRunId: AcquisitionRun["runId"],
   ctx: GovernanceExecutionContext,
   ports: DiscoveryIntakePorts,
   tally: ScanTally,
@@ -285,7 +307,7 @@ async function processObjectCandidate(
       return;
     }
 
-    await ensureReviewSubjectAndPropose(finding, undefined, ctx, ports, tally, "object");
+    await ensureReviewSubjectAndPropose(finding, undefined, acquisitionRunId, ctx, ports, tally, "object");
   } catch (error) {
     tally.failures.push({
       findingId: finding.findingId,
@@ -297,6 +319,7 @@ async function processObjectCandidate(
 
 async function processRelationshipCandidate(
   result: RelationshipCorrelationResult,
+  acquisitionRunId: AcquisitionRun["runId"],
   ctx: GovernanceExecutionContext,
   ports: DiscoveryIntakePorts,
   tally: ScanTally,
@@ -307,7 +330,7 @@ async function processRelationshipCandidate(
     // correlation runs after every object candidate in this same scan has
     // already been processed); no new evidence is fabricated for the edge
     // itself. Already-governed endpoints never suppress a relationship.
-    await ensureReviewSubjectAndPropose(result.finding, result.candidate, ctx, ports, tally, "relationship");
+    await ensureReviewSubjectAndPropose(result.finding, result.candidate, acquisitionRunId, ctx, ports, tally, "relationship");
   } catch (error) {
     tally.failures.push({
       findingId: result.finding.findingId,
@@ -406,10 +429,10 @@ export async function runGovernanceDiscoveryScan(
   };
 
   for (const candidate of candidates) {
-    await processObjectCandidate(candidate, ctx, ports, tally);
+    await processObjectCandidate(candidate, run.runId, ctx, ports, tally);
   }
   for (const relationshipResult of relationshipResults) {
-    await processRelationshipCandidate(relationshipResult, ctx, ports, tally);
+    await processRelationshipCandidate(relationshipResult, run.runId, ctx, ports, tally);
   }
 
   const counts: AcquisitionRunCounts = {

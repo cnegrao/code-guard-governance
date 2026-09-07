@@ -6,17 +6,31 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { asOrganisationId, type OrganisationId, type Evidence, type SourceAssertion, type AcquisitionRun } from "@council/canonical-contracts";
+import {
+  asOrganisationId,
+  type OrganisationId,
+  type DiscoveryCandidateKind,
+  type DiscoveryFinding,
+  type DiscoveryFindingId,
+  type Evidence,
+  type NormalizedCandidate,
+  type SourceAssertion,
+  type AcquisitionRun,
+} from "@council/canonical-contracts";
 import {
   createReviewSubject,
   asReviewSubjectId,
+  recoverReconciliationInput,
+  RECONCILIATION_INPUT_STATUS,
   type AcquisitionRunCounts,
   type AcquisitionRunPersistenceResult,
   type ActiveObjectSourceMapping,
+  type DiscoveryFindingPersistenceResult,
   type DiscoveryIntakePersistencePort,
   type EvidencePersistenceResult,
   type GovernanceReviewPersistencePort,
   type MaterializationPersistencePort,
+  type NormalizedCandidatePersistenceResult,
   type ObjectMaterializationInput,
   type ObjectMaterializationResult,
   type ObjectSourceMappingLookupInput,
@@ -68,8 +82,15 @@ class FakeIntakePersistence implements DiscoveryIntakePersistencePort {
   // must be tenant-scoped to avoid one tenant's write colliding with another's.
   readonly evidence = new Map<string, Evidence>();
   readonly assertions = new Map<string, SourceAssertion>();
+  readonly findings = new Map<string, DiscoveryFinding<DiscoveryCandidateKind>>();
+  // Keyed by tenantKey(organisationId, findingId) — mirrors the real schema's
+  // UNIQUE (organisation_id, finding_id) on gov_repo.discovery_candidates
+  // (at most one durable candidate per finding, the real current cardinality).
+  readonly candidatesByFinding = new Map<string, NormalizedCandidate>();
   evidenceCallCount = 0;
   assertionCallCount = 0;
+  findingCallCount = 0;
+  candidateCallCount = 0;
 
   async startAcquisitionRun(organisationId: OrganisationId, run: AcquisitionRun): Promise<AcquisitionRunPersistenceResult> {
     const existing = this.runs.get(run.runId);
@@ -122,12 +143,101 @@ class FakeIntakePersistence implements DiscoveryIntakePersistencePort {
     return { replay: false, assertionId: assertion.assertionId };
   }
 
+  async recordDiscoveryFinding(
+    organisationId: OrganisationId,
+    finding: DiscoveryFinding<DiscoveryCandidateKind>,
+    acquisitionRunId: AcquisitionRun["runId"],
+  ): Promise<DiscoveryFindingPersistenceResult> {
+    this.findingCallCount += 1;
+    // Mirrors gov_repo.discovery_findings_run_fkey: the cited acquisition run
+    // must already be durable.
+    if (!this.runs.has(acquisitionRunId)) {
+      throw new Error(`FK_VIOLATION: acquisition run ${acquisitionRunId} is not durable yet`);
+    }
+    for (const assertionId of finding.assertionIds) {
+      if (!this.hasDurableAssertion(organisationId, assertionId)) {
+        throw new Error(`FK_VIOLATION: assertion ${assertionId} is not durable for this tenant yet`);
+      }
+    }
+    for (const evidenceId of finding.evidenceIds) {
+      if (!this.hasDurableEvidence(organisationId, evidenceId)) {
+        throw new Error(`FK_VIOLATION: evidence ${evidenceId} is not durable for this tenant yet`);
+      }
+    }
+
+    // Mirrors gov_repo.record_discovery_finding: findingId already excludes
+    // detectedAt (the only field expected to vary across a rescan of
+    // unchanged content, exactly like evidenceId/assertionId exclude their
+    // own wall-clock fields) — a reused finding_id always replays, first
+    // insert wins, no content comparison.
+    const key = tenantKey(organisationId, finding.findingId);
+    const existing = this.findings.get(key);
+    if (existing) {
+      return { replay: true, findingId: finding.findingId };
+    }
+    this.findings.set(key, finding);
+    return { replay: false, findingId: finding.findingId };
+  }
+
+  async getDiscoveryFinding(
+    organisationId: OrganisationId,
+    findingId: DiscoveryFindingId,
+  ): Promise<DiscoveryFinding<DiscoveryCandidateKind> | undefined> {
+    return this.findings.get(tenantKey(organisationId, findingId));
+  }
+
+  async recordNormalizedCandidate(
+    organisationId: OrganisationId,
+    candidate: NormalizedCandidate,
+    acquisitionRunId: AcquisitionRun["runId"],
+  ): Promise<NormalizedCandidatePersistenceResult> {
+    this.candidateCallCount += 1;
+    if (!this.hasDurableFinding(organisationId, candidate.findingId)) {
+      throw new Error(`FK_VIOLATION: finding ${candidate.findingId} is not durable for this tenant yet`);
+    }
+    if (!this.runs.has(acquisitionRunId)) {
+      throw new Error(`FK_VIOLATION: acquisition run ${acquisitionRunId} is not durable yet`);
+    }
+    const finding = this.findings.get(tenantKey(organisationId, candidate.findingId))!;
+    if (finding.candidateKind !== candidate.candidateKind) {
+      throw new Error(`DISCOVERY_CANDIDATE_KIND_MISMATCH: ${candidate.candidateId}`);
+    }
+    if (JSON.stringify(finding.sourceObject) !== JSON.stringify(candidate.sourceObject)) {
+      throw new Error(`DISCOVERY_CANDIDATE_SOURCE_MISMATCH: ${candidate.candidateId}`);
+    }
+
+    const findingKey = tenantKey(organisationId, candidate.findingId);
+    const existing = this.candidatesByFinding.get(findingKey);
+    if (existing) {
+      if (existing.candidateId !== candidate.candidateId) {
+        throw new Error(`DISCOVERY_CANDIDATE_FINDING_ALREADY_HAS_CANDIDATE: ${candidate.findingId}`);
+      }
+      if (JSON.stringify(existing) !== JSON.stringify(candidate)) {
+        throw new Error(`DISCOVERY_CANDIDATE_CONFLICT: ${candidate.candidateId}`);
+      }
+      return { replay: true, candidateId: candidate.candidateId };
+    }
+    this.candidatesByFinding.set(findingKey, candidate);
+    return { replay: false, candidateId: candidate.candidateId };
+  }
+
+  async getNormalizedCandidateForFinding(
+    organisationId: OrganisationId,
+    findingId: DiscoveryFindingId,
+  ): Promise<NormalizedCandidate | undefined> {
+    return this.candidatesByFinding.get(tenantKey(organisationId, findingId));
+  }
+
   hasDurableEvidence(organisationId: OrganisationId, evidenceId: string): boolean {
     return this.evidence.has(tenantKey(organisationId, evidenceId));
   }
 
   hasDurableAssertion(organisationId: OrganisationId, assertionId: string): boolean {
     return this.assertions.has(tenantKey(organisationId, assertionId));
+  }
+
+  hasDurableFinding(organisationId: OrganisationId, findingId: string): boolean {
+    return this.findings.has(tenantKey(organisationId, findingId));
   }
 }
 
@@ -141,6 +251,14 @@ class FakeReviewPersistence implements GovernanceReviewPersistencePort {
 
   async createReviewSubject(subject: ReviewSubject): Promise<ReviewSubjectPersistenceResult> {
     this.createCallCount += 1;
+
+    // Hard gate mirror: a ReviewSubject must never be creatable while its
+    // backing DiscoveryFinding is not already durable — exactly what
+    // review_subjects_finding_fkey enforces in the real migration (Discovery
+    // Governance Input Persistence V1).
+    if (!this.intake.hasDurableFinding(subject.organisationId, subject.findingId)) {
+      throw new Error(`HARD_GATE_VIOLATION: finding ${subject.findingId} is not durable for this tenant yet`);
+    }
 
     // Hard gate mirror: a ReviewSubject must never be creatable while any of
     // its cited assertionIds/evidenceIds are not already durable — exactly
@@ -613,15 +731,116 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
       evidenceIds: ["evidence:a" as never],
     });
 
+    await ports.intake.recordDiscoveryFinding(ORG_A, findingA, "acquisition-run:x" as never);
     const subjectA = createReviewSubject({ reviewSubjectId: sharedReviewSubjectId, organisationId: ORG_A, finding: findingA });
     const firstResult = await ports.review.createReviewSubject(subjectA);
     assert.equal(firstResult.replay, false);
 
+    await ports.intake.recordDiscoveryFinding(ORG_A, findingB, "acquisition-run:x" as never);
     const subjectB = createReviewSubject({ reviewSubjectId: sharedReviewSubjectId, organisationId: ORG_A, finding: findingB });
     await assert.rejects(
       () => ports.review.createReviewSubject(subjectB),
       /REVIEW_SUBJECT_ID_CONFLICT/,
       "reusing a reviewSubjectId with different underlying finding content must fail closed, never silently replay",
     );
+  });
+});
+
+describe("Discovery Governance Input Persistence V1: durable Finding/Candidate continuity into reconciliation input recovery", () => {
+  test("a real scan durably persists the exact Finding for every object AND relationship candidate, and the exact Candidate only for relationships", async () => {
+    await withFixtureRepository(async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      // 3 object findings (AGENT/MODEL/TOOL) + 2 relationship findings (USES_MODEL/USES_TOOL) = 5.
+      assert.equal(ports.intake.findings.size, 5);
+      // Only the 2 relationship findings ever get a durable candidate — no
+      // NormalizedObjectCandidate producer exists anywhere in this repository.
+      assert.equal(ports.intake.candidatesByFinding.size, 2);
+
+      for (const subject of ports.review.subjects.values()) {
+        const finding = await ports.intake.getDiscoveryFinding(ORG_A, subject.findingId);
+        assert.ok(finding, `expected a durable finding for review subject ${subject.reviewSubjectId}`);
+        assert.equal(finding!.findingId, subject.findingId);
+
+        const candidate = await ports.intake.getNormalizedCandidateForFinding(ORG_A, subject.findingId);
+        const recovered = recoverReconciliationInput({ reviewSubject: subject, finding, candidate });
+        if (subject.candidateKind === "RELATIONSHIP") {
+          assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE);
+        } else {
+          assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.FINDING_ONLY, "no OBJECT candidate producer exists yet — this is real, not unavailable");
+        }
+      }
+    });
+  });
+
+  test("IDEMPOTENT RE-SCAN: an identical rerun does not duplicate durable Finding/Candidate rows", async () => {
+    await withFixtureRepository(async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const findingCountAfterFirst = ports.intake.findings.size;
+      const candidateCountAfterFirst = ports.intake.candidatesByFinding.size;
+      const findingCallsAfterFirst = ports.intake.findingCallCount;
+
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      assert.equal(ports.intake.findings.size, findingCountAfterFirst, "rescan must not create any new durable finding row");
+      assert.equal(ports.intake.candidatesByFinding.size, candidateCountAfterFirst, "rescan must not create any new durable candidate row");
+      // recordDiscoveryFinding is still called on every rescan (it's cheap and
+      // idempotent — see ensureReviewSubjectAndPropose's own doc comment) but
+      // must never grow the durable row count.
+      assert.ok(ports.intake.findingCallCount > findingCallsAfterFirst);
+    });
+  });
+
+  test("TENANT ISOLATION: another organisation cannot read this tenant's durable Finding, even with the identical findingId", async () => {
+    await withFixtureRepository(async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const [someFindingId] = [...ports.intake.findings.keys()].map((key) => key.split("::")[1]!);
+
+      const crossTenantRead = await ports.intake.getDiscoveryFinding(ORG_B, someFindingId as never);
+      assert.equal(crossTenantRead, undefined, "a findingId guessed/reused under a different organisationId must never resolve");
+    });
+  });
+
+  test("LEGACY: a pre-milestone ReviewSubject with no durable Finding recovers as INPUT_UNAVAILABLE, never fabricated", async () => {
+    const finding = {
+      findingId: "discovery-finding:legacy:1" as never,
+      findingNature: "CANDIDATE" as const,
+      candidateKind: "AGENT" as const,
+      sourceObject: { connectionId: "source-connection:legacy" as never, externalType: "file", externalId: "legacy.py" as never },
+      assertionIds: [],
+      evidenceIds: [],
+      confidence: 0.9,
+      reviewStatus: "UNREVIEWED" as const,
+      requiresReview: true as const,
+      createsCanonicalObject: false as const,
+      detectedAt: "2026-01-01T00:00:00.000Z" as never,
+    };
+    // A subject that predates Discovery Governance Input Persistence V1: it
+    // exists (governance-review's createReviewSubject never required a
+    // durable Finding to exist), but this milestone's intake integration was
+    // never run for it, so no gov_repo.discovery_findings row exists.
+    const legacySubject = createReviewSubject({
+      reviewSubjectId: asReviewSubjectId("review-subject:legacy:1"),
+      organisationId: ORG_A,
+      finding,
+    });
+
+    const recovered = recoverReconciliationInput({ reviewSubject: legacySubject, finding: undefined, candidate: undefined });
+    assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.INPUT_UNAVAILABLE);
   });
 });
