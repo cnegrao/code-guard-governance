@@ -698,11 +698,16 @@ export const governanceReviewPersistence: GovernanceReviewPersistencePort = {
 // Supabase client — actual RPC/query behavior is proven separately by the
 // controlled Supabase runtime gate (see docs/codex/evidence/), matching this
 // repo's existing test-layering convention.
+// privilegedDb is exported so the sibling Canonical Materialization V1
+// adapter (materialization.ts) reuses this one service-role client instead
+// of opening a second connection pool; it never leaves the server-only
+// governance adapter boundary.
 export {
   actorFromColumns,
   actorToColumns,
   canonicalStringify,
   hashEnvelope,
+  privilegedDb,
   rehydrateEnvelopeByFamily,
   rehydrateMergeCandidatesDecision,
   sha256Hex,
