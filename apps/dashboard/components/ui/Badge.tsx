@@ -11,10 +11,27 @@ const colors: Record<string, string> = {
   suspended: "bg-danger/20 text-danger border-danger/30",
   passed: "bg-success/20 text-success border-success/30",
   failed: "bg-danger/20 text-danger border-danger/30",
+  detected: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+  proposed: "bg-warning/20 text-warning border-warning/30",
+  confirmed: "bg-accent-cyan/20 text-accent-cyan border-accent-cyan/30",
+  certified: "bg-success/20 text-success border-success/30",
+  rejected: "bg-danger/20 text-danger border-danger/30",
 };
 
 interface BadgeProps {
-  variant?: RiskLevel | "active" | "registered" | "decommissioned" | "suspended" | "passed" | "failed";
+  variant?:
+    | RiskLevel
+    | "active"
+    | "registered"
+    | "decommissioned"
+    | "suspended"
+    | "passed"
+    | "failed"
+    | "detected"
+    | "proposed"
+    | "confirmed"
+    | "certified"
+    | "rejected";
   children: React.ReactNode;
 }
 

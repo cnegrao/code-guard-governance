@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/discovery", label: "Discovery", icon: "◎" },
   { href: "/graph", label: "GraphOS", icon: "◈" },
   { href: "/governance", label: "Governance", icon: "◆" },
+  { href: "/governance/reviews", label: "Review Queue", icon: "▤" },
   { href: "/search", label: "Search", icon: "◇" },
   { href: "/compliance", label: "Compliance", icon: "◷" },
   { href: "/audit", label: "Audit Trail", icon: "◎" },
