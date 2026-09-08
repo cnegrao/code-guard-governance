@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 
 import {
+  AgentVersionCorrelationStrategy,
   DiscoveryPipeline,
   LocalRepositoryAdapter,
   RelationshipCorrelationStrategy,
@@ -11,6 +12,7 @@ import {
   createSourceConnection,
   createSourceSystem,
   normalizeObjectCandidate,
+  type AgentVersionCorrelationResult,
   type DiscoveryCandidate,
   type DiscoveryRunResult,
   type RelationshipCorrelationResult,
@@ -351,6 +353,30 @@ async function processRelationshipCandidate(
   }
 }
 
+async function processAgentVersionCandidate(
+  result: AgentVersionCorrelationResult,
+  acquisitionRunId: AcquisitionRun["runId"],
+  ctx: GovernanceExecutionContext,
+  ports: DiscoveryIntakePorts,
+  tally: ScanTally,
+): Promise<void> {
+  try {
+    // AGENT_VERSION is an OBJECT-kind finding, but (like RELATIONSHIP) it is
+    // a correlation product, not a single detector's own match: it reuses
+    // the Evidence/SourceAssertion already made durable while processing its
+    // parent AGENT and correlated MODEL/TOOL candidates (AGENT_VERSION
+    // correlation runs after every object candidate in this same scan has
+    // already been processed); no new evidence is fabricated for it.
+    await ensureReviewSubjectAndPropose(result.finding, result.candidate, acquisitionRunId, ctx, ports, tally, "object");
+  } catch (error) {
+    tally.failures.push({
+      findingId: result.finding.findingId,
+      candidateKind: "AGENT_VERSION",
+      reason: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 /**
  * Runs one real discovery scan against a trusted, server-configured source
  * and places every reviewable result into the governed review queue at
@@ -430,6 +456,15 @@ export async function runGovernanceDiscoveryScan(
     candidates,
     run.completedAt ?? run.startedAt,
   );
+  // AGENT_VERSION, like RELATIONSHIP, is a correlation product rather than a
+  // single detector's own match (see agent-version-correlation.ts); it is
+  // computed here alongside relationshipResults but only ever processed
+  // below once its parent AGENT/MODEL/TOOL evidence has already been made
+  // durable by the object-candidate loop.
+  const agentVersionResults: readonly AgentVersionCorrelationResult[] = new AgentVersionCorrelationStrategy().correlate(
+    candidates,
+    run.completedAt ?? run.startedAt,
+  );
 
   const tally: ScanTally = {
     reviewSubjectsCreated: 0,
@@ -442,14 +477,18 @@ export async function runGovernanceDiscoveryScan(
   for (const candidate of candidates) {
     await processObjectCandidate(candidate, run.runId, ctx, ports, tally);
   }
+  for (const agentVersionResult of agentVersionResults) {
+    await processAgentVersionCandidate(agentVersionResult, run.runId, ctx, ports, tally);
+  }
   for (const relationshipResult of relationshipResults) {
     await processRelationshipCandidate(relationshipResult, run.runId, ctx, ports, tally);
   }
 
+  const objectCandidateCount = candidates.length + agentVersionResults.length;
   const counts: AcquisitionRunCounts = {
     artifactsScanned,
-    findingsDetected: candidates.length + relationshipResults.length,
-    objectCandidates: candidates.length,
+    findingsDetected: objectCandidateCount + relationshipResults.length,
+    objectCandidates: objectCandidateCount,
     relationshipCandidates: relationshipResults.length,
     reviewSubjectsCreated: tally.reviewSubjectsCreated,
     proposalsCreated: tally.proposalsCreated,
@@ -474,7 +513,7 @@ export async function runGovernanceDiscoveryScan(
     status,
     artifactsScanned,
     findingsDetected: counts.findingsDetected,
-    objectCandidates: candidates.length,
+    objectCandidates: objectCandidateCount,
     relationshipCandidates: relationshipResults.length,
     reviewSubjectsCreated: tally.reviewSubjectsCreated,
     relationshipSubjectsCreated: tally.relationshipSubjectsCreated,

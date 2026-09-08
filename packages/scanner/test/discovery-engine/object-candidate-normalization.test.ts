@@ -6,7 +6,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
 
-import type { DiscoveryCandidateKind, NormalizedModelCandidate, NormalizedToolCandidate } from '@council/canonical-contracts';
+import type {
+  DiscoveryCandidateKind,
+  NormalizedAgentCandidate,
+  NormalizedModelCandidate,
+  NormalizedToolCandidate,
+} from '@council/canonical-contracts';
 
 import { LocalRepositoryAdapter } from '../../src/discovery/adapters/local-repository-adapter';
 import {
@@ -63,7 +68,7 @@ function byKind(candidates: readonly DiscoveryCandidate[], kind: DiscoveryCandid
 }
 
 describe('Object Candidate Normalization V1: NORMALIZATION MAP (real detector output)', () => {
-  it('AGENT: AgentKindDeclarationSpecification output is NOT_SAFELY_NORMALIZABLE (no captured identity)', async () => {
+  it('AGENT: a bare "kind = agent" marker with no enclosing declaration is NOT_SAFELY_NORMALIZABLE (no captured identity)', async () => {
     await withTempRepository({ 'agent.py': 'kind = "agent"\n' }, async (root) => {
       const { candidates } = await scan(root);
       const agent = byKind(candidates, 'AGENT');
@@ -74,6 +79,36 @@ describe('Object Candidate Normalization V1: NORMALIZATION MAP (real detector ou
         assert.equal(result.reasonCode, OBJECT_NORMALIZATION_REASON_CODE.AGENT_IDENTITY_NOT_DERIVABLE);
       }
     });
+  });
+
+  it('AGENT: the enclosing Python class name is promoted exactly to proposedIdentity.agentCode', async () => {
+    await withTempRepository(
+      { 'agent.py': ['class CustomerSupportAgent:', '    kind = "agent"', ''].join('\n') },
+      async (root) => {
+        const { candidates } = await scan(root);
+        const agent = byKind(candidates, 'AGENT');
+        assert.equal(agent.displayValue, 'CustomerSupportAgent');
+        const result = normalizeObjectCandidate(agent);
+        assert.equal(result.status, 'NORMALIZED');
+        if (result.status !== 'NORMALIZED') return;
+        assert.deepEqual(result.candidate.proposedIdentity, { agentCode: 'CustomerSupportAgent' });
+      },
+    );
+  });
+
+  it('AGENT: the enclosing TypeScript const object-literal name is promoted exactly to proposedIdentity.agentCode', async () => {
+    await withTempRepository(
+      { 'agent.ts': ['export const billingAgent = {', '  kind: "agent",', '};', ''].join('\n') },
+      async (root) => {
+        const { candidates } = await scan(root);
+        const agent = byKind(candidates, 'AGENT');
+        assert.equal(agent.displayValue, 'billingAgent');
+        const result = normalizeObjectCandidate(agent);
+        assert.equal(result.status, 'NORMALIZED');
+        if (result.status !== 'NORMALIZED') return;
+        assert.deepEqual(result.candidate.proposedIdentity, { agentCode: 'billingAgent' });
+      },
+    );
   });
 
   it('MODEL: ModelReferenceDeclarationSpecification displayValue is promoted exactly to proposedIdentity.modelReference', async () => {
@@ -157,6 +192,21 @@ describe('Object Candidate Normalization V1: DETERMINISM', () => {
       assert.deepEqual(resultA.candidate.proposedIdentity, resultB.candidate.proposedIdentity);
     });
   });
+
+  it('AGENT: an unchanged class-enclosed declaration produces the same candidateId and agentCode across independent scans', async () => {
+    await withTempRepository(
+      { 'agent.py': ['class RepeatableAgent:', '    kind = "agent"', ''].join('\n') },
+      async (root) => {
+        const first = normalizeObjectCandidate(byKind((await scan(root)).candidates, 'AGENT'));
+        const second = normalizeObjectCandidate(byKind((await scan(root)).candidates, 'AGENT'));
+        assert.equal(first.status, 'NORMALIZED');
+        assert.equal(second.status, 'NORMALIZED');
+        if (first.status !== 'NORMALIZED' || second.status !== 'NORMALIZED') return;
+        assert.equal(first.candidate.candidateId, second.candidate.candidateId);
+        assert.deepEqual(first.candidate.proposedIdentity, second.candidate.proposedIdentity);
+      },
+    );
+  });
 });
 
 describe('Object Candidate Normalization V1: SEMANTIC CHANGE', () => {
@@ -210,6 +260,28 @@ describe('Object Candidate Normalization V1: SEMANTIC CHANGE', () => {
     );
   });
 
+  it('AGENT: two different enclosing declaration names in the same scan produce different identities', async () => {
+    await withTempRepository(
+      {
+        'a.py': ['class AlphaAgent:', '    kind = "agent"', ''].join('\n'),
+        'b.py': ['class BetaAgent:', '    kind = "agent"', ''].join('\n'),
+      },
+      async (root) => {
+        const { candidates } = await scan(root);
+        const agents = candidates.filter((c) => c.finding.candidateKind === 'AGENT');
+        assert.equal(agents.length, 2);
+        const normalized = agents.map((a) => normalizeObjectCandidate(a));
+        assert.ok(normalized.every((r) => r.status === 'NORMALIZED'));
+        const codes = normalized.map((r) =>
+          r.status === 'NORMALIZED' ? (r.candidate as NormalizedAgentCandidate).proposedIdentity.agentCode : '',
+        );
+        assert.deepEqual(codes.sort(), ['AlphaAgent', 'BetaAgent']);
+        const ids = normalized.map((r) => (r.status === 'NORMALIZED' ? r.candidate.candidateId : ''));
+        assert.notEqual(ids[0], ids[1]);
+      },
+    );
+  });
+
   it('the identical model reference literal declared in two different files never collapses into the same candidate (same display label, different semantic objects)', async () => {
     await withTempRepository(
       { 'a/model.py': 'MODEL_REFERENCE = "gpt-4"\n', 'b/model.py': 'MODEL_REFERENCE = "gpt-4"\n' },
@@ -229,18 +301,40 @@ describe('Object Candidate Normalization V1: SEMANTIC CHANGE', () => {
 });
 
 describe('Object Candidate Normalization V1: FAIL CLOSED', () => {
-  it('AGENT never fabricates identity even when a class name appears nearby in the same file', async () => {
+  it('AGENT: an enclosing declaration literally named "agent" (case-insensitive) is still treated as the unresolved generic value, never promoted to identity', async () => {
     await withTempRepository(
-      { 'agent.py': ['class SupportAgent:', '    kind = "agent"', ''].join('\n') },
+      { 'agent.py': ['class Agent:', '    kind = "agent"', ''].join('\n') },
       async (root) => {
         const { candidates } = await scan(root);
         const agent = byKind(candidates, 'AGENT');
-        // The detector's own displayValue is still the fixed literal "agent",
-        // never the nearby class name "SupportAgent" — proving the class name
-        // was never promoted to identity.
-        assert.equal(agent.displayValue, 'agent');
+        assert.equal(agent.displayValue, 'Agent');
         const result = normalizeObjectCandidate(agent);
         assert.equal(result.status, 'NOT_SAFELY_NORMALIZABLE');
+        if (result.status === 'NOT_SAFELY_NORMALIZABLE') {
+          assert.equal(result.reasonCode, OBJECT_NORMALIZATION_REASON_CODE.AGENT_IDENTITY_NOT_DERIVABLE);
+        }
+      },
+    );
+  });
+
+  it('AGENT: two declarations with an identical class name in two different files never collapse into the same candidate', async () => {
+    await withTempRepository(
+      {
+        'a/agent.py': ['class SharedName:', '    kind = "agent"', ''].join('\n'),
+        'b/agent.py': ['class SharedName:', '    kind = "agent"', ''].join('\n'),
+      },
+      async (root) => {
+        const { candidates } = await scan(root);
+        const agents = candidates.filter((c) => c.finding.candidateKind === 'AGENT');
+        assert.equal(agents.length, 2);
+        const normalized = agents.map((a) => normalizeObjectCandidate(a));
+        assert.ok(normalized.every((r) => r.status === 'NORMALIZED'));
+        const ids = normalized.map((r) => (r.status === 'NORMALIZED' ? r.candidate.candidateId : ''));
+        assert.notEqual(
+          ids[0],
+          ids[1],
+          'identical displayName across different SourceConnection/artifact boundaries must never be silently merged',
+        );
       },
     );
   });
@@ -394,13 +488,25 @@ describe('Object Candidate Normalization V1: AUTHORITY CEILING', () => {
 });
 
 describe('Object Candidate Normalization V1: strategy classes are individually usable', () => {
-  it('AgentCandidateNormalizationStrategy always returns NOT_SAFELY_NORMALIZABLE', async () => {
+  it('AgentCandidateNormalizationStrategy returns NOT_SAFELY_NORMALIZABLE for the bare generic marker', async () => {
     await withTempRepository({ 'agent.py': 'kind = "agent"\n' }, async (root) => {
       const agent = byKind((await scan(root)).candidates, 'AGENT');
       const strategy = new AgentCandidateNormalizationStrategy();
       assert.equal(strategy.candidateKind, 'AGENT');
       assert.equal(strategy.normalize(agent).status, 'NOT_SAFELY_NORMALIZABLE');
     });
+  });
+
+  it('AgentCandidateNormalizationStrategy agrees with the dispatcher for a real enclosing declaration', async () => {
+    await withTempRepository(
+      { 'agent.py': ['class StrategyAgent:', '    kind = "agent"', ''].join('\n') },
+      async (root) => {
+        const agent = byKind((await scan(root)).candidates, 'AGENT');
+        const strategy = new AgentCandidateNormalizationStrategy();
+        assert.deepEqual(strategy.normalize(agent), normalizeObjectCandidate(agent));
+        assert.equal(strategy.normalize(agent).status, 'NORMALIZED');
+      },
+    );
   });
 
   it('ModelCandidateNormalizationStrategy and ToolCandidateNormalizationStrategy agree with the dispatcher', async () => {

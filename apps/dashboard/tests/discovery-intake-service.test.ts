@@ -22,6 +22,7 @@ import {
   asReviewSubjectId,
   recoverReconciliationInput,
   RECONCILIATION_INPUT_STATUS,
+  REVIEW_STATE,
   type AcquisitionRunCounts,
   type AcquisitionRunPersistenceResult,
   type ActiveObjectSourceMapping,
@@ -44,6 +45,7 @@ import {
   type SourceAssertionPersistenceResult,
   type TransitionResult,
 } from "@council/governance-review";
+import { deriveReconciliationReadiness } from "@/lib/governance/reconciliation-readiness";
 
 // lib/governance/discovery-intake.ts transitively imports lib/governance/persistence.ts,
 // which reads SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY at module-load time — a static
@@ -848,5 +850,109 @@ describe("Discovery Governance Input Persistence V1: durable Finding/Candidate c
 
     const recovered = recoverReconciliationInput({ reviewSubject: legacySubject, finding: undefined, candidate: undefined });
     assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.INPUT_UNAVAILABLE);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Agent Identity & Version Discovery V1: an identifiable Agent (a real
+// enclosing class/const declaration around `kind = "agent"`, see
+// packages/scanner/src/discovery/strategies/agent-kind-declaration.ts) now
+// normalizes, and a correlated Model/Tool alongside it produces an
+// evidence-backed AGENT_VERSION candidate — proving the same governance
+// continuity (Discovery -> Finding -> NormalizedCandidate -> Governance
+// Intake -> reconciliation readiness) MODEL/TOOL already had, without any
+// change to governance-review or the persistence adapter.
+// ---------------------------------------------------------------------------
+
+async function withIdentifiableAgentFixtureRepository(run: (root: string) => Promise<void>): Promise<void> {
+  const root = await mkdtemp(join(tmpdir(), "discovery-intake-agent-version-"));
+  try {
+    await writeFile(
+      join(root, "agent.py"),
+      [
+        "class CustomerSupportAgent:",
+        '    kind = "agent"',
+        '    modelReference = "gpt-x"',
+        "    tools = [alpha]",
+        "",
+      ].join("\n"),
+    );
+    await run(root);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+describe("Agent Identity & Version Discovery V1: AGENT and AGENT_VERSION governance continuity", () => {
+  test("a real scan normalizes AGENT and produces a correlated AGENT_VERSION candidate, both reconciliation-ready once CERTIFIED", async () => {
+    await withIdentifiableAgentFixtureRepository(async (root) => {
+      const ports = makePorts();
+      const result = await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      assert.equal(result.status, "SUCCEEDED");
+      assert.deepEqual(result.failures, []);
+      // AGENT + MODEL + TOOL (per-artifact) + AGENT_VERSION (correlated) = 4.
+      assert.equal(result.objectCandidates, 4, "expected AGENT + MODEL + TOOL + AGENT_VERSION");
+
+      const agentSubject = [...ports.review.subjects.values()].find((s) => s.candidateKind === "AGENT");
+      const agentVersionSubject = [...ports.review.subjects.values()].find((s) => s.candidateKind === "AGENT_VERSION");
+      assert.ok(agentSubject, "expected a durable AGENT review subject");
+      assert.ok(agentVersionSubject, "expected a durable AGENT_VERSION review subject");
+      assert.equal(agentSubject!.state, "PROPOSED");
+      assert.equal(agentVersionSubject!.state, "PROPOSED");
+
+      for (const subject of [agentSubject!, agentVersionSubject!]) {
+        const finding = await ports.intake.getDiscoveryFinding(ORG_A, subject.findingId);
+        const candidate = await ports.intake.getNormalizedCandidateForFinding(ORG_A, subject.findingId);
+        assert.ok(finding);
+        assert.ok(candidate, `expected a durable NormalizedCandidate for ${subject.candidateKind}`);
+
+        const recovered = recoverReconciliationInput({ reviewSubject: subject, finding, candidate });
+        assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.OBJECT_INPUT_AVAILABLE);
+
+        // CERTIFIED is a human-only transition, out of scope for this
+        // machine-intake service; readiness is proven at the pure-function
+        // boundary exactly as reconciliation-readiness.test.ts does.
+        const readiness = deriveReconciliationReadiness({
+          reviewState: REVIEW_STATE.CERTIFIED,
+          recoveryStatus: recovered.status,
+          hasExistingReconciliationDecision: false,
+          isMaterializedApplied: false,
+        });
+        assert.equal(readiness.ready, true, `expected ${subject.candidateKind} to be reconciliation-ready`);
+      }
+
+      if (agentVersionSubject) {
+        const candidate = await ports.intake.getNormalizedCandidateForFinding(ORG_A, agentVersionSubject.findingId);
+        assert.ok(candidate && candidate.candidateKind === "AGENT_VERSION");
+        if (candidate && candidate.candidateKind === "AGENT_VERSION") {
+          assert.equal(candidate.proposedIdentity.agent.candidateKind, "AGENT");
+          assert.equal(candidate.proposedIdentity.agent.referenceKind, "SOURCE_OBJECT");
+          assert.equal(candidate.proposedIdentity.versionCode, undefined, "no fabricated version is ever produced");
+        }
+      }
+    });
+  });
+
+  test("IDEMPOTENT RE-SCAN: rescanning the identical Agent/Model/Tool fixture creates no duplicate AGENT_VERSION subject", async () => {
+    await withIdentifiableAgentFixtureRepository(async (root) => {
+      const ports = makePorts();
+      const first = await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const second = await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      assert.equal(second.reviewSubjectsCreated, 0, "rescan must not report any NEW review subjects");
+      const agentVersionSubjects = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
+      assert.equal(agentVersionSubjects.length, 1, "exactly one durable AGENT_VERSION subject across both scans");
+      assert.ok(first.objectCandidates > 0);
+    });
   });
 });
