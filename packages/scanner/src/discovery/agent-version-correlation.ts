@@ -44,37 +44,57 @@ function fileGroupKey(identity: SourceObjectIdentity): string {
 }
 
 /**
- * Canonical projection of the agent-relevant discovery evidence this
- * milestone's Discovery Engine actually possesses, used to derive a
+ * Canonical projection of the agent-relevant discovery *technical* evidence
+ * this milestone's Discovery Engine actually possesses, used to derive a
  * deterministic AGENT_VERSION technical-revision fingerprint (see the
  * milestone evidence document's AGENT_VERSION_FINGERPRINT_INPUTS for the
- * exact, documented input list). Deliberately excludes anything not
- * agent-relevant (a README edit, an unrelated file) and anything volatile
- * (timestamps, candidate traversal order): every input is sorted and
- * deduplicated so input order never changes the projection.
+ * exact, documented input list).
  *
- * The parent AGENT's own findingId (itself already a stable hash of source
- * connection, artifact locator, and the matched declaration — see
- * evidence-assembly.ts) is included first specifically so that two
- * unrelated Agents that merely happen to share the same agentCode and the
- * same correlated Model/Tool identities (e.g. the same generic fixture
- * declared twice under two different files/tenants) can never collapse into
- * one AGENT_VERSION identity: PARENT LOGICAL AGENT IDENTITY + EVIDENCE-
- * BACKED TECHNICAL REVISION, exactly as required, not technical revision
- * alone.
+ * Deliberately semantic-only. It must never include anything from
+ * provenance/record identity — no findingId, no sourceObject/locator, no
+ * line number, no timestamp, no candidate traversal order — because a
+ * technical revision is a statement about *what the Agent is technically
+ * bound to*, not *where or when that binding was observed*. Provenance and
+ * cross-source collision protection are handled entirely separately by
+ * {@link buildSourceScope}; mixing the two here would make an unrelated
+ * formatting/comment/blank-line change elsewhere in the same file (which
+ * can shift the parent AGENT's own findingId — see evidence-assembly.ts)
+ * incorrectly produce a new AGENT_VERSION even though nothing agent-relevant
+ * changed.
+ *
+ * Every input is sorted and deduplicated so input order never changes the
+ * projection.
  */
 function buildTechnicalRevisionProjection(params: {
-  readonly agentFindingId: string;
   readonly agentCode: string;
   readonly modelReferences: readonly string[];
   readonly toolDeclarationKeys: readonly string[];
 }): readonly string[] {
   return [
-    `agent-finding:${params.agentFindingId}`,
     `agent-code:${params.agentCode}`,
     ...Array.from(new Set(params.modelReferences)).sort().map((value) => `model:${value}`),
     ...Array.from(new Set(params.toolDeclarationKeys)).sort().map((value) => `tool:${value}`),
   ];
+}
+
+/**
+ * Deterministic source-scope identity: which discovered source declaration
+ * this AGENT_VERSION candidate belongs to, derived only from the parent
+ * AGENT's own {@link SourceObjectIdentity} (connectionId + externalType +
+ * externalId — the existing, already-canonical file/connection identity
+ * every DiscoveryCandidate carries, see evidence-assembly.ts). Deliberately
+ * excludes match line numbers: two occurrences of the exact same enclosing
+ * declaration in the exact same file remain the same source scope even if
+ * an unrelated edit elsewhere in that file shifts where the matched
+ * `kind = "agent"` line sits. Two different files, or the same file under a
+ * different SourceConnection, always produce a different source scope —
+ * this is what keeps two unrelated Agents that happen to share the same
+ * agentCode and the same correlated Model/Tool identities from colliding
+ * into one AGENT_VERSION identity, without borrowing that protection from
+ * technical-revision content.
+ */
+function buildSourceScope(sourceObject: SourceObjectIdentity): string {
+  return stableSuffix([sourceObject.connectionId, sourceObject.externalType, sourceObject.externalId]);
 }
 
 /**
@@ -98,17 +118,41 @@ function buildTechnicalRevisionProjection(params: {
  *     for AGENT_VERSION"). An AGENT with no correlated technical signal
  *     fails closed here rather than emitting a placeholder version, even
  *     though its own AGENT candidate may still normalize independently.
- *   - The AGENT_VERSION's findingId/candidateId are derived from a
- *     canonical, sorted, deduplicated projection of the AGENT's own
- *     normalized agentCode plus every correlated MODEL modelReference and
- *     TOOL declarationKey — never from a wall-clock value, a random UUID,
- *     or candidate traversal order. Identical technical inputs always
+ *   - The AGENT_VERSION's findingId/candidateId are derived from two
+ *     deliberately separate deterministic inputs, combined only at the very
+ *     last step (see {@link buildTechnicalRevisionProjection} and
+ *     {@link buildSourceScope}):
+ *       (1) a purely semantic TECHNICAL REVISION fingerprint — a canonical,
+ *           sorted, deduplicated projection of the AGENT's own normalized
+ *           agentCode plus every correlated MODEL modelReference and TOOL
+ *           declarationKey, never a findingId, sourceObject, line number,
+ *           wall-clock value, random UUID, or candidate traversal order;
+ *       (2) a SOURCE SCOPE identity — the parent AGENT's own
+ *           SourceObjectIdentity (connectionId + externalType + externalId)
+ *           only, never a line number.
+ *     Identical technical inputs under the identical source scope always
  *     reproduce the identical AGENT_VERSION identity; a materially
- *     different input set always produces a different one.
+ *     different technical input set, or a different source scope, always
+ *     produces a different one. Critically, an unrelated formatting/
+ *     comment/blank-line change elsewhere in the same file — which can
+ *     shift the parent AGENT's own findingId without changing its
+ *     declaration name, sourceObject, or any correlated Model/Tool evidence
+ *     — changes neither input and therefore never creates a new
+ *     AGENT_VERSION: RECORD ID (findingId) != SEMANTIC VERSION IDENTITY.
  *   - No versionCode is ever fabricated: this V1 correlation observes no
  *     trustworthy explicit version declaration anywhere in the current
  *     Discovery Engine, so `proposedIdentity.versionCode` is always left
  *     absent rather than invented (no "1.0.0"/"v1"/"latest"/UUID/timestamp).
+ *     `NormalizedAgentVersionCandidate.proposedIdentity` has no field for a
+ *     derived technical-revision value (only `agent` and `versionCode`) —
+ *     the frozen V1A.1d canonical contract explicitly defers true
+ *     TechnicalFingerprint/BehaviorFingerprint-based AgentVersion tracking
+ *     to a later, post-canonicalization `AgentVersionTechnicalProfile`
+ *     (contracts.ts:1104-1112), not this Discovery-stage candidate. This
+ *     module therefore expresses the technical-revision distinction the
+ *     same way every other Discovery-stage candidate kind (AGENT, MODEL,
+ *     TOOL) already expresses its own deterministic identity: through the
+ *     candidate's own findingId/candidateId, never inside proposedIdentity.
  */
 export function correlateAgentVersions(
   candidates: readonly DiscoveryCandidate[],
@@ -178,12 +222,18 @@ export function correlateAgentVersions(
     if (normalizedModelReferences.length === 0 && normalizedToolKeys.length === 0) continue;
 
     const projection = buildTechnicalRevisionProjection({
-      agentFindingId: agent.finding.findingId,
       agentCode,
       modelReferences: normalizedModelReferences,
       toolDeclarationKeys: normalizedToolKeys,
     });
-    const suffix = stableSuffix(projection);
+    const technicalRevisionFingerprint = stableSuffix(projection);
+    const sourceScope = buildSourceScope(agent.finding.sourceObject);
+    // sourceScopedAgentVersionCandidateId = HASH(sourceScope + technicalRevisionFingerprint):
+    // provenance/source-scope and technical revision are combined only here,
+    // at the very last step, never earlier — see buildTechnicalRevisionProjection
+    // and buildSourceScope's own doc comments for why they must stay separate
+    // inputs rather than one merged projection.
+    const suffix = stableSuffix([sourceScope, technicalRevisionFingerprint]);
 
     const correlatedCandidates = [agent, ...models, ...tools];
     const assertionIds: readonly SourceAssertionId[] = dedupeIds(

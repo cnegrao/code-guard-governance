@@ -73,22 +73,40 @@ This mirrors exactly how MODEL (`MODEL_REFERENCE = "..."` literal) and TOOL (`to
 AGENT_VERSION is **not** produced by any single `DetectionSpecification` (no detector observes "a version" directly). It is a **correlation product**, exactly like a governed relationship: `AgentVersionCorrelationStrategy` / `correlateAgentVersions` (new module `agent-version-correlation.ts`) groups already-produced `DiscoveryCandidate`s by source artifact (same file-grouping rule `relationship-correlation.ts` already uses) and, per file:
 
 1. Requires exactly one AGENT candidate in that file, and that candidate must itself normalize (`normalizeObjectCandidate` → `NORMALIZED`). Zero, more-than-one, or an unidentifiable AGENT yields no AGENT_VERSION for that file.
-2. Requires at least one correlated MODEL or TOOL candidate in the same file that itself normalizes (Minimum evidence rule, §10 below). An AGENT with no correlated technical signal yields no AGENT_VERSION even though its own AGENT candidate may normalize independently.
-3. Derives a deterministic `findingId`/`candidateId` from a canonical, sorted, deduplicated projection of: the parent AGENT's own `findingId` (already source/connection/locator-scoped) + its normalized `agentCode` + every correlated MODEL `modelReference` + every correlated TOOL `declarationKey`.
+2. Requires at least one correlated MODEL or TOOL candidate in the same file that itself normalizes (Minimum evidence rule, §13 below). An AGENT with no correlated technical signal yields no AGENT_VERSION even though its own AGENT candidate may normalize independently.
+3. Derives a deterministic `findingId`/`candidateId` from **two deliberately separate inputs, combined only at the last step**:
+   - a purely semantic **technical revision fingerprint** — a canonical, sorted, deduplicated projection of the parent AGENT's normalized `agentCode` + every correlated MODEL `modelReference` + every correlated TOOL `declarationKey` (§10);
+   - a **source scope** identity — the parent AGENT's own `SourceObjectIdentity` (`connectionId` + `externalType` + `externalId`) only, never a line number, never a `findingId` (§10).
 4. Sets `proposedIdentity: { agent: { referenceKind: "SOURCE_OBJECT", sourceObject: <agent's source object>, candidateKind: "AGENT" } }` — `versionCode` is always absent.
+
+**Correction (post-review, this document's current revision):** an earlier revision of this milestone folded the parent AGENT's own `DiscoveryFinding.findingId` directly into the technical-revision fingerprint to prevent cross-file/cross-tenant collisions. External review correctly identified this as conflating **provenance/record identity** (which `evidence-assembly.ts` already makes sensitive to the *matched declaration's line position*, not just its content) with **technical revision** (which must be a statement about *what the Agent is technically bound to*, never *where/when that binding was observed*). Concretely: inserting an unrelated comment or blank line above a `kind = "agent"` declaration shifts that line's own `findingId` without changing anything agent-relevant, which would have incorrectly produced a new AGENT_VERSION. This has been corrected — see §10 below for the fixed design, and §22/§23 for the regression tests and re-verification.
 
 ## 10. AGENT_VERSION_FINGERPRINT_INPUTS
 
 ```
-AGENT_VERSION_FINGERPRINT_INPUTS = [
-  "agent-finding:<parent AGENT's own DiscoveryFinding.findingId>",
+TECHNICAL_REVISION_INPUTS = [
   "agent-code:<parent AGENT's normalized proposedIdentity.agentCode>",
   "model:<normalized MODEL proposedIdentity.modelReference>"   // one per correlated MODEL, sorted + deduplicated
   "tool:<normalized TOOL proposedIdentity.declarationKey>"     // one per correlated TOOL, sorted + deduplicated
 ]
+technicalRevisionFingerprint = sha256(canonicalize(TECHNICAL_REVISION_INPUTS))[0:32]
+
+SOURCE_SCOPE_INPUTS = [
+  "<parent AGENT's own SourceObjectIdentity.connectionId>",
+  "<parent AGENT's own SourceObjectIdentity.externalType>",
+  "<parent AGENT's own SourceObjectIdentity.externalId>"
+]
+sourceScope = sha256(canonicalize(SOURCE_SCOPE_INPUTS))[0:32]
+
+AGENT_VERSION_FINGERPRINT_INPUTS = [sourceScope, technicalRevisionFingerprint]
+findingId/candidateId suffix = sha256(canonicalize(AGENT_VERSION_FINGERPRINT_INPUTS))[0:32]
 ```
 
-The parent AGENT's own `findingId` is included specifically so that two Agents which merely happen to share the same `agentCode` and the same correlated Model/Tool identities in two different files/tenants can never collapse into the same AGENT_VERSION identity (an adversarial-review finding, fixed before this document was written — see §23). Everything is sorted and deduplicated before hashing (`sha256`, first 32 hex chars), so traversal order and duplicate declarations never change the result.
+**`TECHNICAL_REVISION_INPUTS` is deliberately semantic-only** — it contains no `findingId`, no `sourceObject`/locator, no line number, no timestamp, and no candidate-traversal-order dependency. Cross-file/cross-tenant collision protection is instead the exclusive responsibility of `sourceScope`, which is derived only from the AGENT's own `SourceObjectIdentity` (file/connection identity), **never** a line number or `findingId` — two occurrences of the exact same enclosing declaration in the exact same file remain the same source scope even if an unrelated edit elsewhere in that file shifts where the matched `kind = "agent"` line sits. `sourceScope` and `technicalRevisionFingerprint` are combined only in the final `findingId`/`candidateId` suffix — never merged earlier or elsewhere. Everything is sorted and deduplicated before hashing (`sha256`, first 32 hex chars), so traversal order and duplicate declarations never change either input.
+
+### Contract-precision check
+
+`NormalizedAgentVersionCandidate.proposedIdentity` (`packages/canonical-contracts/src/contracts.ts:1908-1914`) has exactly two fields: `agent: PreCanonicalObjectReference<"AGENT">` (required) and `versionCode?: string` (optional). There is **no field for a derived technical-revision value**. `versionCode` is confirmed to be reserved for an **explicit, declared** version string — it is the identical field name and shape on `NormalizedAgentCandidate.proposedIdentity` (`contracts.ts:1899-1906`), confirming it is a generic "explicit declared version, if one was observed" slot, not a derived-hash slot; overloading it with a fabricated/derived hash would violate "no fabricated version" and was correctly avoided. The frozen contract's own doc comment (`contracts.ts:1090-1094`) states that true `TechnicalFingerprint`-pinned binding/revision tracking is intentionally deferred to a **future**, post-canonicalization stage — `AgentVersionTechnicalProfile.behaviorFingerprint` (`contracts.ts:1104-1112`) already models this, but it is populated after canonicalization (roadmap milestone 3, "Agent Technical Profile — L4 Round 1"), not by this Discovery-stage candidate. Given no explicit field exists and none may be invented (`canonical-contracts` was not modified), this module expresses the technical-revision distinction the same way every other Discovery-stage candidate kind (AGENT, MODEL, TOOL) already expresses its own deterministic identity: through the candidate's own `findingId`/`candidateId`, never inside `proposedIdentity`. This is **not** a violation of "RECORD ID != SEMANTIC VERSION IDENTITY" in the sense of hiding a *semantically expressible* value in an opaque id — no such semantic field exists to hide it in; it is the same pattern MODEL's `candidateId` (deterministic from its own detected content) and TOOL's `candidateId` already use. **Verdict: no architecture decision required** — this is a confirmed, intentional V1A.1d contract boundary, not a gap this milestone can or should close by modifying `canonical-contracts`.
 
 ## 11. CHANGES_THAT_CREATE_NEW_AGENT_VERSION
 
@@ -98,7 +116,7 @@ CHANGES_THAT_CREATE_NEW_AGENT_VERSION = [
   "a correlated TOOL declaration is added or removed",
   "a correlated TOOL's declarationKey identifier changes",
   "the parent AGENT's own enclosing declaration name (agentCode) changes",
-  "the parent AGENT's own DiscoveryFinding.findingId changes (e.g. the file is renamed/moved, or the matched `kind = \"agent\"` line's position/content changes)"
+  "the parent AGENT's source artifact is renamed/moved, or scanned under a different SourceConnection (changes sourceScope)"
 ]
 ```
 
@@ -108,6 +126,7 @@ CHANGES_THAT_CREATE_NEW_AGENT_VERSION = [
 CHANGES_THAT_DO_NOT_CREATE_NEW_AGENT_VERSION = [
   "an edit to an unrelated file elsewhere in the scan (README, docs, other agents)",
   "an unrelated candidate detected in a different source artifact during the same scan",
+  "an unrelated comment, blank-line insertion, or other formatting change within the SAME source artifact that shifts the matched declaration's own line position (and therefore the parent AGENT's own DiscoveryFinding.findingId) without changing agentCode or any correlated Model/Tool evidence — corrected in this revision, see §9",
   "the declared order of Model/Tool identifiers within the same file",
   "a duplicate declaration of the exact same Tool identifier (deduplicated via Set before hashing)",
   "a repeated identical scan of the same, unchanged repository",
@@ -137,7 +156,7 @@ Unchanged. Every AGENT and AGENT_VERSION `SourceAssertion` remains `TRUST_STATE.
 ## 16. SourceConnection/tenant boundary behavior
 
 - AGENT candidateId/findingId already embed `connectionId` + artifact locator (existing `evidence-assembly.ts` behavior, unchanged) — two identical declarations in different files, or under different SourceConnections, never share an identity (proven by test: "two declarations with an identical class name in two different files never collapse into the same candidate").
-- AGENT_VERSION additionally embeds the parent AGENT's own `findingId` in its fingerprint (see §10), and defensively rejects any file bucket whose correlated candidates span more than one `connectionId` (mirrors `relationship-correlation.ts`'s own defensive check).
+- AGENT_VERSION derives its own `sourceScope` fingerprint component from the parent AGENT's `SourceObjectIdentity` (`connectionId` + `externalType` + `externalId` — never a line number or `findingId`, see §10), and defensively rejects any file bucket whose correlated candidates span more than one `connectionId` (mirrors `relationship-correlation.ts`'s own defensive check).
 - Tenant (`organisationId`) isolation is enforced entirely at the persistence layer (`apps/dashboard/lib/governance/discovery-intake.ts`, `discovery-intake-persistence.ts`), identical to how MODEL/TOOL/RELATIONSHIP already isolate tenants — this milestone introduced no new tenant-scoping logic and did not touch that layer's tenant checks. The existing "TENANT ISOLATION" tests in `discovery-intake-service.test.ts` (unmodified) still pass.
 
 ## 17. Governance continuity proven
@@ -181,36 +200,40 @@ Zero diff under `packages/scanner/test/discovery-validation-lab/**` (harness, co
 
 | Suite | Command | Result |
 |---|---|---|
-| Scanner discovery-engine (unit) | `npm run test:discovery-engine` (packages/scanner) | **118/118 passing** (was 92; +26 new: 3 rewritten/added AGENT normalization tests in `object-candidate-normalization.test.ts`, 23 in new `agent-version-correlation.test.ts`) |
+| Scanner discovery-engine (unit) | `npm run test:discovery-engine` (packages/scanner) | **120/120 passing** (was 92 pre-milestone; +26 in the original milestone pass, +2 more in the post-PR-#23 provenance/technical-revision correction: TEST A line-shift regression, TEST B real-technical-change regression) |
 | Scanner discovery-engine typecheck | `npm run typecheck:discovery-engine` | clean, no errors |
 | Scanner full package typecheck | `npm run typecheck` (packages/scanner) | clean, no errors |
-| Discovery Validation Lab | `npm run test:validation-lab` (packages/scanner) | **51/51 passing**, unchanged |
-| governance-review (unit) | `npm run test` (packages/governance-review) | **113/113 passing**, unchanged |
-| governance-review typecheck | `npm run typecheck` (packages/governance-review) | clean, no errors |
-| Dashboard targeted governance tests | `node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/discovery-intake-service.test.ts tests/reconciliation-readiness.test.ts` (apps/dashboard) | **25/25 passing** (was 23; +2 new AGENT/AGENT_VERSION governance-continuity tests) |
+| Discovery Validation Lab | `npm run test:validation-lab` (packages/scanner) | **51/51 passing**, unchanged — not rerun after the correction (unaffected suite, per the correction's narrow validation scope) |
+| governance-review (unit) | `npm run test` (packages/governance-review) | **113/113 passing**, unchanged — not rerun after the correction (unaffected package) |
+| governance-review typecheck | `npm run typecheck` (packages/governance-review) | clean, no errors — not rerun after the correction |
+| Dashboard targeted governance tests | `node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/discovery-intake-service.test.ts tests/reconciliation-readiness.test.ts` (apps/dashboard) | **25/25 passing** after the original milestone pass; **17/17 re-confirmed** for `discovery-intake-service.test.ts` alone after the correction (its AGENT_VERSION governance-continuity test exercises the real, now-corrected `AgentVersionCorrelationStrategy`) |
 | Dashboard workspace typecheck | `npx tsc --noEmit -p tsconfig.json` (apps/dashboard) | clean, no errors |
-| `git diff --check` | repo root | clean, no whitespace errors |
+| `git diff --check` | repo root | clean, no whitespace errors (re-verified after the correction) |
 
 No Golden Repository / Validation Lab suite was modified; no full historical audit, Supabase runtime, production DB test, deployment, or load test was run, per the milestone's controlled-validation scope.
 
 ## 23. Adversarial review result
 
-One review pass performed over the full diff before finalizing tests (per the milestone's required adversarial checklist):
+**Original milestone pass** (one review pass performed over the full diff before finalizing tests, per the milestone's required adversarial checklist):
 
-- **A/B (identity collision / instability):** No accidental collision or instability found for AGENT (findingId already source/locator-scoped). **Confirmed a real defect for AGENT_VERSION**: the initial fingerprint design used only `agentCode + model/tool identities`, which meant two unrelated Agents in different files sharing the same declaration name and technical evidence would have collapsed into the same AGENT_VERSION identity. **Fixed** by folding the parent AGENT's own `findingId` into the fingerprint projection (§10) before any candidate was normalized/persisted. Verified by a dedicated regression test ("two different Agents that happen to share the same agentCode and technical evidence never collapse into the same AGENT_VERSION").
-- **C/D (unrelated change / relevant change):** Verified both directions with dedicated tests; no defect found.
-- **E (traversal order):** Verified; no defect found (Set + sort neutralizes order for both the correlation input array and the Model/Tool identifier lists).
-- **F (tenant/connection collision):** Verified; no defect found (existing tenant isolation layer untouched; connection consistency defensively checked).
+- **A/B (identity collision / instability):** No accidental collision or instability found for AGENT (findingId already source/locator-scoped). **Confirmed a real defect for AGENT_VERSION**: the initial fingerprint design used only `agentCode + model/tool identities`, which meant two unrelated Agents in different files sharing the same declaration name and technical evidence would have collapsed into the same AGENT_VERSION identity. **Fixed at the time** by folding the parent AGENT's own `findingId` into the fingerprint projection before any candidate was normalized/persisted, verified by a dedicated regression test.
+- **C/D (unrelated change / relevant change):** Verified both directions with dedicated tests; no defect found at the time.
+- **E (traversal order):** Verified; no defect found.
+- **F (tenant/connection collision):** Verified; no defect found.
 - **G (generic label as identity):** Verified; the case-insensitive generic-value guard was added specifically to close this.
 - **H (fabricated version):** Verified; `versionCode` is structurally never set anywhere in this milestone's code.
-- **I (authority ceiling):** Verified; `processAgentVersionCandidate` uses the identical `ensureReviewSubjectAndPropose` boundary as every other candidate kind, capped at PROPOSED.
-- **J (relationship semantics):** Verified unchanged — zero diff in `relationship-correlation.ts`.
-- **K (production trigger):** Verified absent — zero references to `runGovernanceDiscoveryScan` under `apps/dashboard/app/**`.
-- **L (governance bypass):** Verified absent — no reference to confirm/certify/authorize/reconcile/materialize anywhere in the new module (enforced by a dedicated static-analysis test, mirroring the existing pattern in `object-candidate-normalization.test.ts`).
+- **I (authority ceiling):** Verified.
+- **J (relationship semantics):** Verified unchanged.
+- **K (production trigger):** Verified absent.
+- **L (governance bypass):** Verified absent.
 
-No second review cycle was needed: the one defect found (A/B) was fixed and re-verified within this same pass, and no new blocker was exposed by re-inspecting the corrected diff.
+**Post-PR-#23 external review (this document's current revision):** external review of PR #23 correctly identified that the A/B fix above — folding `findingId` (a *provenance/record* identity, already sensitive to matched-line position per `evidence-assembly.ts`) directly into the *technical-revision* fingerprint — reintroduced a different defect: an unrelated comment/blank-line insertion above a `kind = "agent"` declaration, in the same file, would shift that declaration's own `findingId` and therefore incorrectly produce a **new** AGENT_VERSION even though nothing agent-relevant changed. This violates the explicit milestone invariant "unrelated/non-agent-relevant change must not create a new AGENT_VERSION." **Fixed** by separating the two concerns cleanly (§9/§10): a purely semantic `technicalRevisionFingerprint` (never touches findingId/locator/line-number/timestamp) combined, only in the final id, with a `sourceScope` derived from the AGENT's own stable `SourceObjectIdentity` (file/connection identity, not line-sensitive) — which still fully preserves the original A/B collision protection (proven by the existing cross-file collision test, re-verified unchanged) while additionally proving the new correction with two dedicated regression tests (TEST A: line-shift produces the same AGENT_VERSION identity; TEST B: a real Model-reference change produces a different one). A companion contract-precision check (§10) confirmed no existing canonical-contracts field was available to hold the technical-revision value explicitly, and that `canonical-contracts` correctly was not modified to invent one.
+
+No further review cycle was needed after this correction: the diff was re-inspected once and no new blocker was found.
 
 ## 24. Exact final diff scope
+
+**Original milestone commit (`f52c1f1`):**
 
 ```
  apps/dashboard/lib/governance/discovery-intake.ts                    | 45 +++++++-
@@ -224,12 +247,21 @@ No second review cycle was needed: the one defect found (A/B) was fixed and re-v
  packages/scanner/test/discovery-engine/object-candidate-normalization.test.ts | 124 +++++++++++++++++++--
 ```
 
-No dependency, lockfile, or migration change. No file under `docs/architecture/**`, `.claude/**`, or `codex-recovery-6101-6240.txt` was touched.
+**Follow-up correction commit (surgical, PR #23 review response):**
+
+```
+ docs/codex/evidence/2026-09-08-agent-identity-version-discovery-v1-validation.md | 70 ++++++++++-----
+ packages/scanner/src/discovery/agent-version-correlation.ts                     | 100 +++++++++++++++------
+ packages/scanner/test/discovery-engine/agent-version-correlation.test.ts        | 75 ++++++++++++++++
+```
+
+Only `agent-version-correlation.ts` (source), its own test file, and this evidence document changed in the correction — no other milestone file was touched. No dependency, lockfile, or migration change in either commit. No file under `docs/architecture/**`, `.claude/**`, or `codex-recovery-6101-6240.txt` was touched.
 
 ## 25. Known limitations honestly stated
 
 - **AgentVersion V1 reflects the technical signals discoverable by the current design-time scanner and must not be represented as full runtime behavior identity.** It is derived only from the parent AGENT's own declaration name plus correlated `MODEL_REFERENCE`/`modelReference` and `tools = [...]` declarations in the same source artifact — not from Prompt, MCP, API, Knowledge Base, Memory, Guardrail, or any other L4 signal (those remain out of scope for roadmap milestone 3, "Agent Technical Profile — L4 Round 1").
 - No explicit, trustworthy source-level version declaration is currently detected anywhere in the Discovery Engine; `versionCode` is therefore always absent in this V1. If a future detector adds one, it should be layered in as `DECLARED` evidence per Section 9 of the milestone brief, not retrofitted into this correlation module's technical-fingerprint path.
-- AGENT/AGENT_VERSION `findingId` (and therefore identity) remains sensitive to the *matched declaration line's own position* within its file, exactly as MODEL/TOOL already are — an edit that shifts the `kind = "agent"` (or the correlated Model/Tool declaration) line number, even without changing its content, produces a different `findingId` and therefore a different AGENT/AGENT_VERSION Discovery candidate. This is a pre-existing characteristic of `evidence-assembly.ts`'s finding-identity scheme (unchanged, out of scope to redesign here), not a new regression — but it means "unrelated formatting changes never create a new version" holds only for changes that don't shift the matched declaration lines themselves within the *same* file.
+- AGENT's own `findingId` (and therefore its own Discovery-candidate record identity) remains sensitive to the *matched `kind = "agent"` declaration line's own position* within its file, exactly as MODEL/TOOL's own findingId already is — an edit that shifts that line's position (even without changing its content) produces a different AGENT `findingId`/`candidateId`. This is a pre-existing characteristic of `evidence-assembly.ts`'s finding-identity scheme (unchanged, out of scope to redesign here), not a new regression. **This no longer propagates to AGENT_VERSION**: AGENT_VERSION's own identity is deliberately decoupled from the parent AGENT's `findingId` (§9/§10, post-PR-#23 correction) and depends only on the AGENT's stable `SourceObjectIdentity` plus semantic technical evidence — proven by the TEST A line-shift regression test.
 - AGENT identity derivation is purely indentation-based, not a real AST parse. It correctly handles the formatting style used throughout the Discovery Validation Lab's Golden Repositories (verified against `01-simple-agent` and `02-multi-agent`'s real fixture source), but a differently-indented or single-line class/object-literal declaration would not be recognized and would fail closed to the generic value — a conservative, not a silent, failure mode.
+- `AgentVersionTechnicalProfile.behaviorFingerprint` (the canonical, post-materialization technical-fingerprint record already modeled in `canonical-contracts`) is not populated by this milestone. This Discovery-stage AGENT_VERSION candidate expresses its technical-revision distinction only through its own deterministic `findingId`/`candidateId`, not through any canonical semantic field — populating `AgentVersionTechnicalProfile` is a later, explicitly out-of-scope concern (roadmap milestone 3).
 - AGENT_VERSION correlation currently requires the AGENT and its Model/Tool evidence to be detected in the exact same single source artifact, mirroring `relationship-correlation.ts`'s own existing "same file" correlation rule exactly. An Agent whose Model/Tool bindings are declared in a different file (e.g. a separate config file) will not yet produce an AGENT_VERSION — this is a direct, intentional consequence of reusing the existing, already-audited correlation pattern rather than inventing a new one, not a new limitation this milestone introduced.

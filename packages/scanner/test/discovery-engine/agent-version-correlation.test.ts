@@ -152,6 +152,81 @@ describe('AgentVersionCorrelationStrategy: POSITIVE CORRELATION', () => {
   });
 });
 
+describe('AgentVersionCorrelationStrategy: PROVENANCE vs TECHNICAL REVISION SEPARATION', () => {
+  it('TEST A — an unrelated comment/blank-line insertion above the declaration in the same repository does not change the AGENT_VERSION identity', async () => {
+    await withTempRepository(
+      { 'src/agent.py': ['class SupportAgent:', '    kind = "agent"', '    modelReference = "model-x"', ''].join('\n') },
+      async (root) => {
+        const before = correlate((await scan(root)).candidates);
+        assert.equal(before.length, 1);
+
+        // Overwrite the SAME file under the SAME repository root (same
+        // connectionId/externalId — the source scope) with an unrelated
+        // header comment and blank lines inserted above the declaration.
+        // This shifts every matched line number (and therefore the parent
+        // AGENT's own DiscoveryFinding.findingId — see
+        // evidence-assembly.ts) without changing the declaration name or
+        // any correlated Model/Tool evidence.
+        await writeFile(
+          join(root, 'src', 'agent.py'),
+          [
+            '# Unrelated header comment with no agent-relevant content.',
+            '',
+            '',
+            'class SupportAgent:',
+            '    kind = "agent"',
+            '    modelReference = "model-x"',
+            '',
+          ].join('\n'),
+        );
+        const after = correlate((await scan(root)).candidates);
+        assert.equal(after.length, 1);
+
+        assert.equal(
+          before[0]!.candidate.candidateId,
+          after[0]!.candidate.candidateId,
+          'AGENT_VERSION identity must be insensitive to a line-position-only shift caused by an unrelated edit',
+        );
+        assert.equal(before[0]!.finding.findingId, after[0]!.finding.findingId);
+      },
+    );
+  });
+
+  it('TEST B — a real Model-reference change produces a different AGENT_VERSION while the Agent declaration is unchanged', async () => {
+    await withTempRepository(
+      { 'src/agent.py': ['class SupportAgent:', '    kind = "agent"', '    modelReference = "model-x"', ''].join('\n') },
+      async (root) => {
+        const before = correlate((await scan(root)).candidates);
+        assert.equal(before.length, 1);
+
+        await writeFile(
+          join(root, 'src', 'agent.py'),
+          ['class SupportAgent:', '    kind = "agent"', '    modelReference = "model-y"', ''].join('\n'),
+        );
+        const { candidates: candidatesAfter } = await scan(root);
+        const after = correlate(candidatesAfter);
+        assert.equal(after.length, 1);
+
+        assert.notEqual(
+          before[0]!.candidate.candidateId,
+          after[0]!.candidate.candidateId,
+          'a real Model-reference change must produce a different AGENT_VERSION technical revision',
+        );
+
+        const agentAfter = candidatesAfter.find((c) => c.finding.candidateKind === 'AGENT')!;
+        const normalizedAgentAfter = normalizeObjectCandidate(agentAfter);
+        assert.equal(normalizedAgentAfter.status, 'NORMALIZED');
+        if (normalizedAgentAfter.status === 'NORMALIZED' && normalizedAgentAfter.candidate.candidateKind === 'AGENT') {
+          // The Agent's own declaration/logical identity is unaffected by
+          // the Model change — only its AGENT_VERSION technical revision
+          // changed.
+          assert.equal(normalizedAgentAfter.candidate.proposedIdentity.agentCode, 'SupportAgent');
+        }
+      },
+    );
+  });
+});
+
 describe('AgentVersionCorrelationStrategy: FAIL CLOSED', () => {
   it('does not correlate when the Agent itself has no derivable identity (generic "agent" value)', () => {
     const agent = buildCandidate({ kind: 'AGENT', file: 'src/agent.py', displayValue: 'agent' });
