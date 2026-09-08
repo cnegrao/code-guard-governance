@@ -28,7 +28,7 @@ function fixedClock() {
 }
 
 function correlate(candidates: readonly DiscoveryCandidate[]): readonly AgentVersionCorrelationResult[] {
-  return new AgentVersionCorrelationStrategy().correlate(candidates, OBSERVED_AT);
+  return new AgentVersionCorrelationStrategy().correlate(candidates, [], OBSERVED_AT);
 }
 
 async function withTempRepository(
@@ -277,7 +277,7 @@ describe('AgentVersionCorrelationStrategy: FAIL CLOSED', () => {
     // same "strategy classes are individually usable" pattern
     // object-candidate-normalization.test.ts and relationship-correlation.test.ts
     // both already establish.
-    const [result] = correlateAgentVersions([agent, model], { observedAt: OBSERVED_AT });
+    const [result] = correlateAgentVersions([agent, model], [], { observedAt: OBSERVED_AT });
     assert.ok(result);
     assert.equal(result.candidate.proposedIdentity.versionCode, undefined);
     assert.deepEqual(Object.keys(result.candidate.proposedIdentity).sort(), ['agent']);

@@ -3,7 +3,7 @@
 // source adapter, and it never decides trust or governance — that belongs
 // to the pipeline assembling canonical evidence around its output.
 
-import type { DiscoveryCandidateKind } from '@council/canonical-contracts';
+import type { DiscoveryCandidateKind, TrustState } from '@council/canonical-contracts';
 
 import type { SourceArtifactContent } from './source-adapter';
 
@@ -17,6 +17,19 @@ export interface DetectionMatch {
   readonly excerpt: string;
   /** 0..1. This is the specification's own confidence, never governed truth. */
   readonly confidence: number;
+  /**
+   * Per-fact trust state (frozen vocabulary: INFERRED/DECLARED/IMPORTED/
+   * OBSERVED/VALIDATED — see GOVIA-L0L16-CIA-v1.0.md §3). Optional and
+   * defaults to INFERRED in evidence-assembly.ts when absent, preserving
+   * every pre-existing specification's exact prior behavior unchanged. Set
+   * this to DECLARED only when the matched value sits in a semantically
+   * authoritative declaration position the source/config format itself
+   * defines as an explicit identity (e.g. a named JSON config key, a
+   * dedicated config file's own field, a file-path convention) — never
+   * because confidence is high, and never OBSERVED/VALIDATED from
+   * design-time source (a specification must never set either).
+   */
+  readonly trustState?: TrustState;
 }
 
 /**

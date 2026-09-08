@@ -11,6 +11,12 @@ import {
   type ProvenanceClock,
 } from './provenance';
 import type { SourceAdapter, SourceArtifactRef } from './source-adapter';
+import {
+  assembleTechnicalProfileSignal,
+  type TechnicalProfileSignal,
+  type TechnicalProfileSignalMatch,
+  type TechnicalProfileSignalSpecification,
+} from './technical-profile-signal';
 
 /** An artifact or specification the pipeline skipped rather than trusted blindly. */
 export interface DiscoveryRunWarning {
@@ -21,6 +27,14 @@ export interface DiscoveryRunWarning {
 export interface DiscoveryRunResult {
   readonly run: AcquisitionRun;
   readonly candidates: readonly DiscoveryCandidate[];
+  /**
+   * AgentVersion technical-profile signals (Framework/Memory/Orchestration
+   * — see technical-profile-signal.ts) collected in the same single pass
+   * over the source. Structurally separate from `candidates`: never a
+   * CanonicalObjectKind, never routed through Object Candidate
+   * Normalization or ReviewSubject creation.
+   */
+  readonly technicalProfileSignals: readonly TechnicalProfileSignal[];
   readonly warnings: readonly DiscoveryRunWarning[];
 }
 
@@ -28,6 +42,8 @@ export interface DiscoveryPipelineOptions {
   readonly clock?: ProvenanceClock;
   /** Artifacts larger than this are skipped with a warning, never read. */
   readonly maxArtifactSizeBytes?: number;
+  /** Optional AgentVersion technical-profile signal specifications, run in the same artifact pass as `specifications`. */
+  readonly signalSpecifications?: readonly TechnicalProfileSignalSpecification[];
 }
 
 const DEFAULT_MAX_ARTIFACT_SIZE_BYTES = 2_000_000;
@@ -65,6 +81,8 @@ export class DiscoveryPipeline {
 
     const warnings: DiscoveryRunWarning[] = [];
     const candidates: DiscoveryCandidate[] = [];
+    const technicalProfileSignals: TechnicalProfileSignal[] = [];
+    const signalSpecifications = this.options.signalSpecifications ?? [];
 
     let artifacts: readonly SourceArtifactRef[];
     try {
@@ -118,12 +136,41 @@ export class DiscoveryPipeline {
           );
         }
       }
+
+      for (const specification of signalSpecifications) {
+        let matches: readonly TechnicalProfileSignalMatch[];
+        try {
+          matches = specification.detect(outcome.content);
+        } catch (error) {
+          warnings.push({
+            locator: artifactRef.locator,
+            reason: `Technical-profile signal specification "${specification.code}" failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          });
+          continue;
+        }
+
+        for (const match of matches) {
+          technicalProfileSignals.push(
+            assembleTechnicalProfileSignal({
+              connection,
+              run,
+              artifact: outcome.content,
+              specification,
+              match,
+              observedAt: clock.now(),
+            }),
+          );
+        }
+      }
     }
 
     run = completeAcquisitionRun(run, 'SUCCEEDED', clock);
     return {
       run,
       candidates: Object.freeze(candidates),
+      technicalProfileSignals: Object.freeze(technicalProfileSignals),
       warnings: Object.freeze(warnings),
     };
   }

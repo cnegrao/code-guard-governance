@@ -14,13 +14,9 @@ import {
   ApiDeclarationSpecification,
   KnowledgeBaseDeclarationSpecification,
   SkillListDeclarationSpecification,
-  AGENT_VERSION_TECHNICAL_SIGNAL_CODES,
-  FrameworkReferenceDeclarationSpecification,
-  BuildReferenceDeclarationSpecification,
-  MemoryReferenceDeclarationSpecification,
-  OrchestrationReferenceDeclarationSpecification,
-  GuardrailReferenceDeclarationSpecification,
-  HitlReferenceDeclarationSpecification,
+  FrameworkImportSignalSpecification,
+  OrchestrationFrameworkSignalSpecification,
+  MemoryImportSignalSpecification,
   createSourceConnection,
   createSourceSystem,
   normalizeObjectCandidate,
@@ -28,6 +24,7 @@ import {
   type DiscoveryCandidate,
   type DiscoveryRunResult,
   type RelationshipCorrelationResult,
+  type TechnicalProfileSignal,
 } from "@council/scanner";
 import {
   IneligibleFindingError,
@@ -366,38 +363,28 @@ async function processRelationshipCandidate(
 }
 
 /**
- * AgentVersion technical signals (Framework/Build/Memory/Orchestration/
- * Guardrail/HITL — see agent-version-technical-signal-declaration.ts) share
- * candidateKind AGENT_VERSION with correlation's own eventual output but are
- * never independently governable objects: Object Candidate Normalization V1
- * has no strategy for them (they fail closed to
- * NOT_SAFELY_NORMALIZABLE/UNSUPPORTED_CANDIDATE_KIND, same as every other
- * unsupported kind), so no ReviewSubject is ever created for one on its own.
- * Their Evidence/SourceAssertion are still made durable here — the same
- * "durable before referenced" invariant processObjectCandidate enforces —
- * because AgentVersion correlation's own ReviewSubject (processAgentVersionCandidate
- * below) may cite their assertionIds/evidenceIds in its own union.
+ * AgentVersion technical-profile signals (Framework/Memory/Orchestration —
+ * see technical-profile-signal.ts) are structurally NOT DiscoveryCandidates
+ * of any CanonicalObjectKind and therefore never flow through
+ * processObjectCandidate/normalizeObjectCandidate/ensureReviewSubjectAndPropose
+ * at all — there is no candidateKind to normalize or to back a ReviewSubject
+ * with. Their Evidence/SourceAssertion are still made durable here — the
+ * same "durable before referenced" invariant processObjectCandidate
+ * enforces — because AgentVersion correlation's own ReviewSubject
+ * (processAgentVersionCandidate below) may cite their assertionIds/
+ * evidenceIds in its own union.
  */
-function isTechnicalSignalCandidate(candidate: DiscoveryCandidate): boolean {
-  return (
-    candidate.finding.candidateKind === "AGENT_VERSION" &&
-    (AGENT_VERSION_TECHNICAL_SIGNAL_CODES as readonly string[]).includes(candidate.assertion.method.code)
-  );
-}
-
-async function processTechnicalSignalCandidate(
-  candidate: DiscoveryCandidate,
+async function processTechnicalProfileSignal(
+  signal: TechnicalProfileSignal,
   ctx: GovernanceExecutionContext,
   ports: DiscoveryIntakePorts,
   tally: ScanTally,
 ): Promise<void> {
   try {
-    await ports.intake.recordEvidence(ctx.organisationId, candidate.evidence);
-    await ports.intake.recordSourceAssertion(ctx.organisationId, candidate.assertion);
+    await ports.intake.recordEvidence(ctx.organisationId, signal.evidence);
+    await ports.intake.recordSourceAssertion(ctx.organisationId, signal.assertion);
   } catch (error) {
     tally.failures.push({
-      findingId: candidate.finding.findingId,
-      candidateKind: candidate.finding.candidateKind,
       reason: error instanceof Error ? error.message : String(error),
     });
   }
@@ -441,26 +428,32 @@ export async function runGovernanceDiscoveryScan(
 ): Promise<GovernanceDiscoveryScanResult> {
   const { executionContext: ctx, sourceConfiguration } = input;
   const adapter = new LocalRepositoryAdapter(sourceConfiguration.rootPath);
-  const pipeline = new DiscoveryPipeline(adapter, [
-    new AgentKindDeclarationSpecification(),
-    new ModelReferenceDeclarationSpecification(),
-    new ToolListDeclarationSpecification(),
-    new PromptDeclarationSpecification(),
-    new McpServerDeclarationSpecification(),
-    new ApiDeclarationSpecification(),
-    new KnowledgeBaseDeclarationSpecification(),
-    new SkillListDeclarationSpecification(),
-    // AgentVersion technical-signal detectors: never routed through
-    // processObjectCandidate below (see the technicalSignalCandidates split
-    // in the object-candidate loop) — they only ever contribute evidence to
-    // AgentVersion correlation's own technical revision (agent-version-correlation.ts).
-    new FrameworkReferenceDeclarationSpecification(),
-    new BuildReferenceDeclarationSpecification(),
-    new MemoryReferenceDeclarationSpecification(),
-    new OrchestrationReferenceDeclarationSpecification(),
-    new GuardrailReferenceDeclarationSpecification(),
-    new HitlReferenceDeclarationSpecification(),
-  ]);
+  const pipeline = new DiscoveryPipeline(
+    adapter,
+    [
+      new AgentKindDeclarationSpecification(),
+      new ModelReferenceDeclarationSpecification(),
+      new ToolListDeclarationSpecification(),
+      new PromptDeclarationSpecification(),
+      new McpServerDeclarationSpecification(),
+      new ApiDeclarationSpecification(),
+      new KnowledgeBaseDeclarationSpecification(),
+      new SkillListDeclarationSpecification(),
+    ],
+    {
+      // AgentVersion technical-profile signal detectors: structurally
+      // separate from `specifications` above (never a DiscoveryCandidate of
+      // any CanonicalObjectKind — see technical-profile-signal.ts). They
+      // only ever contribute evidence to AgentVersion correlation's own
+      // technical revision (agent-version-correlation.ts), never their own
+      // ReviewSubject (see processTechnicalProfileSignal below).
+      signalSpecifications: [
+        new FrameworkImportSignalSpecification(),
+        new OrchestrationFrameworkSignalSpecification(),
+        new MemoryImportSignalSpecification(),
+      ],
+    },
+  );
 
   let runResult: DiscoveryRunResult;
   try {
@@ -508,7 +501,7 @@ export async function runGovernanceDiscoveryScan(
     };
   }
 
-  const { run, candidates } = runResult;
+  const { run, candidates, technicalProfileSignals } = runResult;
   await ports.intake.startAcquisitionRun(ctx.organisationId, run);
 
   // LocalRepositoryAdapter.listArtifacts() is a deterministic, side-effect-
@@ -524,10 +517,11 @@ export async function runGovernanceDiscoveryScan(
   // AGENT_VERSION, like RELATIONSHIP, is a correlation product rather than a
   // single detector's own match (see agent-version-correlation.ts); it is
   // computed here alongside relationshipResults but only ever processed
-  // below once its parent AGENT/MODEL/TOOL evidence has already been made
-  // durable by the object-candidate loop.
+  // below once its parent AGENT/MODEL/TOOL evidence and every correlated
+  // technical-profile signal have already been made durable.
   const agentVersionResults: readonly AgentVersionCorrelationResult[] = new AgentVersionCorrelationStrategy().correlate(
     candidates,
+    technicalProfileSignals,
     run.completedAt ?? run.startedAt,
   );
 
@@ -539,14 +533,11 @@ export async function runGovernanceDiscoveryScan(
     failures: [],
   };
 
-  const technicalSignalCandidates = candidates.filter(isTechnicalSignalCandidate);
-  const objectCandidates = candidates.filter((candidate) => !isTechnicalSignalCandidate(candidate));
-
-  for (const candidate of objectCandidates) {
+  for (const candidate of candidates) {
     await processObjectCandidate(candidate, run.runId, ctx, ports, tally);
   }
-  for (const signalCandidate of technicalSignalCandidates) {
-    await processTechnicalSignalCandidate(signalCandidate, ctx, ports, tally);
+  for (const signal of technicalProfileSignals) {
+    await processTechnicalProfileSignal(signal, ctx, ports, tally);
   }
   for (const agentVersionResult of agentVersionResults) {
     await processAgentVersionCandidate(agentVersionResult, run.runId, ctx, ports, tally);
@@ -555,7 +546,7 @@ export async function runGovernanceDiscoveryScan(
     await processRelationshipCandidate(relationshipResult, run.runId, ctx, ports, tally);
   }
 
-  const objectCandidateCount = objectCandidates.length + agentVersionResults.length;
+  const objectCandidateCount = candidates.length + agentVersionResults.length;
   const counts: AcquisitionRunCounts = {
     artifactsScanned,
     findingsDetected: objectCandidateCount + relationshipResults.length,

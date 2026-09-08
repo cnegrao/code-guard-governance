@@ -1,6 +1,6 @@
 import { test, before, describe } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -958,15 +958,19 @@ describe("Agent Identity & Version Discovery V1: AGENT and AGENT_VERSION governa
 });
 
 // ---------------------------------------------------------------------------
-// Agent Technical Profile — L4 Round 1: the five newly-supported canonical
-// object kinds (PROMPT/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) reach the exact
-// same DETECTED -> PROPOSED governance-intake boundary MODEL/TOOL already
-// use — no new bypass, no new authority ceiling. AgentVersion technical
-// signals (Framework/Build/Memory/Orchestration/Guardrail/HITL) are the
-// deliberate exception: their Evidence/SourceAssertion become durable, but
-// they never receive their own ReviewSubject (see discovery-intake.ts's
-// isTechnicalSignalCandidate split) — only the real, correlation-produced
-// AGENT_VERSION ReviewSubject cites their assertion/evidence ids.
+// Agent Technical Profile — L4 Round 1 (corrected): the five newly-supported
+// canonical object kinds (PROMPT/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) reach
+// the exact same DETECTED -> PROPOSED governance-intake boundary MODEL/TOOL
+// already use — no new bypass, no new authority ceiling. Every fixture below
+// uses the REAL, Golden-Repository-precedented convention for each kind
+// (read, never modified — see each detector's own doc comment), not an
+// invented declaration syntax. AgentVersion technical-profile signals
+// (Framework/Memory/Orchestration) are the deliberate structural exception:
+// they are never a DiscoveryCandidate of any CanonicalObjectKind at all (see
+// technical-profile-signal.ts) — their Evidence/SourceAssertion become
+// durable, but they never receive their own ReviewSubject; only the real,
+// correlation-produced AGENT_VERSION ReviewSubject cites their assertion/
+// evidence ids.
 // ---------------------------------------------------------------------------
 
 async function withL4RoundOneFixtureRepository(run: (root: string) => Promise<void>): Promise<void> {
@@ -979,23 +983,28 @@ async function withL4RoundOneFixtureRepository(run: (root: string) => Promise<vo
         '    kind = "agent"',
         '    modelReference = "gpt-x"',
         "    tools = [alpha]",
-        '    PROMPT_REFERENCE = "support-prompt-v1"',
-        '    MCP_SERVER_REFERENCE = "filesystem-mcp"',
-        '    API_REFERENCE = "billing-api"',
-        '    KNOWLEDGE_BASE_REFERENCE = "product-docs-index"',
-        "    skills = [summarize_ticket]",
-        '    FRAMEWORK_REFERENCE = "langgraph"',
-        '    BUILD_REFERENCE = "py3.11-slim"',
+        "",
+        'SUPPORT_PROMPT = "Assist with account questions."',
+        "BILLING_API = {",
+        '    "id": "billing-api",',
+        "}",
+        "from langgraph import StateGraph",
+        "import redis",
         "",
       ].join("\n"),
     );
+    await writeFile(join(root, "mcp.json"), JSON.stringify({ serverIdentity: "filesystem-mcp" }));
+    await mkdir(join(root, "config"), { recursive: true });
+    await writeFile(join(root, "config", "knowledge-base.yaml"), "knowledge_base:\n  identity: product-docs-index\n");
+    await mkdir(join(root, ".claude", "skills", "summarize-ticket"), { recursive: true });
+    await writeFile(join(root, ".claude", "skills", "summarize-ticket", "SKILL.md"), "# Summarize Ticket\n");
     await run(root);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 }
 
-describe("Agent Technical Profile L4 Round 1: new canonical object kinds + AgentVersion technical signals", () => {
+describe("Agent Technical Profile L4 Round 1: new canonical object kinds + AgentVersion technical-profile signals", () => {
   test("PROMPT/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL each reach a PROPOSED review subject, same governance ceiling as MODEL/TOOL", async () => {
     await withL4RoundOneFixtureRepository(async (root) => {
       const ports = makePorts();
@@ -1016,7 +1025,7 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
     });
   });
 
-  test("Framework/Build technical signals are durably evidenced but never create their own ReviewSubject", async () => {
+  test("Framework/Memory technical-profile signals are durably evidenced but never create their own ReviewSubject", async () => {
     await withL4RoundOneFixtureRepository(async (root) => {
       const ports = makePorts();
       await runGovernanceDiscoveryScan(
@@ -1024,25 +1033,31 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
         ports,
       );
 
-      // No ReviewSubject anywhere carries a technical-signal detector code as
-      // its own candidateKind marker — AGENT_VERSION is the only candidateKind
-      // a technical signal ever shares, and exactly one AGENT_VERSION subject
-      // exists (the real, correlation-produced one).
+      // No ReviewSubject anywhere is backed by a technical-profile signal —
+      // exactly one AGENT_VERSION subject exists (the real, correlation-
+      // produced one), and technical-profile signals are structurally never
+      // a DiscoveryCandidate of any CanonicalObjectKind (see
+      // technical-profile-signal.ts), so they can never masquerade as one.
       const agentVersionSubjects = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
-      assert.equal(agentVersionSubjects.length, 1, "technical signals never create their own AGENT_VERSION subject");
+      assert.equal(agentVersionSubjects.length, 1, "technical-profile signals never create their own AGENT_VERSION subject");
 
       // Their Evidence/SourceAssertion are still durable: the correlated
-      // AGENT_VERSION subject's own finding cites more assertion/evidence ids
-      // than just its parent AGENT + Model/Tool would alone (Framework/Build
-      // are folded in too).
+      // AGENT_VERSION subject's own finding cites more assertion/evidence
+      // ids than just its parent AGENT + Model/Tool would alone (the
+      // same-file Framework/Memory signals are folded in too — PROMPT/API
+      // are also same-file; MCP_SERVER/KNOWLEDGE_BASE/SKILL live in separate
+      // files and correctly do NOT fold into this AgentVersion).
       const [agentVersionSubject] = agentVersionSubjects;
       const finding = await ports.intake.getDiscoveryFinding(ORG_A, agentVersionSubject.findingId);
       assert.ok(finding);
-      assert.ok(finding!.assertionIds.length >= 6, "AGENT + MODEL + TOOL + PROMPT + MCP + API + KB + SKILL + FRAMEWORK + BUILD evidence all contribute");
+      assert.ok(
+        finding!.assertionIds.length >= 6,
+        "AGENT + MODEL + TOOL + PROMPT + API + FRAMEWORK + MEMORY evidence all contribute",
+      );
     });
   });
 
-  test("changing a correlated Prompt value changes the AGENT_VERSION technical revision (new AgentVersion)", async () => {
+  test("changing the correlated API id changes the AGENT_VERSION technical revision (new AgentVersion); changing only the Prompt's own string content does not (identity is the constant name, never its content)", async () => {
     let firstFindingId: string | undefined;
     await withL4RoundOneFixtureRepository(async (root) => {
       const ports = makePorts();
@@ -1065,13 +1080,13 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
           '    kind = "agent"',
           '    modelReference = "gpt-x"',
           "    tools = [alpha]",
-          '    PROMPT_REFERENCE = "support-prompt-v2"', // changed
-          '    MCP_SERVER_REFERENCE = "filesystem-mcp"',
-          '    API_REFERENCE = "billing-api"',
-          '    KNOWLEDGE_BASE_REFERENCE = "product-docs-index"',
-          "    skills = [summarize_ticket]",
-          '    FRAMEWORK_REFERENCE = "langgraph"',
-          '    BUILD_REFERENCE = "py3.11-slim"',
+          "",
+          'SUPPORT_PROMPT = "Assist with account questions, revised wording."', // content changed, same constant name — must NOT change identity
+          "BILLING_API = {",
+          '    "id": "billing-api-v2",', // identity changed — must change identity
+          "}",
+          "from langgraph import StateGraph",
+          "import redis",
           "",
         ].join("\n"),
       );
@@ -1080,7 +1095,7 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
         secondPorts,
       );
       const [secondSubject] = [...secondPorts.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
-      assert.notEqual(secondSubject.findingId, firstFindingId, "a changed Prompt binding produces a different AGENT_VERSION identity");
+      assert.notEqual(secondSubject.findingId, firstFindingId, "a changed API id produces a different AGENT_VERSION identity");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

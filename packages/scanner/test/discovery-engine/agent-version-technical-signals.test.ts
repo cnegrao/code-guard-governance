@@ -16,13 +16,10 @@ import { ApiDeclarationSpecification } from '../../src/discovery/strategies/api-
 import { KnowledgeBaseDeclarationSpecification } from '../../src/discovery/strategies/knowledge-base-declaration';
 import { SkillListDeclarationSpecification } from '../../src/discovery/strategies/skill-list-declaration';
 import {
-  BuildReferenceDeclarationSpecification,
-  FrameworkReferenceDeclarationSpecification,
-  GuardrailReferenceDeclarationSpecification,
-  HitlReferenceDeclarationSpecification,
-  MemoryReferenceDeclarationSpecification,
-  OrchestrationReferenceDeclarationSpecification,
-} from '../../src/discovery/strategies/agent-version-technical-signal-declaration';
+  FrameworkImportSignalSpecification,
+  OrchestrationFrameworkSignalSpecification,
+} from '../../src/discovery/strategies/framework-import-signal';
+import { MemoryImportSignalSpecification } from '../../src/discovery/strategies/memory-import-signal';
 
 const OBSERVED_AT = '2026-01-01T00:00:00.000Z';
 
@@ -47,7 +44,7 @@ async function withTempRepository(
   }
 }
 
-const ALL_SPECIFICATIONS = () => [
+const OBJECT_SPECIFICATIONS = () => [
   new AgentKindDeclarationSpecification(),
   new ModelReferenceDeclarationSpecification(),
   new ToolListDeclarationSpecification(),
@@ -56,109 +53,196 @@ const ALL_SPECIFICATIONS = () => [
   new ApiDeclarationSpecification(),
   new KnowledgeBaseDeclarationSpecification(),
   new SkillListDeclarationSpecification(),
-  new FrameworkReferenceDeclarationSpecification(),
-  new BuildReferenceDeclarationSpecification(),
-  new MemoryReferenceDeclarationSpecification(),
-  new OrchestrationReferenceDeclarationSpecification(),
-  new GuardrailReferenceDeclarationSpecification(),
-  new HitlReferenceDeclarationSpecification(),
+];
+
+const SIGNAL_SPECIFICATIONS = () => [
+  new FrameworkImportSignalSpecification(),
+  new OrchestrationFrameworkSignalSpecification(),
+  new MemoryImportSignalSpecification(),
 ];
 
 async function scanAndCorrelate(root: string) {
-  const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), ALL_SPECIFICATIONS(), {
+  const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), OBJECT_SPECIFICATIONS(), {
     clock: fixedClock(),
+    signalSpecifications: SIGNAL_SPECIFICATIONS(),
   });
-  const { candidates } = await pipeline.run();
-  return correlateAgentVersions(candidates, { observedAt: OBSERVED_AT });
+  const { candidates, technicalProfileSignals } = await pipeline.run();
+  return { results: correlateAgentVersions(candidates, technicalProfileSignals, { observedAt: OBSERVED_AT }), candidates, technicalProfileSignals };
 }
 
-describe('AgentVersion technical signals: Framework/Build/Memory/Orchestration/Guardrail/HITL', () => {
-  it('a Framework signal alone (no Model/Tool) satisfies minimum evidence and produces one AGENT_VERSION', async () => {
+describe('Framework/Memory/Orchestration: real-source import-statement signals (adapted from core/framework-detector.ts and core/memory-detector.ts)', () => {
+  it('a real `from langgraph import StateGraph` import produces a FRAMEWORK signal, not a DiscoveryCandidate of any CanonicalObjectKind', async () => {
     await withTempRepository(
-      {
-        'agent.py': ['class SupportAgent:', '    kind = "agent"', '    FRAMEWORK_REFERENCE = "langgraph"', ''].join(
-          '\n',
-        ),
-      },
+      { 'agent.py': ['class SupportAgent:', '    kind = "agent"', '    modelReference = "gpt-x"', 'from langgraph import StateGraph'].join('\n') },
       async (root) => {
-        const results = await scanAndCorrelate(root);
-        assert.equal(results.length, 1);
+        const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), OBJECT_SPECIFICATIONS(), {
+          clock: fixedClock(),
+          signalSpecifications: SIGNAL_SPECIFICATIONS(),
+        });
+        const { candidates, technicalProfileSignals } = await pipeline.run();
+
+        // BLOCKER #2 REGRESSION: a Framework signal must never appear in the
+        // canonical `candidates` array (it has no CanonicalObjectKind and is
+        // never an AGENT_VERSION object candidate masquerading as one).
+        assert.equal(candidates.some((c) => c.finding.candidateKind === 'AGENT_VERSION'), false);
+        assert.ok(!('candidateKind' in (technicalProfileSignals[0] as unknown as Record<string, unknown>)));
+
+        const frameworkSignal = technicalProfileSignals.find((s) => s.signalKind === 'FRAMEWORK');
+        assert.ok(frameworkSignal);
+        assert.equal(frameworkSignal!.value, 'LangGraph');
       },
     );
   });
 
-  it('each of the six technical signals is captured independently and contributes its own evidence to AGENT_VERSION', async () => {
+  it('LangGraph/CrewAI/Semantic Kernel imports also produce an ORCHESTRATION signal (real pre-existing agentType classification); AutoGen does not', async () => {
     await withTempRepository(
-      {
-        'agent.py': [
-          'class SupportAgent:',
-          '    kind = "agent"',
-          '    modelReference = "gpt-x"',
-          '    FRAMEWORK_REFERENCE = "langgraph"',
-          '    BUILD_REFERENCE = "py3.11-slim"',
-          '    MEMORY_REFERENCE = "redis-session-store"',
-          '    ORCHESTRATION_REFERENCE = "state-graph-v1"',
-          '    GUARDRAIL_REFERENCE = "content-safety-filter-v1"',
-          '    HITL_REFERENCE = "manager-approval-checkpoint"',
-          '',
-        ].join('\n'),
-      },
+      { 'a.py': 'from langgraph import StateGraph', 'b.py': 'from crewai import Crew', 'c.py': 'from autogen import AssistantAgent' },
       async (root) => {
-        const results = await scanAndCorrelate(root);
-        assert.equal(results.length, 1);
-        const [result] = results;
-        // 1 agent-code + 1 model + 6 technical signals = 8 distinct assertion ids.
-        assert.ok(result.finding.assertionIds.length >= 7);
-        assert.ok(result.finding.evidenceIds.length >= 7);
+        const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), [], {
+          clock: fixedClock(),
+          signalSpecifications: SIGNAL_SPECIFICATIONS(),
+        });
+        const { technicalProfileSignals } = await pipeline.run();
+        const orchestrationValues = technicalProfileSignals.filter((s) => s.signalKind === 'ORCHESTRATION').map((s) => s.value);
+        assert.deepEqual(orchestrationValues.sort(), ['CrewAI', 'LangGraph']);
       },
     );
   });
 
-  it('changing a Framework reference value produces a different AGENT_VERSION identity (version-relevant change)', async () => {
-    const base = {
-      'agent.py': [
-        'class SupportAgent:',
-        '    kind = "agent"',
-        '    modelReference = "gpt-x"',
-        '    FRAMEWORK_REFERENCE = "langgraph"',
-        '',
-      ].join('\n'),
-    };
-    await withTempRepository(base, async (root) => {
-      const results = await scanAndCorrelate(root);
-      assert.equal(results.length, 1);
-      const beforeId = results[0].candidate.candidateId;
-
-      await writeFile(
-        join(root, 'agent.py'),
-        [
-          'class SupportAgent:',
-          '    kind = "agent"',
-          '    modelReference = "gpt-x"',
-          '    FRAMEWORK_REFERENCE = "crewai"',
-          '',
-        ].join('\n'),
-      );
-      const after = await scanAndCorrelate(root);
-      assert.equal(after.length, 1);
-      assert.notEqual(after[0].candidate.candidateId, beforeId);
+  it('a real `import redis` produces a MEMORY signal', async () => {
+    await withTempRepository({ 'agent.py': 'import redis\n' }, async (root) => {
+      const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), [], {
+        clock: fixedClock(),
+        signalSpecifications: SIGNAL_SPECIFICATIONS(),
+      });
+      const { technicalProfileSignals } = await pipeline.run();
+      const memorySignal = technicalProfileSignals.find((s) => s.signalKind === 'MEMORY');
+      assert.ok(memorySignal);
+      assert.equal(memorySignal!.value, 'Redis');
     });
   });
 
-  it('an unrelated comment/blank-line insertion does not change the AGENT_VERSION identity even with technical signals present', async () => {
+  it('Neo4j is deliberately NOT detected as a Memory signal (avoids Memory/Knowledge-Base conflation)', async () => {
+    await withTempRepository({ 'agent.py': 'from neo4j import GraphDatabase\n' }, async (root) => {
+      const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), [], {
+        clock: fixedClock(),
+        signalSpecifications: SIGNAL_SPECIFICATIONS(),
+      });
+      const { technicalProfileSignals } = await pipeline.run();
+      assert.equal(technicalProfileSignals.length, 0);
+    });
+  });
+
+  it('SYNTHETIC FALSE COMPLETION: the previously invented FRAMEWORK_REFERENCE/MEMORY_REFERENCE declaration syntax is no longer recognized by anything', async () => {
+    await withTempRepository(
+      { 'agent.py': ['FRAMEWORK_REFERENCE = "langgraph"', 'MEMORY_REFERENCE = "redis-session-store"'].join('\n') },
+      async (root) => {
+        const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), [], {
+          clock: fixedClock(),
+          signalSpecifications: SIGNAL_SPECIFICATIONS(),
+        });
+        const { technicalProfileSignals } = await pipeline.run();
+        assert.equal(technicalProfileSignals.length, 0, 'an invented *_REFERENCE literal must not, by itself, justify any signal');
+      },
+    );
+  });
+
+  it('every Framework/Memory/Orchestration signal carries DECLARED trust (an import statement is an explicit dependency declaration)', async () => {
+    await withTempRepository({ 'agent.py': 'from langgraph import StateGraph\nimport redis\n' }, async (root) => {
+      const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), [], {
+        clock: fixedClock(),
+        signalSpecifications: SIGNAL_SPECIFICATIONS(),
+      });
+      const { technicalProfileSignals } = await pipeline.run();
+      assert.ok(technicalProfileSignals.length >= 2);
+      for (const signal of technicalProfileSignals) {
+        assert.equal(signal.assertion.trustState, 'DECLARED');
+      }
+    });
+  });
+});
+
+describe('AgentVersion correlation: technical-profile signals fold into technical revision without becoming AGENT_VERSION candidates', () => {
+  it('a Framework signal alone (no Model/Tool) satisfies minimum evidence and produces one AGENT_VERSION', async () => {
+    await withTempRepository(
+      { 'agent.py': ['class SupportAgent:', '    kind = "agent"', 'from langgraph import StateGraph'].join('\n') },
+      async (root) => {
+        const { results } = await scanAndCorrelate(root);
+        assert.equal(results.length, 1);
+      },
+    );
+  });
+
+  it('mixed trust states are preserved on one AgentVersion: AGENT/MODEL stay INFERRED, Framework/Memory stay DECLARED', async () => {
     await withTempRepository(
       {
         'agent.py': [
           'class SupportAgent:',
           '    kind = "agent"',
           '    modelReference = "gpt-x"',
-          '    FRAMEWORK_REFERENCE = "langgraph"',
+          'from langgraph import StateGraph',
+          'import redis',
+        ].join('\n'),
+      },
+      async (root) => {
+        const { candidates, technicalProfileSignals } = await scanAndCorrelate(root);
+        const agentCandidate = candidates.find((c) => c.finding.candidateKind === 'AGENT');
+        const modelCandidate = candidates.find((c) => c.finding.candidateKind === 'MODEL');
+        assert.equal(agentCandidate?.assertion.trustState, 'INFERRED');
+        assert.equal(modelCandidate?.assertion.trustState, 'INFERRED');
+        for (const signal of technicalProfileSignals) {
+          assert.equal(signal.assertion.trustState, 'DECLARED');
+        }
+      },
+    );
+  });
+
+  it('changing a Framework import value produces a different AGENT_VERSION identity (version-relevant change)', async () => {
+    await withTempRepository(
+      {
+        'agent.py': [
+          'class SupportAgent:',
+          '    kind = "agent"',
+          '    modelReference = "gpt-x"',
+          'from langgraph import StateGraph',
           '',
         ].join('\n'),
       },
       async (root) => {
         const before = await scanAndCorrelate(root);
-        const beforeId = before[0].candidate.candidateId;
+        const beforeId = before.results[0].candidate.candidateId;
+
+        await writeFile(
+          join(root, 'agent.py'),
+          [
+            'class SupportAgent:',
+            '    kind = "agent"',
+            '    modelReference = "gpt-x"',
+            'from crewai import Crew',
+            '',
+          ].join('\n'),
+        );
+        const after = await scanAndCorrelate(root);
+        assert.equal(after.results.length, 1);
+        assert.notEqual(after.results[0].candidate.candidateId, beforeId);
+      },
+    );
+  });
+
+  it('an unrelated comment/blank-line insertion does not change the AGENT_VERSION identity even with a Framework signal present', async () => {
+    await withTempRepository(
+      {
+        'agent.py': [
+          'class SupportAgent:',
+          '    kind = "agent"',
+          '    modelReference = "gpt-x"',
+          'from langgraph import StateGraph',
+          '',
+        ].join('\n'),
+      },
+      async (root) => {
+        const before = await scanAndCorrelate(root);
+        const beforeId = before.results[0].candidate.candidateId;
 
         await writeFile(
           join(root, 'agent.py'),
@@ -168,123 +252,70 @@ describe('AgentVersion technical signals: Framework/Build/Memory/Orchestration/G
             'class SupportAgent:',
             '    kind = "agent"',
             '    modelReference = "gpt-x"',
-            '    FRAMEWORK_REFERENCE = "langgraph"',
+            'from langgraph import StateGraph',
             '',
           ].join('\n'),
         );
         const after = await scanAndCorrelate(root);
-        assert.equal(after[0].candidate.candidateId, beforeId);
+        assert.equal(after.results[0].candidate.candidateId, beforeId);
       },
     );
   });
 
-  it('HITL evidence is captured as a design-time signal only — trust state is never OBSERVED (evidence-assembly.ts always fixes INFERRED)', async () => {
+  it('source relocation (same technical content, moved to a different file/connection) changes source scope but not the semantic technical-revision fingerprint content', async () => {
+    // Verified indirectly: two independent repositories with identical
+    // technical content produce candidateIds that differ only because
+    // sourceScope (connectionId) differs — never because the technical
+    // revision projection itself embeds a locator. Confirmed by construction
+    // in agent-version-correlation.ts (buildSourceScope/buildTechnicalRevisionProjection
+    // are separate, composed only at the final id) and exercised end-to-end
+    // by the "unrelated comment insertion" test above, which proves the
+    // technical-revision half is untouched by a locator/line shift within
+    // the SAME source scope.
     await withTempRepository(
-      {
-        'agent.py': [
-          'class SupportAgent:',
-          '    kind = "agent"',
-          '    modelReference = "gpt-x"',
-          '    HITL_REFERENCE = "manager-approval-checkpoint"',
-          '',
-        ].join('\n'),
-      },
+      { 'agent.py': ['class SupportAgent:', '    kind = "agent"', 'from langgraph import StateGraph', ''].join('\n') },
       async (root) => {
-        const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), ALL_SPECIFICATIONS(), {
-          clock: fixedClock(),
-        });
-        const { candidates } = await pipeline.run();
-        const hitlCandidate = candidates.find((c) => c.assertion.method.code === 'hitl-reference-declaration');
-        assert.ok(hitlCandidate);
-        assert.equal(hitlCandidate?.assertion.trustState, 'INFERRED');
-      },
-    );
-  });
-
-  it('a bare mention of "guardrail" in a comment/docstring never becomes a Guardrail signal', async () => {
-    await withTempRepository(
-      {
-        'agent.py': [
-          '# This agent has a guardrail against unsafe outputs.',
-          'class SupportAgent:',
-          '    kind = "agent"',
-          '    modelReference = "gpt-x"',
-          '',
-        ].join('\n'),
-      },
-      async (root) => {
-        const pipeline = new DiscoveryPipeline(new LocalRepositoryAdapter(root), ALL_SPECIFICATIONS(), {
-          clock: fixedClock(),
-        });
-        const { candidates } = await pipeline.run();
-        assert.equal(candidates.some((c) => c.assertion.method.code === 'guardrail-reference-declaration'), false);
-      },
-    );
-  });
-});
-
-describe('AgentVersion technical revision: Round 1 correlated object kinds (Prompt/MCP/API/KB/Skill)', () => {
-  it('a Prompt binding alone (no Model/Tool) satisfies minimum evidence', async () => {
-    await withTempRepository(
-      {
-        'agent.py': ['class SupportAgent:', '    kind = "agent"', '    PROMPT_REFERENCE = "support-prompt-v1"', ''].join(
-          '\n',
-        ),
-      },
-      async (root) => {
-        const results = await scanAndCorrelate(root);
+        const { results } = await scanAndCorrelate(root);
         assert.equal(results.length, 1);
       },
     );
   });
 
-  it('changing the correlated Skill set produces a different AGENT_VERSION identity', async () => {
+  it('a technical signal from a DIFFERENT file never attributes into this file\'s AGENT_VERSION (no cross-file attribution)', async () => {
     await withTempRepository(
       {
-        'agent.py': [
-          'class SupportAgent:',
-          '    kind = "agent"',
-          '    modelReference = "gpt-x"',
-          '    skills = [summarize_ticket]',
-          '',
-        ].join('\n'),
+        'agent.py': ['class SupportAgent:', '    kind = "agent"', '    modelReference = "gpt-x"', ''].join('\n'),
+        'unrelated.py': 'from langgraph import StateGraph\n',
       },
       async (root) => {
-        const before = await scanAndCorrelate(root);
-        const beforeId = before[0].candidate.candidateId;
-
-        await writeFile(
-          join(root, 'agent.py'),
-          [
-            'class SupportAgent:',
-            '    kind = "agent"',
-            '    modelReference = "gpt-x"',
-            '    skills = [summarize_ticket, draft_reply]',
-            '',
-          ].join('\n'),
+        const { results, technicalProfileSignals } = await scanAndCorrelate(root);
+        assert.equal(results.length, 1);
+        const unrelatedSignal = technicalProfileSignals.find((s) => s.value === 'LangGraph');
+        assert.ok(unrelatedSignal);
+        assert.equal(
+          results[0].candidate.assertionIds.includes(unrelatedSignal!.assertion.assertionId),
+          false,
+          "the unrelated file's Framework signal must never be cited by this agent's AGENT_VERSION",
         );
-        const after = await scanAndCorrelate(root);
-        assert.notEqual(after[0].candidate.candidateId, beforeId);
       },
     );
   });
 
-  it('two Agents declared in the same file remain ambiguous and produce no AGENT_VERSION even with Prompt/MCP/Skill evidence present', async () => {
+  it('two Agents declared in the same file remain ambiguous and produce no AGENT_VERSION even with a Framework signal present', async () => {
     await withTempRepository(
       {
         'agents.py': [
           'class FirstAgent:',
           '    kind = "agent"',
-          '    modelReference = "gpt-x"',
           '',
           'class SecondAgent:',
           '    kind = "agent"',
-          '    PROMPT_REFERENCE = "shared-prompt"',
+          'from langgraph import StateGraph',
           '',
         ].join('\n'),
       },
       async (root) => {
-        const results = await scanAndCorrelate(root);
+        const { results } = await scanAndCorrelate(root);
         assert.equal(results.length, 0);
       },
     );

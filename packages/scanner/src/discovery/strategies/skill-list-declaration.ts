@@ -1,60 +1,50 @@
-import { CANONICAL_OBJECT_KIND } from '@council/canonical-contracts';
+import { CANONICAL_OBJECT_KIND, TRUST_STATE } from '@council/canonical-contracts';
 
 import type { DetectionMatch, DetectionSpecification } from '../detection-specification';
 import type { SourceArtifactContent } from '../source-adapter';
 
-// Mirrors ToolListDeclarationSpecification (tool-list-declaration.ts)
-// exactly, for the same reason: `skills = [...]` / `skills: [...]` is the
-// explicit structural binding this Discovery Engine trusts, never a bare
-// function definition, a generic import, or a filename containing "skill".
-const SKILLS_ARRAY_LINE_PATTERN =
-  /^\s*(?:export\s+)?(?:const\s+|readonly\s+)?["']?skills["']?\s*[:=]\s*\[\s*([^\]]*?)\s*\]\s*,?\s*$/;
-const BARE_IDENTIFIER_PATTERN = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+// Real-source convention, not invented by this milestone: reuses
+// `packages/scanner/src/codeguard/agent-detector.ts`'s own pre-existing,
+// already-shipped `CONFIG_DETECTORS` path pattern for a Claude Code Skill —
+// `.claude/skills/<name>/SKILL.md` — the same convention that legacy
+// detector already treats as "definitive" (path-based, no content
+// heuristic needed) with its own highest confidence tier. No Golden
+// Repository fixture currently models SKILL (confirmed by inspection before
+// implementation), so this real, externally-recognized Claude Code
+// convention is the only defensible real-source pattern available for this
+// object kind in this round — a generic function definition, a Tool
+// declaration, or a capability mentioned in prose is never sufficient on
+// its own; only this exact path shape counts as evidence.
+const CLAUDE_SKILL_PATH_PATTERN = /(^|\/)\.claude\/skills\/([^/]+)\/SKILL\.md$/i;
 
 /**
- * Detects the structural declaration `skills = [...]` / `skills: [...]`
- * binding an Agent to the bare identifiers of the Skills it uses. A Skill is
- * a distinct canonical object from Tool (see contracts.ts's SkillTechnicalProfile
- * doc comment): a generic function, a Tool declaration, or a capability
- * mentioned in prose is never sufficient on its own — only this explicit
- * array-literal binding, using the `skills` key specifically (never `tools`),
- * counts as evidence.
+ * Detects the path convention `.claude/skills/<name>/SKILL.md`, promoting
+ * the directory's own name to `proposedIdentity.declarationReference` — the
+ * file's existence at this defined skill-directory path is itself the
+ * declaration, exactly as `codeguard/agent-detector.ts` already treats it.
  */
 export class SkillListDeclarationSpecification implements DetectionSpecification {
-  readonly code = 'skill-list-declaration';
+  readonly code = 'CLAUDE_SKILL_PATH';
   readonly version = '1.0.0';
   readonly candidateKind = CANONICAL_OBJECT_KIND.SKILL;
 
   isSatisfiedBy(artifact: SourceArtifactContent): readonly DetectionMatch[] {
-    const matches: DetectionMatch[] = [];
-    const lines = artifact.text.split(/\r\n|\r|\n/);
+    const match = CLAUDE_SKILL_PATH_PATTERN.exec(artifact.locator);
+    if (!match) return [];
 
-    lines.forEach((line, index) => {
-      const match = SKILLS_ARRAY_LINE_PATTERN.exec(line);
-      if (!match) return;
-
-      const rawItems = match[1]
-        .split(',')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0);
-      if (rawItems.length === 0) return;
-      if (!rawItems.every((item) => BARE_IDENTIFIER_PATTERN.test(item))) return;
-
-      const lineNumber = index + 1;
-      const excerpt = line.trim().slice(0, 200);
-      const uniqueItems = Array.from(new Set(rawItems));
-
-      for (const item of uniqueItems) {
-        matches.push({
-          displayValue: item,
-          lineStart: lineNumber,
-          lineEnd: lineNumber,
-          excerpt,
-          confidence: 0.6,
-        });
-      }
-    });
-
-    return matches;
+    const skillName = match[2];
+    return [
+      {
+        displayValue: skillName,
+        lineStart: 1,
+        lineEnd: 1,
+        excerpt: artifact.locator.slice(0, 200),
+        confidence: 0.9,
+        // A file's existence at this defined skill-directory path is
+        // itself the declaration — a path convention, not a scanner
+        // inference from content.
+        trustState: TRUST_STATE.DECLARED,
+      },
+    ];
   }
 }

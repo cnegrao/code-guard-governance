@@ -3,264 +3,223 @@
 **Architecture ID:** `GOVIA-L0L16-CIA-v1.0` (FROZEN BASELINE — unchanged by this milestone)
 **Base main SHA:** `9386ca3c878a94257112bfead71d206e4adb9977` (PR #23 merge — `fix(discovery): separate agent version revision from provenance`)
 **Branch:** `feat/agent-technical-profile-l4-round1`
-**Date:** 2026-09-08
+**PR:** #24
+**Date:** 2026-09-08 (original pass), corrected same day after external architecture review
 
 ---
 
-## 1. Base SHA
+## 0. Correction notice
 
-`9386ca3c878a94257112bfead71d206e4adb9977`. `git merge-base --is-ancestor ab12dfb468ff6749792f44768f907d92edb65a79 HEAD` confirmed before branching. Local `main` matched `origin/main` exactly; no unexpected tracked changes were present (`codex-recovery-6101-6240.txt` remained the only untracked, untouched file).
+External review of the original PR #24 diff (commit `deef88a`) found three architecture blockers and one mandatory persistence/governance clarification. This document has been rewritten in place (not appended-to) to describe the **corrected** state only. The corrected state supersedes every claim in the original pass. A summary of what was wrong and what changed:
 
-## 2. Branch
+1. **Synthetic Discovery DSL (Blocker #1).** The original pass invented ten never-before-seen declaration keys (`PROMPT_REFERENCE`, `MCP_SERVER_REFERENCE`, `API_REFERENCE`, `KNOWLEDGE_BASE_REFERENCE`, `FRAMEWORK_REFERENCE`, `BUILD_REFERENCE`, `MEMORY_REFERENCE`, `ORCHESTRATION_REFERENCE`, `GUARDRAIL_REFERENCE`, `HITL_REFERENCE`) and then wrote synthetic tests proving those same invented keys could be detected — passing tests against syntax the milestone itself made up, never evidence that the Discovery Engine discovers real technical architecture. **Corrected**: every detector now targets a real, already-existing convention — either the frozen Golden Repository oracle's own fixtures (read, never modified) or the pre-existing legacy `core/framework-detector.ts` / `core/memory-detector.ts` / `codeguard/agent-detector.ts` detection patterns. Two dimensions (Guardrail, HITL) and one (Technology/Build) had no defensible real-source precedent within this correction's inspection scope and are honestly downgraded to `NOT_IMPLEMENTED` — their synthetic detectors were deleted, not relabeled.
+2. **Profile fact masquerading as AGENT_VERSION object candidate (Blocker #2).** The original pass gave Framework/Build/Memory/Orchestration/Guardrail/HITL detectors `candidateKind: CANONICAL_OBJECT_KIND.AGENT_VERSION` and then filtered them back out before normalization — a semantic overload where a raw technical signal carried a canonical object kind it was never allowed to become. **Corrected**: a new, structurally separate, non-canonical `TechnicalProfileSignal` type (`technical-profile-signal.ts`) replaces this entirely. It has no `candidateKind` field at all, is never a `DiscoveryCandidate<CanonicalObjectKind>`, and is produced by a parallel `TechnicalProfileSignalSpecification` interface, run by `DiscoveryPipeline` in the same artifact pass but collected into its own `technicalProfileSignals` result array.
+3. **All-INFERRED trust (Blocker #3).** The original pass argued every fact was safely `INFERRED` because `evidence-assembly.ts` hardcoded that trust state. **Corrected**: `DetectionMatch` (and the new `TechnicalProfileSignalMatch`) now carry an explicit, per-match `trustState`. Every real-source detector added or corrected in this pass sets `DECLARED` (an import statement, a named JSON config key, a path convention, or a named constant/object-literal declaration is a semantically authoritative position, not a scanner inference) while AGENT/MODEL/TOOL (whose own evidence model was not touched) remain `INFERRED` exactly as before — proven by a mixed-trust regression test on one AgentVersion.
+4. **AgentVersionTechnicalProfile persistence (mandatory check).** Re-evaluated in §22 below: the canonical contract's `runtimeFrameworkReference`/`buildReference` fields exist, but no materialization writer exists anywhere in the repository for any of the seven `*TechnicalProfile` kinds — confirmed still true, and building one is judged (with reasons, §22) to be a genuine, disproportionate architectural addition for this round, not an excuse. The determination is unchanged from the original pass but is now justified against the actual persistence/materialization contract shape, not asserted.
 
-`feat/agent-technical-profile-l4-round1`, branched from `main` at the SHA above. One branch, one milestone, no worktrees, no secondary branches.
+Sections below describe only the corrected state.
 
-## 3. Frozen architecture ID
+---
 
-`GOVIA-L0L16-CIA-v1.0`. Not modified. `git diff --name-only` against base confirms none of `GOVIA-L0L16-CIA-v1.0.md`, `ADR-GOVIA-L0L16-CIA-v1.0.md`, `-roadmap.md`, `-coverage.md`, `-implementation-conformance.md`, `-reuse-register.md` appear in this branch's diff.
+## 1. Base SHA / Branch / Architecture
 
-## 4. Roadmap milestone
+Unchanged from the original pass: base `9386ca3c878a94257112bfead71d206e4adb9977`, branch `feat/agent-technical-profile-l4-round1`, `GOVIA-L0L16-CIA-v1.0` frozen and unmodified (`git diff --name-only` against base confirms no `docs/architecture/**` file appears in this branch's diff, in either the original or corrected commit).
 
-Roadmap milestone 3, **AGENT TECHNICAL PROFILE — L4 ROUND 1**, per `GOVIA-L0L16-CIA-v1.0-roadmap.md` and the immediately preceding milestone's own stated deferral (`docs/codex/evidence/2026-09-08-agent-identity-version-discovery-v1-validation.md` §25: "populating `AgentVersionTechnicalProfile`... is a later, explicitly out-of-scope concern (roadmap milestone 3)").
+## 2. Roadmap milestone
 
-## 5. Contract-first capability map
+Roadmap milestone 3, **AGENT TECHNICAL PROFILE — L4 ROUND 1**. This correction is surgical, not a new milestone: no relationship taxonomy change, no Graph/Vector/Runtime/DataAsset work, no live Discovery trigger, no production/Supabase access.
 
-Inspected before any implementation: `packages/canonical-contracts/src/contracts.ts` (`AgentVersionTechnicalProfile`/`Support` at lines 1096–1112; `ModelTechnicalProfile`/`ToolTechnicalProfile`/`McpServerTechnicalProfile`/`ApiTechnicalProfile`/`PromptTechnicalProfile`/`KnowledgeBaseTechnicalProfile`/`SkillTechnicalProfile` at 1121–1270; `NormalizedObjectCandidate` union including `NormalizedMcpServerCandidate`/`NormalizedApiCandidate`/`NormalizedPromptCandidate`/`NormalizedKnowledgeBaseCandidate`/`NormalizedSkillCandidate` at 1908–2013 — all already fully specified, zero production instantiation anywhere in the repo before this milestone, confirmed by an exhaustive grep). Also inspected `object-candidate-normalization.ts`, `agent-version-correlation.ts`, `relationship-correlation.ts`, `evidence-assembly.ts`, `pipeline.ts`, and the legacy `core/framework-detector.ts`/`core/memory-detector.ts` (broad import/pattern-keyword style, confirmed unsuitable for reuse as a *canonical-object* detector per Section 11's no-broad-keyword-matching rule, though their *existence* confirms Framework/Memory signals were already anticipated as scanner-level concepts).
+## 3. PROFILE_SIGNAL_MODEL
 
-| Roadmap item | Classification | Contract/type | Detector | Trust | Evidence source | Governable this round? | Affects AgentVersion technical revision? |
+`packages/scanner/src/discovery/technical-profile-signal.ts` defines the corrected, structurally separate representation for AgentVersion technical-profile facts that are not canonical objects:
+
+```ts
+TECHNICAL_PROFILE_SIGNAL_KIND = { FRAMEWORK, MEMORY, ORCHESTRATION }  // closed, scanner-internal only
+
+TechnicalProfileSignal {
+  signalKind: TechnicalProfileSignalKind;
+  sourceObject: SourceObjectIdentity;   // reused canonical-contracts type
+  value: string;                          // e.g. "LangGraph", "Redis"
+  detector: { code: string; version: string };
+  assertion: SourceAssertion;             // reused canonical-contracts type, own trustState
+  evidence: Evidence;                     // reused canonical-contracts type
+  confidence: number;
+}
+```
+
+It has **no `candidateKind` field of any kind** — it cannot be mistaken for, filtered as, or accidentally routed through anything that expects a `DiscoveryCandidate<CanonicalObjectKind>`. `DiscoveryPipeline` (extended, not replaced — see `pipeline.ts`) runs an optional `signalSpecifications: readonly TechnicalProfileSignalSpecification[]` list in the same single artifact-read pass as the existing `specifications: readonly DetectionSpecification[]`, and returns both `candidates` and `technicalProfileSignals` as separate arrays in `DiscoveryRunResult`. `correlateAgentVersions` now takes `technicalProfileSignals` as an explicit second parameter (alongside `candidates`) and folds each signal's `value` into the technical revision projection by `signalKind`, using only its own `assertion.assertionId`/`evidence.evidenceId` for the AGENT_VERSION's evidence union — never its own `candidateKind`, because it has none.
+
+`apps/dashboard/lib/governance/discovery-intake.ts`'s `processTechnicalProfileSignal` durably persists each signal's `Evidence`/`SourceAssertion` (the same "durable before referenced" invariant every other fact honors) but never calls `ensureReviewSubjectAndPropose` — there is no `DiscoveryFinding`/`candidateKind` to construct one from, so no phantom ReviewSubject can ever exist for a raw technical signal (verified by a dedicated regression test).
+
+Technology/Build, Guardrail, and HITL have **no signal kind** in this closed set — no defensible real-source pattern was found for them within this correction's inspection scope (see §7 below), and none is fabricated to fill the slot.
+
+## 4. TRUST_STATE_DECISION
+
+`DetectionMatch` (detection-specification.ts) and `TechnicalProfileSignalMatch` (technical-profile-signal.ts) both carry `trustState` — optional on `DetectionMatch` (defaults to `INFERRED` in `evidence-assembly.ts` when absent, so AGENT/MODEL/TOOL are completely unaffected by this extension and remain `INFERRED` unchanged), required on `TechnicalProfileSignalMatch` (every specification in that lane is new in this correction and must justify its own trust tier explicitly).
+
+| Detector | Trust | Why |
+|---|---|---|
+| AGENT (`kind = "agent"`), MODEL (`MODEL_REFERENCE`/`modelReference`), TOOL (`tools = [...]`) | INFERRED (unchanged) | Pre-existing detectors, not touched by this correction; a scanner conclusion from a structural marker, not itself an authoritative declaration position by the frozen contract's own prior classification. |
+| PROMPT (`<NAME>_PROMPT = "..."`), API (`<NAME>_API = {"id": "..."}`), KNOWLEDGE_BASE (`knowledge_base:`/`identity:` YAML), MCP_SERVER (`mcp.json`-shaped config), SKILL (`.claude/skills/<name>/SKILL.md` path) | DECLARED | Each sits in a semantically authoritative position the source/config convention itself defines as an explicit identity — a named constant, an object literal's own `id` field, a YAML config key, a JSON config field, or a directory-naming convention — not a scanner inference from prose or a loose keyword. |
+| Framework (import statement), Memory (import statement), Orchestration (derived from the same import statement) | DECLARED | An import/require statement is an explicit, unambiguous dependency declaration the language/module system itself defines — never a confidence-based promotion. |
+
+No detector ever produces `OBSERVED` (every one is design-time source only) or `VALIDATED` (that requires governed reconciliation, entirely out of Discovery-stage scope). Mixed trust on one AgentVersion is proven by a dedicated test: AGENT/MODEL stay INFERRED while a same-file Framework/Memory signal is DECLARED, on the same correlated `AGENT_VERSION`.
+
+## 5. REAL_SOURCE_EVIDENCE
+
+Inspected before any implementation (per the correction's own inspection-scope limit): `packages/scanner/src/core/framework-detector.ts`, `packages/scanner/src/core/memory-detector.ts`, `packages/scanner/src/codeguard/agent-detector.ts`, and — because the correction requires "real evidence," not merely "legacy code" — the frozen Golden Repository fixtures those legacy files predate (`packages/scanner/test/discovery-validation-lab/golden-repositories/**`, read only, never modified, never wired to the Lab/oracle harness). The Golden Repository's own `.govia-lab/expected.json` files already model Prompt/API/Knowledge Base/MCP Server with real fixture source, predating this milestone:
+
+| Kind | Real source found | File (read only) |
+|---|---|---|
+| PROMPT | `<NAME>_PROMPT = "..."` module constant (Python: `SUPPORT_PROMPT`, `CARE_PROMPT`; TS: `export const TRIAGE_PROMPT = "..."`) | `01-simple-agent/src/customer_support_agent.py`, `02-multi-agent/src/triage_agent.ts`, `06-care-coordination/src/care_agent.py` |
+| API | `<NAME>_API = { "id": "...", "base_url": "..." }` object literal | `06-care-coordination/src/care_agent.py` |
+| KNOWLEDGE_BASE | `knowledge_base:` / nested `identity:` YAML block | `06-care-coordination/config/knowledge-base.yaml` |
+| MCP_SERVER | `{ "serverIdentity": "...", "entrypoint": "...", "tools": [...] }` | `04-mcp-not-agent/mcp.json` |
+| SKILL | none found in any Golden Repository fixture (confirmed by exhaustive grep) | — |
+
+For SKILL, the correction instead reuses `codeguard/agent-detector.ts`'s own pre-existing, already-shipped `.claude/skills/<name>/SKILL.md` path convention (its `CONFIG_DETECTORS` array already treats this as "definitive").
+
+For Framework/Memory/Orchestration, the correction adapts `core/framework-detector.ts`'s `FRAMEWORK_PATTERNS.imports` and `core/memory-detector.ts`'s `MEMORY_PATTERNS` import lists — **with one necessary fix**: both legacy files' own `imports` regexes only ever match a JS/TS-shaped `import X from "pkg"` / `require("pkg")` statement (verified: `/from\s+['"]@?langgraph\b/i` never matches real Python `from langgraph import StateGraph`, since no quote follows `from` in that form). Every Golden Repository Agent fixture is Python or TS, and a real Python agent is at least as likely to use the unquoted `from module import X` form, so a matching Python-shaped regex was added per technology — a correction to a latent gap in the legacy patterns' actual matching behavior, not a new detection surface (same technology list, same intent, now functionally real in both languages). This was caught by this correction's own regression tests initially failing against a realistic `from langgraph import StateGraph` fixture.
+
+Orchestration is derived from the identical Framework import evidence, not a separate detection surface: only frameworks `codeguard/agent-detector.ts`'s own pre-existing `agentType: "orchestrator"` classification already applies to (LangGraph, CrewAI, Semantic Kernel) also emit an ORCHESTRATION signal.
+
+Neo4j (listed in `core/memory-detector.ts` under its own distinct `type: "knowledge"`, not `"vector_store"`/`"long_term"`) is deliberately excluded from the Memory signal — even the legacy code treats it as conceptually closer to Knowledge Base than Memory, and folding it in would risk exactly the Memory/Knowledge-Base conflation the milestone brief prohibits. It is not detected as either a Memory signal or a KNOWLEDGE_BASE candidate in this round.
+
+No repository-global manifest (`package.json`, `pyproject.toml`, a lockfile) is parsed anywhere in this correction, deliberately: Section 9's attribution-ambiguity warning (a repo-global fact must not blindly attach to one Agent in a monorepo) is sidestepped structurally by only ever detecting single-file, single-declaration, explicit evidence.
+
+## 6. Per-dimension classification (corrected)
+
+| Dimension | Classification | Real-source pattern | Synthetic pattern removed | Trust | Attribution | Governed representation | Technical-revision impact |
 |---|---|---|---|---|---|---|---|
-| Framework/SDK | EXISTING_AGENT_VERSION_PROFILE_FIELD (field exists; zero materialization writer repo-wide) | `AgentVersionTechnicalProfileSupport.runtimeFrameworkReference` | NEW: `FrameworkReferenceDeclarationSpecification` | INFERRED | `FRAMEWORK_REFERENCE = "..."` declaration | NO (profile field never materialized — see §22) | YES |
-| Technology/Build | EXISTING_AGENT_VERSION_PROFILE_FIELD (field exists; zero materialization writer repo-wide) | `AgentVersionTechnicalProfileSupport.buildReference` | NEW: `BuildReferenceDeclarationSpecification` | INFERRED | `BUILD_REFERENCE = "..."` declaration | NO (same reason) | YES |
-| Model | EXISTING_CANONICAL_OBJECT | `ModelIdentity`/`ModelTechnicalProfile` | REUSE_AS_IS: `ModelReferenceDeclarationSpecification` | INFERRED | pre-existing | YES (unchanged) | YES (pre-existing) |
-| Prompt | EXISTING_CANONICAL_OBJECT | `PromptIdentity`/`NormalizedPromptCandidate` | NEW: `PromptDeclarationSpecification` | INFERRED | `PROMPT_REFERENCE = "..."` declaration | YES (new) | YES (new) |
-| Tool | EXISTING_CANONICAL_OBJECT | `ToolIdentity`/`ToolTechnicalProfile` | REUSE_AS_IS: `ToolListDeclarationSpecification` | INFERRED | pre-existing | YES (unchanged) | YES (pre-existing) |
-| MCP | EXISTING_CANONICAL_OBJECT | `McpServerIdentity`/`NormalizedMcpServerCandidate` | NEW: `McpServerDeclarationSpecification` | INFERRED | `MCP_SERVER_REFERENCE = "..."` declaration | YES (new) | YES (new) |
-| API | EXISTING_CANONICAL_OBJECT | `ApiIdentity`/`NormalizedApiCandidate` | NEW: `ApiDeclarationSpecification` | INFERRED | `API_REFERENCE = "..."` declaration | YES (new) | YES (new) |
-| KB/RAG | EXISTING_CANONICAL_OBJECT (Knowledge Base only; RAG/Vector infra out of scope) | `KnowledgeBaseIdentity`/`NormalizedKnowledgeBaseCandidate` | NEW: `KnowledgeBaseDeclarationSpecification` | INFERRED | `KNOWLEDGE_BASE_REFERENCE = "..."` declaration | YES (new) | YES (new) |
-| Memory | EXISTING_DISCOVERY_SIGNAL_ONLY (no canonical kind, no dedicated profile field) | none | NEW: `MemoryReferenceDeclarationSpecification` | INFERRED | `MEMORY_REFERENCE = "..."` declaration | NO (evidence-only) | YES (folds into technical revision) |
-| Skill | EXISTING_CANONICAL_OBJECT | `SkillIdentity`/`NormalizedSkillCandidate` | NEW: `SkillListDeclarationSpecification` | INFERRED | `skills = [...]` bare-identifier array | YES (new) | YES (new) |
-| Orchestration | EXISTING_DISCOVERY_SIGNAL_ONLY (no canonical kind, no dedicated profile field) | none | NEW: `OrchestrationReferenceDeclarationSpecification` | INFERRED | `ORCHESTRATION_REFERENCE = "..."` declaration | NO (evidence-only) | YES |
-| Guardrails/HITL | EXISTING_DISCOVERY_SIGNAL_ONLY (no canonical kind, no dedicated profile field) | none | NEW: `GuardrailReferenceDeclarationSpecification` / `HitlReferenceDeclarationSpecification` | INFERRED | `GUARDRAIL_REFERENCE = "..."` / `HITL_REFERENCE = "..."` | NO (evidence-only) | YES |
+| Framework/SDK | REAL_SOURCE_IMPLEMENTED (evidence-only; no canonical profile writer — see §22) | Python/JS import statement (adapted + corrected from `core/framework-detector.ts`) | `FRAMEWORK_REFERENCE = "..."` deleted | DECLARED | same-file only | `TechnicalProfileSignal`, not a governed profile field | YES |
+| Technology/Build | NOT_IMPLEMENTED | none found within inspection scope | `BUILD_REFERENCE = "..."` deleted | — | — | — | NO |
+| MODEL | IMPLEMENTED (reused as-is) | pre-existing `MODEL_REFERENCE`/`modelReference` | n/a | INFERRED (unchanged) | same-file | NormalizedObjectCandidate → PROPOSED | YES (pre-existing) |
+| PROMPT | REAL_SOURCE_IMPLEMENTED | `<NAME>_PROMPT = "..."` (Golden Repository precedent) | `PROMPT_REFERENCE = "..."` deleted | DECLARED | same-file | NormalizedObjectCandidate → PROPOSED | YES |
+| TOOL | IMPLEMENTED (reused as-is) | pre-existing `tools = [...]` | n/a | INFERRED (unchanged) | same-file | NormalizedObjectCandidate → PROPOSED | YES (pre-existing) |
+| MCP_SERVER | REAL_SOURCE_IMPLEMENTED | `mcp.json`-shaped config, both Golden-Repository flat shape and legacy named-dict shape | `MCP_SERVER_REFERENCE = "..."` deleted | DECLARED | path-scoped (own config file) | NormalizedObjectCandidate → PROPOSED | YES |
+| API | REAL_SOURCE_IMPLEMENTED | `<NAME>_API = {"id": "..."}` (Golden Repository precedent) | `API_REFERENCE = "..."` deleted | DECLARED | same-file | NormalizedObjectCandidate → PROPOSED | YES |
+| KNOWLEDGE_BASE/RAG | REAL_SOURCE_IMPLEMENTED (Knowledge Base only; RAG/Vector infra out of scope) | `knowledge_base:`/`identity:` YAML (Golden Repository precedent) | `KNOWLEDGE_BASE_REFERENCE = "..."` deleted | DECLARED | own config file | NormalizedObjectCandidate → PROPOSED | YES |
+| Memory | REAL_SOURCE_IMPLEMENTED (evidence-only; no canonical profile field exists) | Python/JS import statement (adapted + corrected from `core/memory-detector.ts`, Neo4j excluded) | `MEMORY_REFERENCE = "..."` deleted | DECLARED | same-file | `TechnicalProfileSignal` | YES |
+| SKILL | REAL_SOURCE_IMPLEMENTED | `.claude/skills/<name>/SKILL.md` path (reused from `codeguard/agent-detector.ts`) | `skills = [...]` synthetic array deleted (zero Golden Repository precedent found) | DECLARED | path-scoped (own file) | NormalizedObjectCandidate → PROPOSED | YES |
+| Orchestration | REAL_SOURCE_IMPLEMENTED (evidence-only; no canonical profile field exists) | derived from the same Framework import evidence, filtered to `agentType: "orchestrator"` frameworks | `ORCHESTRATION_REFERENCE = "..."` deleted | DECLARED | same-file | `TechnicalProfileSignal` | YES |
+| Guardrails/HITL | NOT_IMPLEMENTED | none found within inspection scope (the one real precedent found — `06-care-coordination`'s `require_human_approval` tool tagged `methodCode: "HUMAN_APPROVAL_GATE"` in the Golden Repository oracle — models HITL as a Tool sub-classification requiring cross-reference from a bare identifier back to its own function definition elsewhere in the file, a capability no current detector has; implementing it is out of proportion for this correction) | `GUARDRAIL_REFERENCE = "..."` / `HITL_REFERENCE = "..."` deleted | — | — | — | NO |
 
-No `NOT_MODELED` row required a `STOP_REQUIRES_ARCHITECTURE_DECISION`: every dimension either had an existing canonical object kind, an existing (if unwritten) profile field, or was implementable purely as Discovery-stage evidence contributing to the already-existing `AGENT_VERSION` technical-revision fingerprint, without inventing a new `CanonicalObjectKind` or a new frozen-vocabulary term.
+## 7. Files changed (this correction)
 
-## 6. Files changed
+Deleted:
+- `packages/scanner/src/discovery/strategies/agent-version-technical-signal-declaration.ts` (the synthetic 6-detector module)
 
 Added:
-- `packages/scanner/src/discovery/strategies/prompt-declaration.ts`
-- `packages/scanner/src/discovery/strategies/mcp-server-declaration.ts`
-- `packages/scanner/src/discovery/strategies/api-declaration.ts`
-- `packages/scanner/src/discovery/strategies/knowledge-base-declaration.ts`
-- `packages/scanner/src/discovery/strategies/skill-list-declaration.ts`
-- `packages/scanner/src/discovery/strategies/agent-version-technical-signal-declaration.ts`
-- `packages/scanner/test/discovery-engine/l4-round1-object-detection.test.ts`
-- `packages/scanner/test/discovery-engine/agent-version-technical-signals.test.ts`
-- this evidence document
+- `packages/scanner/src/discovery/technical-profile-signal.ts` — the new non-canonical signal type + assembler
+- `packages/scanner/src/discovery/strategies/framework-import-signal.ts` — real Framework/Orchestration import detectors
+- `packages/scanner/src/discovery/strategies/memory-import-signal.ts` — real Memory import detector
+
+Rewritten (real-source detection, same public class name, same file):
+- `strategies/prompt-declaration.ts`, `strategies/mcp-server-declaration.ts`, `strategies/api-declaration.ts`, `strategies/knowledge-base-declaration.ts`, `strategies/skill-list-declaration.ts`
 
 Modified:
-- `packages/scanner/src/discovery/object-candidate-normalization.ts` — 5 new normalization strategies (Prompt/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) registered; module doc comment updated.
-- `packages/scanner/src/discovery/agent-version-correlation.ts` — technical revision projection extended to fold in the 5 new correlated object kinds and the 6 AgentVersion technical signals; minimum-evidence rule extended accordingly.
-- `packages/scanner/src/discovery/index.ts`, `packages/scanner/src/index.ts` — export the new specifications/strategies.
-- `apps/dashboard/lib/governance/discovery-intake.ts` — new specifications wired into the scan pipeline; technical-signal candidates are durably evidenced but routed away from `processObjectCandidate` (never their own ReviewSubject — see §9/§22).
-- `apps/dashboard/tests/discovery-intake-service.test.ts` — new `describe` block for L4 Round 1 governance continuity.
-- `packages/scanner/test/discovery-engine/object-candidate-normalization.test.ts` — the pre-existing "unsupported/dormant candidateKind" test used `MCP_SERVER` as its example of a still-dormant kind; since MCP_SERVER is now genuinely supported, the test was updated to use `DATA_ASSET` (still correctly dormant) instead. No assertion semantics changed.
+- `detection-specification.ts` — `DetectionMatch` gains optional `trustState`
+- `evidence-assembly.ts` — `assembleDiscoveryCandidate` uses `match.trustState ?? TRUST_STATE.INFERRED`
+- `pipeline.ts` — `DiscoveryPipeline` runs an optional `signalSpecifications` list in the same artifact pass; `DiscoveryRunResult` gains `technicalProfileSignals`
+- `agent-version-correlation.ts` — `correlateAgentVersions`/`AgentVersionCorrelationStrategy.correlate` take a new `technicalProfileSignals` parameter; the AGENT_VERSION-kind technical-signal candidate hack is fully removed; `object-candidate-normalization.ts`'s doc comments updated to match
+- `object-candidate-normalization.ts` — doc comments only (the 5 normalization strategies needed zero logic changes — they only ever promoted `displayValue`, which the new real-source detectors still supply in the same shape)
+- `discovery/index.ts`, `src/index.ts` — export surface updated
+- `apps/dashboard/lib/governance/discovery-intake.ts` — new pipeline wiring, `processTechnicalProfileSignal` replaces `isTechnicalSignalCandidate`/`processTechnicalSignalCandidate`
+- `apps/dashboard/tests/discovery-intake-service.test.ts` — L4 Round 1 describe block rewritten for real-source multi-file fixtures
+- `packages/scanner/test/discovery-engine/agent-version-correlation.test.ts` — `correlate()` call sites updated for the new 3-argument signature
+- `packages/scanner/test/discovery-engine/agent-version-technical-signals.test.ts` — fully rewritten for the new `TechnicalProfileSignal` architecture and real import fixtures
+- `packages/scanner/test/discovery-engine/l4-round1-object-detection.test.ts` — fully rewritten against real-source fixtures
 
-No file under `docs/architecture/**`, `.claude/**`, `supabase/migrations/**`, or `codex-recovery-6101-6240.txt` was read, staged, modified, or inspected. No dependency, lockfile, or migration change.
+No file under `docs/architecture/**`, `.claude/**`, `supabase/migrations/**`, `codex-recovery-6101-6240.txt`, or `packages/scanner/test/discovery-validation-lab/**` was modified. No dependency, lockfile, or migration change.
 
-## 7. Framework/SDK — PARTIAL
+## 8. AGENT_VERSION_TECHNICAL_PROFILE_PERSISTENCE_DECISION
 
-Detector: `FrameworkReferenceDeclarationSpecification` (`FRAMEWORK_REFERENCE = "..."` / `frameworkReference: "..."`). Evidence-backed, INFERRED, folds into the AgentVersion technical revision as `framework:<value>`. **The canonical `AgentVersionTechnicalProfile.support.runtimeFrameworkReference` field is NOT materialized** — see §22 (Persistence). Classification: `PARTIAL` (Discovery evidence + technical-revision impact: yes; governed canonical profile field: no).
+Re-evaluated per the correction's mandatory check, against the actual contract/persistence shape (not merely asserted):
 
-## 8. Technology/Build — PARTIAL
+**A. Can the current canonical materialization machinery already carry an `AgentVersionTechnicalProfile` without a schema change?** Inspected: `AgentVersionTechnicalProfile`/`Support` (`contracts.ts:1096-1112`), the object materialization RPC input shape (`ObjectMaterializationInput`, `materializationPersistence`), and every other canonical-object `*TechnicalProfile` (Model/Tool/MCP/API/Prompt/KB/Skill). **Finding: no.** `ObjectMaterializationInput`/`materialize_object_reconciliation` carries a canonical object's *identity* fields (from `proposedIdentity`) through reconciliation into `gov_repo.canonical_objects`; it has no parameter or persisted column anywhere for a *profile* record layered on top of an already-materialized object, for any of the seven `*TechnicalProfile` kinds. This is not specific to `AgentVersionTechnicalProfile` — confirmed by exhaustive grep, zero production code anywhere constructs a `ModelTechnicalProfile`/`ToolTechnicalProfile`/etc. either.
 
-Detector: `BuildReferenceDeclarationSpecification` (`BUILD_REFERENCE = "..."` / `buildReference: "..."`). Same status as Framework/SDK: evidence-backed and version-relevant, canonical `buildReference` profile field not materialized. Classification: `PARTIAL`.
+**B. Is the limitation merely an implementation writer gap that can be solved without changing frozen semantics?** Yes, in principle — the contract shape (`agentVersionId` + typed fields + `support: {field: {assertionIds, evidenceIds}}`) is fully specified and requires no new type. But implementing it requires: (1) a materialization-stage trigger point that does not exist today (materialization currently only ever writes a `canonical_objects` identity row, never a companion profile row, for any kind), (2) a decision about where a profile row lives (a new table, or a JSONB column on `canonical_objects` — either is a genuine, non-trivial persistence decision this correction was explicitly told not to make casually — "no unnecessary migration," "any migration must be additive... contain no speculative future fields"), and (3) doing it for `AgentVersionTechnicalProfile` alone, while leaving the other six kinds' identical gap untouched, would be an arbitrary, inconsistent scope boundary with no principled justification. Building a *correct*, consistent writer for all seven kinds is a materially larger unit of work than "Round 1 of L4 detection" and risks exactly the kind of casual, unreviewed persistence decision the correction brief warns against making merely to avoid saying "not yet."
 
-## 9. MODEL — IMPLEMENTED (reused as-is)
+**Decision: NOT_IMPLEMENTED, not a STOP_REQUIRES_ARCHITECTURE_DECISION.** No frozen semantic needs to change — the contract already supports this correctly — but no minimal, safe writer was implemented in this correction, because doing so responsibly would require a persistence-layer design decision (a new table vs. an extension to the existing materialization RPCs) that is out of proportion for a "Round 1" detection milestone and was not requested with enough scope to make that call correctly. This is recorded honestly as a limitation, not disguised as done. **PERSISTENCE_CONTRACT_GAP**: no materialization-stage row exists for any `*TechnicalProfile` kind. **CURRENT_MATERIALIZATION_LIMIT**: `materialize_object_reconciliation` writes only canonical identity, never a profile. **SMALLEST_REQUIRED_ARCHITECTURAL_CHANGE** (if ever undertaken): one additive table (e.g. `gov_repo.canonical_object_technical_profiles`, keyed by `canonical_object_id` + typed JSONB per field with its own `assertion_ids`/`evidence_ids` arrays) plus one new RPC invoked after `materialize_object_reconciliation` succeeds — deliberately not implemented here.
 
-Zero changes to `model-reference-declaration.ts` or `ModelCandidateNormalizationStrategy`. Regression-verified green (147/147 discovery-engine tests, including all pre-existing MODEL tests). Now additionally folds into the extended technical-revision projection exactly as before (no behavior change to MODEL's own contribution).
+Memory/Orchestration/Guardrail/HITL correctly have **no** dedicated profile field to target in the first place (only a generic `configurationReference` exists, and overloading it with multiple distinct facts was rejected — see §3/§6) — for these, "no writer" is not merely a persistence gap, it is a missing *governed slot*, an even stronger reason they remain evidence-only.
 
-## 10. PROMPT — IMPLEMENTED
+## 9. TECHNICAL_REVISION_FINGERPRINT_CHANGE vs SOURCE_SCOPED_CANDIDATE_CHANGE
 
-New `PromptDeclarationSpecification` + `PromptCandidateNormalizationStrategy`, wired through governance intake to the same DETECTED→PROPOSED ceiling as every other kind. Explicit-declaration-only (`PROMPT_REFERENCE = "..."` / `promptReference: "..."`); a docstring, template literal, or prose mention of "prompt" produces zero candidates (tested). Raw prompt content is never captured — only the declared reference literal is promoted to `proposedIdentity.declarationKey`.
-
-## 11. TOOL — IMPLEMENTED (reused as-is)
-
-Zero changes to `tool-list-declaration.ts` or `ToolCandidateNormalizationStrategy`. Regression-verified green.
-
-## 12. MCP_SERVER — IMPLEMENTED
-
-New `McpServerDeclarationSpecification` + `McpServerCandidateNormalizationStrategy`. Explicit-declaration-only (`MCP_SERVER_REFERENCE = "..."`); an `mcp`-related import or a bare Tool declaration never implies an MCP_SERVER candidate on its own (tested).
-
-## 13. API — IMPLEMENTED
-
-New `ApiDeclarationSpecification` + `ApiCandidateNormalizationStrategy`. Explicit-declaration-only (`API_REFERENCE = "..."`); a bare URL literal anywhere in source never becomes an API candidate on its own (tested). L10 connectivity/network topology remains untouched and out of scope.
-
-## 14. KNOWLEDGE_BASE/RAG — IMPLEMENTED (Knowledge Base only; RAG/Vector out of scope)
-
-New `KnowledgeBaseDeclarationSpecification` + `KnowledgeBaseCandidateNormalizationStrategy`. Explicit-declaration-only (`KNOWLEDGE_BASE_REFERENCE = "..."`); the bare word "memory" or a generic vector-store import never implies a KNOWLEDGE_BASE candidate (tested — kept structurally distinct from the separate Memory technical signal, §17). No embeddings created, no pgvector access, no Vector Store implementation — RAG configuration remains representable only as this same explicit Knowledge Base evidence; no separate RAG object was invented.
-
-## 15. Memory — EVIDENCE_ONLY
-
-New `MemoryReferenceDeclarationSpecification` (`MEMORY_REFERENCE = "..."`). Not a canonical object kind (correctly not invented); no dedicated `AgentVersionTechnicalProfile` field exists for it (only a generic `configurationReference`, deliberately not overloaded — see §19/§23). Captured as evidence-backed Discovery signal, folds into AgentVersion's technical revision as `memory:<value>`, durably persisted (Evidence + SourceAssertion) but never independently governable (no ReviewSubject of its own — see §22). Absence of a `MEMORY_REFERENCE` line is `UNKNOWN`, never `FALSE`.
-
-## 16. SKILL — IMPLEMENTED
-
-New `SkillListDeclarationSpecification` (`skills = [...]` bare-identifier array, mirrors `ToolListDeclarationSpecification` exactly) + `SkillCandidateNormalizationStrategy`. A generic function definition, a Tool declaration, or a quoted-string skills array never implies a Skill (tested).
-
-## 17. Orchestration — EVIDENCE_ONLY
-
-New `OrchestrationReferenceDeclarationSpecification` (`ORCHESTRATION_REFERENCE = "..."`). Same status class as Memory: no canonical object kind, no dedicated profile field, Discovery-evidence-only, folds into technical revision as `orchestration:<value>`. Never conflated with TOOL (tested implicitly by the detector's own narrow pattern; a generic control-flow construct never matches).
-
-## 18. Guardrails/HITL — EVIDENCE_ONLY
-
-New `GuardrailReferenceDeclarationSpecification` (`GUARDRAIL_REFERENCE = "..."`) and `HitlReferenceDeclarationSpecification` (`HITL_REFERENCE = "..."`) — two independent detectors, two independent evidence trails (never merged into one fact). A bare comment/docstring mentioning "guardrail" never matches (tested). HITL evidence is structurally design-time-only: every detector here only observes already-checked-in source text, so its `SourceAssertion.trustState` is fixed to `INFERRED` by the pre-existing, unmodified `evidence-assembly.ts` — proven by a dedicated test asserting `trustState === 'INFERRED'` for the HITL signal. **Design-time HITL declaration never becomes OBSERVED.**
-
-## 19. Per-fact evidence model
-
-Every one of the 11 profile dimensions above (Model/Tool reused; Prompt/MCP/API/KB/Skill new canonical objects; Framework/Build/Memory/Orchestration/Guardrail/HITL new AgentVersion technical signals) is captured by its own dedicated `DetectionSpecification` with its own `code`, own `Evidence` row, own `SourceAssertion` row, and own confidence — never a single opaque `technicalProfile = {...}` blob. `AgentVersionCorrelationResult.finding.assertionIds`/`evidenceIds` is the deduplicated union of every correlated fact's own ids (extended in this milestone from Model/Tool-only to all 11), so each fact's provenance remains independently recoverable via `getDiscoveryFinding`/evidence lookup — proven by the dashboard test asserting `finding.assertionIds.length >= 6` when all 11 signals are present in one fixture.
-
-## 20. Per-fact trust model
-
-Unchanged mechanism, extended scope: `evidence-assembly.ts`'s `assembleDiscoveryCandidate` (zero diff this milestone) fixes every Discovery-stage `SourceAssertion.trustState` to `INFERRED` regardless of which of the 11 detectors produced it. No fact in this milestone is ever `DECLARED`, `IMPORTED`, `OBSERVED`, or `VALIDATED`. Mixed trust across facts was never introduced as a risk here because every current detector shares the identical INFERRED/design-time trust tier — the vocabulary itself (`INFERRED`/`DECLARED`/`IMPORTED`/`OBSERVED`/`VALIDATED`) was not modified or extended.
-
-## 21. UNKNOWN handling
-
-No detector in this milestone ever emits a negative/false fact. Absence of a `MEMORY_REFERENCE`/`GUARDRAIL_REFERENCE`/etc. line simply means no `DiscoveryCandidate` of that signal exists for that AgentVersion — the correct representation is "no evidence observed" (`UNKNOWN`), never a persisted `false`/`absent` value. This is a structural property of the additive, evidence-only detection model (there is no code path that writes a negative assertion).
-
-## 22. AgentVersion attribution rules
-
-Every one of the 11 new/extended facts is attributed to an AgentVersion under **UNAMBIGUOUS_SOURCE_SCOPE**: `correlateAgentVersions` requires exactly one normalizable AGENT candidate per source artifact (file) before any Model/Tool/Prompt/MCP/API/KB/Skill/technical-signal candidate in that same file is folded in — the identical file-scoping rule already governing Model/Tool. A file with two AGENT declarations remains ambiguous and yields **no** AGENT_VERSION even when Prompt/MCP/Skill evidence is present (regression-tested). No detector in this milestone parses a repository-global manifest (package.json, pyproject.toml, lockfiles) specifically to avoid the DIRECT/EXPLICIT_REFERENCE/UNAMBIGUOUS_SOURCE_SCOPE attribution problem in monorepos with multiple Agents (Section 9's explicit warning) — every new declaration pattern is a single-file, single-line, explicit literal, so attribution is never ambiguous by construction.
-
-## 23. AGENT_VERSION_TECHNICAL_REVISION_INPUTS
+Preserved exactly from the prior milestone's own separation (commit `ab12dfb`), extended with new inputs:
 
 ```
 TECHNICAL_REVISION_INPUTS = [
-  "agent-code:<parent AGENT's normalized agentCode>",
-  "model:<normalized MODEL modelReference>"              // sorted+deduplicated, 0..n
-  "tool:<normalized TOOL declarationKey>"                 // sorted+deduplicated, 0..n
-  "prompt:<normalized PROMPT declarationKey>"              // NEW, sorted+deduplicated, 0..n
-  "mcp:<normalized MCP_SERVER serverReference>"            // NEW, sorted+deduplicated, 0..n
-  "api:<normalized API apiReference>"                      // NEW, sorted+deduplicated, 0..n
-  "kb:<normalized KNOWLEDGE_BASE sourceReference>"          // NEW, sorted+deduplicated, 0..n
-  "skill:<normalized SKILL declarationReference>"          // NEW, sorted+deduplicated, 0..n
-  "framework:<FRAMEWORK_REFERENCE displayValue>"           // NEW, sorted+deduplicated, 0..n
-  "build:<BUILD_REFERENCE displayValue>"                   // NEW, sorted+deduplicated, 0..n
-  "memory:<MEMORY_REFERENCE displayValue>"                 // NEW, sorted+deduplicated, 0..n
-  "orchestration:<ORCHESTRATION_REFERENCE displayValue>"   // NEW, sorted+deduplicated, 0..n
-  "guardrail:<GUARDRAIL_REFERENCE displayValue>"           // NEW, sorted+deduplicated, 0..n
-  "hitl:<HITL_REFERENCE displayValue>"                     // NEW, sorted+deduplicated, 0..n
+  "agent-code:<agentCode>",
+  "model:<value>", "tool:<value>", "prompt:<value>", "mcp:<value>",
+  "api:<value>", "kb:<value>", "skill:<value>",       // sorted+deduplicated, 0..n each
+  "framework:<value>", "memory:<value>", "orchestration:<value>",  // NEW, sorted+deduplicated, 0..n each
 ]
 technicalRevisionFingerprint = sha256(canonicalize(TECHNICAL_REVISION_INPUTS))[0:32]
 
-AGENT_VERSION_FINGERPRINT_INPUTS = [sourceScope, technicalRevisionFingerprint]   // unchanged from the prior milestone
+SOURCE_SCOPE_INPUTS = [connectionId, externalType, externalId]   // parent AGENT's own SourceObjectIdentity only
+sourceScope = sha256(canonicalize(SOURCE_SCOPE_INPUTS))[0:32]
+
+candidateId suffix = sha256(canonicalize([sourceScope, technicalRevisionFingerprint]))[0:32]
 ```
 
-Minimum evidence rule extended: at least one of {Model, Tool, Prompt, MCP_SERVER, API, Knowledge Base, Skill, Framework, Build, Memory, Orchestration, Guardrail, HITL} must be present alongside a normalizable AGENT, or no AGENT_VERSION is produced (the AGENT's own logical identity is still never sufficient alone). `versionCode` remains always absent — still no fabricated version, unchanged from the prior milestone.
+**TECHNICAL_REVISION_FINGERPRINT_CHANGE** (a genuinely different AgentVersion): a correlated fact's own semantic *value* changes — a different Model/Tool/Prompt/API/Framework/Memory value, a Prompt's constant identifier changing (not its string content), an API's `id` field changing (not its `base_url`), a Skill added/removed. Regression-tested: changing a Framework import (`langgraph` → `crewai`), changing a correlated Skill set, changing an API's `id` field each produce a different `candidateId`.
 
-## 24. CHANGES_THAT_CREATE_NEW_AGENT_VERSION
+**SOURCE_SCOPED_DISCOVERY_CANDIDATE_CHANGE** (never itself a technical-revision change): an unrelated comment/blank-line insertion in the same file (shifts the parent AGENT's own `findingId`, never `technicalRevisionFingerprint`); a Prompt's own string *content* changing while its constant name stays the same (identity is the name, never the content — regression-tested); traversal/detection order; duplicate identical evidence; the wall-clock scan time. **Moving a source file to a different location or SourceConnection changes `sourceScope` (a different `candidateId`), but this is a provenance-scope change, never a claim that the technical-revision content itself changed** — the two are combined only in the final id, at the very last step, exactly as before. A cross-file technical signal (e.g. a Framework import in a different, unrelated file) never attributes into another file's AgentVersion at all — regression-tested by asserting the correlated AGENT_VERSION's own `assertionIds` never include an unrelated file's signal's assertion id.
 
-```
-CHANGES_THAT_CREATE_NEW_AGENT_VERSION = [
-  "the correlated MODEL's declared modelReference literal changes",         // pre-existing
-  "a correlated TOOL declaration is added or removed",                       // pre-existing
-  "a correlated TOOL's declarationKey identifier changes",                   // pre-existing
-  "the parent AGENT's own enclosing declaration name (agentCode) changes",   // pre-existing
-  "the parent AGENT's source artifact is renamed/moved, or scanned under a different SourceConnection (changes sourceScope)", // pre-existing
-  "a correlated PROMPT_REFERENCE/promptReference value changes",             // NEW — regression-tested
-  "a correlated MCP_SERVER_REFERENCE value changes",                        // NEW
-  "a correlated API_REFERENCE value changes",                                // NEW
-  "a correlated KNOWLEDGE_BASE_REFERENCE value changes",                     // NEW
-  "the correlated skills = [...] set changes",                              // NEW — regression-tested
-  "a correlated FRAMEWORK_REFERENCE value changes",                         // NEW — regression-tested
-  "a correlated BUILD_REFERENCE value changes",                              // NEW
-  "a correlated MEMORY_REFERENCE value changes",                            // NEW
-  "a correlated ORCHESTRATION_REFERENCE value changes",                     // NEW
-  "a correlated GUARDRAIL_REFERENCE value changes",                        // NEW
-  "a correlated HITL_REFERENCE value changes",                              // NEW
-]
-```
+## 10. Governance continuity
 
-## 25. CHANGES_THAT_DO_NOT_CREATE_NEW_AGENT_VERSION
+Unchanged authority ceiling: every new/corrected canonical object kind (Prompt/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) reuses the exact same `ensureReviewSubjectAndPropose` DETECTED→PROPOSED boundary every existing kind already uses. Technical-profile signals (Framework/Memory/Orchestration) are durably evidenced (`recordEvidence`/`recordSourceAssertion`) but structurally cannot reach `ensureReviewSubjectAndPropose` at all — that function requires a `DiscoveryFinding<DiscoveryCandidateKind>`, which a `TechnicalProfileSignal` simply does not have. This is now enforced by the type system, not by a runtime filter that could regress silently (the original Blocker #2 defect was exactly such a filter).
 
-```
-CHANGES_THAT_DO_NOT_CREATE_NEW_AGENT_VERSION = [
-  "an edit to an unrelated file elsewhere in the scan",                                          // pre-existing
-  "an unrelated candidate detected in a different source artifact during the same scan",         // pre-existing
-  "an unrelated comment/blank-line insertion in the SAME file that shifts the matched declaration's own line position without changing any correlated fact — regression-tested for both a pre-existing fact (Model) and a new one (Framework)",
-  "the declared order of Model/Tool/Prompt/MCP/API/KB/Skill identifiers or technical signals within the same file",
-  "a duplicate declaration of the exact same identifier/reference (deduplicated via Set before hashing)",
-  "a repeated identical scan of the same, unchanged repository",
-  "the wall-clock time of the scan",
-]
-```
+## 11. Relationship semantics
 
-## 26. Relationship semantics status
+Unchanged. Zero diff on `relationship-correlation.ts` in either the original or corrected pass (confirmed by `git diff --name-only`). `USES_MODEL`/`USES_TOOL` correlation remains AGENT-sourced. No new `GOVERNED_RELATIONSHIP_TYPE`. No relationship materialized for any new object kind.
 
-Zero diff on `packages/scanner/src/discovery/relationship-correlation.ts` (confirmed by `git diff --name-only`). `USES_MODEL`/`USES_TOOL` correlation remains AGENT-sourced exactly as before — unaffected by the new AGENT_VERSION-kind technical-signal candidates now present in the shared `candidates` array, because `relationship-correlation.ts` filters strictly by `candidateKind === MODEL`/`TOOL`/`AGENT` (verified by inspection: `grep -n "candidateKind ==="` shows only these three exact-equality filters). No new `GOVERNED_RELATIONSHIP_TYPE`, no relaxed endpoint constraint, no relationship materialization for Prompt/MCP/API/KB/Skill — those remain roadmap milestone 6 (AgentVersion Behavior Relationships — L9), untouched here.
-
-## 27. Governance continuity
-
-Every new canonical object kind (Prompt/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) flows through the exact same `ensureReviewSubjectAndPropose` DETECTED→PROPOSED boundary every existing kind already uses — no new authority ceiling, no new bypass path. AgentVersion technical signals (Framework/Build/Memory/Orchestration/Guardrail/HITL) are the one deliberate exception: their `Evidence`/`SourceAssertion` are made durable (via a new `processTechnicalSignalCandidate`, calling only `recordEvidence`/`recordSourceAssertion`), but they are filtered out of `processObjectCandidate`'s loop (`isTechnicalSignalCandidate`) and never receive their own `ReviewSubject` — only the real, correlation-produced `AGENT_VERSION` `ReviewSubject` cites their assertion/evidence ids in its own union. This avoids polluting the governance review queue with phantom "AGENT_VERSION" entries that are really just fragments of raw technical evidence, while still making that evidence durably auditable end-to-end.
-
-## 28. Persistence strategy
-
-**No new migration.** `PERSISTENCE_GAP` assessment: canonical `AgentVersionTechnicalProfile.support.{runtimeFrameworkReference, buildReference}` fields exist in `canonical-contracts` but have **zero materialization-writer infrastructure anywhere in the repository**, for any of the seven `*TechnicalProfile` kinds (Model/Tool/MCP/API/Prompt/KB/Skill/AgentVersion) — confirmed by an exhaustive grep before this milestone began (only contracts.ts, its own tests, and the prior milestone's evidence doc reference these types; zero production instantiation). `WHY_EXISTING_GENERIC_PERSISTENCE_IS_INSUFFICIENT`: it is not insufficient — the existing Evidence/SourceAssertion/DiscoveryFinding/ReviewSubject persistence (`gov_repo.discovery_findings`, `discovery_candidates`, `review_subjects`) already fully supports every fact this milestone produces at the Discovery/Candidate stage; the only thing genuinely missing is a *materialization-stage* writer that would populate `AgentVersionTechnicalProfile` after canonicalization — the same missing capability that already existed, unaddressed, before this milestone, for Model/Tool/MCP/API/Prompt/KB/Skill's own `*TechnicalProfile` records too. `ARCHITECTURAL_CONTRACT_ALREADY_SUPPORTS_IT`: yes, fully — the contract needs no change; only a future writer needs to be built, which is a **materialization-stage concern**, not a Discovery-stage one, and is explicitly out of this milestone's scope (this milestone's mandate is Discovery-stage evidence per fact, per Section 8 of the brief, not canonical-object materialization, which remains gated behind the existing human-governed Decision-to-Truth pipeline this milestone does not extend). Building that writer now would be a disproportionate, unscoped architectural addition; the correct, honest classification is `PARTIAL`/`EVIDENCE_ONLY` for the two dimensions with a dedicated (but unwritten) profile field, and `EVIDENCE_ONLY` for the three with no profile field at all — never fabricated as `IMPLEMENTED`.
-
-## 29. Migration status
-
-None. No `supabase/migrations/**` file was created, modified, or inspected in a way that would suggest one is needed beyond what's documented in §28.
-
-## 30. Supabase/production status
-
-No Supabase CLI, RPC, or database connection was invoked at any point. All governance-continuity testing used in-memory fake ports (`FakeIntakePersistence`, `FakeReviewPersistence`, `FakeMaterializationPersistence`), the same pattern the pre-existing test suite already established. `git status --short supabase/` is empty.
-
-## 31. Test results
+## 12. Test results (corrected)
 
 | Suite | Command | Result |
 |---|---|---|
-| Scanner discovery-engine (unit) | `npm run test:discovery-engine` (packages/scanner) | **147/147 passing** (was 120 pre-milestone; +27 new: 18 in `l4-round1-object-detection.test.ts`, 9 in `agent-version-technical-signals.test.ts`; 1 pre-existing test updated to use a still-genuinely-dormant kind, `DATA_ASSET`, instead of the now-supported `MCP_SERVER`) |
-| Scanner discovery-engine typecheck | `npm run typecheck:discovery-engine` | clean, no errors |
-| Scanner full package typecheck | `npm run typecheck` (packages/scanner) | clean, no errors |
-| Discovery Validation Lab | `npm run test:validation-lab` (packages/scanner) | **51/51 passing**, unchanged — zero diff under `packages/scanner/test/discovery-validation-lab/**` |
-| Dashboard targeted governance tests | `node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/discovery-intake-service.test.ts tests/reconciliation-readiness.test.ts` (apps/dashboard) | **28/28 passing** (was 25 pre-milestone; +3 new in the "Agent Technical Profile L4 Round 1" describe block) |
-| Dashboard workspace typecheck | `npx tsc --noEmit -p tsconfig.json` (apps/dashboard) | clean, no errors |
-| `git diff --check` | repo root | clean, no whitespace errors |
+| Scanner discovery-engine (unit) | `npm run test:discovery-engine` (packages/scanner) | **157/157 passing** |
+| Scanner discovery-engine typecheck | `npm run typecheck:discovery-engine` | clean |
+| Scanner full package typecheck | `npm run typecheck` (packages/scanner) | clean |
+| Discovery Validation Lab | `npm run test:validation-lab` (packages/scanner) | **51/51 passing**, unchanged — not re-run repeatedly per the correction's own validation-scope instruction, confirmed green once |
+| Dashboard targeted governance tests | `discovery-intake-service.test.ts` + `reconciliation-readiness.test.ts` (apps/dashboard) | **28/28 passing** |
+| Dashboard workspace typecheck | `npx tsc --noEmit -p tsconfig.json` (apps/dashboard) | clean |
+| `git diff --check` | repo root | clean |
 
-No Golden Repository / Validation Lab suite was modified; no Supabase runtime, production DB test, deployment, or load test was run, per the milestone's controlled-validation scope. `canonical-contracts` was not modified, so its own test/typecheck suites were not re-run (only type-only imports of already-exported, unmodified contracts were added).
+`canonical-contracts` was not modified in this correction (only type-only imports of already-exported, unmodified contracts changed), so its own suites were not re-run.
 
-## 32. Adversarial review result
+## 13. Adversarial review (corrected pass)
 
-One review pass performed over the full diff, per the milestone's checklist (A–Q):
+Re-run against the corrected diff:
 
-- **A (wrong AgentVersion attribution):** Every new fact is folded in only via the pre-existing same-file correlation rule (`correlateAgentVersions`'s `byFile` grouping, unmodified); no cross-file or cross-agent leakage possible. Verified by a dedicated regression test: two Agents declared in the same file remain ambiguous and produce zero AGENT_VERSION even with Prompt/MCP/Skill evidence present.
-- **B (repository-global metadata duplicated across Agents):** No new detector parses a repository-global manifest (package.json, pyproject.toml, lockfile) — every new pattern is a single-file, single-line, explicit declaration, so this class of defect cannot arise structurally.
-- **C (profile field vs canonical object confusion):** Memory/Orchestration/Guardrail/HITL were deliberately kept as Discovery-evidence-only, never promoted to a canonical object or forced into an ill-fitting profile field (`configurationReference` was considered and rejected — see §19/§23 — because overloading it would lose per-fact provenance).
-- **D (Memory vs Knowledge Base confusion):** Verified by a dedicated false-positive test: a generic vector-store import/`memory_store` variable never produces a KNOWLEDGE_BASE candidate.
-- **E (Tool vs Skill confusion):** Verified by a dedicated test: a generic function or a `tools = [...]` binding never produces a SKILL candidate; `skills = [...]` is a structurally distinct array key.
-- **F (API vs arbitrary URL false positives):** Verified — a bare URL literal in a comment or a generic `endpoint = "..."` assignment never matches `API_REFERENCE`.
-- **G (Prompt vs arbitrary string false positives):** Verified — a docstring and a `SYSTEM_PROMPT = "..."` assignment (deliberately using a non-matching key name) never produce a PROMPT candidate; only the exact `PROMPT_REFERENCE`/`promptReference` key does.
-- **H (MCP Server vs Tool confusion):** Verified — an `mcp`-related import plus a `tools = [...]` declaration in the same file never produces an MCP_SERVER candidate.
-- **I (HITL design vs runtime observation confusion):** Verified by a dedicated test asserting the HITL signal's own `SourceAssertion.trustState === 'INFERRED'`, never `OBSERVED`.
-- **J (missing evidence converted to FALSE):** No code path in any new detector ever emits a negative/false fact; absence is structurally `UNKNOWN` by omission.
-- **K (trust inflated to VALIDATED/OBSERVED):** `evidence-assembly.ts` (zero diff) unconditionally fixes every Discovery-stage assertion to `INFERRED`; no new detector bypasses this.
-- **L (technical revision contaminated by provenance/line/timestamp):** Verified by two regression tests (one for a pre-existing fact, Model; one for a new one, Framework): an unrelated comment/blank-line insertion in the same file does not change the AGENT_VERSION identity.
-- **M (relevant change not producing a new revision):** Verified by three regression tests: changing a Prompt reference, changing the correlated Skill set, and changing a Framework reference each produce a different `candidateId`/`findingId`.
-- **N (irrelevant change producing a new revision):** Covered by the same L-series tests above (the negative case is asserted in the same test).
-- **O (relationship milestone accidentally implemented early):** Verified — zero diff on `relationship-correlation.ts`; no new `GOVERNED_RELATIONSHIP_TYPE` added anywhere in `canonical-contracts` (untouched); no relationship materialized for any new object kind.
-- **P (direct canonical writes / governance bypass):** Verified — every new object kind reuses the exact same `ensureReviewSubjectAndPropose` function (not a copy); a static grep for `confirm|certify|authorize|reconcile|materialize` RPC names in the new/modified source turns up none.
-- **Q (tenant/source attribution leakage):** Verified — no new tenant-scoping logic was added; every new code path reuses the existing `ctx.organisationId`-scoped port calls unchanged.
+- **A (wrong AgentVersion attribution):** unchanged same-file correlation rule; new regression test proves an unrelated file's Framework signal is never cited by another file's AGENT_VERSION.
+- **B (repository-global metadata duplication):** no manifest parsing added; structurally impossible.
+- **C (profile field vs canonical object confusion):** now enforced by the type system (`TechnicalProfileSignal` has no `candidateKind`), not by a runtime filter — the exact class of defect Blocker #2 was.
+- **D (Memory vs Knowledge Base confusion):** Neo4j explicitly excluded from Memory with a documented reason; verified by a dedicated test that a Neo4j import produces zero signals.
+- **E (Tool vs Skill confusion):** Skill is now path-based (`.claude/skills/...`), structurally unrelated to Tool's `tools = [...]` array; verified.
+- **F (API vs arbitrary URL false positives):** verified — a bare URL/`endpoint = "..."` assignment never matches; an `_API` object literal with zero or multiple `id` fields fails closed (new test).
+- **G (Prompt vs arbitrary string false positives):** verified — a variable not ending in `_PROMPT`, and a bare reference to an existing `_PROMPT` constant, never produce a second/false candidate.
+- **H (MCP Server vs Tool confusion):** verified — path-scoped to recognized MCP config filenames only.
+- **I (HITL design vs runtime observation):** N/A this pass — HITL is NOT_IMPLEMENTED, so no evidence of any trust level is produced for it at all (the safest possible outcome for this invariant).
+- **J (missing evidence → FALSE):** unchanged, still structurally impossible.
+- **K (trust inflated to VALIDATED/OBSERVED):** verified — every new DECLARED assertion is exactly DECLARED, never higher; proven by explicit assertions in tests, not merely absence of a bug.
+- **L (technical revision contaminated by provenance):** re-verified with real-source fixtures (unrelated comment insertion with a real Framework import present still preserves `candidateId`).
+- **M/N (relevant/irrelevant change vs revision):** re-verified with real fixtures (Framework/API/Skill changes as the "relevant" cases; Prompt content-only change, comment insertion as the "irrelevant" cases).
+- **O (relationship milestone implemented early):** unchanged, verified.
+- **P (governance bypass):** strengthened — a technical-profile signal cannot even structurally reach the ReviewSubject path now, versus the original's runtime-filter-only protection.
+- **Q (tenant/source attribution leakage):** unchanged, verified.
 
-One defect was found and fixed during this pass: the pre-existing "unsupported/dormant candidateKind" regression test in `object-candidate-normalization.test.ts` used `MCP_SERVER` as its example of a kind with no registered strategy — since this milestone gives MCP_SERVER a real strategy, the test would have started asserting the wrong thing (silently validating that MCP_SERVER fails closed, which is no longer true and would mask a real regression if normalization ever broke). Fixed by switching the test's fabricated example to `DATA_ASSET`, which correctly remains dormant. No other defect was found; the diff was re-inspected once and no further blocker was identified.
+One additional defect found and fixed during this corrected pass: the adapted Framework/Memory import regexes (copied conceptually from the legacy files) initially failed to match real Python `from module import X` syntax at all — caught by this pass's own regression tests, not by manual inspection, and fixed by adding a matching Python-shaped regex per technology (see §5).
 
-## 33. Known limitations
+## 14. Known limitations (corrected)
 
-- **Canonical `AgentVersionTechnicalProfile` materialization is not implemented.** Framework/SDK and Technology/Build have dedicated contract fields (`runtimeFrameworkReference`, `buildReference`) but no writer anywhere populates them from this (or any prior) milestone's evidence — this is a pre-existing, repo-wide gap for all seven `*TechnicalProfile` kinds, not something this milestone introduces or is expected to close (see §28).
-- **Memory, Orchestration, and Guardrail/HITL have no canonical profile field at all**, by design (inventing one, or overloading the generic `configurationReference`, was considered and rejected — see §19/§23). Their evidence is real, durable, and folds into the AgentVersion technical revision, but is not yet a governed Passport field.
-- **Every new detector is an explicit single-line/single-declaration literal pattern**, deliberately conservative to avoid false positives (Section 11's prohibition on broad keyword matching). A framework/build/memory/orchestration/guardrail/HITL signal expressed through a different mechanism (e.g. a real `package.json` dependency, a YAML config block, a decorator) is not detected by this milestone — conservative under-detection, never a fabricated positive.
-- **AgentVersion correlation remains "same file" only**, exactly as the prior milestone established for Model/Tool — an Agent whose Prompt/MCP/API/KB/Skill/technical-signal bindings are declared in a separate config file will not yet correlate into that Agent's AGENT_VERSION. This is an intentional continuation of the existing correlation rule, not a new limitation.
-- **DATA_ASSET and DATA_ELEMENT remain entirely dormant** (no detector, no strategy) — unaffected by and out of scope for this milestone (roadmap milestone 8).
-- **The governance-connected Discovery Engine still has no live production application trigger.** `grep -rn "runGovernanceDiscoveryScan" apps/dashboard/app/` returns zero matches on this branch — unchanged from every prior milestone. No route, cron, worker, or script was added.
+- **Technology/Build, Guardrail, and HITL are NOT_IMPLEMENTED** — no defensible real-source pattern was found for any of them within this correction's inspection scope (`core/framework-detector.ts`, `core/memory-detector.ts`, `codeguard/agent-detector.ts`, and the Golden Repository fixtures those files predate). This is an honest, deliberate downgrade from the original pass's fabricated `IMPLEMENTED` claim for these three.
+- **Canonical `AgentVersionTechnicalProfile` (and every other `*TechnicalProfile` kind) materialization remains unimplemented** — see §8's full reasoning. The contract needs no change; a materialization-stage writer does not exist for any of the seven kinds and was not built in this correction.
+- **MCP_SERVER, KNOWLEDGE_BASE, and SKILL are necessarily path/config-scoped to their own file** (a real `mcp.json`, a real `knowledge-base.yaml`, a real `SKILL.md`), so unlike Prompt/API (declared inline in the same file as the Agent), they do not fold into any AgentVersion's technical revision unless a future correlation rule is added to bridge same-directory or manifest-referenced files — a conservative, honest consequence of using genuinely real, externally-recognized conventions instead of an inline synthetic declaration.
+- **Framework/Memory import detection is line-based regex, not a real AST/import-resolution parse** — a dynamically constructed import (`importlib.import_module(name)`) or a heavily aliased import is not detected. This mirrors the same limitation the legacy `core/framework-detector.ts`/`core/memory-detector.ts` already had.
+- **The governance-connected Discovery Engine still has no live production application trigger** — unchanged from every prior milestone.
 
-## 34. Live Discovery trigger status
+## 15. Live Discovery trigger status
 
-Unchanged: still absent. No route, cron, worker, scheduled scan, GitHub webhook, or deployment integration was added in this milestone.
+Unchanged: still absent. No route, cron, worker, scheduled scan, GitHub webhook, or deployment integration was added.

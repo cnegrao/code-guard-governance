@@ -39,10 +39,16 @@ import type { DiscoveryCandidate } from './evidence-assembly';
  * registered strategy or an intentional AGENT_VERSION-only fail-closed
  * dispatch (AGENT_VERSION candidates never normalize through this map — see
  * agent-version-correlation.ts, the sole producer of a normalized
- * AGENT_VERSION candidate). DATA_ASSET and DATA_ELEMENT remain dormant, with
- * no detector emitting either — they fail closed via the same
- * NOT_SAFELY_NORMALIZABLE outcome rather than being silently normalized the
- * moment a future detector starts producing them.
+ * AGENT_VERSION candidate). Framework/Memory/Orchestration technical-profile
+ * facts never reach this module at all: they are represented as a
+ * structurally separate, non-canonical `TechnicalProfileSignal`
+ * (technical-profile-signal.ts), never a `DiscoveryCandidate` of any kind —
+ * see agent-version-correlation.ts for how those signals are folded into
+ * the AGENT_VERSION technical revision without ever being normalized here.
+ * DATA_ASSET and DATA_ELEMENT remain dormant, with no detector emitting
+ * either — they fail closed via the same NOT_SAFELY_NORMALIZABLE outcome
+ * rather than being silently normalized the moment a future detector starts
+ * producing them.
  */
 
 export const OBJECT_NORMALIZATION_REASON_CODE = {
@@ -219,12 +225,13 @@ export class ToolCandidateNormalizationStrategy implements ObjectCandidateNormal
 }
 
 /**
- * PROMPT: PromptDeclarationSpecification's displayValue IS the declared
- * prompt reference literal captured from `PROMPT_REFERENCE = "..."` /
- * `promptReference: "..."` (see strategies/prompt-declaration.ts) — the
- * detector's entire purpose is to capture that literal, so it is safe to
- * promote it directly to proposedIdentity.declarationKey. Raw prompt content
- * is never captured by this detector and therefore never enters identity.
+ * PROMPT: PromptDeclarationSpecification's displayValue IS the captured
+ * `<NAME>_PROMPT` constant identifier (see strategies/prompt-declaration.ts,
+ * a real convention already used by the frozen Golden Repository fixtures,
+ * not invented by this PR) — safe to promote directly to
+ * proposedIdentity.declarationKey. Raw prompt content (the constant's own
+ * string value) is never captured by this detector and therefore never
+ * enters identity.
  */
 export class PromptCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
   readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.PROMPT;
@@ -255,12 +262,14 @@ export class PromptCandidateNormalizationStrategy implements ObjectCandidateNorm
 }
 
 /**
- * MCP_SERVER: McpServerDeclarationSpecification's displayValue IS the
- * declared server reference literal captured from
- * `MCP_SERVER_REFERENCE = "..."` / `mcpServerReference: "..."` (see
- * strategies/mcp-server-declaration.ts) — safe to promote directly to
- * proposedIdentity.serverReference for the same reason MODEL's own literal
- * is safe to promote.
+ * MCP_SERVER: McpServerDeclarationSpecification's displayValue IS the real
+ * `serverIdentity` field of a structured `mcp.json`-shaped config file, or a
+ * named key of a real `mcpServers`/`servers` dictionary (see
+ * strategies/mcp-server-declaration.ts — both shapes are real, pre-existing
+ * conventions, one from the frozen Golden Repository oracle, one from
+ * codeguard/agent-detector.ts's own legacy config parsing; neither is
+ * invented by this PR) — safe to promote directly to
+ * proposedIdentity.serverReference.
  */
 export class McpServerCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
   readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.MCP_SERVER;
@@ -291,12 +300,14 @@ export class McpServerCandidateNormalizationStrategy implements ObjectCandidateN
 }
 
 /**
- * API: ApiDeclarationSpecification's displayValue IS the declared API
- * reference literal captured from `API_REFERENCE = "..."` /
- * `apiReference: "..."` (see strategies/api-declaration.ts) — safe to
- * promote directly to proposedIdentity.apiReference. A bare URL is never
- * this detector's own evidence (see the detector's own doc comment), so no
- * arbitrary-URL false positive can reach this normalization strategy.
+ * API: ApiDeclarationSpecification's displayValue IS the explicit `id`
+ * field of a `<NAME>_API = { "id": "...", ... }` object literal — the same
+ * real convention the frozen Golden Repository fixture `06-care-coordination`
+ * already uses (see strategies/api-declaration.ts), not invented by this
+ * PR — safe to promote directly to proposedIdentity.apiReference. A bare
+ * URL is never this detector's own evidence (see the detector's own doc
+ * comment), so no arbitrary-URL false positive can reach this
+ * normalization strategy.
  */
 export class ApiCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
   readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.API;
@@ -328,10 +339,11 @@ export class ApiCandidateNormalizationStrategy implements ObjectCandidateNormali
 
 /**
  * KNOWLEDGE_BASE: KnowledgeBaseDeclarationSpecification's displayValue IS
- * the declared source reference literal captured from
- * `KNOWLEDGE_BASE_REFERENCE = "..."` / `knowledgeBaseReference: "..."` (see
- * strategies/knowledge-base-declaration.ts) — safe to promote directly to
- * proposedIdentity.sourceReference.
+ * the nested `identity` field of a top-level `knowledge_base:` YAML block —
+ * the same real convention the frozen Golden Repository fixture
+ * `06-care-coordination` already uses (see
+ * strategies/knowledge-base-declaration.ts), not invented by this PR — safe
+ * to promote directly to proposedIdentity.sourceReference.
  */
 export class KnowledgeBaseCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
   readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE;
@@ -362,11 +374,12 @@ export class KnowledgeBaseCandidateNormalizationStrategy implements ObjectCandid
 }
 
 /**
- * SKILL: SkillListDeclarationSpecification's displayValue is a single bare
- * identifier item explicitly bound inside a `skills = [...]` /
- * `skills: [...]` declaration (see strategies/skill-list-declaration.ts) —
- * mirrors ToolCandidateNormalizationStrategy exactly, promoting the
- * identifier to proposedIdentity.declarationReference (the field name
+ * SKILL: SkillListDeclarationSpecification's displayValue IS the directory
+ * name from a real `.claude/skills/<name>/SKILL.md` path — the same
+ * already-shipped convention codeguard/agent-detector.ts's own
+ * CONFIG_DETECTORS already recognizes as definitive (see
+ * strategies/skill-list-declaration.ts), not invented by this PR — safe to
+ * promote directly to proposedIdentity.declarationReference (the field name
  * SkillIdentity's own contract uses).
  */
 export class SkillCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {

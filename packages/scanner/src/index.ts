@@ -86,18 +86,21 @@ export { McpServerDeclarationSpecification } from './discovery/strategies/mcp-se
 export { ApiDeclarationSpecification } from './discovery/strategies/api-declaration';
 export { KnowledgeBaseDeclarationSpecification } from './discovery/strategies/knowledge-base-declaration';
 export { SkillListDeclarationSpecification } from './discovery/strategies/skill-list-declaration';
-export type { AgentVersionTechnicalSignalCode } from './discovery/strategies/agent-version-technical-signal-declaration';
 export {
-  AGENT_VERSION_TECHNICAL_SIGNAL_CODES,
-  BuildReferenceDeclarationSpecification,
-  FrameworkReferenceDeclarationSpecification,
-  GuardrailReferenceDeclarationSpecification,
-  HitlReferenceDeclarationSpecification,
-  MemoryReferenceDeclarationSpecification,
-  OrchestrationReferenceDeclarationSpecification,
-} from './discovery/strategies/agent-version-technical-signal-declaration';
+  FRAMEWORK_IMPORT_PATTERNS,
+  FrameworkImportSignalSpecification,
+  OrchestrationFrameworkSignalSpecification,
+} from './discovery/strategies/framework-import-signal';
+export { MEMORY_IMPORT_PATTERNS, MemoryImportSignalSpecification } from './discovery/strategies/memory-import-signal';
 export type { DiscoveryCandidate } from './discovery/evidence-assembly';
 export { assembleDiscoveryCandidate } from './discovery/evidence-assembly';
+export type {
+  TechnicalProfileSignal,
+  TechnicalProfileSignalKind,
+  TechnicalProfileSignalMatch,
+  TechnicalProfileSignalSpecification,
+} from './discovery/technical-profile-signal';
+export { TECHNICAL_PROFILE_SIGNAL_KIND, assembleTechnicalProfileSignal } from './discovery/technical-profile-signal';
 export type {
   ObjectCandidateNormalizationResult,
   ObjectCandidateNormalizationStrategy,

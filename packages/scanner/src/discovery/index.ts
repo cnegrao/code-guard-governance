@@ -19,19 +19,23 @@ export { McpServerDeclarationSpecification } from './strategies/mcp-server-decla
 export { ApiDeclarationSpecification } from './strategies/api-declaration';
 export { KnowledgeBaseDeclarationSpecification } from './strategies/knowledge-base-declaration';
 export { SkillListDeclarationSpecification } from './strategies/skill-list-declaration';
-export type { AgentVersionTechnicalSignalCode } from './strategies/agent-version-technical-signal-declaration';
 export {
-  AGENT_VERSION_TECHNICAL_SIGNAL_CODES,
-  BuildReferenceDeclarationSpecification,
-  FrameworkReferenceDeclarationSpecification,
-  GuardrailReferenceDeclarationSpecification,
-  HitlReferenceDeclarationSpecification,
-  MemoryReferenceDeclarationSpecification,
-  OrchestrationReferenceDeclarationSpecification,
-} from './strategies/agent-version-technical-signal-declaration';
+  FRAMEWORK_IMPORT_PATTERNS,
+  FrameworkImportSignalSpecification,
+  OrchestrationFrameworkSignalSpecification,
+} from './strategies/framework-import-signal';
+export { MEMORY_IMPORT_PATTERNS, MemoryImportSignalSpecification } from './strategies/memory-import-signal';
 
 export type { DiscoveryCandidate } from './evidence-assembly';
 export { assembleDiscoveryCandidate } from './evidence-assembly';
+
+export type {
+  TechnicalProfileSignal,
+  TechnicalProfileSignalKind,
+  TechnicalProfileSignalMatch,
+  TechnicalProfileSignalSpecification,
+} from './technical-profile-signal';
+export { TECHNICAL_PROFILE_SIGNAL_KIND, assembleTechnicalProfileSignal } from './technical-profile-signal';
 
 export type {
   ObjectCandidateNormalizationResult,
