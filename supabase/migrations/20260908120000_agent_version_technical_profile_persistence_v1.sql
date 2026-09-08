@@ -100,8 +100,6 @@ create table gov_repo.agent_version_technical_profile_proposals (
   contract_version                    text        not null,
   created_at                          timestamptz not null default now(),
   constraint agent_version_technical_profile_proposals_pkey primary key (organisation_id, proposal_id),
-  constraint agent_version_technical_profile_proposals_organisation_id_unique
-    unique (organisation_id, proposal_id),
   constraint agent_version_technical_profile_proposals_candidate_fkey
     foreign key (organisation_id, agent_version_candidate_id)
     references gov_repo.discovery_candidates (organisation_id, candidate_id)
@@ -118,28 +116,35 @@ create index idx_agent_version_technical_profile_proposals_org
 create index idx_agent_version_technical_profile_proposals_candidate
   on gov_repo.agent_version_technical_profile_proposals (organisation_id, agent_version_candidate_id);
 
+-- Constraint/index names on these two tables use the "avtp_proposal_field_*"
+-- abbreviation (AgentVersionTechnicalProfile) instead of the full table name
+-- as their prefix: the full table name is already 57/55 bytes, leaving too
+-- little room under PostgreSQL's 63-byte NAMEDATALEN limit for a
+-- self-documenting suffix (_field_check/_proposal_fkey/_assertion_fkey/
+-- _evidence_fkey). The table names themselves are unaffected and remain
+-- fully spelled out.
 create table gov_repo.agent_version_technical_profile_proposal_field_assertions (
   organisation_id uuid not null,
   proposal_id     text not null,
   field_name      text not null,
   assertion_id    text not null,
-  constraint agent_version_technical_profile_proposal_field_assertions_pkey
+  constraint avtp_proposal_field_assertions_pkey
     primary key (organisation_id, proposal_id, field_name, assertion_id),
-  constraint agent_version_technical_profile_proposal_field_assertions_field_check
+  constraint avtp_proposal_field_assertions_field_check
     check (field_name in (
       'behaviorFingerprint', 'buildReference', 'runtimeFrameworkReference',
       'entrypointReference', 'configurationReference'
     )),
-  constraint agent_version_technical_profile_proposal_field_assertions_proposal_fkey
+  constraint avtp_proposal_field_assertions_proposal_fkey
     foreign key (organisation_id, proposal_id)
     references gov_repo.agent_version_technical_profile_proposals (organisation_id, proposal_id),
-  constraint agent_version_technical_profile_proposal_field_assertions_assertion_fkey
+  constraint avtp_proposal_field_assertions_assertion_fkey
     foreign key (organisation_id, assertion_id)
     references gov_repo.source_assertions (organisation_id, assertion_id)
 );
 comment on table gov_repo.agent_version_technical_profile_proposal_field_assertions is
   'Per-field SourceAssertionId membership for one proposal, constrained to the exact five frozen AgentVersionTechnicalProfileSupport field names. Provenance only — never a semantic value, never a generic EAV store.';
-create index idx_agent_version_technical_profile_proposal_field_assertions_org
+create index idx_avtp_proposal_field_assertions_org
   on gov_repo.agent_version_technical_profile_proposal_field_assertions (organisation_id);
 
 create table gov_repo.agent_version_technical_profile_proposal_field_evidence (
@@ -147,23 +152,23 @@ create table gov_repo.agent_version_technical_profile_proposal_field_evidence (
   proposal_id     text not null,
   field_name      text not null,
   evidence_id     text not null,
-  constraint agent_version_technical_profile_proposal_field_evidence_pkey
+  constraint avtp_proposal_field_evidence_pkey
     primary key (organisation_id, proposal_id, field_name, evidence_id),
-  constraint agent_version_technical_profile_proposal_field_evidence_field_check
+  constraint avtp_proposal_field_evidence_field_check
     check (field_name in (
       'behaviorFingerprint', 'buildReference', 'runtimeFrameworkReference',
       'entrypointReference', 'configurationReference'
     )),
-  constraint agent_version_technical_profile_proposal_field_evidence_proposal_fkey
+  constraint avtp_proposal_field_evidence_proposal_fkey
     foreign key (organisation_id, proposal_id)
     references gov_repo.agent_version_technical_profile_proposals (organisation_id, proposal_id),
-  constraint agent_version_technical_profile_proposal_field_evidence_evidence_fkey
+  constraint avtp_proposal_field_evidence_evidence_fkey
     foreign key (organisation_id, evidence_id)
     references gov_repo.discovery_evidence (organisation_id, evidence_id)
 );
 comment on table gov_repo.agent_version_technical_profile_proposal_field_evidence is
   'Per-field EvidenceId membership for one proposal, constrained to the exact five frozen AgentVersionTechnicalProfileSupport field names.';
-create index idx_agent_version_technical_profile_proposal_field_evidence_org
+create index idx_avtp_proposal_field_evidence_org
   on gov_repo.agent_version_technical_profile_proposal_field_evidence (organisation_id);
 
 -- -----------------------------------------------------------------------------
@@ -359,13 +364,18 @@ revoke all on table
   gov_repo.agent_version_technical_profile_materializations
 from public, anon, authenticated;
 
-create policy "Service role has full access to agent_version_technical_profile_proposals" on gov_repo.agent_version_technical_profile_proposals for all to service_role using (true) with check (true);
-create policy "Service role access to agent_version_technical_profile_proposal_field_assertions" on gov_repo.agent_version_technical_profile_proposal_field_assertions for all to service_role using (true) with check (true);
-create policy "Service role access to agent_version_technical_profile_proposal_field_evidence" on gov_repo.agent_version_technical_profile_proposal_field_evidence for all to service_role using (true) with check (true);
-create policy "Service role has full access to agent_version_technical_profiles" on gov_repo.agent_version_technical_profiles for all to service_role using (true) with check (true);
-create policy "Service role access to agent_version_technical_profile_field_assertions" on gov_repo.agent_version_technical_profile_field_assertions for all to service_role using (true) with check (true);
-create policy "Service role access to agent_version_technical_profile_field_evidence" on gov_repo.agent_version_technical_profile_field_evidence for all to service_role using (true) with check (true);
-create policy "Service role has full access to agent_version_technical_profile_materializations" on gov_repo.agent_version_technical_profile_materializations for all to service_role using (true) with check (true);
+-- Policy names use the "avtp_*" abbreviation (AgentVersionTechnicalProfile):
+-- "Service role has full access to " + the full table name exceeds
+-- PostgreSQL's 63-byte NAMEDATALEN limit for every one of these seven
+-- tables (silently truncated otherwise) — the table names themselves are
+-- unaffected and remain fully spelled out in the `on gov_repo.<table>` clause.
+create policy "Service role access to avtp_proposals" on gov_repo.agent_version_technical_profile_proposals for all to service_role using (true) with check (true);
+create policy "Service role access to avtp_proposal_field_assertions" on gov_repo.agent_version_technical_profile_proposal_field_assertions for all to service_role using (true) with check (true);
+create policy "Service role access to avtp_proposal_field_evidence" on gov_repo.agent_version_technical_profile_proposal_field_evidence for all to service_role using (true) with check (true);
+create policy "Service role access to avtp_profiles" on gov_repo.agent_version_technical_profiles for all to service_role using (true) with check (true);
+create policy "Service role access to avtp_field_assertions" on gov_repo.agent_version_technical_profile_field_assertions for all to service_role using (true) with check (true);
+create policy "Service role access to avtp_field_evidence" on gov_repo.agent_version_technical_profile_field_evidence for all to service_role using (true) with check (true);
+create policy "Service role access to avtp_materializations" on gov_repo.agent_version_technical_profile_materializations for all to service_role using (true) with check (true);
 
 -- -----------------------------------------------------------------------------
 -- G. RECORD PROPOSAL — idempotent durable persistence of one typed
@@ -546,9 +556,48 @@ comment on function gov_repo.record_agent_version_technical_profile_proposal is
 --    same governed AgentVersion this call targets, never a different one.
 --    Idempotent: a replay of the identical (canonical_object_id,
 --    proposal_id) pair is detected and returned BEFORE any write — no
---    revision bump, no duplicate audit row, no duplicate outbox event. Only
---    a genuinely new pair (first materialization, or a real enrichment from
---    a different proposal_id) ever reaches the upsert/audit/outbox writes.
+--    revision bump, no duplicate audit row, no duplicate outbox event.
+--
+--    CANONICAL AGENT_VERSION = ONE technical/behavioral revision (external
+--    review correction): an incoming proposal whose behaviorFingerprint
+--    differs from the already-governed canonical profile's own fingerprint
+--    fails closed with AGENT_VERSION_TECHNICAL_REVISION_MISMATCH — a
+--    different technical revision requires a different canonical
+--    AGENT_VERSION, never an UPDATE of this profile. behaviorFingerprint is
+--    therefore semantically IMMUTABLE for an existing canonical profile;
+--    the fingerprint columns are never written by the UPDATE branch below
+--    (only by the initial INSERT), enforcing that immutability structurally,
+--    not merely by convention.
+--
+--    For the SAME behaviorFingerprint, enrichment of the four optional
+--    fields (buildReference/runtimeFrameworkReference/entrypointReference/
+--    configurationReference) is monotonic: UNKNOWN -> known is enrichment;
+--    known -> the SAME known value is a compatible no-op; a known value
+--    conflicting with a different known value fails closed with
+--    AGENT_VERSION_PROFILE_SEMANTIC_CONFLICT (never last-write-wins); and an
+--    already-known value is never erased merely because a newer proposal
+--    does not carry that fact (known -> UNKNOWN is not applied).
+--
+--    Field-level assertion/evidence support is a monotonic UNION across
+--    every compatible proposal ever materialized against this canonical
+--    profile (INSERT ... ON CONFLICT DO NOTHING on the existing per-field
+--    junction-table primary key), never a delete-then-replace — enrichment
+--    must never destroy previously governed provenance.
+--
+--    revision increments only for an actual governed change: the first-ever
+--    profile for this AgentVersion, a newly-filled previously-UNKNOWN
+--    optional field, or newly added assertion/evidence support rows. A
+--    compatible proposal that adds no new field value and no new support is
+--    accepted (proposal_id-distinct, audited) but leaves revision untouched.
+--
+--    source_proposal_id records the ORIGIN proposal only (the one that
+--    first materialized this canonical profile) — it is deliberately never
+--    overwritten by a later compatible enrichment, so it never falsely
+--    implies that all of this profile's provenance came from only the most
+--    recent proposal. Full provenance for a field is the union recorded in
+--    gov_repo.agent_version_technical_profile_field_assertions/_evidence;
+--    the sequence of every proposal ever applied is the audit trail in
+--    gov_repo.agent_version_technical_profile_materializations.
 -- -----------------------------------------------------------------------------
 
 create or replace function gov_repo.materialize_agent_version_technical_profile(
@@ -568,13 +617,21 @@ security invoker
 set search_path = 'gov_repo', 'pg_catalog'
 as $$
 declare
-  v_object    gov_repo.canonical_objects%rowtype;
-  v_proposal  gov_repo.agent_version_technical_profile_proposals%rowtype;
-  v_candidate gov_repo.discovery_candidates%rowtype;
-  v_mapped    boolean;
-  v_existing  gov_repo.agent_version_technical_profile_materializations%rowtype;
+  v_object          gov_repo.canonical_objects%rowtype;
+  v_proposal        gov_repo.agent_version_technical_profile_proposals%rowtype;
+  v_candidate       gov_repo.discovery_candidates%rowtype;
+  v_mapped          boolean;
+  v_existing        gov_repo.agent_version_technical_profile_materializations%rowtype;
+  v_existing_profile gov_repo.agent_version_technical_profiles%rowtype;
   v_materialization_id text;
-  v_payload   jsonb;
+  v_payload         jsonb;
+  v_final_build_reference             text;
+  v_final_runtime_framework_reference text;
+  v_final_entrypoint_reference        text;
+  v_final_configuration_reference     text;
+  v_changed         boolean;
+  v_assertions_inserted integer;
+  v_evidence_inserted   integer;
 begin
   -- (1) organisation scope + (2)(3) canonical target exists and is AGENT_VERSION.
   select * into v_object
@@ -647,11 +704,127 @@ begin
     return;
   end if;
 
-  -- Genuinely new for this (canonical_object_id, proposal_id) pair: either
-  -- the first-ever profile for this AgentVersion, or a real enrichment
-  -- (a DIFFERENT proposal_id being materialized against an
-  -- already-profiled AgentVersion) — revision incrementing here is
-  -- therefore always a real semantic event, never a replay artifact.
+  -- Load the current canonical profile, if any, BEFORE any write. Its
+  -- absence means this is the first-ever profile for this AgentVersion
+  -- (always a real governed change); its presence means this materialize
+  -- call must be checked for compatibility with it before anything is
+  -- written.
+  select * into v_existing_profile
+  from gov_repo.agent_version_technical_profiles as p
+  where p.organisation_id = p_organisation_id and p.canonical_object_id = p_canonical_object_id;
+
+  if found then
+    -- TECHNICAL REVISION IMMUTABILITY: a different behaviorFingerprint for
+    -- an already-governed canonical AgentVersion is never a profile update
+    -- — it is a different technical/behavioral revision, which must be a
+    -- different canonical AgentVersion (a Discovery/reconciliation-stage
+    -- concern this function has no authority over). Fail closed rather
+    -- than silently overwrite the fingerprint, bump revision, or replace
+    -- support for what would actually be a different AgentVersion's data.
+    if v_existing_profile.behavior_fingerprint_algorithm is distinct from v_proposal.behavior_fingerprint_algorithm
+       or v_existing_profile.behavior_fingerprint_schema_version is distinct from v_proposal.behavior_fingerprint_schema_version
+       or v_existing_profile.behavior_fingerprint_value is distinct from v_proposal.behavior_fingerprint_value
+    then
+      raise exception using
+        errcode = '23514',
+        message = 'AGENT_VERSION_TECHNICAL_REVISION_MISMATCH',
+        detail = format('canonical_object_id %s already has a governed AgentVersionTechnicalProfile with a different behaviorFingerprint; a different technical revision requires a different canonical AGENT_VERSION, never an update of this profile', p_canonical_object_id);
+    end if;
+
+    -- OPTIONAL FIELD COMPATIBILITY: monotonic enrichment only. A known
+    -- value conflicting with a different known value fails closed instead
+    -- of silently mutating already-governed technical semantics
+    -- (last-write-wins is explicitly forbidden). Field identification only
+    -- — never the conflicting values themselves — is included in the error
+    -- detail.
+    if v_existing_profile.build_reference is not null
+       and v_proposal.build_reference is not null
+       and v_existing_profile.build_reference is distinct from v_proposal.build_reference
+    then
+      raise exception using
+        errcode = '23514', message = 'AGENT_VERSION_PROFILE_SEMANTIC_CONFLICT',
+        detail = format('canonical_object_id %s: incoming buildReference conflicts with an already-governed, different buildReference', p_canonical_object_id);
+    end if;
+    if v_existing_profile.runtime_framework_reference is not null
+       and v_proposal.runtime_framework_reference is not null
+       and v_existing_profile.runtime_framework_reference is distinct from v_proposal.runtime_framework_reference
+    then
+      raise exception using
+        errcode = '23514', message = 'AGENT_VERSION_PROFILE_SEMANTIC_CONFLICT',
+        detail = format('canonical_object_id %s: incoming runtimeFrameworkReference conflicts with an already-governed, different runtimeFrameworkReference', p_canonical_object_id);
+    end if;
+    if v_existing_profile.entrypoint_reference is not null
+       and v_proposal.entrypoint_reference is not null
+       and v_existing_profile.entrypoint_reference is distinct from v_proposal.entrypoint_reference
+    then
+      raise exception using
+        errcode = '23514', message = 'AGENT_VERSION_PROFILE_SEMANTIC_CONFLICT',
+        detail = format('canonical_object_id %s: incoming entrypointReference conflicts with an already-governed, different entrypointReference', p_canonical_object_id);
+    end if;
+    if v_existing_profile.configuration_reference is not null
+       and v_proposal.configuration_reference is not null
+       and v_existing_profile.configuration_reference is distinct from v_proposal.configuration_reference
+    then
+      raise exception using
+        errcode = '23514', message = 'AGENT_VERSION_PROFILE_SEMANTIC_CONFLICT',
+        detail = format('canonical_object_id %s: incoming configurationReference conflicts with an already-governed, different configurationReference', p_canonical_object_id);
+    end if;
+
+    -- Compatible: existing non-null value wins over incoming NULL (already-
+    -- governed knowledge is never erased by a less-informative proposal);
+    -- an existing NULL is enriched by an incoming non-null value.
+    v_final_build_reference             := coalesce(v_existing_profile.build_reference, v_proposal.build_reference);
+    v_final_runtime_framework_reference := coalesce(v_existing_profile.runtime_framework_reference, v_proposal.runtime_framework_reference);
+    v_final_entrypoint_reference        := coalesce(v_existing_profile.entrypoint_reference, v_proposal.entrypoint_reference);
+    v_final_configuration_reference     := coalesce(v_existing_profile.configuration_reference, v_proposal.configuration_reference);
+
+    v_changed :=
+      v_final_build_reference is distinct from v_existing_profile.build_reference
+      or v_final_runtime_framework_reference is distinct from v_existing_profile.runtime_framework_reference
+      or v_final_entrypoint_reference is distinct from v_existing_profile.entrypoint_reference
+      or v_final_configuration_reference is distinct from v_existing_profile.configuration_reference;
+  else
+    -- First-ever canonical profile for this AgentVersion: always a real
+    -- governed change, and there is no existing state to be compatible with.
+    v_final_build_reference             := v_proposal.build_reference;
+    v_final_runtime_framework_reference := v_proposal.runtime_framework_reference;
+    v_final_entrypoint_reference        := v_proposal.entrypoint_reference;
+    v_final_configuration_reference     := v_proposal.configuration_reference;
+    v_changed := true;
+  end if;
+
+  -- Field-level support: UNION, never delete-then-replace. Existing
+  -- provenance rows are preserved; only rows that are not already present
+  -- (per the junction tables' own primary keys) are newly inserted. A
+  -- proposal materialized purely to add support to an already-governed
+  -- field never destroys prior assertion/evidence membership.
+  insert into gov_repo.agent_version_technical_profile_field_assertions (organisation_id, canonical_object_id, field_name, assertion_id)
+  select p_organisation_id, p_canonical_object_id, field_name, assertion_id
+  from gov_repo.agent_version_technical_profile_proposal_field_assertions
+  where organisation_id = p_organisation_id and proposal_id = p_proposal_id
+  on conflict do nothing;
+  get diagnostics v_assertions_inserted = row_count;
+
+  insert into gov_repo.agent_version_technical_profile_field_evidence (organisation_id, canonical_object_id, field_name, evidence_id)
+  select p_organisation_id, p_canonical_object_id, field_name, evidence_id
+  from gov_repo.agent_version_technical_profile_proposal_field_evidence
+  where organisation_id = p_organisation_id and proposal_id = p_proposal_id
+  on conflict do nothing;
+  get diagnostics v_evidence_inserted = row_count;
+
+  if v_assertions_inserted > 0 or v_evidence_inserted > 0 then
+    v_changed := true;
+  end if;
+
+  -- Canonical profile upsert. Deliberately never writes
+  -- behavior_fingerprint_algorithm/_schema_version/_value or
+  -- source_proposal_id in the UPDATE branch: the fingerprint is immutable
+  -- once governed (enforced above, and structurally reinforced here by
+  -- omission), and source_proposal_id preserves the ORIGIN proposal rather
+  -- than being overwritten by every later compatible enrichment. revision/
+  -- updated_at only advance when v_changed is true, so a compatible-but-
+  -- uninformative proposal is accepted (and audited below) without
+  -- fabricating an enrichment that did not happen.
   insert into gov_repo.agent_version_technical_profiles (
     organisation_id, canonical_object_id, source_proposal_id,
     behavior_fingerprint_algorithm, behavior_fingerprint_schema_version, behavior_fingerprint_value,
@@ -660,40 +833,16 @@ begin
   ) values (
     p_organisation_id, p_canonical_object_id, p_proposal_id,
     v_proposal.behavior_fingerprint_algorithm, v_proposal.behavior_fingerprint_schema_version, v_proposal.behavior_fingerprint_value,
-    v_proposal.build_reference, v_proposal.runtime_framework_reference, v_proposal.entrypoint_reference, v_proposal.configuration_reference,
+    v_final_build_reference, v_final_runtime_framework_reference, v_final_entrypoint_reference, v_final_configuration_reference,
     p_occurred_at
   )
   on conflict (organisation_id, canonical_object_id) do update set
-    source_proposal_id = excluded.source_proposal_id,
-    behavior_fingerprint_algorithm = excluded.behavior_fingerprint_algorithm,
-    behavior_fingerprint_schema_version = excluded.behavior_fingerprint_schema_version,
-    behavior_fingerprint_value = excluded.behavior_fingerprint_value,
     build_reference = excluded.build_reference,
     runtime_framework_reference = excluded.runtime_framework_reference,
     entrypoint_reference = excluded.entrypoint_reference,
     configuration_reference = excluded.configuration_reference,
-    revision = gov_repo.agent_version_technical_profiles.revision + 1,
-    updated_at = excluded.updated_at;
-
-  -- Field-level support: replace this canonical profile's own support rows
-  -- with the proposal's (delete-then-copy keeps this correct under genuine
-  -- enrichment without duplicating membership rows — this code path is
-  -- reached only for a genuinely new materialization, never a pure replay,
-  -- per the early return above).
-  delete from gov_repo.agent_version_technical_profile_field_assertions
-    where organisation_id = p_organisation_id and canonical_object_id = p_canonical_object_id;
-  delete from gov_repo.agent_version_technical_profile_field_evidence
-    where organisation_id = p_organisation_id and canonical_object_id = p_canonical_object_id;
-
-  insert into gov_repo.agent_version_technical_profile_field_assertions (organisation_id, canonical_object_id, field_name, assertion_id)
-  select p_organisation_id, p_canonical_object_id, field_name, assertion_id
-  from gov_repo.agent_version_technical_profile_proposal_field_assertions
-  where organisation_id = p_organisation_id and proposal_id = p_proposal_id;
-
-  insert into gov_repo.agent_version_technical_profile_field_evidence (organisation_id, canonical_object_id, field_name, evidence_id)
-  select p_organisation_id, p_canonical_object_id, field_name, evidence_id
-  from gov_repo.agent_version_technical_profile_proposal_field_evidence
-  where organisation_id = p_organisation_id and proposal_id = p_proposal_id;
+    revision = case when v_changed then gov_repo.agent_version_technical_profiles.revision + 1 else gov_repo.agent_version_technical_profiles.revision end,
+    updated_at = case when v_changed then excluded.updated_at else gov_repo.agent_version_technical_profiles.updated_at end;
 
   v_materialization_id := gen_random_uuid()::text;
   insert into gov_repo.agent_version_technical_profile_materializations (
@@ -720,6 +869,19 @@ end;
 $$;
 
 comment on function gov_repo.materialize_agent_version_technical_profile is
-  'The only path from a durable AgentVersionTechnicalProfile proposal to a governed canonical profile row. Verifies canonical target exists and is kind AGENT_VERSION, the proposal exists, and the proposal''s own source candidate is actively mapped to the exact canonical target (never a different AgentVersion''s proposal applied to this one) before any write. Idempotent on (organisation_id, canonical_object_id, proposal_id) via gov_repo.agent_version_technical_profile_materializations, checked and returned BEFORE any write — a pure replay never bumps revision, never duplicates the audit row, never duplicates the outbox event. UPDATEs the canonical profile row (never appends a second one per AgentVersion) only for a genuinely new pair — profile enrichment, never a new canonical object. SECURITY INVOKER, service_role only. Scanner Discovery has zero access to this function; only a governed, human-triggered materialization path may call it.';
+  'The only path from a durable AgentVersionTechnicalProfile proposal to a governed canonical profile row. Verifies canonical target exists and is kind AGENT_VERSION, the proposal exists, and the proposal''s own source candidate is actively mapped to the exact canonical target (never a different AgentVersion''s proposal applied to this one) before any write. Idempotent on (organisation_id, canonical_object_id, proposal_id) via gov_repo.agent_version_technical_profile_materializations, checked and returned BEFORE any write. CANONICAL AGENT_VERSION = ONE technical revision: a behaviorFingerprint mismatch against an already-governed profile fails closed with AGENT_VERSION_TECHNICAL_REVISION_MISMATCH rather than overwriting it. Optional fields (buildReference/runtimeFrameworkReference/entrypointReference/configurationReference) enrich monotonically (UNKNOWN->known allowed, known->same allowed, known->different fails closed with AGENT_VERSION_PROFILE_SEMANTIC_CONFLICT, known->UNKNOWN never erases known state). Field-level assertion/evidence support is a monotonic UNION (INSERT ... ON CONFLICT DO NOTHING), never delete-then-replace. revision increments only for an actual governed change (first profile, a newly-filled optional field, or newly added support) — a compatible no-op enrichment is accepted and audited but leaves revision untouched. source_proposal_id records only the ORIGIN proposal, never overwritten by later compatible enrichments. SECURITY INVOKER, service_role only. Scanner Discovery has zero access to this function; only a governed, human-triggered materialization path may call it.';
+
+-- -----------------------------------------------------------------------------
+-- I. PERMISSIONS — EXECUTE revoked from PUBLIC/anon/authenticated, granted
+--    only to service_role. Postgres grants EXECUTE to PUBLIC by default on
+--    new functions, so this revoke is mandatory, not optional (identical
+--    convention to every prior migration in this history).
+-- -----------------------------------------------------------------------------
+
+revoke all on function gov_repo.record_agent_version_technical_profile_proposal from public, anon, authenticated;
+revoke all on function gov_repo.materialize_agent_version_technical_profile from public, anon, authenticated;
+
+grant execute on function gov_repo.record_agent_version_technical_profile_proposal to service_role;
+grant execute on function gov_repo.materialize_agent_version_technical_profile to service_role;
 
 commit;

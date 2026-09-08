@@ -59,7 +59,24 @@ Every persisted field preserves its own `assertionIds`/`evidenceIds`, matching `
 
 ### F. Profile lifecycle
 
-`AgentVersionTechnicalProfile` is a governed projection associated with a canonical `AGENT_VERSION`. Canonical identity remains separate and is never mutated by profile writes. Profile enrichment (stronger provenance, additional evidence, a corrected value) does not, by itself, create a new canonical AgentVersion. A genuine technical/behavioral semantic change continues to be detected upstream, exclusively, as a new `technicalRevisionFingerprint`/AgentVersion by `packages/scanner/src/discovery/agent-version-correlation.ts` — computed before any profile row is ever written.
+`AgentVersionTechnicalProfile` is a governed projection associated with a canonical `AGENT_VERSION`. Canonical identity remains separate and is never mutated by profile writes. Profile enrichment (stronger provenance, additional evidence, a previously-unknown value) does not, by itself, create a new canonical AgentVersion. A genuine technical/behavioral semantic change continues to be detected upstream, exclusively, as a new `technicalRevisionFingerprint`/AgentVersion by `packages/scanner/src/discovery/agent-version-correlation.ts` — computed before any profile row is ever written.
+
+**F.1 — CANONICAL AGENT_VERSION = ONE technical/behavioral revision.** Because the upstream invariant above means `behaviorFingerprint` is precisely what distinguishes one AgentVersion from another, `behaviorFingerprint` is **semantically immutable** for an already-governed canonical profile: a materialization whose proposal carries a *different* `behaviorFingerprint` than the profile already on file is not an enrichment of that profile at all — it describes a different technical revision, which belongs on a different canonical AgentVersion. `gov_repo.materialize_agent_version_technical_profile` therefore fails closed (`AGENT_VERSION_TECHNICAL_REVISION_MISMATCH`) rather than overwriting the fingerprint, bumping `revision`, or replacing field support in that case. This is enforced structurally, not only by a runtime check: the fingerprint columns are never present in the function's `ON CONFLICT ... DO UPDATE SET` clause, so no code path can write a fingerprint value once a profile row exists.
+
+**F.2 — PROFILE_ENRICHMENT is monotonic compatibility for the SAME `behaviorFingerprint`, defined per optional field** (`buildReference`/`runtimeFrameworkReference`/`entrypointReference`/`configurationReference`):
+
+| existing | incoming | result |
+|---|---|---|
+| UNKNOWN (`NULL`) | known value | enrichment — the known value is adopted |
+| known value | the SAME known value | compatible no-op |
+| known value | UNKNOWN (`NULL`) | preserved — the existing known value is never erased by a less-informative proposal |
+| known value | a DIFFERENT known value | rejected — `AGENT_VERSION_PROFILE_SEMANTIC_CONFLICT`, fails closed; last-write-wins is explicitly forbidden |
+
+**F.3 — PROVENANCE_RULE: field-level `assertionIds`/`evidenceIds` support is a monotonic UNION**, not a replace. Every compatible proposal ever materialized against a given canonical profile contributes its support to that field; enrichment never deletes or replaces previously governed assertion/evidence membership. Implemented via `INSERT ... ON CONFLICT DO NOTHING` against the field-support junction tables' own primary keys, never a delete-then-insert.
+
+**F.4 — REVISION_RULE: `revision` increments only for an actual governed change** — the first-ever profile for an AgentVersion, a previously-`UNKNOWN` optional field becoming known, or newly added assertion/evidence support. A compatible proposal that adds no new field value and no new support is still accepted and audited (it is a genuinely distinct `proposal_id`, recorded in `gov_repo.agent_version_technical_profile_materializations`), but it leaves `revision` untouched — `revision` counts real enrichment events, not proposal submissions.
+
+**F.5 — `source_proposal_id` semantics: ORIGIN only.** `gov_repo.agent_version_technical_profiles.source_proposal_id` records the proposal that first materialized the canonical profile row. It is deliberately never overwritten by a later compatible enrichment (a different `proposal_id` is never written into this column after the initial `INSERT`), so it never falsely implies that all of a profile's provenance came from only the most recently applied proposal. Full field-level provenance is the union recorded in `gov_repo.agent_version_technical_profile_field_assertions`/`_field_evidence` (F.3); the complete sequence of every proposal ever applied to a profile is the append-only audit trail in `gov_repo.agent_version_technical_profile_materializations`.
 
 ### G. Materialization authority
 
