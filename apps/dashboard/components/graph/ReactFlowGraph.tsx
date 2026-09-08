@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect, useMemo } from "react";
 import {
-  ReactFlow, Background, Controls, MiniMap, useNodesState, useEdgesState,
+  ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, useNodesState, useEdgesState,
   type Node, type Edge, MarkerType, Panel, useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -178,6 +178,14 @@ function buildEdges(list: UnifiedGraphEdge[]): Edge[] {
 }
 
 export default function ReactFlowGraph() {
+  return (
+    <ReactFlowProvider>
+      <GraphCanvas />
+    </ReactFlowProvider>
+  );
+}
+
+function GraphCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [allNodes, setAllNodes] = useState<UnifiedGraphNode[]>([]);
