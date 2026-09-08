@@ -24,8 +24,8 @@ import type { SourceArtifactContent } from './source-adapter';
  * AgentVersion technical-profile SIGNAL — deliberately NOT a
  * DiscoveryCandidate<CanonicalObjectKind> and never routed through Object
  * Candidate Normalization, ReviewSubject creation, or canonical
- * materialization. A Framework/Memory/Orchestration fact is evidence ABOUT
- * an AgentVersion's technical configuration; it is not itself an
+ * materialization. A Framework/Orchestration fact is evidence ABOUT an
+ * AgentVersion's technical configuration; it is not itself an
  * independently governable canonical object, and must never masquerade as
  * one by borrowing `candidateKind: AGENT_VERSION` (the defect this module
  * corrects — see the PR #24 correction's Blocker #2). It still carries the
@@ -39,17 +39,28 @@ import type { SourceArtifactContent } from './source-adapter';
  */
 export const TECHNICAL_PROFILE_SIGNAL_KIND = {
   FRAMEWORK: 'FRAMEWORK',
-  MEMORY: 'MEMORY',
   ORCHESTRATION: 'ORCHESTRATION',
 } as const;
 export type TechnicalProfileSignalKind =
   (typeof TECHNICAL_PROFILE_SIGNAL_KIND)[keyof typeof TECHNICAL_PROFILE_SIGNAL_KIND];
 
 /**
- * Technology/Build and Guardrail/HITL deliberately have no signal kind here:
- * no defensible real-source pattern was found for them within this
- * correction's inspection scope (see the evidence document's
- * REAL_SOURCE_EVIDENCE section) and none is fabricated to fill the slot.
+ * Technology/Build, Memory, and Guardrail/HITL deliberately have no signal
+ * kind here: no defensible real-source pattern was found for any of them
+ * within this correction's inspection scope (see the evidence document's
+ * REAL_SOURCE_EVIDENCE / MEMORY_TRUST_AND_FALSE_POSITIVE_DECISION
+ * sections) and none is fabricated to fill the slot. Memory specifically
+ * had a prior detector (adapted from core/memory-detector.ts's generic
+ * import list — ChromaDB/Pinecone/Redis/PostgreSQL/etc.) that was removed:
+ * an imported storage/vector-store technology alone never proves "this
+ * Agent uses this technology as its memory mechanism" — Redis may be
+ * cache/session/event infrastructure, PostgreSQL may be unrelated
+ * application persistence, and Chroma/Pinecone/FAISS may be Knowledge
+ * Base/RAG retrieval rather than memory. No defensible memory-specific
+ * evidence (an explicit memory constructor/configuration/framework-native
+ * memory binding) was found within this correction's inspection scope, so
+ * Memory fails closed to NOT_IMPLEMENTED rather than being inferred from a
+ * generic dependency import.
  */
 
 /** One match a TechnicalProfileSignalSpecification found inside one artifact. */

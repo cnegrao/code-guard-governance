@@ -31,6 +31,18 @@ import {
  * as its own canonical MCP_SERVER object via real `mcp.json`-shaped config
  * (see mcp-server-declaration.ts) — including it here too would double-count
  * the same real-world signal under two different labels.
+ *
+ * TRUST (corrected): an import statement DECLARES a source dependency —
+ * that much is unambiguous. But concluding "this AgentVersion's runtime
+ * framework IS this package" from same-file correlation alone is a scanner
+ * INTERPRETATION, not something the source explicitly declared about the
+ * AgentVersion itself — the source never wrote `framework = "langgraph"` or
+ * an equivalent Agent-bound configuration key. No such explicit
+ * Agent-bound-framework declaration convention was found within this
+ * correction's inspection scope, so every Framework signal here is
+ * INFERRED, never DECLARED. Orchestration (below) is doubly so: it adds a
+ * second inference layer (a legacy classification of which frameworks
+ * happen to be orchestrators) on top of the import evidence itself.
  */
 interface FrameworkImportPattern {
   readonly name: string;
@@ -89,10 +101,12 @@ function detectFrameworkImportMatches(artifact: SourceArtifactContent): Array<{
           lineEnd: lineNumber,
           excerpt: line.trim().slice(0, 200),
           confidence: 0.8,
-          // An import statement is an explicit, unambiguous dependency
-          // declaration — a semantically authoritative position the
-          // language/module system itself defines, not a scanner inference.
-          trustState: TRUST_STATE.DECLARED,
+          // Corrected: the import statement itself is an explicit
+          // dependency declaration, but "this AgentVersion's framework IS
+          // this package" is a scanner interpretation of same-file
+          // correlation, not an explicit Agent-bound declaration — see this
+          // module's own top-level doc comment.
+          trustState: TRUST_STATE.INFERRED,
         },
       });
     }
@@ -120,6 +134,13 @@ export class FrameworkImportSignalSpecification implements TechnicalProfileSigna
  * to (LangGraph, CrewAI, Semantic Kernel) also emit an ORCHESTRATION signal,
  * so Orchestration is a real semantic reclassification of already-real
  * evidence, not a new detection surface.
+ *
+ * TRUST: always INFERRED, never DECLARED. The source never wrote an
+ * explicit `orchestration = ...` (or equivalent) declaration — this signal
+ * is a scanner conclusion built on top of an already-INFERRED Framework
+ * signal plus a legacy classification table, never something the source
+ * itself asserted about orchestration. It must never mechanically inherit
+ * a stronger trust tier than the Framework evidence it is derived from.
  */
 export class OrchestrationFrameworkSignalSpecification implements TechnicalProfileSignalSpecification {
   readonly code = 'orchestration-framework-classification';

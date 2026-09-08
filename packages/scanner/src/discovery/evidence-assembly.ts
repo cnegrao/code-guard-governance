@@ -31,6 +31,12 @@ export interface DiscoveryCandidate {
   readonly assertion: SourceAssertion;
   readonly evidence: Evidence;
   readonly displayValue: string;
+  /**
+   * Optional controlled content fingerprint (see DetectionMatch.contentFingerprint's
+   * own doc comment) — deliberately scanner-internal plumbing, never part of
+   * NormalizedObjectCandidate.proposedIdentity or any canonical-contracts type.
+   */
+  readonly contentFingerprint?: string;
 }
 
 function stableSuffix(parts: readonly string[]): string {
@@ -130,5 +136,11 @@ export function assembleDiscoveryCandidate(params: {
     detectedAt: observed,
   };
 
-  return { finding, assertion, evidence, displayValue: match.displayValue };
+  return {
+    finding,
+    assertion,
+    evidence,
+    displayValue: match.displayValue,
+    ...(match.contentFingerprint === undefined ? {} : { contentFingerprint: match.contentFingerprint }),
+  };
 }

@@ -965,7 +965,7 @@ describe("Agent Identity & Version Discovery V1: AGENT and AGENT_VERSION governa
 // uses the REAL, Golden-Repository-precedented convention for each kind
 // (read, never modified — see each detector's own doc comment), not an
 // invented declaration syntax. AgentVersion technical-profile signals
-// (Framework/Memory/Orchestration) are the deliberate structural exception:
+// (Framework/Orchestration) are the deliberate structural exception:
 // they are never a DiscoveryCandidate of any CanonicalObjectKind at all (see
 // technical-profile-signal.ts) — their Evidence/SourceAssertion become
 // durable, but they never receive their own ReviewSubject; only the real,
@@ -989,7 +989,6 @@ async function withL4RoundOneFixtureRepository(run: (root: string) => Promise<vo
         '    "id": "billing-api",',
         "}",
         "from langgraph import StateGraph",
-        "import redis",
         "",
       ].join("\n"),
     );
@@ -1025,7 +1024,7 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
     });
   });
 
-  test("Framework/Memory technical-profile signals are durably evidenced but never create their own ReviewSubject", async () => {
+  test("Framework technical-profile signal is durably evidenced (INFERRED trust) but never creates its own ReviewSubject", async () => {
     await withL4RoundOneFixtureRepository(async (root) => {
       const ports = makePorts();
       await runGovernanceDiscoveryScan(
@@ -1044,35 +1043,31 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
       // Their Evidence/SourceAssertion are still durable: the correlated
       // AGENT_VERSION subject's own finding cites more assertion/evidence
       // ids than just its parent AGENT + Model/Tool would alone (the
-      // same-file Framework/Memory signals are folded in too — PROMPT/API
-      // are also same-file; MCP_SERVER/KNOWLEDGE_BASE/SKILL live in separate
-      // files and correctly do NOT fold into this AgentVersion).
+      // same-file Framework signal and Prompt/API are folded in too;
+      // MCP_SERVER/KNOWLEDGE_BASE/SKILL live in separate files and correctly
+      // do NOT fold into this AgentVersion).
       const [agentVersionSubject] = agentVersionSubjects;
       const finding = await ports.intake.getDiscoveryFinding(ORG_A, agentVersionSubject.findingId);
       assert.ok(finding);
       assert.ok(
-        finding!.assertionIds.length >= 6,
-        "AGENT + MODEL + TOOL + PROMPT + API + FRAMEWORK + MEMORY evidence all contribute",
+        finding!.assertionIds.length >= 5,
+        "AGENT + MODEL + TOOL + PROMPT + API + FRAMEWORK evidence all contribute",
       );
     });
   });
 
-  test("changing the correlated API id changes the AGENT_VERSION technical revision (new AgentVersion); changing only the Prompt's own string content does not (identity is the constant name, never its content)", async () => {
-    let firstFindingId: string | undefined;
+  test("changing the correlated API id changes the AGENT_VERSION technical revision (new AgentVersion)", async () => {
+    // Same temp root (same SourceConnection) for both scans — a second,
+    // independent mkdtemp root would legitimately differ in sourceScope
+    // alone, which would prove nothing about the API-id change specifically.
     await withL4RoundOneFixtureRepository(async (root) => {
       const ports = makePorts();
       await runGovernanceDiscoveryScan(
         { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
         ports,
       );
-      const [subject] = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
-      firstFindingId = subject.findingId;
-    });
-    assert.ok(firstFindingId);
+      const [firstSubject] = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
 
-    const secondPorts = makePorts();
-    const root = await mkdtemp(join(tmpdir(), "discovery-intake-l4-round1-changed-"));
-    try {
       await writeFile(
         join(root, "agent.py"),
         [
@@ -1081,23 +1076,60 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
           '    modelReference = "gpt-x"',
           "    tools = [alpha]",
           "",
-          'SUPPORT_PROMPT = "Assist with account questions, revised wording."', // content changed, same constant name — must NOT change identity
+          'SUPPORT_PROMPT = "Assist with account questions."',
           "BILLING_API = {",
           '    "id": "billing-api-v2",', // identity changed — must change identity
           "}",
           "from langgraph import StateGraph",
-          "import redis",
           "",
         ].join("\n"),
       );
+      const secondPorts = makePorts();
       await runGovernanceDiscoveryScan(
         { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
         secondPorts,
       );
       const [secondSubject] = [...secondPorts.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
-      assert.notEqual(secondSubject.findingId, firstFindingId, "a changed API id produces a different AGENT_VERSION identity");
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+      assert.notEqual(secondSubject.findingId, firstSubject.findingId, "a changed API id produces a different AGENT_VERSION identity");
+    });
+  });
+
+  test("DEFECT #2 CORRECTION: changing only the Prompt's own string content (same declaration key) DOES change the AGENT_VERSION technical revision", async () => {
+    await withL4RoundOneFixtureRepository(async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const [firstSubject] = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
+
+      await writeFile(
+        join(root, "agent.py"),
+        [
+          "class CustomerSupportAgent:",
+          '    kind = "agent"',
+          '    modelReference = "gpt-x"',
+          "    tools = [alpha]",
+          "",
+          'SUPPORT_PROMPT = "Assist with account questions, revised wording."', // content changed, same constant name
+          "BILLING_API = {",
+          '    "id": "billing-api",',
+          "}",
+          "from langgraph import StateGraph",
+          "",
+        ].join("\n"),
+      );
+      const secondPorts = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        secondPorts,
+      );
+      const [secondSubject] = [...secondPorts.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
+      assert.notEqual(
+        secondSubject.findingId,
+        firstSubject.findingId,
+        "changing the Prompt's own effective content must produce a different AGENT_VERSION technical revision, even with the same declaration key",
+      );
+    });
   });
 });

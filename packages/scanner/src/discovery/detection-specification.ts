@@ -30,6 +30,18 @@ export interface DetectionMatch {
    * design-time source (a specification must never set either).
    */
   readonly trustState?: TrustState;
+  /**
+   * Optional controlled content fingerprint (e.g. sha256 of a Prompt
+   * declaration's own parsed string value, truncated the same way every
+   * other stable-suffix hash in this package is) — deliberately never the
+   * raw content itself. Threaded through to DiscoveryCandidate.contentFingerprint
+   * (evidence-assembly.ts) so a downstream correlation (e.g.
+   * agent-version-correlation.ts's technical revision projection) can be
+   * sensitive to a fact's own *content* without that content, or a
+   * derived-from-content value, ever entering canonical object identity
+   * (NormalizedObjectCandidate.proposedIdentity) or the evidence excerpt.
+   */
+  readonly contentFingerprint?: string;
 }
 
 /**

@@ -24,7 +24,6 @@ export {
   FrameworkImportSignalSpecification,
   OrchestrationFrameworkSignalSpecification,
 } from './strategies/framework-import-signal';
-export { MEMORY_IMPORT_PATTERNS, MemoryImportSignalSpecification } from './strategies/memory-import-signal';
 
 export type { DiscoveryCandidate } from './evidence-assembly';
 export { assembleDiscoveryCandidate } from './evidence-assembly';

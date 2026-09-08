@@ -16,7 +16,6 @@ import {
   SkillListDeclarationSpecification,
   FrameworkImportSignalSpecification,
   OrchestrationFrameworkSignalSpecification,
-  MemoryImportSignalSpecification,
   createSourceConnection,
   createSourceSystem,
   normalizeObjectCandidate,
@@ -363,8 +362,8 @@ async function processRelationshipCandidate(
 }
 
 /**
- * AgentVersion technical-profile signals (Framework/Memory/Orchestration —
- * see technical-profile-signal.ts) are structurally NOT DiscoveryCandidates
+ * AgentVersion technical-profile signals (Framework/Orchestration — see
+ * technical-profile-signal.ts) are structurally NOT DiscoveryCandidates
  * of any CanonicalObjectKind and therefore never flow through
  * processObjectCandidate/normalizeObjectCandidate/ensureReviewSubjectAndPropose
  * at all — there is no candidateKind to normalize or to back a ReviewSubject
@@ -447,11 +446,7 @@ export async function runGovernanceDiscoveryScan(
       // only ever contribute evidence to AgentVersion correlation's own
       // technical revision (agent-version-correlation.ts), never their own
       // ReviewSubject (see processTechnicalProfileSignal below).
-      signalSpecifications: [
-        new FrameworkImportSignalSpecification(),
-        new OrchestrationFrameworkSignalSpecification(),
-        new MemoryImportSignalSpecification(),
-      ],
+      signalSpecifications: [new FrameworkImportSignalSpecification(), new OrchestrationFrameworkSignalSpecification()],
     },
   );
 

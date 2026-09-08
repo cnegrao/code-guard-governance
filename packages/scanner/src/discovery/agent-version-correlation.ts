@@ -80,13 +80,35 @@ function extractNormalizedValues(list: readonly DiscoveryCandidate[]): readonly 
   return values;
 }
 
+/**
+ * PROMPT technical-revision extraction (corrected). Canonical PROMPT
+ * identity (proposedIdentity.declarationKey) stays declaration-name-only —
+ * unchanged, still never raw content. But AGENT_VERSION represents
+ * technical/behavioral state, and a Prompt's own *effective content*
+ * changing is version-relevant even when its declaration name does not
+ * (the prior "same key + changed content = same technical revision"
+ * behavior was a defect, not a feature). Each technical-revision input
+ * combines the stable declaration key with the candidate's own controlled
+ * `contentFingerprint` (see prompt-declaration.ts / evidence-assembly.ts) —
+ * never the raw prompt text itself, and never a value derived from
+ * provenance (findingId/locator/line/timestamp).
+ */
+function extractPromptTechnicalRevisionValues(prompts: readonly DiscoveryCandidate[]): readonly string[] {
+  const values: string[] = [];
+  for (const item of prompts) {
+    const declarationKey = extractNormalizedIdentityValue(item);
+    if (!declarationKey) continue;
+    values.push(`${declarationKey}:${item.contentFingerprint ?? 'unknown'}`);
+  }
+  return values;
+}
+
 function fileGroupKey(identity: SourceObjectIdentity): string {
   return JSON.stringify([identity.connectionId, identity.externalType, identity.externalId]);
 }
 
 const TECHNICAL_PROFILE_SIGNAL_LABEL: Record<TechnicalProfileSignal['signalKind'], string> = {
   [TECHNICAL_PROFILE_SIGNAL_KIND.FRAMEWORK]: 'framework',
-  [TECHNICAL_PROFILE_SIGNAL_KIND.MEMORY]: 'memory',
   [TECHNICAL_PROFILE_SIGNAL_KIND.ORCHESTRATION]: 'orchestration',
 };
 
@@ -114,7 +136,7 @@ const TECHNICAL_PROFILE_SIGNAL_LABEL: Record<TechnicalProfileSignal['signalKind'
  *
  * L4 Round 1 extension: every newly-supported correlated canonical-object
  * kind (Prompt/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) and every accepted
- * AgentVersion technical-profile signal (Framework/Memory/Orchestration —
+ * AgentVersion technical-profile signal (Framework/Orchestration —
  * see technical-profile-signal.ts; Technology/Build and Guardrail/HITL are
  * not implemented in this round, see the evidence document) is folded in
  * here, using the exact same sorted+deduplicated `<label>:<value>`
@@ -192,7 +214,7 @@ function buildSourceScope(sourceObject: SourceObjectIdentity): string {
  *     AGENT_VERSION, matching relationship correlation's own posture.
  *   - At least one MODEL, TOOL, PROMPT, MCP_SERVER, API, KNOWLEDGE_BASE, or
  *     SKILL candidate correlated in the same file (itself normalizable), OR
- *     at least one AgentVersion technical-profile signal (Framework/Memory/
+ *     at least one AgentVersion technical-profile signal (Framework/
  *     Orchestration), is required as version-relevant technical evidence
  *     beyond the AGENT's own logical identity ("Minimum evidence for
  *     AGENT_VERSION"). An AGENT with no correlated technical evidence fails
@@ -304,7 +326,7 @@ export function correlateAgentVersions(
 
     const normalizedModelReferences = extractNormalizedValues(models);
     const normalizedToolKeys = extractNormalizedValues(tools);
-    const normalizedPromptKeys = extractNormalizedValues(prompts);
+    const normalizedPromptKeys = extractPromptTechnicalRevisionValues(prompts);
     const normalizedMcpServerReferences = extractNormalizedValues(mcpServers);
     const normalizedApiReferences = extractNormalizedValues(apis);
     const normalizedKnowledgeBaseReferences = extractNormalizedValues(knowledgeBases);
@@ -312,7 +334,6 @@ export function correlateAgentVersions(
 
     const technicalProfileSignalValues: Record<TechnicalProfileSignal['signalKind'], string[]> = {
       [TECHNICAL_PROFILE_SIGNAL_KIND.FRAMEWORK]: [],
-      [TECHNICAL_PROFILE_SIGNAL_KIND.MEMORY]: [],
       [TECHNICAL_PROFILE_SIGNAL_KIND.ORCHESTRATION]: [],
     };
     for (const signal of technicalProfileSignalsInFile) {

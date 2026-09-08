@@ -91,7 +91,6 @@ export {
   FrameworkImportSignalSpecification,
   OrchestrationFrameworkSignalSpecification,
 } from './discovery/strategies/framework-import-signal';
-export { MEMORY_IMPORT_PATTERNS, MemoryImportSignalSpecification } from './discovery/strategies/memory-import-signal';
 export type { DiscoveryCandidate } from './discovery/evidence-assembly';
 export { assembleDiscoveryCandidate } from './discovery/evidence-assembly';
 export type {

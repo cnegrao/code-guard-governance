@@ -123,6 +123,47 @@ describe('PROMPT: real `<NAME>_PROMPT = "..."` constant convention (matches 01-s
     );
   });
 
+  it('PROMPT canonical identity (candidateId) is content-independent: two different prompt string values under the identical declaration key produce the identical candidateId', async () => {
+    // Scans the SAME temp root (same SourceConnection) both times, overwriting
+    // the file in place — two independent mkdtemp roots would legitimately
+    // differ by sourceScope/connection alone, which would prove nothing about
+    // content-independence specifically.
+    await withTempRepository({ 'agent.py': 'SUPPORT_PROMPT = "Assist with account questions."\n' }, async (root) => {
+      const before = await scan(root);
+      const beforeCandidate = candidatesByKind(before.candidates, 'PROMPT')[0];
+      const beforeNormalized = normalizeObjectCandidate(beforeCandidate);
+      assert.equal(beforeNormalized.status, 'NORMALIZED');
+
+      await writeFile(join(root, 'agent.py'), 'SUPPORT_PROMPT = "A completely different prompt body."\n');
+      const after = await scan(root);
+      const afterCandidate = candidatesByKind(after.candidates, 'PROMPT')[0];
+      const afterNormalized = normalizeObjectCandidate(afterCandidate);
+      assert.equal(afterNormalized.status, 'NORMALIZED');
+
+      if (beforeNormalized.status === 'NORMALIZED' && afterNormalized.status === 'NORMALIZED') {
+        assert.equal(
+          afterNormalized.candidate.candidateId,
+          beforeNormalized.candidate.candidateId,
+          'canonical PROMPT identity must never depend on the prompt\'s own string content, only its declaration key',
+        );
+      }
+    });
+  });
+
+  it('evidence never persists the full raw Prompt literal by default: the redacted excerpt shows only the declaration shape', async () => {
+    await withTempRepository(
+      { 'agent.py': 'SUPPORT_PROMPT = "This exact sentence must never appear in the evidence excerpt."\n' },
+      async (root) => {
+        const { candidates } = await scan(root);
+        const found = candidatesByKind(candidates, 'PROMPT');
+        assert.equal(found.length, 1);
+        const excerpt = found[0].evidence.redactedExcerpt ?? '';
+        assert.equal(excerpt.includes('This exact sentence'), false, 'raw prompt content must never leak into the evidence excerpt');
+        assert.equal(excerpt, 'SUPPORT_PROMPT = <redacted>');
+      },
+    );
+  });
+
   it('a docstring or prose mentioning "prompt" produces no candidate (no `_PROMPT`-suffixed constant present)', async () => {
     await withTempRepository(
       { 'agent.py': '"""This agent uses a carefully engineered prompt to answer questions."""\n' },
