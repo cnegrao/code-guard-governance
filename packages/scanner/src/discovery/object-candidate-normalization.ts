@@ -5,11 +5,13 @@ import {
   asNormalizedCandidateId,
   type CanonicalObjectKind,
   type DiscoveryCandidateKind,
+  type NormalizedAgentCandidate,
   type NormalizedModelCandidate,
   type NormalizedObjectCandidate,
   type NormalizedToolCandidate,
 } from '@council/canonical-contracts';
 
+import { AGENT_KIND_DECLARATION_GENERIC_VALUE } from './strategies/agent-kind-declaration';
 import type { DiscoveryCandidate } from './evidence-assembly';
 
 /**
@@ -35,7 +37,7 @@ import type { DiscoveryCandidate } from './evidence-assembly';
  */
 
 export const OBJECT_NORMALIZATION_REASON_CODE = {
-  /** AgentKindDeclarationSpecification only proves the `kind = "agent"` shape; it never captures a name/code/version. */
+  /** No enclosing declaration name was found for the `kind = "agent"` shape (or the detector's own generic fallback literal was all that was observed); no name/code/version can be derived without guessing. */
   AGENT_IDENTITY_NOT_DERIVABLE: 'AGENT_IDENTITY_NOT_DERIVABLE',
   /** The detector's own displayValue was empty/whitespace-only after trimming — never promoted to identity. */
   EMPTY_IDENTITY_VALUE: 'EMPTY_IDENTITY_VALUE',
@@ -92,24 +94,44 @@ function isNonBlank(value: string): boolean {
 }
 
 /**
- * AGENT: AgentKindDeclarationSpecification's displayValue is always the
- * fixed literal `"agent"` (see strategies/agent-kind-declaration.ts) — it
- * proves only that the structural `kind = "agent"` shape is present, never a
- * captured agent name, code, or version. None of
- * NormalizedAgentCandidate.proposedIdentity's fields (agentCode, displayName,
- * versionCode) can be derived from this evidence without guessing, so every
- * current AGENT finding fails closed rather than producing an empty,
- * unverifiable candidate merely to make reconciliation callable.
+ * AGENT: AgentKindDeclarationSpecification's displayValue is the name of the
+ * Python `class Name:` or TypeScript/JavaScript `const name = {...}`
+ * declaration that structurally encloses a `kind = "agent"` marker (see
+ * strategies/agent-kind-declaration.ts) — an explicit, already-in-source
+ * identifier, exactly the same kind of evidence MODEL/TOOL promote for their
+ * own kinds. When no such enclosing declaration was found, the detector
+ * falls back to the fixed literal `"agent"`
+ * (AGENT_KIND_DECLARATION_GENERIC_VALUE), which proves only the structural
+ * shape and is never promoted to identity: every current detector run that
+ * only observes the bare structural marker still fails closed here, exactly
+ * as before this strategy could derive a real declaration name.
  */
 export class AgentCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
   readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.AGENT;
 
   normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
-    return {
-      status: 'NOT_SAFELY_NORMALIZABLE',
-      candidateKind: candidate.finding.candidateKind,
-      reasonCode: OBJECT_NORMALIZATION_REASON_CODE.AGENT_IDENTITY_NOT_DERIVABLE,
+    const agentCode = candidate.displayValue.trim();
+
+    if (!isNonBlank(agentCode) || agentCode.toLowerCase() === AGENT_KIND_DECLARATION_GENERIC_VALUE) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.AGENT_IDENTITY_NOT_DERIVABLE,
+      };
+    }
+
+    const normalized: NormalizedAgentCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'AGENT',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { agentCode },
     };
+    return { status: 'NORMALIZED', candidate: normalized };
   }
 }
 
