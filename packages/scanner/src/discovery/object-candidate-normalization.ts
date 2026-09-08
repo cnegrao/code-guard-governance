@@ -6,8 +6,13 @@ import {
   type CanonicalObjectKind,
   type DiscoveryCandidateKind,
   type NormalizedAgentCandidate,
+  type NormalizedApiCandidate,
+  type NormalizedKnowledgeBaseCandidate,
+  type NormalizedMcpServerCandidate,
   type NormalizedModelCandidate,
   type NormalizedObjectCandidate,
+  type NormalizedPromptCandidate,
+  type NormalizedSkillCandidate,
   type NormalizedToolCandidate,
 } from '@council/canonical-contracts';
 
@@ -29,11 +34,15 @@ import type { DiscoveryCandidate } from './evidence-assembly';
  * mirrors). No LLM, no fuzzy matching, no filename guessing.
  *
  * Only the CURRENT production object kinds actually wired into
- * apps/dashboard/lib/governance/discovery-intake.ts (AGENT, MODEL, TOOL) have
- * a registered strategy. Every other CanonicalObjectKind — dormant today,
- * with no detector emitting it — fails closed via the same
+ * apps/dashboard/lib/governance/discovery-intake.ts (AGENT, AGENT_VERSION,
+ * MODEL, TOOL, PROMPT, MCP_SERVER, API, KNOWLEDGE_BASE, SKILL) have a
+ * registered strategy or an intentional AGENT_VERSION-only fail-closed
+ * dispatch (AGENT_VERSION candidates never normalize through this map — see
+ * agent-version-correlation.ts, the sole producer of a normalized
+ * AGENT_VERSION candidate). DATA_ASSET and DATA_ELEMENT remain dormant, with
+ * no detector emitting either — they fail closed via the same
  * NOT_SAFELY_NORMALIZABLE outcome rather than being silently normalized the
- * moment a future detector starts producing it.
+ * moment a future detector starts producing them.
  */
 
 export const OBJECT_NORMALIZATION_REASON_CODE = {
@@ -209,11 +218,195 @@ export class ToolCandidateNormalizationStrategy implements ObjectCandidateNormal
   }
 }
 
+/**
+ * PROMPT: PromptDeclarationSpecification's displayValue IS the declared
+ * prompt reference literal captured from `PROMPT_REFERENCE = "..."` /
+ * `promptReference: "..."` (see strategies/prompt-declaration.ts) — the
+ * detector's entire purpose is to capture that literal, so it is safe to
+ * promote it directly to proposedIdentity.declarationKey. Raw prompt content
+ * is never captured by this detector and therefore never enters identity.
+ */
+export class PromptCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.PROMPT;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const declarationKey = candidate.displayValue.trim();
+    if (!isNonBlank(declarationKey)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedPromptCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'PROMPT',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { declarationKey },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * MCP_SERVER: McpServerDeclarationSpecification's displayValue IS the
+ * declared server reference literal captured from
+ * `MCP_SERVER_REFERENCE = "..."` / `mcpServerReference: "..."` (see
+ * strategies/mcp-server-declaration.ts) — safe to promote directly to
+ * proposedIdentity.serverReference for the same reason MODEL's own literal
+ * is safe to promote.
+ */
+export class McpServerCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.MCP_SERVER;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const serverReference = candidate.displayValue.trim();
+    if (!isNonBlank(serverReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedMcpServerCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'MCP_SERVER',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { serverReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * API: ApiDeclarationSpecification's displayValue IS the declared API
+ * reference literal captured from `API_REFERENCE = "..."` /
+ * `apiReference: "..."` (see strategies/api-declaration.ts) — safe to
+ * promote directly to proposedIdentity.apiReference. A bare URL is never
+ * this detector's own evidence (see the detector's own doc comment), so no
+ * arbitrary-URL false positive can reach this normalization strategy.
+ */
+export class ApiCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.API;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const apiReference = candidate.displayValue.trim();
+    if (!isNonBlank(apiReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedApiCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'API',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { apiReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * KNOWLEDGE_BASE: KnowledgeBaseDeclarationSpecification's displayValue IS
+ * the declared source reference literal captured from
+ * `KNOWLEDGE_BASE_REFERENCE = "..."` / `knowledgeBaseReference: "..."` (see
+ * strategies/knowledge-base-declaration.ts) — safe to promote directly to
+ * proposedIdentity.sourceReference.
+ */
+export class KnowledgeBaseCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const sourceReference = candidate.displayValue.trim();
+    if (!isNonBlank(sourceReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedKnowledgeBaseCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'KNOWLEDGE_BASE',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { sourceReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * SKILL: SkillListDeclarationSpecification's displayValue is a single bare
+ * identifier item explicitly bound inside a `skills = [...]` /
+ * `skills: [...]` declaration (see strategies/skill-list-declaration.ts) —
+ * mirrors ToolCandidateNormalizationStrategy exactly, promoting the
+ * identifier to proposedIdentity.declarationReference (the field name
+ * SkillIdentity's own contract uses).
+ */
+export class SkillCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.SKILL;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const declarationReference = candidate.displayValue.trim();
+    if (!isNonBlank(declarationReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedSkillCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'SKILL',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { declarationReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
 const OBJECT_NORMALIZATION_STRATEGIES: ReadonlyMap<CanonicalObjectKind, ObjectCandidateNormalizationStrategy> =
   new Map([
     [CANONICAL_OBJECT_KIND.AGENT, new AgentCandidateNormalizationStrategy()],
     [CANONICAL_OBJECT_KIND.MODEL, new ModelCandidateNormalizationStrategy()],
     [CANONICAL_OBJECT_KIND.TOOL, new ToolCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.PROMPT, new PromptCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.MCP_SERVER, new McpServerCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.API, new ApiCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE, new KnowledgeBaseCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.SKILL, new SkillCandidateNormalizationStrategy()],
   ]);
 
 /**

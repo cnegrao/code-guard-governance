@@ -81,6 +81,21 @@ export type { DetectionMatch, DetectionSpecification } from './discovery/detecti
 export { AgentKindDeclarationSpecification } from './discovery/strategies/agent-kind-declaration';
 export { ModelReferenceDeclarationSpecification } from './discovery/strategies/model-reference-declaration';
 export { ToolListDeclarationSpecification } from './discovery/strategies/tool-list-declaration';
+export { PromptDeclarationSpecification } from './discovery/strategies/prompt-declaration';
+export { McpServerDeclarationSpecification } from './discovery/strategies/mcp-server-declaration';
+export { ApiDeclarationSpecification } from './discovery/strategies/api-declaration';
+export { KnowledgeBaseDeclarationSpecification } from './discovery/strategies/knowledge-base-declaration';
+export { SkillListDeclarationSpecification } from './discovery/strategies/skill-list-declaration';
+export type { AgentVersionTechnicalSignalCode } from './discovery/strategies/agent-version-technical-signal-declaration';
+export {
+  AGENT_VERSION_TECHNICAL_SIGNAL_CODES,
+  BuildReferenceDeclarationSpecification,
+  FrameworkReferenceDeclarationSpecification,
+  GuardrailReferenceDeclarationSpecification,
+  HitlReferenceDeclarationSpecification,
+  MemoryReferenceDeclarationSpecification,
+  OrchestrationReferenceDeclarationSpecification,
+} from './discovery/strategies/agent-version-technical-signal-declaration';
 export type { DiscoveryCandidate } from './discovery/evidence-assembly';
 export { assembleDiscoveryCandidate } from './discovery/evidence-assembly';
 export type {
@@ -90,8 +105,13 @@ export type {
 } from './discovery/object-candidate-normalization';
 export {
   AgentCandidateNormalizationStrategy,
+  ApiCandidateNormalizationStrategy,
+  KnowledgeBaseCandidateNormalizationStrategy,
+  McpServerCandidateNormalizationStrategy,
   ModelCandidateNormalizationStrategy,
   OBJECT_NORMALIZATION_REASON_CODE,
+  PromptCandidateNormalizationStrategy,
+  SkillCandidateNormalizationStrategy,
   ToolCandidateNormalizationStrategy,
   normalizeObjectCandidate,
 } from './discovery/object-candidate-normalization';

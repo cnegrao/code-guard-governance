@@ -339,12 +339,12 @@ describe('Object Candidate Normalization V1: FAIL CLOSED', () => {
     );
   });
 
-  it('an unsupported/dormant candidateKind (e.g. a future MCP_SERVER finding) fails closed rather than being normalized', () => {
+  it('an unsupported/dormant candidateKind (e.g. a future DATA_ASSET finding) fails closed rather than being normalized', () => {
     const fabricated: DiscoveryCandidate = {
       finding: {
         findingId: 'discovery-finding:fabricated' as never,
         findingNature: 'CANDIDATE',
-        candidateKind: 'MCP_SERVER' as never,
+        candidateKind: 'DATA_ASSET' as never,
         sourceObject: { connectionId: 'source-connection:x' as never, externalType: 'file', externalId: 'x.py' as never },
         assertionIds: ['source-assertion:x' as never],
         evidenceIds: ['evidence:x' as never],
@@ -356,7 +356,7 @@ describe('Object Candidate Normalization V1: FAIL CLOSED', () => {
       },
       assertion: {} as never,
       evidence: {} as never,
-      displayValue: 'some-mcp-server',
+      displayValue: 'some-data-asset',
     };
 
     const result = normalizeObjectCandidate(fabricated);

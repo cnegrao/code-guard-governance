@@ -956,3 +956,133 @@ describe("Agent Identity & Version Discovery V1: AGENT and AGENT_VERSION governa
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Agent Technical Profile — L4 Round 1: the five newly-supported canonical
+// object kinds (PROMPT/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) reach the exact
+// same DETECTED -> PROPOSED governance-intake boundary MODEL/TOOL already
+// use — no new bypass, no new authority ceiling. AgentVersion technical
+// signals (Framework/Build/Memory/Orchestration/Guardrail/HITL) are the
+// deliberate exception: their Evidence/SourceAssertion become durable, but
+// they never receive their own ReviewSubject (see discovery-intake.ts's
+// isTechnicalSignalCandidate split) — only the real, correlation-produced
+// AGENT_VERSION ReviewSubject cites their assertion/evidence ids.
+// ---------------------------------------------------------------------------
+
+async function withL4RoundOneFixtureRepository(run: (root: string) => Promise<void>): Promise<void> {
+  const root = await mkdtemp(join(tmpdir(), "discovery-intake-l4-round1-"));
+  try {
+    await writeFile(
+      join(root, "agent.py"),
+      [
+        "class CustomerSupportAgent:",
+        '    kind = "agent"',
+        '    modelReference = "gpt-x"',
+        "    tools = [alpha]",
+        '    PROMPT_REFERENCE = "support-prompt-v1"',
+        '    MCP_SERVER_REFERENCE = "filesystem-mcp"',
+        '    API_REFERENCE = "billing-api"',
+        '    KNOWLEDGE_BASE_REFERENCE = "product-docs-index"',
+        "    skills = [summarize_ticket]",
+        '    FRAMEWORK_REFERENCE = "langgraph"',
+        '    BUILD_REFERENCE = "py3.11-slim"',
+        "",
+      ].join("\n"),
+    );
+    await run(root);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+describe("Agent Technical Profile L4 Round 1: new canonical object kinds + AgentVersion technical signals", () => {
+  test("PROMPT/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL each reach a PROPOSED review subject, same governance ceiling as MODEL/TOOL", async () => {
+    await withL4RoundOneFixtureRepository(async (root) => {
+      const ports = makePorts();
+      const result = await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      assert.equal(result.status, "SUCCEEDED");
+      assert.deepEqual(result.failures, []);
+
+      for (const kind of ["PROMPT", "MCP_SERVER", "API", "KNOWLEDGE_BASE", "SKILL"] as const) {
+        const subject = [...ports.review.subjects.values()].find((s) => s.candidateKind === kind);
+        assert.ok(subject, `expected a durable ${kind} review subject`);
+        assert.equal(subject!.state, "PROPOSED");
+        assert.equal(subject!.organisationId, ORG_A);
+      }
+    });
+  });
+
+  test("Framework/Build technical signals are durably evidenced but never create their own ReviewSubject", async () => {
+    await withL4RoundOneFixtureRepository(async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      // No ReviewSubject anywhere carries a technical-signal detector code as
+      // its own candidateKind marker — AGENT_VERSION is the only candidateKind
+      // a technical signal ever shares, and exactly one AGENT_VERSION subject
+      // exists (the real, correlation-produced one).
+      const agentVersionSubjects = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
+      assert.equal(agentVersionSubjects.length, 1, "technical signals never create their own AGENT_VERSION subject");
+
+      // Their Evidence/SourceAssertion are still durable: the correlated
+      // AGENT_VERSION subject's own finding cites more assertion/evidence ids
+      // than just its parent AGENT + Model/Tool would alone (Framework/Build
+      // are folded in too).
+      const [agentVersionSubject] = agentVersionSubjects;
+      const finding = await ports.intake.getDiscoveryFinding(ORG_A, agentVersionSubject.findingId);
+      assert.ok(finding);
+      assert.ok(finding!.assertionIds.length >= 6, "AGENT + MODEL + TOOL + PROMPT + MCP + API + KB + SKILL + FRAMEWORK + BUILD evidence all contribute");
+    });
+  });
+
+  test("changing a correlated Prompt value changes the AGENT_VERSION technical revision (new AgentVersion)", async () => {
+    let firstFindingId: string | undefined;
+    await withL4RoundOneFixtureRepository(async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const [subject] = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
+      firstFindingId = subject.findingId;
+    });
+    assert.ok(firstFindingId);
+
+    const secondPorts = makePorts();
+    const root = await mkdtemp(join(tmpdir(), "discovery-intake-l4-round1-changed-"));
+    try {
+      await writeFile(
+        join(root, "agent.py"),
+        [
+          "class CustomerSupportAgent:",
+          '    kind = "agent"',
+          '    modelReference = "gpt-x"',
+          "    tools = [alpha]",
+          '    PROMPT_REFERENCE = "support-prompt-v2"', // changed
+          '    MCP_SERVER_REFERENCE = "filesystem-mcp"',
+          '    API_REFERENCE = "billing-api"',
+          '    KNOWLEDGE_BASE_REFERENCE = "product-docs-index"',
+          "    skills = [summarize_ticket]",
+          '    FRAMEWORK_REFERENCE = "langgraph"',
+          '    BUILD_REFERENCE = "py3.11-slim"',
+          "",
+        ].join("\n"),
+      );
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        secondPorts,
+      );
+      const [secondSubject] = [...secondPorts.review.subjects.values()].filter((s) => s.candidateKind === "AGENT_VERSION");
+      assert.notEqual(secondSubject.findingId, firstFindingId, "a changed Prompt binding produces a different AGENT_VERSION identity");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
