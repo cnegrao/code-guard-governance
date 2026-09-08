@@ -44,13 +44,24 @@ work" in earlier planning material already exists, merged, and tested on `main`.
   transactional, idempotent, and optimistic-concurrency-protected at the database layer.
 
 At the same time, the audit found the *production reach* of this infrastructure is narrower
-than the contracts/persistence layer suggests, and identified one structural disconnect not
-previously documented: **the current authoritative Graph route reads exclusively from a
-separate, pre-canonical table set (`gov_repo.agents`, `agent_edges`, `ai_systems`,
-`ict_incidents`, …) and never projects `gov_repo.canonical_objects` /
-`gov_repo.canonical_relationships` at all** — meaning even the two object kinds (MODEL, TOOL)
-that *can* reach full materialization today are invisible everywhere outside the Governance
-Workspace review-detail page. See §19 (True Gaps), Gap G-01.
+than the contracts/persistence layer suggests, and identified two structural facts not
+previously documented:
+
+1. **The governance-connected Discovery Engine (Path B) has no live production application
+   trigger.** It is implemented, tested, and governance-connected — capable of taking
+   normalized MODEL and TOOL candidates through the full Decision-to-Truth/materialization
+   infrastructure when explicitly invoked — but nothing under `apps/dashboard/app/**` currently
+   calls it. MODEL and TOOL are the only currently detected object kinds with implemented and
+   tested end-to-end canonicalization/materialization continuity *when that engine is invoked*;
+   that invocation does not currently happen from the running application.
+2. **`apps/dashboard`'s active `/graph` surface reads exclusively from a separate, pre-canonical
+   agent-registry table set** (`gov_repo.agents`, `agent_edges`, `ai_systems`, `ict_incidents`,
+   …) and does not project `gov_repo.canonical_objects` / `gov_repo.canonical_relationships` at
+   all — meaning that even where the governance-connected pipeline above is invoked and produces
+   materialized MODEL/TOOL canonical objects, those objects are visible only on the Governance
+   Workspace review-detail page, never on the product's Graph surface. Graph remains
+   architecturally correct as a projection/read-model, not a system of record; it simply does not
+   yet project this particular system-of-record content. See §19 (True Gaps), Gap G-01.
 
 The true root gap, confirmed independently by three separate lines of evidence (canonical
 contracts, discovery engine, governance persistence), is that **AGENT identity normalization
@@ -81,7 +92,7 @@ a gap to record, not a reason to reinterpret the architecture.
 | `packages/graphos` | Standalone in-memory `GraphEngine` library | **Not imported by `apps/dashboard`** — only reachable via `graphos-complete/scripts/pipeline.ts` | Package-level tests only | LEGACY_NOT_AUTHORITATIVE |
 | `apps/dashboard` | Next.js product: governance workspace, graph route, discovery scan API, Talk-to-Governance assistant | Production application | Extensive `tests/` directory | Mixed — see per-subsystem sections |
 | `apps/extension` | Separate VS Code extension product ("codeguard-ai"), own multi-LLM router/cost analytics | Independent product, not part of the audited L0–L16 chain | Own test suite | Out of scope for this architecture (distinct product) |
-| `supabase/migrations` | 41 migration files; canonical/governance persistence + pre-existing agent-registry/graph/vector schema | Production schema | Migration-level `do $$` preflight guards; evidence docs in `docs/codex/evidence/*` | CURRENT_MAIN_IMPLEMENTED for what exists; see §15 for scope |
+| `supabase/migrations` | 46 SQL migration files (all `.sql`, no non-SQL entries); canonical/governance persistence + pre-existing agent-registry/graph/vector schema | Production schema | Migration-level `do $$` preflight guards; evidence docs in `docs/codex/evidence/*` | CURRENT_MAIN_IMPLEMENTED for what exists; see §15 for scope |
 | `supabase/legacy-migrations` | Pre-canonical schema history | Superseded by `supabase/migrations` where overlapping | — | LEGACY_NOT_AUTHORITATIVE (not audited further; out of scope) |
 | `graphos-complete/` | Separate, non-workspace Next.js prototype ("council") — own `graphos_entities`/`graphos_relationships` tables, own roadmap (Portuguese, mostly unchecked) | None — excluded from `package.json` workspaces, zero imports from `apps/dashboard` | Isolated `test:graphos` CI script only | HISTORICAL — confirmed by `GOVIA-L0L16-CIA-v1.0-coverage.md` drift register item G; corroborated here with import-graph evidence |
 | `docs/architecture` | Frozen architecture baseline + roadmap + coverage + ADR | Governs all future milestone decisions | N/A | Authoritative |
@@ -113,9 +124,10 @@ no script).
 (`packages/scanner/test/discovery-validation-lab/**`) that never invokes either Path A or Path B
 in its own test suite — see §9.
 
-Object kinds detected in production Path B (the only path with a governance-connected
-normalization/materialization story): **AGENT, MODEL, TOOL only** — 3 of 11 canonical object
-kinds. Everything downstream of this report (§10–§13) traces from this fact.
+Object kinds detected by Path B (the only path with a governance-connected
+normalization/materialization story, though not currently live-triggered by the application —
+see above): **AGENT, MODEL, TOOL only** — 3 of 11 canonical object kinds. Everything downstream
+of this report (§10–§13) traces from this fact.
 
 ---
 
@@ -210,16 +222,19 @@ design, unconditionally, today).
 
 ## 10. Object-kind capability matrix
 
-Legend: D = Detector exists, P = Real production path, I = Identity sufficient, N = Normalized
-candidate, S = Persistable, G = Governable (reaches ReviewSubject), C = Canonicalizable (reaches
-`gov_repo.canonical_objects`).
+Legend: D = Detector exists, P = **live production application trigger** (i.e. reachable from a
+running `apps/dashboard` route/cron/script today — implemented-but-uninvoked pipelines are NO),
+I = Identity sufficient, N = Normalized candidate, S = Persistable, G = Governable (reaches
+ReviewSubject), C = Canonicalizable — implemented/tested continuity to
+`gov_repo.canonical_objects` *when the owning pipeline is invoked* (does not by itself imply a
+live application trigger; see P).
 
 | Kind | D | P | I | N | S | G | C |
 |---|---|---|---|---|---|---|---|
-| AGENT | YES | YES (Path A only; Path B unreachable) | PARTIAL | **NO (fails closed)** | Path A: legacy `agents` table only | NO (Path A bypasses governance-review) | **NO** |
+| AGENT | YES | YES (Path A only — legacy, governance-bypassing; Path B implemented/tested, no live app trigger) | PARTIAL | **NO (fails closed)** | Path A: legacy `agents` table only | NO (Path A bypasses governance-review) | **NO** |
 | AGENT_VERSION | NO | NO | NO | NO | NO | NO | NO |
-| MODEL | YES | YES (Path B) | PARTIAL/YES | YES | YES | YES | **YES — reaches materialization** |
-| TOOL | YES | YES (Path B) | YES | YES | YES | YES | **YES — reaches materialization** |
+| MODEL | YES | **NO — implemented/tested pipeline (Path B), no live app trigger** | PARTIAL/YES | YES | YES | YES | **YES — implemented/tested continuity to materialization when Path B is invoked** |
+| TOOL | YES | **NO — implemented/tested pipeline (Path B), no live app trigger** | YES | YES | YES | YES | **YES — implemented/tested continuity to materialization when Path B is invoked** |
 | MCP_SERVER | NO (folded into AGENT rows) | NO | N/A | NO | NO | NO | NO |
 | API | NO | NO | NO | NO | NO | NO | NO |
 | PROMPT | PARTIAL (notebook extraction, unwired) | NO | NO | NO | NO | NO | NO |
@@ -228,11 +243,18 @@ candidate, S = Persistable, G = Governable (reaches ReviewSubject), C = Canonica
 | DATA_ASSET | Legacy heuristic only, hardcoded customer keywords, dead output | NO (never mapped into `UnifiedScanResult` or persisted) | PARTIAL (table-name string only) | NO | NO | NO | NO |
 | DATA_ELEMENT | NOT_IMPLEMENTED (zero column-level detection code) | NO | NO | NO | NO | NO | NO |
 
-**Only MODEL and TOOL traverse the full pipeline today.** This is a materially narrower result
-than `GOVIA-L0L16-CIA-v1.0-coverage.md`'s L4 note ("MODEL and TOOL have normalized object
-continuity through discovery → reconciliation → materialization") suggested at a glance — this
-audit confirms that statement precisely and adds that **AGENT does not**, by an unconditional,
-documented design choice in `object-candidate-normalization.ts`, not an oversight.
+**MODEL and TOOL are the only currently detected object kinds with implemented and tested
+end-to-end canonicalization/materialization continuity when the governance-connected Discovery
+Engine (Path B) is invoked; however, that Discovery Engine currently has no live production
+application trigger** — nothing under `apps/dashboard/app/**` calls
+`runGovernanceDiscoveryScan`. This is a materially more precise result than
+`GOVIA-L0L16-CIA-v1.0-coverage.md`'s L4 note ("MODEL and TOOL have normalized object continuity
+through discovery → reconciliation → materialization") suggested at a glance — that statement is
+correct about the *pipeline's* capability, and this audit adds the live-triggering caveat above,
+plus confirms that **AGENT does not** have that continuity even when invoked, by an
+unconditional, documented design choice in `object-candidate-normalization.ts`, not an
+oversight. The persistence/reconciliation/materialization infrastructure itself is not in
+question here — only whether the application currently calls into it.
 
 ---
 
@@ -253,13 +275,20 @@ documented design choice in `object-candidate-normalization.ts`, not an oversigh
 | `DATA_ELEMENT--DERIVED_FROM-->DATA_ELEMENT` | NO in production (fixture-only, in `03-monorepo` golden expectations) | Fixture-only | NOT_IMPLEMENTED |
 | `MCP_SERVER--EXPOSES-->TOOL` | NO | Contract-only | NOT_IMPLEMENTED |
 
-**Zero of the twelve governed relationship types reach `gov_repo.canonical_relationships` today.**
-The persistence/materialization RPCs (`materialize_relationship_reconciliation`) are fully built
-and correct — the blocker is entirely upstream: every relationship's source endpoint kind
-(`AGENT_VERSION`, `DATA_ELEMENT`) has no production identity normalizer. The dashboard UI
-already knows this and fails closed honestly: relationship candidates are offered
-`REJECT`/`DEFER` only, with explicit in-UI copy explaining why, both client- and
-server-enforced (`decision-query.ts`, `decision-commands.ts`).
+**0/12 governed relationship types are currently producible by the present Discovery Engine with
+canonical endpoint identities sufficient to traverse Decision-to-Truth into canonical
+relationship materialization.** The persistence, reconciliation, and relationship-materialization
+infrastructure (`materialize_relationship_reconciliation` and the rest of the RPC chain) already
+fully supports the closed 12-type governed relationship taxonomy — it is not incomplete. The
+current blocker is entirely upstream: every relationship type's source endpoint kind
+(`AGENT_VERSION`, `DATA_ELEMENT`) has no production identity/candidate normalizer. For
+`USES_MODEL`/`USES_TOOL` specifically: current discovery correlation exists and is
+evidence-backed, but it is currently **AGENT**-sourced, while the canonical contract requires
+**AGENT_VERSION** as the behavior-binding source — so those discovered correlations are real and
+tested, but are not yet valid canonical relationship inputs. The dashboard UI already knows this
+and fails closed honestly: relationship candidates are offered `REJECT`/`DEFER` only, with
+explicit in-UI copy explaining why, both client- and server-enforced (`decision-query.ts`,
+`decision-commands.ts`).
 
 ---
 
@@ -271,12 +300,12 @@ server-enforced (`decision-query.ts`, `decision-commands.ts`).
 | **L1** Lexical & Documentation | `CURRENT_MAIN_PARTIAL` | 3 declaration-pattern detectors; notebook prompt extraction (unwired) | General-purpose doc/comment/manifest intelligence | `discovery/strategies/*`, `core/notebook-parser.ts` | detector breadth | reuse as-is |
 | **L2** Deterministic Pattern | `CURRENT_MAIN_PARTIAL` | `core/risk-detector.ts`, model-id regex parser | Breadth re-baseline vs. architecture (roadmap milestone 1) | `core/risk-detector.ts`, `core/model-parser.ts` | none | reuse as-is |
 | **L3** Structure/Schema/Data | `CURRENT_MAIN_FOUNDATIONAL` | DATA_ASSET/DATA_ELEMENT contracts, structural-kind enums | Any SQL/DDL/dbt/schema parser (zero exists); legacy heuristic is dead code (never persisted) | `canonical-contracts/src/contracts.ts` | detector build | must build (contracts reusable) |
-| **L4** Agentic Architecture | `CURRENT_MAIN_PARTIAL` | MODEL/TOOL full continuity to materialization; AGENT detection+fails-closed normalization; USES_MODEL/USES_TOOL correlation (AGENT-sourced) | AGENT_VERSION entirely; Prompt/MCP/KB/Skill as distinct object kinds; AGENT normalization | `discovery/strategies/*`, `object-candidate-normalization.ts` | **AGENT_VERSION identity** | reuse detector pattern for new kinds |
+| **L4** Agentic Architecture | `CURRENT_MAIN_PARTIAL` | MODEL/TOOL implemented+tested continuity to materialization *when the governance-connected Discovery Engine is invoked* (no live app trigger today); AGENT detection+fails-closed normalization; USES_MODEL/USES_TOOL correlation (AGENT-sourced) | AGENT_VERSION entirely; Prompt/MCP/KB/Skill as distinct object kinds; AGENT normalization; a live production trigger for the Discovery Engine | `discovery/strategies/*`, `object-candidate-normalization.ts` | **AGENT_VERSION identity** | reuse detector pattern for new kinds |
 | **L5** Authorized Profiling | `NOT_IMPLEMENTED` | — | Everything | — | L4 maturity | must build |
 | **L6** Business & Info Semantics | `CURRENT_MAIN_FOUNDATIONAL` | Semantic identity kinds + full reconciliation lifecycle modeled in contracts | Discovery/persistence of Business Domain/Term/Information Domain instances | `contracts.ts:648-685,3463-4193` | L4/L9 maturity | reuse contracts as-is |
 | **L7** Embeddings & Semantic Repr. | `CURRENT_MAIN_PARTIAL` **[CORRECTION vs coverage.md, which read NOT_IMPLEMENTED]** | pgvector extension enabled; `agent_embeddings` + `coding_memory` tables (model/version, content-hash, tenant-scoped); real similarity RPCs; `coding_memory` **actively populated and queried** for RAG | This is a **separate RAG feature for Talk-to-Governance**, not embeddings of canonical objects (Agent/Model/DataElement). `agent_embeddings` has **no writer anywhere in the repo** — dead read path. No canonical-object embedding contract exists in `canonical-contracts` | `..._part_3.sql`, `apps/dashboard/supabase-setup-8.2.sql`, `services/coding-memory.ts`, `services/talk.ts` | L4/L9 object maturity (nothing to embed yet) | **infra fully reusable** (pgvector, RPC pattern, tenant-scoping); needs a canonical-object embedding contract + writer |
 | **L8** Similarity & Entity Resolution | `NOT_IMPLEMENTED` | Rule-based (deterministic) entity correlation exists (§L4), but no vector-similarity/clustering candidate model | Vector-based similarity, clustering | — | L7 (real, canonical-object-scoped) | depends on L7 correction above |
-| **L9** Relationships & Lineage | `CURRENT_MAIN_PARTIAL` | Full closed taxonomy modeled + persisted/materializable at DB layer for all 12 types; USES_MODEL/USES_TOOL evidence-backed correlation | AGENT_VERSION-sourced correlation (currently AGENT-sourced); 10 of 12 types have zero producer; **zero relationships reach materialization today** | `contracts.ts:1623-1636,2296-2324`, `relationship-correlation.ts`, `canonical_materialization_v1.sql` | AGENT_VERSION + DATA_ELEMENT identity | reuse taxonomy/persistence as-is |
+| **L9** Relationships & Lineage | `CURRENT_MAIN_PARTIAL` | Full closed taxonomy modeled + persisted/materializable at DB layer for all 12 types (infrastructure complete, not incomplete); USES_MODEL/USES_TOOL evidence-backed correlation | AGENT_VERSION-sourced correlation (currently AGENT-sourced); 10 of 12 types have zero producer; **0/12 types currently producible with a canonical endpoint identity sufficient to traverse Decision-to-Truth into materialization** | `contracts.ts:1623-1636,2296-2324`, `relationship-correlation.ts`, `canonical_materialization_v1.sql` | AGENT_VERSION + DATA_ELEMENT identity | reuse taxonomy/persistence as-is |
 | **L10** Connectivity & Topology | `NOT_IMPLEMENTED` | Free-text `model_endpoint`/`resource_endpoint` metadata fields only | Endpoint/network/topology object kind, egress modeling | — | none (independent) | must build |
 | **L11** Identity, Capability, AuthZ | `NOT_IMPLEMENTED` | App's own user RBAC (not L11); human-identity-provider sync (Keycloak/Entra) for populating owner records (not L11) | Execution-principal object kind for **discovered agents**; IAM/OAuth/service-account/capability-vs-authorization modeling | `apps/dashboard/lib/auth/*` (explicitly NOT L11), `packages/scanner/src/connectors/identity/*` (explicitly NOT L11) | none (independent) | must build |
 | **L12** Runtime & Observability | `NOT_IMPLEMENTED` | Nothing (zero OTel dependency in any `package.json`); `apps/extension` has its own unrelated cost/routing telemetry for a separate product | OTel/trace/span/model-call/tool-call capture pipeline | — | none (independent) | must build |
@@ -294,7 +323,7 @@ A family is not marked implemented merely because a TypeScript type exists.
 
 | # | Family | M | D | E | P | G | Pres. | RtObs | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | Identity | Y | Y (AGENT/MODEL/TOOL) | Y | Y (MODEL/TOOL only) | Y (MODEL/TOOL only) | Governance Workspace only — **not the Graph route** (see Gap G-01) | N | AGENT identity fails closed; AGENT_VERSION absent |
+| 1 | Identity | Y | Y (AGENT/MODEL/TOOL) | Y | Y (MODEL/TOOL only, when the Discovery Engine is invoked — no live app trigger today) | Y (MODEL/TOOL only) | Governance Workspace only — **not the Graph route**, which reads a separate pre-canonical agent-registry table set, not `canonical_objects` (see Gap G-01) | N | AGENT identity fails closed; AGENT_VERSION absent |
 | 2 | Discovery Metadata | Y | Y | Y | Y | Y | Workspace evidence panel | N | Real — `OBJECT_SOURCE_MAPPING_STATUS`, evidence/assertion persistence |
 | 3 | Ownership & Responsibility | Y | N (governance data-entry, not discovered) | Partial | Y | Y (coarse single-role authority) | Workspace | N | Not tied end-to-end to AgentVersion evidence |
 | 4 | Business Context | Y (semantic identity kinds) | N | N | N | N | N | N | Depends on L6 discovery, not implemented |
@@ -389,17 +418,24 @@ collapsed in future planning.
 - **Canonical Truth**: PostgreSQL/Supabase, as required. `gov_repo.canonical_objects` /
   `canonical_relationships` exist and are correctly the terminal write target of the
   reconciliation pipeline. **`CURRENT_MAIN_IMPLEMENTED`** for the persistence layer;
-  **`CURRENT_MAIN_PARTIAL`** for what actually reaches it (MODEL/TOOL only, §10).
-- **Graph/GraphOS**: the *authoritative* graph path (`apps/dashboard` `/graph` route →
-  `getUnifiedGraph` → canonical Supabase tables) is a correct read-model with no
-  GraphOS-owned tables of its own — architecturally conformant ("Graph = projection, not system
-  of record"). **However it reads a separate, pre-canonical table set
-  (`agents`/`agent_edges`/`ai_systems`/…) and never projects `gov_repo.canonical_objects` /
-  `canonical_relationships` at all** — see Gap G-01. `packages/graphos` (standalone
-  `GraphEngine` library) is dead in the production path, reachable only from the legacy
-  `graphos-complete` prototype app, which itself owns its own `graphos_entities`/
-  `graphos_relationships` tables (a genuine System-of-Record violation, but confined to a
-  non-workspace, non-imported legacy app — `LEGACY_NOT_AUTHORITATIVE`, not a live violation).
+  **`CURRENT_MAIN_PARTIAL`** for what actually reaches it — MODEL/TOOL, and only when the
+  governance-connected Discovery Engine is explicitly invoked (no live application trigger
+  today, §10).
+- **Graph/GraphOS**: `apps/dashboard`'s `/graph` route (via `getUnifiedGraph`) is the **current
+  active product graph surface**, and its projection/read-model pattern (application-code
+  assembly off Supabase tables, no GraphOS-owned tables of its own) is architecturally reusable
+  and conformant ("Graph = projection, not system of record"). **It does not currently project
+  the new canonical Decision-to-Truth system of record — it reads the pre-canonical agent
+  registry / graph table family instead** (`gov_repo.agents`/`agent_edges`/`ai_systems`/…, not
+  `gov_repo.canonical_objects`/`canonical_relationships`) — see Gap G-01. Do not read these
+  source tables as "canonical tables": they predate the canonical/governance pipeline. As a
+  direct consequence, materialized canonical MODEL/TOOL objects are not represented on the Graph
+  surface today. `packages/graphos` (standalone `GraphEngine` library) is dead in the production
+  path, reachable only from the legacy `graphos-complete` prototype app, which itself owns its
+  own `graphos_entities`/`graphos_relationships` tables (a genuine System-of-Record violation,
+  but confined to a non-workspace, non-imported legacy app — `LEGACY_NOT_AUTHORITATIVE`, not a
+  live violation). The Graph Route Release Fix V1 milestone conclusion (`ebe371b`, ReactFlow
+  provider boundary) is unaffected by this finding and remains closed.
 - **Vector**: pgvector is enabled and two tables exist (`agent_embeddings`,
   `coding_memory`) — `coding_memory` is genuinely populated and queried for a Talk-to-Governance
   RAG feature; `agent_embeddings` has no writer anywhere and is dead. **Neither is an embedding
@@ -445,7 +481,7 @@ principle.
 
 | Gap ID | CIA Layer | Passport Family | Current state | Required state | Why it matters | Dependency | Reuse potential | Milestone candidate |
 |---|---|---|---|---|---|---|---|---|
-| **G-01** | L9, L4 | 1, 6, 7, 11 | Authoritative Graph route reads only pre-canonical `gov_repo.agents`/`agent_edges`/… tables; never projects `gov_repo.canonical_objects`/`canonical_relationships` | Graph route must project the canonical/materialized system of record | Even the MODEL/TOOL objects that already reach full materialization are invisible everywhere except the Governance Workspace review-detail page — the "governed" system of record has no read-model at all today | none (independent of AGENT_VERSION work) | High — `getUnifiedGraph` pattern and ReactFlow component are reusable; only the data source needs extending | Not previously named in the roadmap; candidate for milestone 12 (Governed Graph + Vector Intelligence V1) to explicitly include, or a small standalone fix |
+| **G-01** | L9, L4 | 1, 6, 7, 11 | The active product Graph surface reads only the pre-canonical `gov_repo.agents`/`agent_edges`/… table family; it never projects `gov_repo.canonical_objects`/`canonical_relationships` | Graph surface must also project the canonical/materialized system of record | Whenever the governance-connected Discovery Engine is invoked and produces materialized MODEL/TOOL canonical objects, those objects are visible only on the Governance Workspace review-detail page — the canonical system of record has no read-model on the product's Graph surface today | none (independent of AGENT_VERSION work) | High — `getUnifiedGraph` pattern and ReactFlow component are reusable; only the data source needs extending | Not previously named in the roadmap; candidate for milestone 12 (Governed Graph + Vector Intelligence V1) to explicitly include, or a small standalone fix |
 | **G-02** | L4 (root) | 1, 7 | `AgentCandidateNormalizationStrategy` unconditionally returns `NOT_SAFELY_NORMALIZABLE`; `AGENT_VERSION` has zero implementation | Evidence-backed AGENT identity + AGENT_VERSION temporal identity | **This is the single gap blocking all 12 governed relationship types** (every one requires an AGENT_VERSION or DATA_ELEMENT source endpoint) and Passport families 1 & 7 end-to-end | none (root gap) | Detector/normalization *pattern* from MODEL/TOOL is directly reusable | **Roadmap milestone 2 — recommended next milestone, see §22** |
 | **G-03** | L3 | 9 | Zero production SQL/DDL/dbt/schema parser; legacy DataAsset heuristic is dead code | Structural discovery into DATA_ASSET/DATA_ELEMENT | Column-grain lineage (`DERIVED_FROM`) and Passport family 9 are entirely fixture-only today | Contracts already exist (§14) | Contracts + golden fixtures (`03-monorepo` expected.json) fully reusable as the target spec | Roadmap milestone 8 (Data Asset & Data Element Discovery V1) — correctly sequenced after AGENT_VERSION |
 | **G-04** | Lab↔Engine wiring | 2 | No `DiscoveryCandidate → DetectedScenarioResult` adapter exists; Lab's match/metrics/report pipeline has never scored real scanner output | A working adapter + one recorded baseline snapshot | Cannot measure detector-expansion progress against a real precision/recall/F1 baseline without this | none | Both sides (Lab harness, production pipeline) are fully built and reusable — this is integration work only, not a rebuild | Roadmap milestone 1, **rescoped to a small recertification task** — see §22 |
@@ -513,8 +549,10 @@ G-08 (L15 risk) ─► depends on L9/L13/L14 evidence maturity generally, not on
 None of the numbered future milestones are **fully** satisfied end-to-end — but the audit
 confirms the roadmap's own framing was already correct at freeze time: "the canonical/governance/
 reconciliation foundation... is strong." What this audit adds is the precise boundary of that
-strength (MODEL/TOOL only, zero relationships) and identifies two milestones (1 and 12) whose
-scope should shrink because most of the work already exists.
+strength (MODEL/TOOL only, and only when the governance-connected Discovery Engine is explicitly
+invoked since it has no live application trigger today; 0/12 relationship types materializable)
+and identifies two milestones (1 and 12) whose scope should shrink because most of the work
+already exists.
 
 ---
 
@@ -534,9 +572,9 @@ normalization fails closed unconditionally by explicit design
 (`object-candidate-normalization.ts:104-114`), and `AGENT_VERSION` has zero implementation
 anywhere in `packages/scanner/src`. This single gap is the reason:
 
-- Zero of the twelve governed relationship types can reach materialization today, even though
-  the persistence/materialization RPCs for all twelve are already fully built and correct (§11,
-  §18).
+- 0/12 governed relationship types are currently producible with a canonical endpoint identity
+  sufficient to reach materialization today, even though the persistence/materialization RPCs
+  for all twelve are already fully built and correct (§11, §18).
 - Passport families 1 (Identity) and 7 (Agent Architecture & Behavior) cannot be governed
   end-to-end even though AGENT is already detected and enters CERTIFIED review (§13).
 - Roadmap milestones 3, 6, 7, 9, and 11 are all explicitly blocked on this gap by the roadmap's

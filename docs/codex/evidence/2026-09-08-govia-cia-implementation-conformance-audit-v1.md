@@ -12,7 +12,9 @@
 - Current branch: `main` (audit performed before branching).
 - Working tree: clean except the explicitly-allowed untracked `codex-recovery-6101-6240.txt`,
   which was not read or touched.
-- `.claude/` was never read, staged, modified, or deleted.
+- No file content under `.claude/` was intentionally opened, modified, staged, or deleted. Some
+  `.claude/worktrees` paths were incidentally enumerated by repository/worktree inventory
+  commands (`git worktree list`). No `.claude` file content was used as architectural evidence.
 - `8d72e46` was never inspected, referenced, or promoted — remains QUARANTINED.
 
 ## Method
@@ -63,22 +65,30 @@ resolve any ambiguity encountered).
    note: the endpoint matrix is `RELATIONSHIP_ENDPOINT_CONSTRAINTS`, module-private, not the
    `RELATIONSHIP_ENDPOINT_RULES` name informally used in prior planning references — content is
    identical.)
-3. **Only MODEL and TOOL reach full canonical materialization today.** AGENT detection exists but
-   its candidate-normalization strategy unconditionally fails closed by explicit design. **Zero
-   of the twelve governed relationship types reach materialization** — not because the
-   persistence/materialization RPCs are incomplete (they are fully built for all twelve), but
-   because every relationship type requires an `AGENT_VERSION` or `DATA_ELEMENT` source endpoint,
-   and neither kind has a production identity normalizer. The dashboard UI already knows this and
+3. **MODEL and TOOL are the only currently detected object kinds with implemented and tested
+   end-to-end canonicalization/materialization continuity when the governance-connected
+   Discovery Engine is invoked; however, that Discovery Engine currently has no live production
+   application trigger** (nothing under `apps/dashboard/app/**` calls it). AGENT detection exists
+   but its candidate-normalization strategy unconditionally fails closed by explicit design, so
+   AGENT would not reach materialization even if the engine were invoked. **0/12 governed
+   relationship types are currently producible with a canonical endpoint identity sufficient to
+   traverse Decision-to-Truth into materialization** — not because the persistence/materialization
+   RPCs are incomplete (they are fully built and correct for all twelve), but because every
+   relationship type requires an `AGENT_VERSION` or `DATA_ELEMENT` source endpoint, and neither
+   kind has a production identity normalizer. (`USES_MODEL`/`USES_TOOL` are discovered and
+   evidence-backed today, but AGENT-sourced rather than the required AGENT_VERSION-sourced, so
+   they are not yet valid canonical relationship inputs.) The dashboard UI already knows this and
    fails closed honestly (explicit REJECT/DEFER-only UX with in-context explanation), rather than
    offering a silent dead end.
 4. **`AGENT_VERSION` has zero implementation anywhere in `packages/scanner/src`** — this is the
    confirmed root gap, independently corroborated by three separate research passes.
-5. **New finding not previously documented**: the authoritative Graph route
-   (`apps/dashboard`'s `/graph`) projects only a separate, pre-canonical table set
-   (`gov_repo.agents`, `agent_edges`, `ai_systems`, …) and never reads
-   `gov_repo.canonical_objects` / `canonical_relationships` at all. Even the MODEL/TOOL objects
-   that already reach full materialization are invisible everywhere outside the Governance
-   Workspace review-detail page.
+5. **New finding not previously documented**: `apps/dashboard`'s active `/graph` surface
+   (the current product graph, an architecturally-conformant projection pattern) reads
+   exclusively from a separate, pre-canonical agent-registry table set (`gov_repo.agents`,
+   `agent_edges`, `ai_systems`, …) and does not project `gov_repo.canonical_objects` /
+   `canonical_relationships` at all. As a result, whenever the governance-connected Discovery
+   Engine is invoked and produces materialized MODEL/TOOL canonical objects, those objects remain
+   visible only on the Governance Workspace review-detail page, never on the Graph surface.
 6. **Correction to `GOVIA-L0L16-CIA-v1.0-coverage.md`'s L7 verdict**: pgvector infrastructure is
    not `NOT_IMPLEMENTED` — it is real, enabled, and actively used for a Talk-to-Governance RAG
    chat feature (`coding_memory` table, populated and queried). It is not, however, the
@@ -129,11 +139,40 @@ were not counted as Vector implementation (only actual pgvector schema/RPC code 
 reusable work was identified and registered; duplicate future work was identified and removed
 from the reconciled roadmap (milestones 1 and 12 rescoped).
 
+## Post-review precision corrections (follow-up to the original audit commit)
+
+After initial review, five wording-precision corrections were applied to the three audit
+documents (no new findings, no change to scope, no change to the recommended next milestone):
+
+1. Disambiguated "production path" to mean a *live application trigger*: the governance-connected
+   Discovery Engine (Path B) is implemented, tested, and governance-connected for MODEL/TOOL, but
+   is not currently invoked by any route/cron/script under `apps/dashboard/app/**`.
+2. Removed the phrase "canonical Supabase tables" when describing the Graph route's actual data
+   source — it reads the pre-canonical `gov_repo.agents`/`agent_edges`/… table family, not
+   `gov_repo.canonical_objects`/`canonical_relationships`; the Graph route's projection pattern
+   remains architecturally conformant and reusable regardless.
+3. Corrected the `.claude/` evidence claim from an absolute "never read" to the factually exact
+   statement: no file content was intentionally opened/modified, but `.claude/worktrees` paths
+   were incidentally enumerated by `git worktree list`.
+4. Corrected the migration file count from "41" to the actual count: **46** SQL migration files
+   under `supabase/migrations` (confirmed via `find supabase/migrations -maxdepth 1 -type f | wc
+   -l` = 46, and `-name "*.sql"` = 46 — all entries are `.sql`, no discrepancy to explain).
+5. Refined "zero of the twelve relationship types reach materialization" to the more precise
+   "0/12 governed relationship types are currently producible with a canonical endpoint identity
+   sufficient to traverse Decision-to-Truth into materialization" — and paired it consistently
+   with the complementary fact that the persistence/reconciliation/materialization infrastructure
+   for all twelve types is already complete; the blocker is upstream endpoint-identity production.
+
+The next-milestone recommendation (**Agent Identity & Version Discovery V1**) and the True Gap
+Register are unchanged by these corrections.
+
 ## Files changed
 
-- `docs/architecture/GOVIA-L0L16-CIA-v1.0-implementation-conformance.md` (new)
-- `docs/architecture/GOVIA-L0L16-CIA-v1.0-reuse-register.md` (new)
-- `docs/codex/evidence/2026-09-08-govia-cia-implementation-conformance-audit-v1.md` (new, this file)
+- `docs/architecture/GOVIA-L0L16-CIA-v1.0-implementation-conformance.md` (corrected)
+- `docs/architecture/GOVIA-L0L16-CIA-v1.0-reuse-register.md` (unchanged by the correction pass —
+  no contradictory wording found there)
+- `docs/codex/evidence/2026-09-08-govia-cia-implementation-conformance-audit-v1.md` (this file,
+  corrected)
 
 No source code, migrations, dependencies, or lockfiles were changed. `GOVIA-L0L16-CIA-v1.0.md`
 and `ADR-GOVIA-L0L16-CIA-v1.0.md` were not modified.
