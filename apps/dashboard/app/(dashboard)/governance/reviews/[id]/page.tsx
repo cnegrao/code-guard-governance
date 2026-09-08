@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { StateBadge } from "@/components/workspace/StateBadge";
+import { LifecycleStepper, type LifecycleStage, type LifecycleStageStatus } from "@/components/workspace/LifecycleStepper";
 
 interface EvidenceHash {
   algorithm: string;
@@ -85,6 +86,126 @@ interface ReviewSubjectDetail {
   allowedActions: AllowedGovernanceActions;
 }
 
+interface CanonicalObjectMatchCandidate {
+  canonicalObjectId: string;
+  kind: string;
+  createdAt: string;
+  sourceMappings: { connectionId: string; externalType: string; externalId: string }[];
+}
+interface ReconciliationDecisionSummary {
+  reconciliationDecisionId: string;
+  family: string;
+  outcome: string;
+  decidedAt: string;
+  actorReference: string;
+  reasonCode: string;
+  canonicalObject?: { objectId: string; kind: string };
+}
+interface MaterializationSummary {
+  status: string;
+  outcome: string;
+  family: string;
+  canonicalObjectId?: string;
+  relationshipId?: string;
+  appliedAt?: string;
+  failureClassification?: string;
+}
+interface GovernanceDecisionDetail {
+  reviewSubjectId: string;
+  candidateKind: string;
+  readiness: { ready: boolean; reason: string };
+  availableOutcomes: string[];
+  matchCandidates?: CanonicalObjectMatchCandidate[];
+  reconciliation?: ReconciliationDecisionSummary;
+  materialization?: MaterializationSummary;
+}
+
+const READINESS_REASON_TEXT: Record<string, string> = {
+  READY: "Ready for reconciliation.",
+  NOT_CERTIFIED: "This review subject is not yet CERTIFIED.",
+  FINDING_ONLY: "No trustworthy normalized object identity is currently available from Discovery.",
+  INPUT_UNAVAILABLE: "The original discovery input for this review subject is no longer available.",
+  ALREADY_RECONCILED: "A reconciliation decision has already been recorded for this review subject.",
+  ALREADY_MATERIALIZED: "This review subject has already been materialized into governed canonical state.",
+};
+
+function computeLifecycleStages(detail: ReviewSubjectDetail, decision: GovernanceDecisionDetail | null): LifecycleStage[] {
+  const state = detail.state;
+  const discovery: LifecycleStage = { label: "Discovery", status: "COMPLETED" };
+  const review: LifecycleStage = { label: "Review", status: state === "DETECTED" ? "AVAILABLE" : "COMPLETED" };
+
+  if (state === "REJECTED") {
+    return [
+      discovery,
+      review,
+      { label: "Certification", status: "NOT_APPLICABLE", detail: "This review subject was rejected." },
+      { label: "Input Readiness", status: "NOT_APPLICABLE" },
+      { label: "Authorization", status: "NOT_APPLICABLE" },
+      { label: "Reconciliation", status: "NOT_APPLICABLE" },
+      { label: "Materialization", status: "NOT_APPLICABLE" },
+      { label: "Governed", status: "NOT_APPLICABLE" },
+    ];
+  }
+
+  const certification: LifecycleStage = {
+    label: "Certification",
+    status: state === "CERTIFIED" ? "COMPLETED" : "PENDING",
+  };
+
+  if (!decision || state !== "CERTIFIED") {
+    return [
+      discovery,
+      review,
+      certification,
+      { label: "Input Readiness", status: "NOT_STARTED" },
+      { label: "Authorization", status: "NOT_STARTED" },
+      { label: "Reconciliation", status: "NOT_STARTED" },
+      { label: "Materialization", status: "NOT_STARTED" },
+      { label: "Governed", status: "NOT_STARTED" },
+    ];
+  }
+
+  const hasDecision = !!decision.reconciliation;
+  const inputReadinessStatus: LifecycleStageStatus =
+    decision.readiness.ready || hasDecision
+      ? "COMPLETED"
+      : decision.readiness.reason === "FINDING_ONLY" || decision.readiness.reason === "INPUT_UNAVAILABLE"
+        ? "NOT_APPLICABLE"
+        : "UNAVAILABLE";
+
+  const authAndReconciliationStatus: LifecycleStageStatus = hasDecision
+    ? "COMPLETED"
+    : decision.readiness.ready
+      ? "AVAILABLE"
+      : inputReadinessStatus === "NOT_APPLICABLE"
+        ? "NOT_APPLICABLE"
+        : "UNAVAILABLE";
+
+  const materializable =
+    hasDecision && (decision.reconciliation!.outcome === "CREATE_NEW" || decision.reconciliation!.outcome === "MATCH_EXISTING");
+  const materializationStatus: LifecycleStageStatus =
+    decision.materialization?.status === "APPLIED"
+      ? "COMPLETED"
+      : materializable
+        ? "AVAILABLE"
+        : hasDecision
+          ? "NOT_APPLICABLE"
+          : "NOT_STARTED";
+
+  const governedStatus: LifecycleStageStatus = decision.materialization?.status === "APPLIED" ? "COMPLETED" : "NOT_STARTED";
+
+  return [
+    discovery,
+    review,
+    certification,
+    { label: "Input Readiness", status: inputReadinessStatus, detail: decision.readiness.reason },
+    { label: "Authorization", status: authAndReconciliationStatus },
+    { label: "Reconciliation", status: authAndReconciliationStatus, detail: decision.reconciliation?.outcome },
+    { label: "Materialization", status: materializationStatus },
+    { label: "Governed", status: governedStatus },
+  ];
+}
+
 function formatTimestamp(value: string): string {
   try {
     return new Date(value).toLocaleString();
@@ -111,6 +232,28 @@ export default function ReviewSubjectDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [staleNotice, setStaleNotice] = useState(false);
 
+  const [decision, setDecision] = useState<GovernanceDecisionDetail | null>(null);
+  const [decisionOutcome, setDecisionOutcome] = useState<string | null>(null);
+  const [matchTarget, setMatchTarget] = useState<string | null>(null);
+  const [decisionReason, setDecisionReason] = useState("");
+  const [submittingDecision, setSubmittingDecision] = useState(false);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
+  const [materializing, setMaterializing] = useState(false);
+  const [materializeError, setMaterializeError] = useState<string | null>(null);
+
+  const loadDecision = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/governance/workspace/reviews/${encodeURIComponent(reviewSubjectId)}/decision`);
+      if (!res.ok) {
+        setDecision(null);
+        return;
+      }
+      setDecision(await res.json());
+    } catch {
+      setDecision(null);
+    }
+  }, [reviewSubjectId]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -126,16 +269,75 @@ export default function ReviewSubjectDetailPage() {
         throw new Error(body.error ?? "Unable to load this review subject.");
       }
       setDetail(await res.json());
+      await loadDecision();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load this review subject.");
     } finally {
       setLoading(false);
     }
-  }, [reviewSubjectId]);
+  }, [reviewSubjectId, loadDecision]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  async function submitDecision() {
+    if (!decisionOutcome) return;
+    setSubmittingDecision(true);
+    setDecisionError(null);
+    try {
+      const res = await fetch(`/api/governance/workspace/reviews/${encodeURIComponent(reviewSubjectId)}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestedOutcome: decisionOutcome,
+          matchCanonicalObjectId: decisionOutcome === "MATCH_EXISTING" ? matchTarget : undefined,
+          reasonCode: decisionReason,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // A 409 (NOT_READY/ALREADY_RECONCILED/ALREADY_MATERIALIZED, or a
+        // persistence conflict) means the screen's belief about readiness is
+        // stale — another operator (or tab) already acted. Refresh so the
+        // lifecycle view shows the current truth instead of leaving the
+        // outcome form visibly stuck.
+        if (res.status === 409) await loadDecision();
+        throw new Error(body.error ?? "Unable to record this reconciliation decision.");
+      }
+      setDecisionOutcome(null);
+      setMatchTarget(null);
+      setDecisionReason("");
+      await loadDecision();
+    } catch (err) {
+      setDecisionError(err instanceof Error ? err.message : "Unable to record this reconciliation decision.");
+    } finally {
+      setSubmittingDecision(false);
+    }
+  }
+
+  async function submitMaterialize() {
+    setMaterializing(true);
+    setMaterializeError(null);
+    try {
+      const res = await fetch(`/api/governance/workspace/reviews/${encodeURIComponent(reviewSubjectId)}/materialize`, {
+        method: "POST",
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Same stale-screen protection as submitDecision: a 409 means
+        // another operator (or tab) already materialized (or the decision
+        // changed) since this screen loaded — refresh to the current truth.
+        if (res.status === 409) await loadDecision();
+        throw new Error(body.error ?? "Unable to materialize this decision.");
+      }
+      await loadDecision();
+    } catch (err) {
+      setMaterializeError(err instanceof Error ? err.message : "Unable to materialize this decision.");
+    } finally {
+      setMaterializing(false);
+    }
+  }
 
   async function submitAction(action: Exclude<PendingAction, null>, reason?: string) {
     if (!detail) return;
@@ -212,6 +414,11 @@ export default function ReviewSubjectDetailPage() {
           </p>
         </Card>
       )}
+
+      <Card className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Decision to Truth</h3>
+        <LifecycleStepper stages={computeLifecycleStages(detail, decision)} />
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -398,6 +605,156 @@ export default function ReviewSubjectDetailPage() {
               </div>
             )}
           </Card>
+
+          {decision && (
+            <Card className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Reconciliation &amp; Materialization</h3>
+
+              {decision.readiness.reason === "FINDING_ONLY" && !decision.reconciliation && (
+                <div className="text-xs space-y-1 mb-3">
+                  <div className="text-gray-500">Reconciliation input: <span className="text-gray-300">FINDING_ONLY</span></div>
+                  <div className="text-warning font-medium">NOT READY FOR RECONCILIATION</div>
+                  <div className="text-gray-500">Reason: {READINESS_REASON_TEXT.FINDING_ONLY}</div>
+                </div>
+              )}
+
+              {!decision.reconciliation &&
+                decision.readiness.reason !== "READY" &&
+                decision.readiness.reason !== "FINDING_ONLY" && (
+                  <p className="text-sm text-gray-500 mb-3">{READINESS_REASON_TEXT[decision.readiness.reason] ?? decision.readiness.reason}</p>
+                )}
+
+              {decisionError && <p className="text-sm text-danger mb-3">{decisionError}</p>}
+
+              {!decision.reconciliation && decision.readiness.ready && (
+                <div className="space-y-3">
+                  {decisionOutcome ? (
+                    <div className="space-y-3">
+                      {decisionOutcome === "MATCH_EXISTING" && (
+                        <div>
+                          <label className="block text-sm text-gray-300 mb-1">Match to existing canonical object</label>
+                          {(decision.matchCandidates ?? []).length === 0 ? (
+                            <p className="text-xs text-gray-500">No existing canonical objects of this kind are governed yet.</p>
+                          ) : (
+                            <select
+                              className="w-full px-3 py-2 bg-surface-dark border border-border-dark rounded-lg text-white text-sm"
+                              value={matchTarget ?? ""}
+                              onChange={(e) => setMatchTarget(e.target.value || null)}
+                            >
+                              <option value="">Select a canonical object…</option>
+                              {(decision.matchCandidates ?? []).map((candidate) => (
+                                <option key={candidate.canonicalObjectId} value={candidate.canonicalObjectId}>
+                                  {candidate.canonicalObjectId}
+                                  {candidate.sourceMappings.length > 0
+                                    ? ` — ${candidate.sourceMappings.map((m) => m.externalId).join(", ")}`
+                                    : ""}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )}
+                      <label className="block text-sm text-gray-300">Reason</label>
+                      <textarea
+                        className="w-full px-3 py-2 bg-surface-dark border border-border-dark rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        rows={3}
+                        value={decisionReason}
+                        onChange={(e) => setDecisionReason(e.target.value)}
+                        placeholder="Explain the basis for this reconciliation decision"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant={decisionOutcome === "REJECT" ? "danger" : "primary"}
+                          loading={submittingDecision}
+                          disabled={
+                            decisionReason.trim().length === 0 ||
+                            (decisionOutcome === "MATCH_EXISTING" && !matchTarget)
+                          }
+                          onClick={submitDecision}
+                        >
+                          Confirm {decisionOutcome.replace("_", " ")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setDecisionOutcome(null);
+                            setMatchTarget(null);
+                            setDecisionReason("");
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {decision.availableOutcomes.map((outcome) => (
+                        <Button
+                          key={outcome}
+                          className="w-full"
+                          variant={outcome === "REJECT" ? "danger" : outcome === "DEFER" ? "secondary" : "primary"}
+                          onClick={() => setDecisionOutcome(outcome)}
+                        >
+                          {outcome.replace("_", " ")}
+                        </Button>
+                      ))}
+                      {detail.candidateKind === "RELATIONSHIP" && (
+                        <p className="text-xs text-gray-500 pt-1">
+                          CREATE NEW / MATCH EXISTING are not yet available for relationships: every governed
+                          relationship type requires an already-governed AGENT_VERSION or DATA_ELEMENT source
+                          endpoint, and neither kind has a production identity normalizer yet.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {decision.reconciliation && (
+                <div className="text-xs space-y-1 p-3 rounded-lg bg-white/5 border border-border-dark/50 mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300 font-medium">{decision.reconciliation.outcome.replace("_", " ")}</span>
+                    <span className="text-gray-500">{formatTimestamp(decision.reconciliation.decidedAt)}</span>
+                  </div>
+                  <div className="text-gray-500">by {decision.reconciliation.actorReference}</div>
+                  <div className="text-gray-500 italic">&quot;{decision.reconciliation.reasonCode}&quot;</div>
+                  {decision.reconciliation.canonicalObject && (
+                    <div className="text-gray-500 break-all">
+                      Canonical object: {decision.reconciliation.canonicalObject.objectId} ({decision.reconciliation.canonicalObject.kind})
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {materializeError && <p className="text-sm text-danger mb-3">{materializeError}</p>}
+
+              {decision.reconciliation &&
+                !decision.materialization &&
+                (decision.reconciliation.outcome === "CREATE_NEW" || decision.reconciliation.outcome === "MATCH_EXISTING") && (
+                  <Button className="w-full" loading={materializing} onClick={submitMaterialize}>
+                    Materialize
+                  </Button>
+                )}
+
+              {decision.materialization?.status === "APPLIED" && (
+                <div className="text-xs space-y-1 p-3 rounded-lg bg-success/10 border border-success/30">
+                  <div className="text-success font-semibold">GOVERNED CANONICAL STATE ESTABLISHED</div>
+                  <div className="text-gray-400">Outcome: {decision.materialization.outcome.replace("_", " ")}</div>
+                  {decision.materialization.canonicalObjectId && (
+                    <div className="text-gray-400 break-all">Canonical object: {decision.materialization.canonicalObjectId}</div>
+                  )}
+                  {decision.materialization.relationshipId && (
+                    <div className="text-gray-400 break-all">Canonical relationship: {decision.materialization.relationshipId}</div>
+                  )}
+                  {decision.materialization.appliedAt && (
+                    <div className="text-gray-500">Applied {formatTimestamp(decision.materialization.appliedAt)}</div>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </div>
