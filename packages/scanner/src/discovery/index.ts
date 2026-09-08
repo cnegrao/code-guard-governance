@@ -61,7 +61,10 @@ export {
   correlateAgentUsesToolRelationships,
 } from './relationship-correlation';
 
-export type { AgentVersionCorrelationResult } from './agent-version-correlation';
+export type {
+  AgentVersionCorrelationResult,
+  AgentVersionTechnicalProfileFieldEvidence,
+} from './agent-version-correlation';
 export { AgentVersionCorrelationStrategy, correlateAgentVersions } from './agent-version-correlation';
 
 export type {

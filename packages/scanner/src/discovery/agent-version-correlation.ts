@@ -27,9 +27,31 @@ import { TECHNICAL_PROFILE_SIGNAL_KIND, type TechnicalProfileSignal } from './te
  * multiple already-produced {@link DiscoveryCandidate}s, never a single
  * detector's own match: no detector observes "a version" directly.
  */
+/** Per-field provenance only — mirrors canonical-contracts' TechnicalMetadataSupport shape. */
+export interface AgentVersionTechnicalProfileFieldEvidence {
+  readonly assertionIds: readonly string[];
+  readonly evidenceIds: readonly string[];
+}
+
 export interface AgentVersionCorrelationResult {
   readonly finding: ObjectDiscoveryFinding<'AGENT_VERSION'>;
   readonly candidate: NormalizedAgentVersionCandidate;
+  /**
+   * Technical Profile Persistence V1 (ADR-GOVIA-TECHNICAL-PROFILE-PERSISTENCE-v1)
+   * projection: the exact same deterministic technicalRevisionFingerprint
+   * already folded into candidate.candidateId, exposed separately so a
+   * caller can map it into AgentVersionTechnicalProfile.behaviorFingerprint.value
+   * without ever computing (or inventing) a second, competing fingerprint.
+   */
+  readonly technicalRevisionFingerprint: string;
+  /**
+   * Present only when exactly one same-file FRAMEWORK technical-profile
+   * signal was correlated — an ambiguous multi-framework file (two different
+   * Framework imports) fails closed to absent (UNKNOWN) rather than
+   * guessing which one is "the" AgentVersion's framework.
+   */
+  readonly runtimeFrameworkReference?: string;
+  readonly runtimeFrameworkReferenceSupport?: AgentVersionTechnicalProfileFieldEvidence;
 }
 
 function stableSuffix(parts: readonly string[]): string {
@@ -429,7 +451,27 @@ export function correlateAgentVersions(
       proposedIdentity: { agent: agentReference },
     };
 
-    results.push({ finding, candidate });
+    // Technical Profile Persistence V1: runtimeFrameworkReference is
+    // proposed only when exactly one same-file FRAMEWORK signal exists —
+    // fails closed (absent) on zero or ambiguous (>1) signals rather than
+    // guessing. Its own support is exactly that one signal's own
+    // assertion/evidence id, never the whole AGENT_VERSION's evidence union.
+    const frameworkSignals = technicalProfileSignalsInFile.filter(
+      (signal) => signal.signalKind === TECHNICAL_PROFILE_SIGNAL_KIND.FRAMEWORK,
+    );
+    const runtimeFrameworkReference =
+      frameworkSignals.length === 1 ? frameworkSignals[0].value : undefined;
+    const runtimeFrameworkReferenceSupport =
+      frameworkSignals.length === 1
+        ? { assertionIds: [frameworkSignals[0].assertion.assertionId], evidenceIds: [frameworkSignals[0].evidence.evidenceId] }
+        : undefined;
+
+    results.push({
+      finding,
+      candidate,
+      technicalRevisionFingerprint,
+      ...(runtimeFrameworkReference === undefined ? {} : { runtimeFrameworkReference, runtimeFrameworkReferenceSupport }),
+    });
   }
 
   return Object.freeze(results);

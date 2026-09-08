@@ -26,6 +26,11 @@ import {
   type AcquisitionRunCounts,
   type AcquisitionRunPersistenceResult,
   type ActiveObjectSourceMapping,
+  type AgentVersionTechnicalProfileMaterializationInput,
+  type AgentVersionTechnicalProfileMaterializationResult,
+  type AgentVersionTechnicalProfilePersistencePort,
+  type AgentVersionTechnicalProfileProposalInput,
+  type AgentVersionTechnicalProfileProposalResult,
   type DiscoveryFindingPersistenceResult,
   type DiscoveryIntakePersistencePort,
   type EvidencePersistenceResult,
@@ -362,10 +367,38 @@ class FakeMaterializationPersistence implements MaterializationPersistencePort {
   }
 }
 
+class FakeAgentVersionTechnicalProfilePersistence implements AgentVersionTechnicalProfilePersistencePort {
+  readonly proposals = new Map<string, AgentVersionTechnicalProfileProposalInput>();
+  readonly materializations = new Map<string, AgentVersionTechnicalProfileMaterializationInput>();
+
+  private key(organisationId: string, id: string): string {
+    return `${organisationId}::${id}`;
+  }
+
+  async recordAgentVersionTechnicalProfileProposal(
+    input: AgentVersionTechnicalProfileProposalInput,
+  ): Promise<AgentVersionTechnicalProfileProposalResult> {
+    const key = this.key(input.organisationId, input.proposalId);
+    const replay = this.proposals.has(key);
+    if (!replay) this.proposals.set(key, input);
+    return { replay, proposalId: input.proposalId };
+  }
+
+  async materializeAgentVersionTechnicalProfile(
+    input: AgentVersionTechnicalProfileMaterializationInput,
+  ): Promise<AgentVersionTechnicalProfileMaterializationResult> {
+    const key = this.key(input.organisationId, `${input.canonicalObjectId}::${input.proposalId}`);
+    const replay = this.materializations.has(key);
+    if (!replay) this.materializations.set(key, input);
+    return { replay, status: "APPLIED", canonicalObjectId: input.canonicalObjectId };
+  }
+}
+
 function makePorts(intake = new FakeIntakePersistence()) {
   const review = new FakeReviewPersistence(intake);
   const materialization = new FakeMaterializationPersistence();
-  return { review, materialization, intake };
+  const agentVersionTechnicalProfile = new FakeAgentVersionTechnicalProfilePersistence();
+  return { review, materialization, intake, agentVersionTechnicalProfile };
 }
 
 // ---------------------------------------------------------------------------
@@ -1130,6 +1163,158 @@ describe("Agent Technical Profile L4 Round 1: new canonical object kinds + Agent
         firstSubject.findingId,
         "changing the Prompt's own effective content must produce a different AGENT_VERSION technical revision, even with the same declaration key",
       );
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Technical Profile Persistence V1 (ADR-GOVIA-TECHNICAL-PROFILE-PERSISTENCE-v1).
+// Pre-canonical AgentVersionTechnicalProfile proposal recording — the FIRST
+// instance of the global typed, per-canonical-object-kind TechnicalProfile
+// persistence pattern, scoped to AgentVersion only in this milestone (see
+// the ADR). Canonical materialization itself lives entirely in
+// gov_repo.materialize_agent_version_technical_profile (SQL, gated on a
+// governed AGENT_VERSION already existing) and is exercised only via the
+// fake port's own recording behavior here — this suite proves the
+// service-layer (Discovery Intake) side: what gets proposed, with what
+// support, and that Discovery Intake itself never reaches materialization.
+// ---------------------------------------------------------------------------
+
+async function withFrameworkFixtureRepository(
+  frameworkImportLine: string,
+  run: (root: string) => Promise<void>,
+): Promise<void> {
+  const root = await mkdtemp(join(tmpdir(), "agent-version-technical-profile-proposal-"));
+  try {
+    await writeFile(
+      join(root, "agent.py"),
+      ["class CustomerSupportAgent:", '    kind = "agent"', '    modelReference = "gpt-x"', frameworkImportLine, ""].join("\n"),
+    );
+    await run(root);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+describe("Technical Profile Persistence V1: pre-canonical AgentVersion proposal", () => {
+  test("1: persists typed semantic values — behaviorFingerprint always present, runtimeFrameworkReference present only when unambiguous; unsupported dimensions stay absent (TEST #21)", async () => {
+    await withFrameworkFixtureRepository("from langgraph import StateGraph", async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      assert.equal(ports.agentVersionTechnicalProfile.proposals.size, 1);
+      const [proposal] = ports.agentVersionTechnicalProfile.proposals.values();
+      assert.equal(proposal.organisationId, ORG_A);
+      assert.equal(proposal.behaviorFingerprintAlgorithm, "sha256");
+      assert.ok(proposal.behaviorFingerprintValue.length > 0);
+      assert.equal(proposal.runtimeFrameworkReference, "LangGraph");
+      assert.equal(proposal.buildReference, undefined);
+      assert.equal(proposal.entrypointReference, undefined);
+      assert.equal(proposal.configurationReference, undefined);
+    });
+  });
+
+  test("2 / 22: preserves independent per-field assertion/evidence support — behaviorFingerprint gets the whole union, runtimeFrameworkReference gets only its own signal's ids", async () => {
+    await withFrameworkFixtureRepository("from langgraph import StateGraph", async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const [proposal] = ports.agentVersionTechnicalProfile.proposals.values();
+
+      assert.ok(proposal.support.behaviorFingerprint.assertionIds.length >= 2, "AGENT + MODEL + Framework all contribute to behaviorFingerprint");
+      assert.equal(proposal.support.runtimeFrameworkReference.assertionIds.length, 1);
+      assert.deepEqual(proposal.support.buildReference, { assertionIds: [], evidenceIds: [] });
+      assert.deepEqual(proposal.support.entrypointReference, { assertionIds: [], evidenceIds: [] });
+      assert.deepEqual(proposal.support.configurationReference, { assertionIds: [], evidenceIds: [] });
+      assert.notDeepEqual(
+        [...proposal.support.behaviorFingerprint.assertionIds].sort(),
+        [...proposal.support.runtimeFrameworkReference.assertionIds].sort(),
+      );
+    });
+  });
+
+  test("3: identical rescan replays the same proposal (idempotent), no duplicate proposal recorded", async () => {
+    await withFrameworkFixtureRepository("from langgraph import StateGraph", async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      assert.equal(ports.agentVersionTechnicalProfile.proposals.size, 1, "an identical rescan must not append a second proposal");
+    });
+  });
+
+  test("4: a materially different technical revision never collides — produces a different proposalId rather than overwriting the prior one", async () => {
+    await withFrameworkFixtureRepository("from langgraph import StateGraph", async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const firstProposalId = [...ports.agentVersionTechnicalProfile.proposals.values()][0].proposalId;
+
+      await writeFile(
+        join(root, "agent.py"),
+        ["class CustomerSupportAgent:", '    kind = "agent"', '    modelReference = "gpt-x"', "from crewai import Crew", ""].join("\n"),
+      );
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      assert.equal(ports.agentVersionTechnicalProfile.proposals.size, 2, "both the original and the changed proposal remain durable, neither overwritten");
+      const secondProposal = [...ports.agentVersionTechnicalProfile.proposals.values()].find((p) => p.proposalId !== firstProposalId);
+      assert.ok(secondProposal, "the changed Framework must produce a genuinely different proposalId");
+    });
+  });
+
+  test("5 / 26: recording a proposal creates no canonical object and never invokes canonical profile materialization", async () => {
+    await withFrameworkFixtureRepository("from langgraph import StateGraph", async (root) => {
+      const ports = makePorts();
+      const result = await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      assert.deepEqual(result.failures, [], "FakeMaterializationPersistence throws on any object/relationship materialization call — a clean run proves it never happened");
+      assert.equal(ports.agentVersionTechnicalProfile.materializations.size, 0, "Discovery Intake must never call materializeAgentVersionTechnicalProfile");
+    });
+  });
+
+  test("6 / 28: recording a proposal never advances the AGENT_VERSION ReviewSubject past PROPOSED (no automatic certification, scanner ceiling holds)", async () => {
+    await withFrameworkFixtureRepository("from langgraph import StateGraph", async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const agentVersionSubject = [...ports.review.subjects.values()].find((s) => s.candidateKind === "AGENT_VERSION");
+      assert.ok(agentVersionSubject);
+      assert.equal(agentVersionSubject!.state, "PROPOSED");
+    });
+  });
+
+  test("19: Orchestration evidence never overloads configurationReference (no dedicated field exists; it must stay absent)", async () => {
+    await withFrameworkFixtureRepository("from crewai import Crew", async (root) => {
+      const ports = makePorts();
+      await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+      const [proposal] = ports.agentVersionTechnicalProfile.proposals.values();
+      // CrewAI is both a Framework AND (via the same import) an
+      // Orchestration signal — runtimeFrameworkReference legitimately
+      // reflects the Framework half, but configurationReference must never
+      // absorb the Orchestration half.
+      assert.equal(proposal.runtimeFrameworkReference, "CrewAI");
+      assert.equal(proposal.configurationReference, undefined);
     });
   });
 });

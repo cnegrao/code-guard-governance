@@ -123,7 +123,10 @@ export {
   correlateAgentUsesModelRelationships,
   correlateAgentUsesToolRelationships,
 } from './discovery/relationship-correlation';
-export type { AgentVersionCorrelationResult } from './discovery/agent-version-correlation';
+export type {
+  AgentVersionCorrelationResult,
+  AgentVersionTechnicalProfileFieldEvidence,
+} from './discovery/agent-version-correlation';
 export { AgentVersionCorrelationStrategy, correlateAgentVersions } from './discovery/agent-version-correlation';
 export type {
   DiscoveryPipelineOptions,
