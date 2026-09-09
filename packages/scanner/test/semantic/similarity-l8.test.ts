@@ -91,6 +91,28 @@ describe('L8 compatible semantic space and tenancy', () => {
 });
 
 describe('L8 mathematically honest cosine', () => {
+  for (const [label, left, right] of [
+    ['left zero', [0, 0], [1, 0]],
+    ['right zero', [1, 0], [0, 0]],
+    ['both zero', [0, 0], [0, 0]],
+  ] as const) {
+    it(`fails closed with the domain error for ${label}`, () => {
+      const request = input({ source: { ...source, vector: left }, target: { ...target, vector: right } });
+      for (const operation of [compareSemanticRepresentations, createPossibleMatchCandidate]) {
+        assert.throws(() => operation(request), { name: 'TypeError', message: 'L8_ZERO_VECTOR' });
+      }
+    });
+  }
+  it('keeps near-boundary and general finite nonzero scores bounded without rescaling', () => {
+    for (const vector of [[1, 1 + Number.EPSILON], [-1, -1 - Number.EPSILON],
+      [1, -1], [1e308, 1], [Number.MIN_VALUE, 1], [3, 4]]) {
+      const score = compareSemanticRepresentations(input({
+        source: { ...source, vector: [1, 1] }, target: { ...target, vector },
+      })).score;
+      assert.ok(Number.isFinite(score));
+      assert.ok(score >= -1 && score <= 1);
+    }
+  });
   for (const [label, vector, expected] of [
     ['aligned', [1, 0], 1], ['orthogonal', [0, 1], 0], ['opposite', [-1, 0], -1],
     ['non-unit', [30, 40], 0.6], ['very large', [1e308, 0], 1], ['subnormal', [Number.MIN_VALUE, 0], 1],
@@ -131,16 +153,32 @@ describe('L8 possible matches and analytical policy', () => {
   it('deduplicates A/B and B/A by identical content-addressed identity and output', () => {
     assert.deepEqual(createPossibleMatchCandidate(input()), createPossibleMatchCandidate(input({ source: target, target: source })));
   });
+  it('canonicalizes the complete candidate for nontrivial cosine in both execution directions', () => {
+    const request = input({ source: { ...source, vector: [0.1, 0.3] },
+      target: { ...target, vector: [-0.2, 0.8] } });
+    const forward = createPossibleMatchCandidate(request)!;
+    const reverse = createPossibleMatchCandidate({ ...request, source: request.target, target: request.source })!;
+    assert.ok(forward);
+    assert.ok(forward.score > policy.threshold && forward.score < 1);
+    assert.deepEqual(forward, reverse);
+    assert.deepEqual(forward.left.subject, source.subject);
+    assert.deepEqual(forward.right.subject, target.subject);
+    const later = createPossibleMatchCandidate({ ...request, source: request.target, target: request.source,
+      computedAt: '2026-09-10T00:00:00Z' })!;
+    assert.deepEqual({ ...later, computedAt }, forward);
+  });
   it('excludes same representation', () => {
     assert.throws(() => createPossibleMatchCandidate(input({ target: source })), /L8_SELF_MATCH_EXCLUDED/);
   });
   it('excludes different representation versions of the same subject', () => {
-    assert.throws(() => createPossibleMatchCandidate(input({ target: { ...source,
-      representationId: asSemanticRepresentationId('new-version') } })), /L8_SELF_MATCH_EXCLUDED/);
+    const version = { ...source, representationId: asSemanticRepresentationId('new-version') };
+    assert.throws(() => createPossibleMatchCandidate(input({ target: version })), /L8_SELF_MATCH_EXCLUDED/);
+    assert.throws(() => createPossibleMatchCandidate(input({ source: version, target: source })), /L8_SELF_MATCH_EXCLUDED/);
   });
   it('excludes the same representation ID even with inconsistent subjects', () => {
-    assert.throws(() => createPossibleMatchCandidate(input({ target: { ...target,
-      representationId: source.representationId } })), /L8_SELF_MATCH_EXCLUDED/);
+    const sameId = { ...target, representationId: source.representationId };
+    assert.throws(() => createPossibleMatchCandidate(input({ target: sameId })), /L8_SELF_MATCH_EXCLUDED/);
+    assert.throws(() => createPossibleMatchCandidate(input({ source: sameId, target: source })), /L8_SELF_MATCH_EXCLUDED/);
   });
   it('excludes timestamps and provenance from pair identity', () => {
     const later = createPossibleMatchCandidate(input({ computedAt: '2026-09-10T00:00:00Z',
@@ -159,6 +197,14 @@ describe('L8 possible matches and analytical policy', () => {
   });
   it('emits at the inclusive configured threshold', () => {
     assert.equal(createPossibleMatchCandidate(input({ policy: { ...policy, threshold: 1 } }))!.score, 1);
+  });
+  it('accepts thresholds -1 and 0 inclusively without converting the score to confidence', () => {
+    for (const [threshold, vector] of [[-1, [-1, 0]], [0, [0, 1]]] as const) {
+      const candidate = createPossibleMatchCandidate(input({ target: { ...target, vector },
+        policy: { ...policy, threshold } }))!;
+      assert.equal(candidate.score, threshold);
+      assert.equal(candidate.status, 'ANALYTICAL');
+    }
   });
   for (const threshold of [NaN, Infinity, -1.01, 1.01, undefined]) {
     it(`rejects invalid or missing threshold ${String(threshold)}`, () => {
@@ -266,6 +312,16 @@ describe('L8 conservative connected components', () => {
     assert.equal(result.find(c => c.members.length === 3)!.candidateIds.length, 2);
     assert.ok(result.every(c => c.status === 'ANALYTICAL'));
   });
+  it('preserves complete clusters under reversed pair orientation, edge order and duplicates', () => {
+    const edges = [edge('a', 'b'), edge('b', 'c'), edge('d', 'e')];
+    const reversed = edges.map(candidate => ({ ...candidate, left: candidate.right, right: candidate.left })).reverse();
+    const expected = clusters(edges);
+    assert.deepEqual(clusters(reversed), expected);
+    assert.deepEqual(clusters([...reversed, ...edges, ...reversed]), expected);
+    assert.deepEqual(clusters([edge('e', 'd'), edge('c', 'b'), edge('b', 'a')]), expected);
+    assert.throws(() => clusters([{ ...reversed[0], candidateId: 'forged' }]), /L8_INVALID_PAIR_IDENTITY/);
+    assert.throws(() => clusters([edges[0], { ...reversed[2], score: 0.9 }]), /L8_CONFLICTING_EDGE_REPLAY/);
+  });
   it('returns an empty population without fabricating DataElements or singleton entities', () => {
     assert.deepEqual(clusterPossibleMatches({ organisationId, semanticSpace: semanticSpaceIdentity(source),
       policy: { ...policy, comparisonFamily: 'DATA_ELEMENT' }, computedAt, candidates: [] }), []);
@@ -287,7 +343,6 @@ describe('L8 conservative connected components', () => {
     ['policy version', (c: PossibleMatchCandidate) => ({ ...c, policy: { ...c.policy, policyVersion: 'v2' } })],
     ['policy threshold', (c: PossibleMatchCandidate) => ({ ...c, policy: { ...c.policy, threshold: 0.9 } })],
     ['self-match', (c: PossibleMatchCandidate) => ({ ...c, right: c.left })],
-    ['reverse ordering', (c: PossibleMatchCandidate) => ({ ...c, left: c.right, right: c.left })],
     ['forged id', (c: PossibleMatchCandidate) => ({ ...c, candidateId: 'forged' })],
     ['high trust', (c: PossibleMatchCandidate) => ({ ...c, status: 'VALIDATED' })],
     ['below threshold', (c: PossibleMatchCandidate) => ({ ...c, score: 0.1 })],

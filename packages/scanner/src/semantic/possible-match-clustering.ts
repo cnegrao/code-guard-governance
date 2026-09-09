@@ -55,11 +55,14 @@ export function clusterPossibleMatches(input: ClusterPossibleMatchesInput): read
       throw new TypeError('L8_INVALID_ANALYTICAL_EDGE');
     }
     validateComputedAt(candidate.computedAt);
-    const left = snapshotEndpoint(candidate.left, input.organisationId, policy.comparisonFamily);
-    const right = snapshotEndpoint(candidate.right, input.organisationId, policy.comparisonFamily);
+    // Cosine edges are unordered: normalize either orientation before graph construction.
+    const [left, right] = [
+      snapshotEndpoint(candidate.left, input.organisationId, policy.comparisonFamily),
+      snapshotEndpoint(candidate.right, input.organisationId, policy.comparisonFamily),
+    ].sort((a, b) => endpointKey(a) < endpointKey(b) ? -1 : endpointKey(a) > endpointKey(b) ? 1 : 0);
     const a = semanticRepresentationSubjectKey(left.subject), b = semanticRepresentationSubjectKey(right.subject);
     if (a === b || left.representationId === right.representationId) throw new TypeError('L8_SELF_MATCH_EXCLUDED');
-    if (endpointKey(left) >= endpointKey(right) || candidateIdentity(candidate) !== candidate.candidateId) {
+    if (candidateIdentity(candidate) !== candidate.candidateId) {
       throw new TypeError('L8_INVALID_PAIR_IDENTITY');
     }
     if (scores.has(candidate.candidateId) && scores.get(candidate.candidateId) !== candidate.score) {

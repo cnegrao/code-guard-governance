@@ -34,6 +34,8 @@
 
 V1 is an explicitly invoked domain computation, with no durable review queue, UI, scheduled run or reconciliation consumer. Results include the full policy, computation context and source references for inspection and deterministic replay against immutable L7 inputs. Durable retention would be required before claiming an auditable historical review workflow or future governed consumption; neither is implemented here. No in-memory map is presented as durable persistence. Separate additive analytical tables remain the preferred future direction; canonical tables must never host these outputs. New persistence/RLS/idempotent database history: NOT_IMPLEMENTED. No new architectural authority is assigned.
 
+PossibleMatchCandidate and PossibleMatchCluster are currently **in-memory derived analytical results**. No durable analytical history exists; therefore **durable audit/review retrieval = NOT_IMPLEMENTED**. Ephemeral inspection/recomputation does not grant canonical authority or constitute durable auditability. A future persistence decision must precede any downstream governed consumer that relies on durable L8 history. No persistence is introduced by the final mathematical/determinism gate.
+
 ## Validation record
 
 1. **Base main SHA:** `3916736360f7a7fae2391b3afac31006b0995d7a`. After `git fetch origin`, local `main` equalled `origin/main`. Both required ancestry commands returned 0 for `a2a1608f4bd35a5c8c026307f20bba58a81cc81e` and `3916736360f7a7fae2391b3afac31006b0995d7a`. Initial status contained only the permitted recovery file.
@@ -85,9 +87,26 @@ V1 is an explicitly invoked domain computation, with no durable review queue, UI
 - `packages/scanner/src/index.ts`: additive public analytical exports.
 - `packages/scanner/src/semantic/similarity.ts`: local types, compatibility, cosine and possible-match emission.
 - `packages/scanner/src/semantic/possible-match-clustering.ts`: deterministic, validated analytical components.
-- `packages/scanner/test/semantic/similarity-l8.test.ts`: 76 focused L8 cases.
+- `packages/scanner/test/semantic/similarity-l8.test.ts`: 82 focused L8 cases after the final gate below (76 at the original feature commit).
 - `docs/codex/evidence/2026-09-09-similarity-entity-resolution-candidates-l8-v1-validation.md`: this evidence.
 
 The recovery file remains untracked and was never read, staged, hashed, modified or deleted. `.claude/**` was not inspected. Frozen architecture, Golden Repository/Validation Lab, relationship-correlation, GraphOS and production configuration are outside the changed file list. One feature commit and one PR to main; do not merge.
 
 **Verdict:** `SIMILARITY_ENTITY_RESOLUTION_CANDIDATES_L8_V1_READY_FOR_REVIEW` for the documented domain V1 scope and explicit persistence/retrieval/production limitations.
+
+## PR #26 final mathematical / determinism gate
+
+Reviewed HEAD: `a48912d2e96d8a92642b394c484dc08fb9d2f5c2` on `feat/similarity-entity-resolution-candidates-l8-v1`; initial status contained only the permitted untouched recovery file. Inspection was limited to similarity.ts, possible-match-clustering.ts, similarity-l8.test.ts and this evidence. The original 108/108 result above is historical validation at that HEAD; this gate ran the focused L8 file only.
+
+- **Zero norm — PASS, implementation unchanged:** scaling checks maximum absolute component before division, rejecting either zero vector with domain-consistent `TypeError('L8_ZERO_VECTOR')`. Explicit left-zero, right-zero and both-zero tests now exercise both comparison and candidate emission. No score is returned for zero norm.
+- **Numeric bounds — PASS, implementation unchanged:** finite component checks, maximum-component scaling, a finite-result guard and final [-1,1] range clamping already exist. Exact aligned/opposite directions and orthogonal vectors yield 1/-1/0; near-boundary, non-unit, large and subnormal cases stay finite and bounded. No precision rounding rule, epsilon-based alignment, score rescaling or new algorithm version was introduced.
+- **Threshold domain — PASS, implementation unchanged:** invalid/nonfinite/out-of-range thresholds are rejected. Existing upper-bound inclusion and new -1/0 equality cases prove inclusive comparison across the cosine domain. Threshold retains zero governance authority.
+- **Complete A/B symmetry — PASS, implementation unchanged:** deep equality now also covers a nontrivial non-unit-vector candidate in both directions, including ordered endpoints, score, family, space, metric, policy and identity. Explicit expected endpoint references verify deterministic ordering. Reversing direction and changing only computedAt changes no semantic field or identity.
+- **Self-match — PASS, implementation unchanged:** same representation ID and distinct representation IDs sharing the same subject are rejected in both directions. Representation-version comparison does not become entity resolution.
+- **Cluster determinism — concrete defect fixed:** the original implementation rejected a semantically identical edge when its endpoint fields were reversed. The regression failed at the reviewed implementation with `L8_INVALID_PAIR_IDENTITY` (81/82 tests passed). Clustering now normalizes validated endpoints with the existing stable endpoint key before building the graph, while continuing to verify the symmetric content-addressed candidate ID. No identity formula changed. Full cluster deep equality proves identical members, member order, cluster identity and candidate IDs under reversed edge order, reversed endpoint orientation, reversed engine execution and duplicated identical edges. Reversed edges with forged IDs or conflicting scores still fail closed. Tenant/family/space/full-policy isolation remains enforced.
+- **Persistence wording — explicit:** see the amended decision above. In-memory only; no durable analytical history, audit/review retrieval or downstream governed-history consumer. Persistence decision required before such a consumer.
+- **Authority boundary — PASS:** the focused static dependency/invocation tests pass for both production modules. No canonical creation/merge, MATCH_EXISTING, certification, reconciliation/materialization, relationship, Graph or L9 behavior invocation is introduced. No LLM, live Supabase, external embedding API or production action.
+- **Validation:** `node --import tsx --test --test-isolation=none test/semantic/similarity-l8.test.ts` in packages/scanner: **82/82 passing** after the correction. `npm run typecheck`: clean. Initial sandbox test attempt hit tsx/esbuild `spawn EPERM`; authorized execution reproduced the single regression before the fix and passed after it. `git diff --check`: clean. No shared Discovery production code changed; Discovery-engine regression and Validation Lab were not run. No broader suite was claimed as rerun.
+- **Change scope:** possible-match-clustering.ts, similarity-l8.test.ts and this evidence only. similarity.ts remains byte-unchanged. One normal follow-up commit to PR #26; no amend, force push, merge, migration or milestone 6 work.
+
+Final-gate verdict: **`PR26_L8_HARDENING_READY_FOR_REVIEW`**. MERGE STATUS: **NOT MERGED**.
