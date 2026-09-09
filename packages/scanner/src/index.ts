@@ -142,3 +142,17 @@ export {
   startAcquisitionRun,
   systemClock,
 } from './discovery/provenance';
+
+// Semantic Intelligence Foundation V1 (roadmap milestone 4, L6/L7)
+export {
+  SEMANTIC_CONTENT_PROJECTION_SCHEMA_VERSION,
+  buildSemanticContentProjection,
+  computeSemanticContentFingerprint,
+} from './semantic/content-projection';
+export type {
+  SemanticContentProjection,
+  SemanticContentProjectionInput,
+} from './semantic/content-projection';
+export type { EmbeddingProviderPort, EmbeddingResult } from './semantic/embedding-provider';
+export { buildSemanticRepresentation } from './semantic/semantic-representation-builder';
+export type { BuildSemanticRepresentationInput } from './semantic/semantic-representation-builder';
