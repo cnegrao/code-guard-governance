@@ -61,6 +61,8 @@ describe('L9 exact AgentVersion declaration bindings', () => {
       assert.deepEqual(candidate.targetEndpoint, { referenceKind: 'CANDIDATE', candidateKind: targetKind, candidateId: normalized.candidate.candidateId });
       for (const id of [...scope.agentVersions[0].finding.evidenceIds, target.evidence.evidenceId]) assert.ok(candidate.evidenceIds.includes(id));
       for (const id of [...scope.agentVersions[0].finding.assertionIds, target.assertion.assertionId]) assert.ok(candidate.assertionIds.includes(id));
+      assert.equal(new Set(candidate.assertionIds).size, candidate.assertionIds.length);
+      assert.equal(new Set(candidate.evidenceIds).size, candidate.evidenceIds.length);
       assert.equal(finding.reviewStatus, 'UNREVIEWED');
       assert.equal(finding.requiresReview, true);
       assert.equal(finding.createsCanonicalObject, false);
@@ -73,6 +75,46 @@ describe('L9 exact AgentVersion declaration bindings', () => {
   it('supports flat TS object declarations and multiple explicit tools', async () => {
     const { candidates } = await scan('export const assistant = {\n  kind: "agent",\n  modelReference: "model-a",\n  tools: [lookup, search],\n};', 'agent.ts');
     assert.equal(correlate(candidates).length, 3);
+  });
+
+  for (const [kind, declaration, remove] of [
+    ['MODEL', 'modelReference = "model-a"', '    modelReference = "model-a"\n'],
+    ['TOOL', 'tools = [lookup]', '    tools = [lookup]\n'],
+  ]) it(`${kind}: an existing target elsewhere cannot bind to an evidenced version`, async () => {
+    const source = await scan(direct.replace(remove, ''));
+    const target = await scan(declaration, 'unrelated.py');
+    assert.equal(context(source.candidates).agentVersions.length, 1);
+    assert.ok(target.candidates.some((item) => item.finding.candidateKind === kind));
+    const results = correlate([...source.candidates, ...target.candidates]);
+    assert.equal(results.length, 1, 'only the other, directly bound family remains');
+    assert.ok(results.every((item) => item.candidate.targetEndpoint.candidateKind !== kind));
+  });
+
+  it('shared names across files do not cause repository-wide fan-out or borrow binding evidence', async () => {
+    const a = await scan(direct, 'a.py');
+    const b = await scan(direct.replace('Assistant', 'Other'), 'b.py');
+    const inputs = [...a.candidates, ...b.candidates];
+    const results = correlate(inputs);
+    assert.equal(results.length, 4, 'two direct bindings per version, no cross-file pairs');
+    for (const result of results) {
+      const file = result.candidate.sourceObject.externalId;
+      const own = inputs.filter((item) => item.finding.sourceObject.externalId === file);
+      assert.deepEqual(new Set(result.candidate.evidenceIds), new Set(own.flatMap((item) => item.finding.evidenceIds)));
+      assert.deepEqual(new Set(result.candidate.assertionIds), new Set(own.flatMap((item) => item.finding.assertionIds)));
+      const foreign = inputs.filter((item) => item.finding.sourceObject.externalId !== file);
+      assert.ok(foreign.every((item) => !result.candidate.evidenceIds.includes(item.evidence.evidenceId)));
+    }
+  });
+
+  it('SDK and documentation/tool prose add no relationship to an existing version', async () => {
+    const source = await scan('import openai\n' + direct.replace('    modelReference = "model-a"\n', ''));
+    const docs = await scan('The modelReference is model-a. The tools include lookup.\n# modelReference = "model-a"\n# tools = [lookup]', 'README.md');
+    assert.equal(context(source.candidates).agentVersions.length, 1);
+    assert.equal(docs.candidates.length, 0);
+    const results = correlate([...source.candidates, ...docs.candidates]);
+    assert.deepEqual(results.map((item) => item.candidate.relationshipTypeCode), ['USES_TOOL']);
+    const modelOnly = await scan(direct.replace('    tools = [lookup]\n', '') + '# tools can include lookup\n');
+    assert.deepEqual(correlate(modelOnly.candidates).map((item) => item.candidate.relationshipTypeCode), ['USES_MODEL']);
   });
 
   for (const [name, text] of Object.entries({
@@ -160,10 +202,28 @@ describe('L9 exact AgentVersion declaration bindings', () => {
     assert.deepEqual(correlate(second.candidates, context(first.candidates)), []);
   });
 
-  it('changed model yields a new version/binding without mutating V1', async () => {
+  it('V1 -> Model A and V2 -> Model B stay distinct; both versions using Tool X also stay distinct', async () => {
     const a = await scan();
     const b = await scan(direct.replace('model-a', 'model-b'));
-    assert.notDeepEqual(correlate(a.candidates).map((item) => item.candidate.candidateId), correlate(b.candidates).map((item) => item.candidate.candidateId));
+    assert.deepEqual(normalizeObjectCandidate(a.candidates.find((item) => item.finding.candidateKind === 'AGENT')!),
+      normalizeObjectCandidate(b.candidates.find((item) => item.finding.candidateKind === 'AGENT')!), 'logical Agent is unchanged');
+    const first = correlate(a.candidates);
+    const second = correlate(b.candidates);
+    for (const [kind, relationshipType] of [['MODEL', 'USES_MODEL'], ['TOOL', 'USES_TOOL']]) {
+      const relations = [...first, ...second].filter((item) => item.candidate.relationshipTypeCode === relationshipType);
+      assert.equal(relations.length, 2);
+      assert.notEqual(relations[0].candidate.candidateId, relations[1].candidate.candidateId);
+      assert.notDeepEqual(relations[0].candidate.sourceEndpoint, relations[1].candidate.sourceEndpoint);
+      if (kind === 'TOOL') assert.deepEqual(relations[0].candidate.targetEndpoint, relations[1].candidate.targetEndpoint);
+      else assert.notDeepEqual(relations[0].candidate.targetEndpoint, relations[1].candidate.targetEndpoint);
+      for (const [index, run] of [a, b].entries()) {
+        const normalized = normalizeObjectCandidate(run.candidates.find((item) => item.finding.candidateKind === kind)!);
+        assert.equal(normalized.status, 'NORMALIZED');
+        if (normalized.status !== 'NORMALIZED') throw new Error('missing target');
+        assert.deepEqual(relations[index].candidate.targetEndpoint, { referenceKind: 'CANDIDATE', candidateKind: kind, candidateId: normalized.candidate.candidateId });
+      }
+    }
+    assert.deepEqual(correlate(a.candidates), first, 'V1 replay does not change after V2');
   });
 
   it('same binding replay is deterministic across time, order and duplicates', async () => {
@@ -205,16 +265,43 @@ describe('L9 exact AgentVersion declaration bindings', () => {
     ['PROMPT', 'prompt.py', 'SYSTEM_PROMPT = "protected"'],
   ]) it(`${kind}: discovered target remains BLOCKED_CORRELATION, no fabrication`, async () => {
     const target = await scan(content, locator);
-    assert.ok(target.candidates.some((item) => item.finding.candidateKind === kind));
+    const discoveredTarget = target.candidates.find((item) => item.finding.candidateKind === kind)!;
+    assert.ok(discoveredTarget);
+    assert.equal(normalizeObjectCandidate(discoveredTarget).status, 'NORMALIZED');
     const agent = await scan();
     const results = correlate([...agent.candidates, ...target.candidates]);
     assert.equal(results.length, 2);
     assert.ok(results.every((item) => item.candidate.targetEndpoint.candidateKind !== kind));
+    assert.ok(results.every((item) => item.candidate.sourceEndpoint.candidateKind === 'AGENT_VERSION'));
+
+    // Correlation-boundary fixture only: model a normalizable target colocated
+    // in the version's artifact, without claiming its real detector supports
+    // that file shape (MCP JSON / KB YAML / Skill paths have separate formats).
+    // No new detector or positive binding is invented. All source/snapshot
+    // consistency gates are satisfied so absence of binding is decisive.
+    const anchor = agent.candidates[0];
+    const colocated: DiscoveryCandidate = {
+      ...discoveredTarget,
+      finding: { ...discoveredTarget.finding, sourceObject: anchor.finding.sourceObject },
+      assertion: { ...discoveredTarget.assertion, sourceObject: anchor.assertion.sourceObject, snapshot: anchor.assertion.snapshot },
+      evidence: { ...discoveredTarget.evidence, locations: anchor.evidence.locations, hashes: anchor.evidence.hashes },
+    };
+    const sameFileInputs = [...agent.candidates, colocated];
+    assert.equal(colocated.behaviorBinding, undefined);
+    assert.equal(normalizeObjectCandidate(colocated).status, 'NORMALIZED');
+    assert.equal(context(sameFileInputs).agentVersions.length, 1);
+    const sameFile = correlate(sameFileInputs);
+    assert.equal(sameFile.length, 2);
+    assert.ok(sameFile.every((item) => item.candidate.sourceEndpoint.candidateKind === 'AGENT_VERSION' &&
+      item.candidate.targetEndpoint.candidateKind !== kind));
   });
 
   it('L8 inputs and governance/Graph authority are absent; legacy behavior emission removed', () => {
     const correlation = readFileSync(new URL('../../src/discovery/relationship-correlation.ts', import.meta.url), 'utf8');
     assert.doesNotMatch(correlation, /from ['"].*(?:semantic|governance-review|graphos)|PossibleMatchCandidate|createReviewSubject\(|materializ\w*\(|reconcil\w*\(|\.rpc\(/i);
+    for (const unrelated of ['EXPOSES', 'HANDOFF_TO', 'READS_FROM', 'WRITES_TO', 'DERIVED_FROM']) {
+      assert.ok(!correlation.includes(unrelated), `${unrelated} remains outside discovery correlation`);
+    }
     const legacy = readFileSync(new URL('../../src/unified.ts', import.meta.url), 'utf8');
     assert.doesNotMatch(legacy, /kind:\s*['"](?:USES_MODEL|USES_TOOL|USES_MCP|INVOKES|USES_PROMPT|USES_KNOWLEDGE_BASE|USES_SKILL)['"]/);
     for (const unrelated of ['OWNED_BY', 'IMPACTS_RISK']) assert.ok(legacy.includes(`kind: '${unrelated}'`));

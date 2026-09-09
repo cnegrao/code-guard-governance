@@ -955,6 +955,39 @@ describe("Agent Identity & Version Discovery V1: AGENT and AGENT_VERSION governa
     });
   }
 
+  for (const targetKind of ["MODEL", "TOOL"] as const) {
+    test(`L9: an exact ${targetKind} candidate persisted only for another tenant cannot back this tenant's relationship`, async () => {
+      await withIdentifiableAgentFixtureRepository(async (root) => {
+        const ports = makePorts();
+        const scanFor = (organisationId: OrganisationId) => runGovernanceDiscoveryScan(
+          { executionContext: { organisationId }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } }, ports);
+        assert.equal((await scanFor(ORG_B)).status, "SUCCEEDED");
+        const foreignSubject = [...ports.review.subjects.values()].find((s) => s.organisationId === ORG_B && s.candidateKind === targetKind)!;
+        const foreignTarget = await ports.intake.getNormalizedCandidateForFinding(ORG_B, foreignSubject.findingId);
+        assert.ok(foreignTarget);
+        const original = ports.intake.recordNormalizedCandidate.bind(ports.intake);
+        ports.intake.recordNormalizedCandidate = async (organisationId, candidate, runId) => {
+          if (organisationId === ORG_A && candidate.candidateKind === targetKind) {
+            assert.equal(candidate.candidateId, foreignTarget.candidateId, 'exact ID exists in B, not A');
+            throw new Error('target unavailable in tenant A');
+          }
+          return original(organisationId, candidate, runId);
+        };
+        const result = await scanFor(ORG_A);
+        assert.equal(result.status, "PARTIAL");
+        assert.equal(result.relationshipSubjectsCreated, 1, 'the independent same-tenant binding still succeeds');
+        assert.ok(result.failures.some((item) => item.reason === "L9_ENDPOINT_CANDIDATE_NOT_DURABLE"));
+        assert.equal(await ports.intake.getNormalizedCandidateForFinding(ORG_A, foreignSubject.findingId), undefined);
+        const subjects = [...ports.review.subjects.values()].filter((s) => s.organisationId === ORG_A && s.candidateKind === "RELATIONSHIP");
+        for (const subject of subjects) {
+          const candidate = await ports.intake.getNormalizedCandidateForFinding(ORG_A, subject.findingId);
+          assert.ok(candidate?.candidateKind === "RELATIONSHIP");
+          assert.notEqual(candidate.targetEndpoint.candidateKind, targetKind);
+        }
+      });
+    });
+  }
+
   test("a real scan normalizes AGENT and produces a correlated AGENT_VERSION candidate, both reconciliation-ready once CERTIFIED", async () => {
     await withIdentifiableAgentFixtureRepository(async (root) => {
       const ports = makePorts();
