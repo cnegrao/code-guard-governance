@@ -24,6 +24,7 @@ import {
 
 import type { DetectionMatch, DetectionSpecification } from './detection-specification';
 import type { SourceArtifactContent } from './source-adapter';
+import { findBehaviorDeclarationBinding, type BehaviorDeclarationBinding } from './behavior-declaration-binding';
 
 /** One evidence-backed candidate: never governed truth (see DiscoveryFinding). */
 export interface DiscoveryCandidate {
@@ -37,6 +38,8 @@ export interface DiscoveryCandidate {
    * NormalizedObjectCandidate.proposedIdentity or any canonical-contracts type.
    */
   readonly contentFingerprint?: string;
+  /** Direct declaration containment, backed by this candidate's snapshot/evidence. */
+  readonly behaviorBinding?: BehaviorDeclarationBinding;
 }
 
 function stableSuffix(parts: readonly string[]): string {
@@ -136,11 +139,18 @@ export function assembleDiscoveryCandidate(params: {
     detectedAt: observed,
   };
 
+  const behaviorBinding =
+    (specification.code === 'model-reference-declaration' && specification.candidateKind === 'MODEL') ||
+    (specification.code === 'tool-list-declaration' && specification.candidateKind === 'TOOL')
+      ? findBehaviorDeclarationBinding(artifact, match.lineStart)
+      : undefined;
+
   return {
     finding,
     assertion,
     evidence,
     displayValue: match.displayValue,
     ...(match.contentFingerprint === undefined ? {} : { contentFingerprint: match.contentFingerprint }),
+    ...(behaviorBinding === undefined ? {} : { behaviorBinding }),
   };
 }
