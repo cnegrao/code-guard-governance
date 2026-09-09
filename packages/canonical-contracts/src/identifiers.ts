@@ -44,6 +44,8 @@ export type DataElementSemanticConceptAssignmentId =
   OpaqueIdentifier<"DataElementSemanticConceptAssignmentId">;
 export type DataElementSemanticConceptAssignmentStateId =
   OpaqueIdentifier<"DataElementSemanticConceptAssignmentStateId">;
+export type SemanticRepresentationId =
+  OpaqueIdentifier<"SemanticRepresentationId">;
 export type ExternalId = OpaqueIdentifier<"ExternalId">;
 export type IsoTimestamp = OpaqueIdentifier<"IsoTimestamp">;
 export type SanitizedEvidenceLocator = OpaqueIdentifier<"SanitizedEvidenceLocator">;
@@ -145,6 +147,10 @@ export const asDataElementSemanticConceptAssignmentStateId = (
   asNonEmptyOpaque(value, "DataElementSemanticConceptAssignmentStateId");
 export const asExternalId = (value: string): ExternalId =>
   asNonEmptyOpaque(value, "ExternalId");
+export const asSemanticRepresentationId = (
+  value: string,
+): SemanticRepresentationId =>
+  asNonEmptyOpaque(value, "SemanticRepresentationId");
 
 export function asIsoTimestamp(value: string): IsoTimestamp {
   if (Number.isNaN(Date.parse(value))) {
