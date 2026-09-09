@@ -344,17 +344,28 @@ async function processObjectCandidate(
 
 async function processRelationshipCandidate(
   result: RelationshipCorrelationResult,
+  endpointCandidates: ReadonlyMap<string, NormalizedCandidate>,
   acquisitionRunId: AcquisitionRun["runId"],
   ctx: GovernanceExecutionContext,
   ports: DiscoveryIntakePorts,
   tally: ScanTally,
 ): Promise<void> {
   try {
+    for (const endpoint of [result.candidate.sourceEndpoint, result.candidate.targetEndpoint]) {
+      if (endpoint.referenceKind !== "CANDIDATE") throw new Error("L9_ENDPOINT_REQUIRES_CANDIDATE");
+      const expected = endpointCandidates.get(endpoint.candidateId);
+      const durable = expected
+        ? await ports.intake.getNormalizedCandidateForFinding(ctx.organisationId, expected.findingId)
+        : undefined;
+      if (!durable || durable.candidateId !== endpoint.candidateId || durable.candidateKind !== endpoint.candidateKind) {
+        throw new Error("L9_ENDPOINT_CANDIDATE_NOT_DURABLE");
+      }
+    }
     // Relationship findings reuse the Evidence/SourceAssertion already made
     // durable while processing their endpoint object candidates (relationship
     // correlation runs after every object candidate in this same scan has
     // already been processed); no new evidence is fabricated for the edge
-    // itself. Already-governed endpoints never suppress a relationship.
+    // itself. No governed endpoint resolution or reconciliation is performed.
     await ensureReviewSubjectAndPropose(result.finding, result.candidate, acquisitionRunId, ctx, ports, tally, "relationship");
   } catch (error) {
     tally.failures.push({
@@ -565,19 +576,21 @@ export async function runGovernanceDiscoveryScan(
   // require changing DiscoveryPipeline's own result shape.
   const artifactsScanned = (await adapter.listArtifacts()).length;
 
-  const relationshipResults = new RelationshipCorrelationStrategy().correlate(
-    candidates,
-    run.completedAt ?? run.startedAt,
-  );
   // AGENT_VERSION, like RELATIONSHIP, is a correlation product rather than a
   // single detector's own match (see agent-version-correlation.ts); it is
-  // computed here alongside relationshipResults but only ever processed
+  // computed before relationshipResults but only ever processed
   // below once its parent AGENT/MODEL/TOOL evidence and every correlated
   // technical-profile signal have already been made durable.
   const agentVersionResults: readonly AgentVersionCorrelationResult[] = new AgentVersionCorrelationStrategy().correlate(
     candidates,
     technicalProfileSignals,
     run.completedAt ?? run.startedAt,
+  );
+  const relationshipResults = new RelationshipCorrelationStrategy().correlate(
+    candidates,
+    run.completedAt ?? run.startedAt,
+    { organisationId: ctx.organisationId, connectionId: run.connection.connectionId,
+      agentVersions: agentVersionResults, technicalProfileSignals },
   );
 
   const tally: ScanTally = {
@@ -601,8 +614,14 @@ export async function runGovernanceDiscoveryScan(
     // ensureReviewSubjectAndPropose above) — must run strictly after.
     await processAgentVersionTechnicalProfileProposal(agentVersionResult, ctx, ports, tally);
   }
+  const endpointCandidates = new Map<string, NormalizedCandidate>();
+  for (const item of candidates) {
+    const normalized = normalizeObjectCandidate(item);
+    if (normalized.status === "NORMALIZED") endpointCandidates.set(normalized.candidate.candidateId, normalized.candidate);
+  }
+  for (const item of agentVersionResults) endpointCandidates.set(item.candidate.candidateId, item.candidate);
   for (const relationshipResult of relationshipResults) {
-    await processRelationshipCandidate(relationshipResult, run.runId, ctx, ports, tally);
+    await processRelationshipCandidate(relationshipResult, endpointCandidates, run.runId, ctx, ports, tally);
   }
 
   const objectCandidateCount = candidates.length + agentVersionResults.length;

@@ -402,9 +402,9 @@ function makePorts(intake = new FakeIntakePersistence()) {
 }
 
 // ---------------------------------------------------------------------------
-// Fixture repository: one file declares an Agent that references a Model and
-// a Tool list, so relationship correlation (USES_MODEL + USES_TOOL) fires
-// alongside the three object candidates — matching the exact literal content
+// Legacy fixture: bare Agent marker plus module-level Model and Tool list.
+// L9 fails closed: no identifiable AgentVersion or direct declaration binding.
+// Three object findings remain — matching the exact literal content
 // shapes packages/scanner's own tests already use (kind = "agent",
 // modelReference = "...", tools = [...]).
 // ---------------------------------------------------------------------------
@@ -423,7 +423,7 @@ async function withFixtureRepository(run: (root: string) => Promise<void>): Prom
 }
 
 describe("Discovery Intake V1: real scan -> durable evidence -> governed review queue", () => {
-  test("REAL DISCOVERY: a real LocalRepositoryAdapter scan reaches DETECTED/PROPOSED review subjects for Agent/Model/Tool and their relationships", async () => {
+  test("REAL DISCOVERY: legacy copresence reaches object review only, never behavior relationships", async () => {
     await withFixtureRepository(async (root) => {
       const ports = makePorts();
       const result = await runGovernanceDiscoveryScan(
@@ -434,16 +434,16 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
       assert.equal(result.status, "SUCCEEDED");
       assert.equal(result.artifactsScanned, 1);
       assert.equal(result.objectCandidates, 3, "expected AGENT + MODEL + TOOL");
-      assert.equal(result.relationshipCandidates, 2, "expected USES_MODEL + USES_TOOL");
+      assert.equal(result.relationshipCandidates, 0, "unidentifiable Agent and copresence cannot bind behavior");
       assert.equal(result.reviewSubjectsCreated, 3);
-      assert.equal(result.relationshipSubjectsCreated, 2);
-      assert.equal(result.proposalsCreated, 5, "every UNREVIEWED finding is deterministically eligible under PASS_THROUGH_V1");
+      assert.equal(result.relationshipSubjectsCreated, 0);
+      assert.equal(result.proposalsCreated, 3, "every UNREVIEWED object finding is eligible under PASS_THROUGH_V1");
       assert.equal(result.alreadyGoverned, 0);
       assert.deepEqual(result.failures, []);
 
       assert.equal(ports.intake.evidence.size, 3, "one Evidence per object candidate");
       assert.equal(ports.intake.assertions.size, 3, "one SourceAssertion per object candidate");
-      assert.equal(ports.review.subjects.size, 5, "3 object + 2 relationship review subjects");
+      assert.equal(ports.review.subjects.size, 3, "3 object review subjects");
       for (const subject of ports.review.subjects.values()) {
         assert.equal(subject.state, "PROPOSED");
         assert.equal(subject.organisationId, ORG_A);
@@ -453,7 +453,7 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
       const runRow = [...ports.intake.runs.values()][0];
       assert.equal(runRow.run.status, "SUCCEEDED");
       assert.equal(runRow.counts?.objectCandidates, 3);
-      assert.equal(runRow.counts?.relationshipCandidates, 2);
+      assert.equal(runRow.counts?.relationshipCandidates, 0);
     });
   });
 
@@ -531,7 +531,7 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
     });
   });
 
-  test("ALREADY GOVERNED: a mapped source identity is recognized as ALREADY_GOVERNED and creates no duplicate object ReviewSubject, but its relationships remain reviewable", async () => {
+  test("ALREADY GOVERNED: source mapping suppresses duplicate objects but cannot supply missing version binding evidence", async () => {
     await withFixtureRepository(async (root) => {
       const ports = makePorts();
 
@@ -570,8 +570,8 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
       assert.equal(result.reviewSubjectsCreated, 0, "no NEW object ReviewSubject for any already-governed identity");
       assert.equal(
         result.relationshipSubjectsCreated,
-        2,
-        "already-governed endpoints (even every endpoint) never suppress a relationship finding",
+        0,
+        "a source mapping cannot manufacture behavior binding evidence",
       );
       // Evidence/assertions for every already-governed object are still preserved for future drift analysis.
       assert.equal(ports.intake.evidence.size, 3);
@@ -583,7 +583,7 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
       );
       assert.equal(
         [...ports.review.subjects.values()].filter((s) => s.candidateKind === "RELATIONSHIP").length,
-        2,
+        0,
       );
     });
   });
@@ -642,22 +642,12 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
       );
 
       assert.equal(result.status, "PARTIAL");
-      // AGENT's own evidence failure is one direct failure; both relationship
-      // candidates (USES_MODEL, USES_TOOL) cite AGENT's assertion/evidence as
-      // part of their unioned provenance, so they correctly cascade-fail
-      // closed too rather than being silently created without one endpoint's
-      // durable evidence — this is correct dependency-aware failure
-      // isolation, not corruption: the two genuinely independent siblings
-      // (MODEL, TOOL) are wholly unaffected.
-      assert.equal(result.failures.length, 3);
+      // Legacy fixture has no behavior bindings; MODEL/TOOL stay independent.
+      assert.equal(result.failures.length, 1);
       assert.match(result.failures[0].reason, /simulated malformed evidence/);
       assert.equal(result.failures[0].candidateKind, "AGENT");
-      for (const failure of result.failures.slice(1)) {
-        assert.equal(failure.candidateKind, "RELATIONSHIP");
-        assert.match(failure.reason, /not durable/);
-      }
       assert.equal(result.reviewSubjectsCreated, 2, "MODEL and TOOL are wholly independent of AGENT's failure and still succeed");
-      assert.equal(result.relationshipSubjectsCreated, 0, "both relationships depend on AGENT's evidence and correctly fail closed with it");
+      assert.equal(result.relationshipSubjectsCreated, 0, "no binding evidence");
     });
   });
 
@@ -782,7 +772,7 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
 });
 
 describe("Discovery Governance Input Persistence V1: durable Finding/Candidate continuity into reconciliation input recovery", () => {
-  test("a real scan durably persists the exact Finding for every object AND relationship candidate, and the exact Candidate for every one Object Candidate Normalization V1 can safely normalize (MODEL/TOOL) plus both relationships", async () => {
+  test("legacy copresence persists object findings and safely normalizable MODEL/TOOL only", async () => {
     await withFixtureRepository(async (root) => {
       const ports = makePorts();
       await runGovernanceDiscoveryScan(
@@ -790,14 +780,9 @@ describe("Discovery Governance Input Persistence V1: durable Finding/Candidate c
         ports,
       );
 
-      // 3 object findings (AGENT/MODEL/TOOL) + 2 relationship findings (USES_MODEL/USES_TOOL) = 5.
-      assert.equal(ports.intake.findings.size, 5);
-      // MODEL + TOOL now normalize (Object Candidate Normalization V1) plus
-      // both relationship candidates = 4. AGENT still has no safe,
-      // evidence-backed identity to normalize (see
-      // object-candidate-normalization.ts) and stays without a durable
-      // candidate.
-      assert.equal(ports.intake.candidatesByFinding.size, 4);
+      assert.equal(ports.intake.findings.size, 3);
+      // The bare AGENT marker still has no safe declaration identity.
+      assert.equal(ports.intake.candidatesByFinding.size, 2);
 
       for (const subject of ports.review.subjects.values()) {
         const finding = await ports.intake.getDiscoveryFinding(ORG_A, subject.findingId);
@@ -917,6 +902,92 @@ async function withIdentifiableAgentFixtureRepository(run: (root: string) => Pro
 }
 
 describe("Agent Identity & Version Discovery V1: AGENT and AGENT_VERSION governance continuity", () => {
+  test("L9: persists exact version/target candidates before proposed relationship review, isolated by tenant", async () => {
+    await withIdentifiableAgentFixtureRepository(async (root) => {
+      const ports = makePorts();
+      const scanFor = (organisationId: OrganisationId) => runGovernanceDiscoveryScan(
+        { executionContext: { organisationId }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } }, ports);
+      const first = await scanFor(ORG_A);
+      assert.equal(first.relationshipCandidates, 2);
+      assert.equal(first.relationshipSubjectsCreated, 2);
+      assert.deepEqual(first.failures, []);
+      const aSubjects = [...ports.review.subjects.values()].filter((s) => s.candidateKind === "RELATIONSHIP");
+      for (const subject of aSubjects) {
+        assert.equal(subject.state, "PROPOSED");
+        const candidate = await ports.intake.getNormalizedCandidateForFinding(ORG_A, subject.findingId);
+        assert.ok(candidate?.candidateKind === "RELATIONSHIP");
+        assert.equal(candidate.sourceEndpoint.candidateKind, "AGENT_VERSION");
+        for (const endpoint of [candidate.sourceEndpoint, candidate.targetEndpoint]) {
+          assert.equal(endpoint.referenceKind, "CANDIDATE");
+          if (endpoint.referenceKind !== "CANDIDATE") throw new Error("wrong endpoint");
+          const durable = [...ports.intake.candidatesByFinding.values()].find((item) => item.candidateId === endpoint.candidateId);
+          assert.ok(durable, "endpoint must be durable");
+          assert.equal(durable.candidateKind, endpoint.candidateKind);
+        }
+        assert.equal(await ports.intake.getNormalizedCandidateForFinding(ORG_B, subject.findingId), undefined);
+      }
+      const replay = await scanFor(ORG_A);
+      assert.equal(replay.relationshipSubjectsCreated, 0);
+      assert.deepEqual(replay.failures, []);
+      const other = await scanFor(ORG_B);
+      assert.deepEqual(other.failures, []);
+      assert.equal(other.relationshipSubjectsCreated, 2);
+      const bIds = [...ports.review.subjects.values()].filter((s) => s.organisationId === ORG_B && s.candidateKind === "RELATIONSHIP").map((s) => s.findingId);
+      assert.ok(aSubjects.every((s) => !bIds.includes(s.findingId)));
+    });
+  });
+
+  for (const missingKind of ["AGENT_VERSION", "MODEL", "TOOL"] as const) {
+    test(`L9: missing durable ${missingKind} endpoint fails closed`, async () => {
+      await withIdentifiableAgentFixtureRepository(async (root) => {
+        const ports = makePorts();
+        const original = ports.intake.recordNormalizedCandidate.bind(ports.intake);
+        ports.intake.recordNormalizedCandidate = async (organisationId, candidate, runId) => {
+          if (candidate.candidateKind === missingKind) throw new Error("simulated endpoint failure");
+          return original(organisationId, candidate, runId);
+        };
+        const result = await runGovernanceDiscoveryScan(
+          { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } }, ports);
+        assert.equal(result.status, "PARTIAL");
+        assert.equal(result.relationshipSubjectsCreated, missingKind === "AGENT_VERSION" ? 0 : 1);
+        assert.ok(result.failures.some((item) => item.reason === "L9_ENDPOINT_CANDIDATE_NOT_DURABLE"));
+      });
+    });
+  }
+
+  for (const targetKind of ["MODEL", "TOOL"] as const) {
+    test(`L9: an exact ${targetKind} candidate persisted only for another tenant cannot back this tenant's relationship`, async () => {
+      await withIdentifiableAgentFixtureRepository(async (root) => {
+        const ports = makePorts();
+        const scanFor = (organisationId: OrganisationId) => runGovernanceDiscoveryScan(
+          { executionContext: { organisationId }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } }, ports);
+        assert.equal((await scanFor(ORG_B)).status, "SUCCEEDED");
+        const foreignSubject = [...ports.review.subjects.values()].find((s) => s.organisationId === ORG_B && s.candidateKind === targetKind)!;
+        const foreignTarget = await ports.intake.getNormalizedCandidateForFinding(ORG_B, foreignSubject.findingId);
+        assert.ok(foreignTarget);
+        const original = ports.intake.recordNormalizedCandidate.bind(ports.intake);
+        ports.intake.recordNormalizedCandidate = async (organisationId, candidate, runId) => {
+          if (organisationId === ORG_A && candidate.candidateKind === targetKind) {
+            assert.equal(candidate.candidateId, foreignTarget.candidateId, 'exact ID exists in B, not A');
+            throw new Error('target unavailable in tenant A');
+          }
+          return original(organisationId, candidate, runId);
+        };
+        const result = await scanFor(ORG_A);
+        assert.equal(result.status, "PARTIAL");
+        assert.equal(result.relationshipSubjectsCreated, 1, 'the independent same-tenant binding still succeeds');
+        assert.ok(result.failures.some((item) => item.reason === "L9_ENDPOINT_CANDIDATE_NOT_DURABLE"));
+        assert.equal(await ports.intake.getNormalizedCandidateForFinding(ORG_A, foreignSubject.findingId), undefined);
+        const subjects = [...ports.review.subjects.values()].filter((s) => s.organisationId === ORG_A && s.candidateKind === "RELATIONSHIP");
+        for (const subject of subjects) {
+          const candidate = await ports.intake.getNormalizedCandidateForFinding(ORG_A, subject.findingId);
+          assert.ok(candidate?.candidateKind === "RELATIONSHIP");
+          assert.notEqual(candidate.targetEndpoint.candidateKind, targetKind);
+        }
+      });
+    });
+  }
+
   test("a real scan normalizes AGENT and produces a correlated AGENT_VERSION candidate, both reconciliation-ready once CERTIFIED", async () => {
     await withIdentifiableAgentFixtureRepository(async (root) => {
       const ports = makePorts();

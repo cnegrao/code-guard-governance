@@ -255,12 +255,8 @@ export class Scanner {
         description: `Provider: ${m.provider} | Cost: ${m.costPerToken || 0}`,
         attrs: { provider: m.provider, modelId: m.modelId || 'unknown', costPerToken: m.costPerToken } as Record<string, unknown>,
       });
-      for (const aid of agentIds) {
-        const agent = data.sourceAnalysis.agents.find((a: any) => a.id === aid);
-        if (agent && (agent.models || []).some((mm: string) => mm.toLowerCase().includes(m.provider?.toLowerCase() || ''))) {
-          relationships.push({ id: this.relId(), kind: 'USES_MODEL', sourceId: aid, targetId: mid });
-        }
-      }
+      // Legacy, non-authoritative model correlation has no AGENT_VERSION
+      // evidence. Fail closed: model discovery remains, behavior edges do not.
     }
 
     // Evidence (source files)
