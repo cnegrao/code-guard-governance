@@ -81,8 +81,25 @@ export type { DetectionMatch, DetectionSpecification } from './discovery/detecti
 export { AgentKindDeclarationSpecification } from './discovery/strategies/agent-kind-declaration';
 export { ModelReferenceDeclarationSpecification } from './discovery/strategies/model-reference-declaration';
 export { ToolListDeclarationSpecification } from './discovery/strategies/tool-list-declaration';
+export { PromptDeclarationSpecification } from './discovery/strategies/prompt-declaration';
+export { McpServerDeclarationSpecification } from './discovery/strategies/mcp-server-declaration';
+export { ApiDeclarationSpecification } from './discovery/strategies/api-declaration';
+export { KnowledgeBaseDeclarationSpecification } from './discovery/strategies/knowledge-base-declaration';
+export { SkillListDeclarationSpecification } from './discovery/strategies/skill-list-declaration';
+export {
+  FRAMEWORK_IMPORT_PATTERNS,
+  FrameworkImportSignalSpecification,
+  OrchestrationFrameworkSignalSpecification,
+} from './discovery/strategies/framework-import-signal';
 export type { DiscoveryCandidate } from './discovery/evidence-assembly';
 export { assembleDiscoveryCandidate } from './discovery/evidence-assembly';
+export type {
+  TechnicalProfileSignal,
+  TechnicalProfileSignalKind,
+  TechnicalProfileSignalMatch,
+  TechnicalProfileSignalSpecification,
+} from './discovery/technical-profile-signal';
+export { TECHNICAL_PROFILE_SIGNAL_KIND, assembleTechnicalProfileSignal } from './discovery/technical-profile-signal';
 export type {
   ObjectCandidateNormalizationResult,
   ObjectCandidateNormalizationStrategy,
@@ -90,8 +107,13 @@ export type {
 } from './discovery/object-candidate-normalization';
 export {
   AgentCandidateNormalizationStrategy,
+  ApiCandidateNormalizationStrategy,
+  KnowledgeBaseCandidateNormalizationStrategy,
+  McpServerCandidateNormalizationStrategy,
   ModelCandidateNormalizationStrategy,
   OBJECT_NORMALIZATION_REASON_CODE,
+  PromptCandidateNormalizationStrategy,
+  SkillCandidateNormalizationStrategy,
   ToolCandidateNormalizationStrategy,
   normalizeObjectCandidate,
 } from './discovery/object-candidate-normalization';
@@ -101,7 +123,10 @@ export {
   correlateAgentUsesModelRelationships,
   correlateAgentUsesToolRelationships,
 } from './discovery/relationship-correlation';
-export type { AgentVersionCorrelationResult } from './discovery/agent-version-correlation';
+export type {
+  AgentVersionCorrelationResult,
+  AgentVersionTechnicalProfileFieldEvidence,
+} from './discovery/agent-version-correlation';
 export { AgentVersionCorrelationStrategy, correlateAgentVersions } from './discovery/agent-version-correlation';
 export type {
   DiscoveryPipelineOptions,

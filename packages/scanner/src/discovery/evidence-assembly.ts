@@ -31,6 +31,12 @@ export interface DiscoveryCandidate {
   readonly assertion: SourceAssertion;
   readonly evidence: Evidence;
   readonly displayValue: string;
+  /**
+   * Optional controlled content fingerprint (see DetectionMatch.contentFingerprint's
+   * own doc comment) — deliberately scanner-internal plumbing, never part of
+   * NormalizedObjectCandidate.proposedIdentity or any canonical-contracts type.
+   */
+  readonly contentFingerprint?: string;
 }
 
 function stableSuffix(parts: readonly string[]): string {
@@ -103,9 +109,13 @@ export function assembleDiscoveryCandidate(params: {
       locator: sanitizedLocator,
     },
     method: { code: specification.code, version: specification.version },
-    // Discovery conclusions are always INFERRED; this is not a second
-    // "declared" trust level with the same meaning.
-    trustState: TRUST_STATE.INFERRED,
+    // Per-fact trust: a specification may opt a specific match into DECLARED
+    // when its own match carries trustState (see detection-specification.ts's
+    // DetectionMatch doc comment for the exact justification rule). Absent
+    // trustState defaults to INFERRED, exactly as before this field existed —
+    // every pre-existing specification (AGENT/MODEL/TOOL) never sets it and
+    // is therefore completely unaffected by this extension.
+    trustState: match.trustState ?? TRUST_STATE.INFERRED,
     confidence: match.confidence,
     observedAt: observed,
     recordedAt: observed,
@@ -126,5 +136,11 @@ export function assembleDiscoveryCandidate(params: {
     detectedAt: observed,
   };
 
-  return { finding, assertion, evidence, displayValue: match.displayValue };
+  return {
+    finding,
+    assertion,
+    evidence,
+    displayValue: match.displayValue,
+    ...(match.contentFingerprint === undefined ? {} : { contentFingerprint: match.contentFingerprint }),
+  };
 }

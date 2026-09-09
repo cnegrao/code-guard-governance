@@ -6,8 +6,13 @@ import {
   type CanonicalObjectKind,
   type DiscoveryCandidateKind,
   type NormalizedAgentCandidate,
+  type NormalizedApiCandidate,
+  type NormalizedKnowledgeBaseCandidate,
+  type NormalizedMcpServerCandidate,
   type NormalizedModelCandidate,
   type NormalizedObjectCandidate,
+  type NormalizedPromptCandidate,
+  type NormalizedSkillCandidate,
   type NormalizedToolCandidate,
 } from '@council/canonical-contracts';
 
@@ -29,11 +34,21 @@ import type { DiscoveryCandidate } from './evidence-assembly';
  * mirrors). No LLM, no fuzzy matching, no filename guessing.
  *
  * Only the CURRENT production object kinds actually wired into
- * apps/dashboard/lib/governance/discovery-intake.ts (AGENT, MODEL, TOOL) have
- * a registered strategy. Every other CanonicalObjectKind — dormant today,
- * with no detector emitting it — fails closed via the same
- * NOT_SAFELY_NORMALIZABLE outcome rather than being silently normalized the
- * moment a future detector starts producing it.
+ * apps/dashboard/lib/governance/discovery-intake.ts (AGENT, AGENT_VERSION,
+ * MODEL, TOOL, PROMPT, MCP_SERVER, API, KNOWLEDGE_BASE, SKILL) have a
+ * registered strategy or an intentional AGENT_VERSION-only fail-closed
+ * dispatch (AGENT_VERSION candidates never normalize through this map — see
+ * agent-version-correlation.ts, the sole producer of a normalized
+ * AGENT_VERSION candidate). Framework/Memory/Orchestration technical-profile
+ * facts never reach this module at all: they are represented as a
+ * structurally separate, non-canonical `TechnicalProfileSignal`
+ * (technical-profile-signal.ts), never a `DiscoveryCandidate` of any kind —
+ * see agent-version-correlation.ts for how those signals are folded into
+ * the AGENT_VERSION technical revision without ever being normalized here.
+ * DATA_ASSET and DATA_ELEMENT remain dormant, with no detector emitting
+ * either — they fail closed via the same NOT_SAFELY_NORMALIZABLE outcome
+ * rather than being silently normalized the moment a future detector starts
+ * producing them.
  */
 
 export const OBJECT_NORMALIZATION_REASON_CODE = {
@@ -209,11 +224,202 @@ export class ToolCandidateNormalizationStrategy implements ObjectCandidateNormal
   }
 }
 
+/**
+ * PROMPT: PromptDeclarationSpecification's displayValue IS the captured
+ * `<NAME>_PROMPT` constant identifier (see strategies/prompt-declaration.ts,
+ * a real convention already used by the frozen Golden Repository fixtures,
+ * not invented by this PR) — safe to promote directly to
+ * proposedIdentity.declarationKey. Raw prompt content (the constant's own
+ * string value) is never captured by this detector and therefore never
+ * enters identity.
+ */
+export class PromptCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.PROMPT;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const declarationKey = candidate.displayValue.trim();
+    if (!isNonBlank(declarationKey)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedPromptCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'PROMPT',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { declarationKey },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * MCP_SERVER: McpServerDeclarationSpecification's displayValue IS the real
+ * `serverIdentity` field of a structured `mcp.json`-shaped config file, or a
+ * named key of a real `mcpServers`/`servers` dictionary (see
+ * strategies/mcp-server-declaration.ts — both shapes are real, pre-existing
+ * conventions, one from the frozen Golden Repository oracle, one from
+ * codeguard/agent-detector.ts's own legacy config parsing; neither is
+ * invented by this PR) — safe to promote directly to
+ * proposedIdentity.serverReference.
+ */
+export class McpServerCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.MCP_SERVER;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const serverReference = candidate.displayValue.trim();
+    if (!isNonBlank(serverReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedMcpServerCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'MCP_SERVER',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { serverReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * API: ApiDeclarationSpecification's displayValue IS the explicit `id`
+ * field of a `<NAME>_API = { "id": "...", ... }` object literal — the same
+ * real convention the frozen Golden Repository fixture `06-care-coordination`
+ * already uses (see strategies/api-declaration.ts), not invented by this
+ * PR — safe to promote directly to proposedIdentity.apiReference. A bare
+ * URL is never this detector's own evidence (see the detector's own doc
+ * comment), so no arbitrary-URL false positive can reach this
+ * normalization strategy.
+ */
+export class ApiCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.API;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const apiReference = candidate.displayValue.trim();
+    if (!isNonBlank(apiReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedApiCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'API',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { apiReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * KNOWLEDGE_BASE: KnowledgeBaseDeclarationSpecification's displayValue IS
+ * the nested `identity` field of a top-level `knowledge_base:` YAML block —
+ * the same real convention the frozen Golden Repository fixture
+ * `06-care-coordination` already uses (see
+ * strategies/knowledge-base-declaration.ts), not invented by this PR — safe
+ * to promote directly to proposedIdentity.sourceReference.
+ */
+export class KnowledgeBaseCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const sourceReference = candidate.displayValue.trim();
+    if (!isNonBlank(sourceReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedKnowledgeBaseCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'KNOWLEDGE_BASE',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { sourceReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
+/**
+ * SKILL: SkillListDeclarationSpecification's displayValue IS the directory
+ * name from a real `.claude/skills/<name>/SKILL.md` path — the same
+ * already-shipped convention codeguard/agent-detector.ts's own
+ * CONFIG_DETECTORS already recognizes as definitive (see
+ * strategies/skill-list-declaration.ts), not invented by this PR — safe to
+ * promote directly to proposedIdentity.declarationReference (the field name
+ * SkillIdentity's own contract uses).
+ */
+export class SkillCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  readonly candidateKind: CanonicalObjectKind = CANONICAL_OBJECT_KIND.SKILL;
+
+  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult {
+    const declarationReference = candidate.displayValue.trim();
+    if (!isNonBlank(declarationReference)) {
+      return {
+        status: 'NOT_SAFELY_NORMALIZABLE',
+        candidateKind: candidate.finding.candidateKind,
+        reasonCode: OBJECT_NORMALIZATION_REASON_CODE.EMPTY_IDENTITY_VALUE,
+      };
+    }
+
+    const normalized: NormalizedSkillCandidate = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      candidateKind: 'SKILL',
+      sourceObject: candidate.finding.sourceObject,
+      findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds,
+      evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence,
+      requiresReconciliation: true,
+      proposedIdentity: { declarationReference },
+    };
+    return { status: 'NORMALIZED', candidate: normalized };
+  }
+}
+
 const OBJECT_NORMALIZATION_STRATEGIES: ReadonlyMap<CanonicalObjectKind, ObjectCandidateNormalizationStrategy> =
   new Map([
     [CANONICAL_OBJECT_KIND.AGENT, new AgentCandidateNormalizationStrategy()],
     [CANONICAL_OBJECT_KIND.MODEL, new ModelCandidateNormalizationStrategy()],
     [CANONICAL_OBJECT_KIND.TOOL, new ToolCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.PROMPT, new PromptCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.MCP_SERVER, new McpServerCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.API, new ApiCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE, new KnowledgeBaseCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.SKILL, new SkillCandidateNormalizationStrategy()],
   ]);
 
 /**

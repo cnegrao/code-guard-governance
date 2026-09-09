@@ -16,6 +16,7 @@ import {
 
 import type { DiscoveryCandidate } from './evidence-assembly';
 import { normalizeObjectCandidate } from './object-candidate-normalization';
+import { TECHNICAL_PROFILE_SIGNAL_KIND, type TechnicalProfileSignal } from './technical-profile-signal';
 
 /**
  * One evidence-backed AGENT_VERSION candidate: the canonical
@@ -26,9 +27,31 @@ import { normalizeObjectCandidate } from './object-candidate-normalization';
  * multiple already-produced {@link DiscoveryCandidate}s, never a single
  * detector's own match: no detector observes "a version" directly.
  */
+/** Per-field provenance only — mirrors canonical-contracts' TechnicalMetadataSupport shape. */
+export interface AgentVersionTechnicalProfileFieldEvidence {
+  readonly assertionIds: readonly string[];
+  readonly evidenceIds: readonly string[];
+}
+
 export interface AgentVersionCorrelationResult {
   readonly finding: ObjectDiscoveryFinding<'AGENT_VERSION'>;
   readonly candidate: NormalizedAgentVersionCandidate;
+  /**
+   * Technical Profile Persistence V1 (ADR-GOVIA-TECHNICAL-PROFILE-PERSISTENCE-v1)
+   * projection: the exact same deterministic technicalRevisionFingerprint
+   * already folded into candidate.candidateId, exposed separately so a
+   * caller can map it into AgentVersionTechnicalProfile.behaviorFingerprint.value
+   * without ever computing (or inventing) a second, competing fingerprint.
+   */
+  readonly technicalRevisionFingerprint: string;
+  /**
+   * Present only when exactly one same-file FRAMEWORK technical-profile
+   * signal was correlated — an ambiguous multi-framework file (two different
+   * Framework imports) fails closed to absent (UNKNOWN) rather than
+   * guessing which one is "the" AgentVersion's framework.
+   */
+  readonly runtimeFrameworkReference?: string;
+  readonly runtimeFrameworkReferenceSupport?: AgentVersionTechnicalProfileFieldEvidence;
 }
 
 function stableSuffix(parts: readonly string[]): string {
@@ -39,9 +62,77 @@ function dedupeIds<Id extends string>(ids: readonly Id[]): readonly Id[] {
   return Object.freeze(Array.from(new Set(ids)).sort());
 }
 
+/**
+ * Extracts the one proposed-identity value each of the L4 Round 1 correlated
+ * object kinds contributes to the technical revision projection — a full
+ * discriminated-union switch (no `as` casts) so every new kind added to
+ * NormalizedObjectCandidate must be handled explicitly here or it is simply
+ * never counted as evidence, never silently miscounted as another kind's.
+ */
+function extractNormalizedIdentityValue(candidate: DiscoveryCandidate): string | undefined {
+  const normalized = normalizeObjectCandidate(candidate);
+  if (normalized.status !== 'NORMALIZED') return undefined;
+  const { candidate: normalizedCandidate } = normalized;
+  switch (normalizedCandidate.candidateKind) {
+    case 'MODEL':
+      return normalizedCandidate.proposedIdentity.modelReference;
+    case 'TOOL':
+      return normalizedCandidate.proposedIdentity.declarationKey;
+    case 'PROMPT':
+      return normalizedCandidate.proposedIdentity.declarationKey;
+    case 'MCP_SERVER':
+      return normalizedCandidate.proposedIdentity.serverReference;
+    case 'API':
+      return normalizedCandidate.proposedIdentity.apiReference;
+    case 'KNOWLEDGE_BASE':
+      return normalizedCandidate.proposedIdentity.sourceReference;
+    case 'SKILL':
+      return normalizedCandidate.proposedIdentity.declarationReference;
+    default:
+      return undefined;
+  }
+}
+
+function extractNormalizedValues(list: readonly DiscoveryCandidate[]): readonly string[] {
+  const values: string[] = [];
+  for (const item of list) {
+    const value = extractNormalizedIdentityValue(item);
+    if (value) values.push(value);
+  }
+  return values;
+}
+
+/**
+ * PROMPT technical-revision extraction (corrected). Canonical PROMPT
+ * identity (proposedIdentity.declarationKey) stays declaration-name-only —
+ * unchanged, still never raw content. But AGENT_VERSION represents
+ * technical/behavioral state, and a Prompt's own *effective content*
+ * changing is version-relevant even when its declaration name does not
+ * (the prior "same key + changed content = same technical revision"
+ * behavior was a defect, not a feature). Each technical-revision input
+ * combines the stable declaration key with the candidate's own controlled
+ * `contentFingerprint` (see prompt-declaration.ts / evidence-assembly.ts) —
+ * never the raw prompt text itself, and never a value derived from
+ * provenance (findingId/locator/line/timestamp).
+ */
+function extractPromptTechnicalRevisionValues(prompts: readonly DiscoveryCandidate[]): readonly string[] {
+  const values: string[] = [];
+  for (const item of prompts) {
+    const declarationKey = extractNormalizedIdentityValue(item);
+    if (!declarationKey) continue;
+    values.push(`${declarationKey}:${item.contentFingerprint ?? 'unknown'}`);
+  }
+  return values;
+}
+
 function fileGroupKey(identity: SourceObjectIdentity): string {
   return JSON.stringify([identity.connectionId, identity.externalType, identity.externalId]);
 }
+
+const TECHNICAL_PROFILE_SIGNAL_LABEL: Record<TechnicalProfileSignal['signalKind'], string> = {
+  [TECHNICAL_PROFILE_SIGNAL_KIND.FRAMEWORK]: 'framework',
+  [TECHNICAL_PROFILE_SIGNAL_KIND.ORCHESTRATION]: 'orchestration',
+};
 
 /**
  * Canonical projection of the agent-relevant discovery *technical* evidence
@@ -64,16 +155,46 @@ function fileGroupKey(identity: SourceObjectIdentity): string {
  *
  * Every input is sorted and deduplicated so input order never changes the
  * projection.
+ *
+ * L4 Round 1 extension: every newly-supported correlated canonical-object
+ * kind (Prompt/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL) and every accepted
+ * AgentVersion technical-profile signal (Framework/Orchestration —
+ * see technical-profile-signal.ts; Technology/Build and Guardrail/HITL are
+ * not implemented in this round, see the evidence document) is folded in
+ * here, using the exact same sorted+deduplicated `<label>:<value>`
+ * projection shape MODEL/TOOL already established. Technical-profile
+ * signals contribute only their own semantic `value` — never their
+ * assertion/evidence id, sourceObject, or line position — for the same
+ * provenance-vs-technical-revision separation reason as every other input.
  */
 function buildTechnicalRevisionProjection(params: {
   readonly agentCode: string;
   readonly modelReferences: readonly string[];
   readonly toolDeclarationKeys: readonly string[];
+  readonly promptDeclarationKeys: readonly string[];
+  readonly mcpServerReferences: readonly string[];
+  readonly apiReferences: readonly string[];
+  readonly knowledgeBaseSourceReferences: readonly string[];
+  readonly skillDeclarationReferences: readonly string[];
+  readonly technicalProfileSignalValues: Readonly<Record<TechnicalProfileSignal['signalKind'], readonly string[]>>;
 }): readonly string[] {
+  const sortedLabeled = (label: string, values: readonly string[]) =>
+    Array.from(new Set(values)).sort().map((value) => `${label}:${value}`);
+
   return [
     `agent-code:${params.agentCode}`,
-    ...Array.from(new Set(params.modelReferences)).sort().map((value) => `model:${value}`),
-    ...Array.from(new Set(params.toolDeclarationKeys)).sort().map((value) => `tool:${value}`),
+    ...sortedLabeled('model', params.modelReferences),
+    ...sortedLabeled('tool', params.toolDeclarationKeys),
+    ...sortedLabeled('prompt', params.promptDeclarationKeys),
+    ...sortedLabeled('mcp', params.mcpServerReferences),
+    ...sortedLabeled('api', params.apiReferences),
+    ...sortedLabeled('kb', params.knowledgeBaseSourceReferences),
+    ...sortedLabeled('skill', params.skillDeclarationReferences),
+    // Iterated in a fixed order (never insertion/traversal order) so the
+    // projection stays stable regardless of signal-detection order.
+    ...(Object.keys(TECHNICAL_PROFILE_SIGNAL_LABEL) as Array<TechnicalProfileSignal['signalKind']>)
+      .sort()
+      .flatMap((kind) => sortedLabeled(TECHNICAL_PROFILE_SIGNAL_LABEL[kind], params.technicalProfileSignalValues[kind] ?? [])),
   ];
 }
 
@@ -98,11 +219,12 @@ function buildSourceScope(sourceObject: SourceObjectIdentity): string {
 }
 
 /**
- * Correlates one already-normalizable AGENT candidate with the MODEL/TOOL
- * candidates correlated alongside it in the same source artifact (same
- * "exactly one Agent per file" rule relationship-correlation.ts already
- * uses for USES_MODEL/USES_TOOL) into one evidence-backed AGENT_VERSION
- * candidate.
+ * Correlates one already-normalizable AGENT candidate with the MODEL/TOOL/
+ * PROMPT/MCP_SERVER/API/KNOWLEDGE_BASE/SKILL candidates and AgentVersion
+ * technical-profile signals correlated alongside it in the same source
+ * artifact (same "exactly one Agent per file" rule relationship-correlation.ts
+ * already uses for USES_MODEL/USES_TOOL) into one evidence-backed
+ * AGENT_VERSION candidate.
  *
  * Correlation and fail-closed rules (deterministic, source-scoped):
  *
@@ -112,21 +234,23 @@ function buildSourceScope(sourceObject: SourceObjectIdentity): string {
  *     real logical identity can never own a version. Zero or more than one
  *     AGENT candidate in the same file is ambiguous and yields no
  *     AGENT_VERSION, matching relationship correlation's own posture.
- *   - At least one MODEL or TOOL candidate correlated in the same file,
- *     itself normalizable, is required as version-relevant technical
- *     evidence beyond the AGENT's own logical identity ("Minimum evidence
- *     for AGENT_VERSION"). An AGENT with no correlated technical signal
- *     fails closed here rather than emitting a placeholder version, even
- *     though its own AGENT candidate may still normalize independently.
+ *   - At least one MODEL, TOOL, PROMPT, MCP_SERVER, API, KNOWLEDGE_BASE, or
+ *     SKILL candidate correlated in the same file (itself normalizable), OR
+ *     at least one AgentVersion technical-profile signal (Framework/
+ *     Orchestration), is required as version-relevant technical evidence
+ *     beyond the AGENT's own logical identity ("Minimum evidence for
+ *     AGENT_VERSION"). An AGENT with no correlated technical evidence fails
+ *     closed here rather than emitting a placeholder version, even though
+ *     its own AGENT candidate may still normalize independently.
  *   - The AGENT_VERSION's findingId/candidateId are derived from two
  *     deliberately separate deterministic inputs, combined only at the very
  *     last step (see {@link buildTechnicalRevisionProjection} and
  *     {@link buildSourceScope}):
  *       (1) a purely semantic TECHNICAL REVISION fingerprint — a canonical,
  *           sorted, deduplicated projection of the AGENT's own normalized
- *           agentCode plus every correlated MODEL modelReference and TOOL
- *           declarationKey, never a findingId, sourceObject, line number,
- *           wall-clock value, random UUID, or candidate traversal order;
+ *           agentCode plus every correlated technical fact's own value,
+ *           never a findingId, sourceObject, line number, wall-clock value,
+ *           random UUID, or candidate traversal order;
  *       (2) a SOURCE SCOPE identity — the parent AGENT's own
  *           SourceObjectIdentity (connectionId + externalType + externalId)
  *           only, never a line number.
@@ -136,7 +260,7 @@ function buildSourceScope(sourceObject: SourceObjectIdentity): string {
  *     produces a different one. Critically, an unrelated formatting/
  *     comment/blank-line change elsewhere in the same file — which can
  *     shift the parent AGENT's own findingId without changing its
- *     declaration name, sourceObject, or any correlated Model/Tool evidence
+ *     declaration name, sourceObject, or any correlated technical evidence
  *     — changes neither input and therefore never creates a new
  *     AGENT_VERSION: RECORD ID (findingId) != SEMANTIC VERSION IDENTITY.
  *   - No versionCode is ever fabricated: this V1 correlation observes no
@@ -156,6 +280,7 @@ function buildSourceScope(sourceObject: SourceObjectIdentity): string {
  */
 export function correlateAgentVersions(
   candidates: readonly DiscoveryCandidate[],
+  technicalProfileSignals: readonly TechnicalProfileSignal[],
   options: { readonly observedAt: string },
 ): readonly AgentVersionCorrelationResult[] {
   const byFile = new Map<string, DiscoveryCandidate[]>();
@@ -166,6 +291,17 @@ export function correlateAgentVersions(
       bucket.push(candidate);
     } else {
       byFile.set(key, [candidate]);
+    }
+  }
+
+  const signalsByFile = new Map<string, TechnicalProfileSignal[]>();
+  for (const signal of technicalProfileSignals) {
+    const key = fileGroupKey(signal.sourceObject);
+    const bucket = signalsByFile.get(key);
+    if (bucket) {
+      bucket.push(signal);
+    } else {
+      signalsByFile.set(key, [signal]);
     }
   }
 
@@ -184,47 +320,78 @@ export function correlateAgentVersions(
 
     const models = bucket.filter((candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.MODEL);
     const tools = bucket.filter((candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.TOOL);
+    const prompts = bucket.filter((candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.PROMPT);
+    const mcpServers = bucket.filter(
+      (candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.MCP_SERVER,
+    );
+    const apis = bucket.filter((candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.API);
+    const knowledgeBases = bucket.filter(
+      (candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE,
+    );
+    const skills = bucket.filter((candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.SKILL);
+    const technicalProfileSignalsInFile = signalsByFile.get(key) ?? [];
+
+    const correlatedObjectCandidates = [...models, ...tools, ...prompts, ...mcpServers, ...apis, ...knowledgeBases, ...skills];
 
     // Defensive fail-closed check, mirroring relationship correlation's own:
-    // never correlate candidates observed under different source connections.
+    // never correlate candidates/signals observed under different source connections.
     if (
-      models.some((model) => model.finding.sourceObject.connectionId !== agent.finding.sourceObject.connectionId) ||
-      tools.some((tool) => tool.finding.sourceObject.connectionId !== agent.finding.sourceObject.connectionId)
+      correlatedObjectCandidates.some(
+        (candidate) => candidate.finding.sourceObject.connectionId !== agent.finding.sourceObject.connectionId,
+      ) ||
+      technicalProfileSignalsInFile.some(
+        (signal) => signal.sourceObject.connectionId !== agent.finding.sourceObject.connectionId,
+      )
     ) {
       continue;
     }
 
-    const normalizedModelReferences: string[] = [];
-    for (const model of models) {
-      const normalized = normalizeObjectCandidate(model);
-      if (
-        normalized.status === 'NORMALIZED' &&
-        normalized.candidate.candidateKind === 'MODEL' &&
-        normalized.candidate.proposedIdentity.modelReference
-      ) {
-        normalizedModelReferences.push(normalized.candidate.proposedIdentity.modelReference);
-      }
+    const normalizedModelReferences = extractNormalizedValues(models);
+    const normalizedToolKeys = extractNormalizedValues(tools);
+    const normalizedPromptKeys = extractPromptTechnicalRevisionValues(prompts);
+    const normalizedMcpServerReferences = extractNormalizedValues(mcpServers);
+    const normalizedApiReferences = extractNormalizedValues(apis);
+    const normalizedKnowledgeBaseReferences = extractNormalizedValues(knowledgeBases);
+    const normalizedSkillReferences = extractNormalizedValues(skills);
+
+    const technicalProfileSignalValues: Record<TechnicalProfileSignal['signalKind'], string[]> = {
+      [TECHNICAL_PROFILE_SIGNAL_KIND.FRAMEWORK]: [],
+      [TECHNICAL_PROFILE_SIGNAL_KIND.ORCHESTRATION]: [],
+    };
+    for (const signal of technicalProfileSignalsInFile) {
+      technicalProfileSignalValues[signal.signalKind].push(signal.value);
     }
-    const normalizedToolKeys: string[] = [];
-    for (const tool of tools) {
-      const normalized = normalizeObjectCandidate(tool);
-      if (
-        normalized.status === 'NORMALIZED' &&
-        normalized.candidate.candidateKind === 'TOOL' &&
-        normalized.candidate.proposedIdentity.declarationKey
-      ) {
-        normalizedToolKeys.push(normalized.candidate.proposedIdentity.declarationKey);
-      }
-    }
+    const hasTechnicalProfileSignalEvidence = Object.values(technicalProfileSignalValues).some(
+      (values) => values.length > 0,
+    );
 
     // Minimum evidence for AGENT_VERSION: the AGENT's own logical identity
-    // is never sufficient on its own.
-    if (normalizedModelReferences.length === 0 && normalizedToolKeys.length === 0) continue;
+    // is never sufficient on its own. Any correlated technical evidence —
+    // Model/Tool (V1) or a Round-1 addition (Prompt/MCP/API/Knowledge Base/
+    // Skill/technical-profile signal) — satisfies this rule.
+    if (
+      normalizedModelReferences.length === 0 &&
+      normalizedToolKeys.length === 0 &&
+      normalizedPromptKeys.length === 0 &&
+      normalizedMcpServerReferences.length === 0 &&
+      normalizedApiReferences.length === 0 &&
+      normalizedKnowledgeBaseReferences.length === 0 &&
+      normalizedSkillReferences.length === 0 &&
+      !hasTechnicalProfileSignalEvidence
+    ) {
+      continue;
+    }
 
     const projection = buildTechnicalRevisionProjection({
       agentCode,
       modelReferences: normalizedModelReferences,
       toolDeclarationKeys: normalizedToolKeys,
+      promptDeclarationKeys: normalizedPromptKeys,
+      mcpServerReferences: normalizedMcpServerReferences,
+      apiReferences: normalizedApiReferences,
+      knowledgeBaseSourceReferences: normalizedKnowledgeBaseReferences,
+      skillDeclarationReferences: normalizedSkillReferences,
+      technicalProfileSignalValues,
     });
     const technicalRevisionFingerprint = stableSuffix(projection);
     const sourceScope = buildSourceScope(agent.finding.sourceObject);
@@ -235,14 +402,19 @@ export function correlateAgentVersions(
     // inputs rather than one merged projection.
     const suffix = stableSuffix([sourceScope, technicalRevisionFingerprint]);
 
-    const correlatedCandidates = [agent, ...models, ...tools];
-    const assertionIds: readonly SourceAssertionId[] = dedupeIds(
-      correlatedCandidates.flatMap((candidate) => candidate.finding.assertionIds),
+    const correlatedCandidates = [agent, ...correlatedObjectCandidates];
+    const assertionIds: readonly SourceAssertionId[] = dedupeIds([
+      ...correlatedCandidates.flatMap((candidate) => candidate.finding.assertionIds),
+      ...technicalProfileSignalsInFile.map((signal) => signal.assertion.assertionId),
+    ]);
+    const evidenceIds: readonly EvidenceId[] = dedupeIds([
+      ...correlatedCandidates.flatMap((candidate) => candidate.finding.evidenceIds),
+      ...technicalProfileSignalsInFile.map((signal) => signal.evidence.evidenceId),
+    ]);
+    const confidence = Math.min(
+      ...correlatedCandidates.map((candidate) => candidate.finding.confidence),
+      ...technicalProfileSignalsInFile.map((signal) => signal.confidence),
     );
-    const evidenceIds: readonly EvidenceId[] = dedupeIds(
-      correlatedCandidates.flatMap((candidate) => candidate.finding.evidenceIds),
-    );
-    const confidence = Math.min(...correlatedCandidates.map((candidate) => candidate.finding.confidence));
     const detectedAt = asIsoTimestamp(options.observedAt);
 
     const finding: ObjectDiscoveryFinding<'AGENT_VERSION'> = {
@@ -279,7 +451,27 @@ export function correlateAgentVersions(
       proposedIdentity: { agent: agentReference },
     };
 
-    results.push({ finding, candidate });
+    // Technical Profile Persistence V1: runtimeFrameworkReference is
+    // proposed only when exactly one same-file FRAMEWORK signal exists —
+    // fails closed (absent) on zero or ambiguous (>1) signals rather than
+    // guessing. Its own support is exactly that one signal's own
+    // assertion/evidence id, never the whole AGENT_VERSION's evidence union.
+    const frameworkSignals = technicalProfileSignalsInFile.filter(
+      (signal) => signal.signalKind === TECHNICAL_PROFILE_SIGNAL_KIND.FRAMEWORK,
+    );
+    const runtimeFrameworkReference =
+      frameworkSignals.length === 1 ? frameworkSignals[0].value : undefined;
+    const runtimeFrameworkReferenceSupport =
+      frameworkSignals.length === 1
+        ? { assertionIds: [frameworkSignals[0].assertion.assertionId], evidenceIds: [frameworkSignals[0].evidence.evidenceId] }
+        : undefined;
+
+    results.push({
+      finding,
+      candidate,
+      technicalRevisionFingerprint,
+      ...(runtimeFrameworkReference === undefined ? {} : { runtimeFrameworkReference, runtimeFrameworkReferenceSupport }),
+    });
   }
 
   return Object.freeze(results);
@@ -295,8 +487,9 @@ export function correlateAgentVersions(
 export class AgentVersionCorrelationStrategy {
   correlate(
     candidates: readonly DiscoveryCandidate[],
+    technicalProfileSignals: readonly TechnicalProfileSignal[],
     observedAt: string,
   ): readonly AgentVersionCorrelationResult[] {
-    return correlateAgentVersions(candidates, { observedAt });
+    return correlateAgentVersions(candidates, technicalProfileSignals, { observedAt });
   }
 }

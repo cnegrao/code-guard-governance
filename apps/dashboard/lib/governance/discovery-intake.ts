@@ -9,6 +9,13 @@ import {
   AgentKindDeclarationSpecification,
   ModelReferenceDeclarationSpecification,
   ToolListDeclarationSpecification,
+  PromptDeclarationSpecification,
+  McpServerDeclarationSpecification,
+  ApiDeclarationSpecification,
+  KnowledgeBaseDeclarationSpecification,
+  SkillListDeclarationSpecification,
+  FrameworkImportSignalSpecification,
+  OrchestrationFrameworkSignalSpecification,
   createSourceConnection,
   createSourceSystem,
   normalizeObjectCandidate,
@@ -16,6 +23,7 @@ import {
   type DiscoveryCandidate,
   type DiscoveryRunResult,
   type RelationshipCorrelationResult,
+  type TechnicalProfileSignal,
 } from "@council/scanner";
 import {
   IneligibleFindingError,
@@ -24,6 +32,7 @@ import {
   asReviewSubjectId,
   createReviewSubject,
   type AcquisitionRunCounts,
+  type AgentVersionTechnicalProfilePersistencePort,
   type DiscoveryIntakePersistencePort,
   type GovernanceReviewPersistencePort,
   type MaterializationPersistencePort,
@@ -43,6 +52,7 @@ import {
 import { governanceReviewPersistence } from "./persistence";
 import { materializationPersistence } from "./materialization";
 import { discoveryIntakePersistence } from "./discovery-intake-persistence";
+import { agentVersionTechnicalProfilePersistence } from "./agent-version-technical-profile-persistence";
 
 /**
  * Discovery Intake V1 — the trusted server-side application service that
@@ -130,12 +140,14 @@ export interface DiscoveryIntakePorts {
   readonly review: GovernanceReviewPersistencePort;
   readonly materialization: MaterializationPersistencePort;
   readonly intake: DiscoveryIntakePersistencePort;
+  readonly agentVersionTechnicalProfile: AgentVersionTechnicalProfilePersistencePort;
 }
 
 const defaultPorts: DiscoveryIntakePorts = {
   review: governanceReviewPersistence,
   materialization: materializationPersistence,
   intake: discoveryIntakePersistence,
+  agentVersionTechnicalProfile: agentVersionTechnicalProfilePersistence,
 };
 
 interface ScanTally {
@@ -353,6 +365,34 @@ async function processRelationshipCandidate(
   }
 }
 
+/**
+ * AgentVersion technical-profile signals (Framework/Orchestration — see
+ * technical-profile-signal.ts) are structurally NOT DiscoveryCandidates
+ * of any CanonicalObjectKind and therefore never flow through
+ * processObjectCandidate/normalizeObjectCandidate/ensureReviewSubjectAndPropose
+ * at all — there is no candidateKind to normalize or to back a ReviewSubject
+ * with. Their Evidence/SourceAssertion are still made durable here — the
+ * same "durable before referenced" invariant processObjectCandidate
+ * enforces — because AgentVersion correlation's own ReviewSubject
+ * (processAgentVersionCandidate below) may cite their assertionIds/
+ * evidenceIds in its own union.
+ */
+async function processTechnicalProfileSignal(
+  signal: TechnicalProfileSignal,
+  ctx: GovernanceExecutionContext,
+  ports: DiscoveryIntakePorts,
+  tally: ScanTally,
+): Promise<void> {
+  try {
+    await ports.intake.recordEvidence(ctx.organisationId, signal.evidence);
+    await ports.intake.recordSourceAssertion(ctx.organisationId, signal.assertion);
+  } catch (error) {
+    tally.failures.push({
+      reason: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 async function processAgentVersionCandidate(
   result: AgentVersionCorrelationResult,
   acquisitionRunId: AcquisitionRun["runId"],
@@ -377,6 +417,62 @@ async function processAgentVersionCandidate(
   }
 }
 
+const AGENT_VERSION_TECHNICAL_PROFILE_CONTRACT_VERSION = "1.0";
+const EMPTY_TECHNICAL_PROFILE_FIELD_SUPPORT = Object.freeze({ assertionIds: [], evidenceIds: [] });
+
+/**
+ * Technical Profile Persistence V1 (ADR-GOVIA-TECHNICAL-PROFILE-PERSISTENCE-v1).
+ * Durably records a typed, pre-canonical AgentVersionTechnicalProfile
+ * proposal for every correlated AGENT_VERSION result — never a canonical
+ * write, never certification, and requires the AGENT_VERSION's own
+ * NormalizedCandidate to already be durable (recordNormalizedCandidate,
+ * called inside ensureReviewSubjectAndPropose above, must run first — see
+ * the ordering in runGovernanceDiscoveryScan below). behaviorFingerprint is
+ * always populated (the same technicalRevisionFingerprint already folded
+ * into candidate.candidateId, never a second competing fingerprint).
+ * buildReference/entrypointReference/configurationReference have no
+ * detector in this round and are always left absent (UNKNOWN, never FALSE).
+ * runtimeFrameworkReference is proposed only when the correlation itself
+ * found exactly one unambiguous same-file Framework signal.
+ */
+async function processAgentVersionTechnicalProfileProposal(
+  result: AgentVersionCorrelationResult,
+  ctx: GovernanceExecutionContext,
+  ports: DiscoveryIntakePorts,
+  tally: ScanTally,
+): Promise<void> {
+  try {
+    const proposalId = `agent-version-technical-profile-proposal:${stableHex([
+      "agent-version-technical-profile-proposal",
+      result.candidate.candidateId,
+    ])}`;
+
+    await ports.agentVersionTechnicalProfile.recordAgentVersionTechnicalProfileProposal({
+      organisationId: ctx.organisationId,
+      proposalId,
+      agentVersionCandidateId: result.candidate.candidateId,
+      behaviorFingerprintAlgorithm: "sha256",
+      behaviorFingerprintSchemaVersion: "1.0",
+      behaviorFingerprintValue: result.technicalRevisionFingerprint,
+      runtimeFrameworkReference: result.runtimeFrameworkReference,
+      support: {
+        behaviorFingerprint: { assertionIds: result.finding.assertionIds, evidenceIds: result.finding.evidenceIds },
+        buildReference: EMPTY_TECHNICAL_PROFILE_FIELD_SUPPORT,
+        runtimeFrameworkReference: result.runtimeFrameworkReferenceSupport ?? EMPTY_TECHNICAL_PROFILE_FIELD_SUPPORT,
+        entrypointReference: EMPTY_TECHNICAL_PROFILE_FIELD_SUPPORT,
+        configurationReference: EMPTY_TECHNICAL_PROFILE_FIELD_SUPPORT,
+      },
+      contractVersion: AGENT_VERSION_TECHNICAL_PROFILE_CONTRACT_VERSION,
+    });
+  } catch (error) {
+    tally.failures.push({
+      findingId: result.finding.findingId,
+      candidateKind: "AGENT_VERSION",
+      reason: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 /**
  * Runs one real discovery scan against a trusted, server-configured source
  * and places every reviewable result into the governed review queue at
@@ -391,11 +487,28 @@ export async function runGovernanceDiscoveryScan(
 ): Promise<GovernanceDiscoveryScanResult> {
   const { executionContext: ctx, sourceConfiguration } = input;
   const adapter = new LocalRepositoryAdapter(sourceConfiguration.rootPath);
-  const pipeline = new DiscoveryPipeline(adapter, [
-    new AgentKindDeclarationSpecification(),
-    new ModelReferenceDeclarationSpecification(),
-    new ToolListDeclarationSpecification(),
-  ]);
+  const pipeline = new DiscoveryPipeline(
+    adapter,
+    [
+      new AgentKindDeclarationSpecification(),
+      new ModelReferenceDeclarationSpecification(),
+      new ToolListDeclarationSpecification(),
+      new PromptDeclarationSpecification(),
+      new McpServerDeclarationSpecification(),
+      new ApiDeclarationSpecification(),
+      new KnowledgeBaseDeclarationSpecification(),
+      new SkillListDeclarationSpecification(),
+    ],
+    {
+      // AgentVersion technical-profile signal detectors: structurally
+      // separate from `specifications` above (never a DiscoveryCandidate of
+      // any CanonicalObjectKind — see technical-profile-signal.ts). They
+      // only ever contribute evidence to AgentVersion correlation's own
+      // technical revision (agent-version-correlation.ts), never their own
+      // ReviewSubject (see processTechnicalProfileSignal below).
+      signalSpecifications: [new FrameworkImportSignalSpecification(), new OrchestrationFrameworkSignalSpecification()],
+    },
+  );
 
   let runResult: DiscoveryRunResult;
   try {
@@ -443,7 +556,7 @@ export async function runGovernanceDiscoveryScan(
     };
   }
 
-  const { run, candidates } = runResult;
+  const { run, candidates, technicalProfileSignals } = runResult;
   await ports.intake.startAcquisitionRun(ctx.organisationId, run);
 
   // LocalRepositoryAdapter.listArtifacts() is a deterministic, side-effect-
@@ -459,10 +572,11 @@ export async function runGovernanceDiscoveryScan(
   // AGENT_VERSION, like RELATIONSHIP, is a correlation product rather than a
   // single detector's own match (see agent-version-correlation.ts); it is
   // computed here alongside relationshipResults but only ever processed
-  // below once its parent AGENT/MODEL/TOOL evidence has already been made
-  // durable by the object-candidate loop.
+  // below once its parent AGENT/MODEL/TOOL evidence and every correlated
+  // technical-profile signal have already been made durable.
   const agentVersionResults: readonly AgentVersionCorrelationResult[] = new AgentVersionCorrelationStrategy().correlate(
     candidates,
+    technicalProfileSignals,
     run.completedAt ?? run.startedAt,
   );
 
@@ -477,8 +591,15 @@ export async function runGovernanceDiscoveryScan(
   for (const candidate of candidates) {
     await processObjectCandidate(candidate, run.runId, ctx, ports, tally);
   }
+  for (const signal of technicalProfileSignals) {
+    await processTechnicalProfileSignal(signal, ctx, ports, tally);
+  }
   for (const agentVersionResult of agentVersionResults) {
     await processAgentVersionCandidate(agentVersionResult, run.runId, ctx, ports, tally);
+    // Requires the AGENT_VERSION's own NormalizedCandidate to already be
+    // durable (recordNormalizedCandidate, called inside
+    // ensureReviewSubjectAndPropose above) — must run strictly after.
+    await processAgentVersionTechnicalProfileProposal(agentVersionResult, ctx, ports, tally);
   }
   for (const relationshipResult of relationshipResults) {
     await processRelationshipCandidate(relationshipResult, run.runId, ctx, ports, tally);
