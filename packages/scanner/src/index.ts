@@ -156,3 +156,11 @@ export type {
 export type { EmbeddingProviderPort, EmbeddingResult } from './semantic/embedding-provider';
 export { buildSemanticRepresentation } from './semantic/semantic-representation-builder';
 export type { BuildSemanticRepresentationInput } from './semantic/semantic-representation-builder';
+
+// L8 derived analytical results: zero canonical authority.
+export { COSINE_ALGORITHM_VERSION, semanticSpaceIdentity, compareSemanticRepresentations,
+  createPossibleMatchCandidate } from './semantic/similarity';
+export type { SemanticComparisonFamily, SemanticSpaceIdentity, SimilarityPolicy, SimilarityEndpoint,
+  SimilarityResult, PossibleMatchCandidate, CompareSemanticRepresentationsInput } from './semantic/similarity';
+export { clusterPossibleMatches } from './semantic/possible-match-clustering';
+export type { PossibleMatchCluster, ClusterPossibleMatchesInput } from './semantic/possible-match-clustering';
