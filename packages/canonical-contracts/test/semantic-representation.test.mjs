@@ -46,7 +46,7 @@ function representationDraft(overrides = {}) {
     contentFingerprint: fingerprint(),
     embeddingProvider: provider(4),
     vector: [0.1, 0.2, 0.3, 0.4],
-    support: { assertionIds: [], evidenceIds: [] },
+    support: { assertionIds: [contracts.asSourceAssertionId("assertion-1")], evidenceIds: [] },
     generatedAt: "2026-09-09T00:00:00.000Z",
     ...overrides,
   };
@@ -92,6 +92,24 @@ describe("SemanticContentFingerprint", () => {
 });
 
 describe("createSemanticRepresentation", () => {
+  for (const [name, support] of [
+    ["assertion-only", { assertionIds: [contracts.asSourceAssertionId("assertion-1")], evidenceIds: [] }],
+    ["evidence-only", { assertionIds: [], evidenceIds: [contracts.asEvidenceId("evidence-1")] }],
+    ["both", { assertionIds: [contracts.asSourceAssertionId("assertion-1")], evidenceIds: [contracts.asEvidenceId("evidence-1")] }],
+  ]) {
+    it(`accepts ${name} support`, () => {
+      const rep = contracts.createSemanticRepresentation(representationDraft({ support }));
+      assert.deepEqual(rep.support, support);
+    });
+  }
+
+  it("fails closed when both support collections are empty", () => {
+    assert.throws(
+      () => contracts.createSemanticRepresentation(representationDraft({ support: { assertionIds: [], evidenceIds: [] } })),
+      { name: "TypeError", message: "SEMANTIC_REPRESENTATION_SUPPORT_REQUIRED" },
+    );
+  });
+
   it("builds and freezes a valid representation", () => {
     const rep = contracts.createSemanticRepresentation(representationDraft());
     assert.ok(Object.isFrozen(rep));

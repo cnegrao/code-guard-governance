@@ -153,7 +153,6 @@ export type {
   SemanticContentProjection,
   SemanticContentProjectionInput,
 } from './semantic/content-projection';
-export { TestOnlyDeterministicEmbeddingProvider } from './semantic/embedding-provider';
 export type { EmbeddingProviderPort, EmbeddingResult } from './semantic/embedding-provider';
 export { buildSemanticRepresentation } from './semantic/semantic-representation-builder';
 export type { BuildSemanticRepresentationInput } from './semantic/semantic-representation-builder';

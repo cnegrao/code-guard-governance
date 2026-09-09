@@ -31,7 +31,7 @@ export interface SemanticContentProjectionInput {
    * e.g. an AgentVersion's own behaviorFingerprint.value, a declared
    * identity/declaration key. Never raw file content, never secrets, never
    * Prompt string content. Order is irrelevant to the caller; the
-   * projection normalizes to a stable (key ascending) order internally so
+   * projection sorts by key then value and deduplicates exact pairs so
    * traversal/insertion order never affects the resulting fingerprint.
    */
   readonly knownTechnicalFacts: ReadonlyArray<readonly [string, string]>;
@@ -56,20 +56,26 @@ export function buildSemanticContentProjection(input: SemanticContentProjectionI
     throw new TypeError("Semantic content projection objectKind must be a non-empty string");
   }
 
-  const sortedFacts = [...input.knownTechnicalFacts]
-    .map(([key, value]) => [key, value] as const)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-
-  for (const [key, value] of sortedFacts) {
-    if (key.trim().length === 0) {
+  const validatedFacts = input.knownTechnicalFacts.map(([key, value]) => {
+    if (typeof key !== "string" || key.trim().length === 0) {
       throw new TypeError("Semantic content projection fact keys must be non-empty");
+    }
+    if (typeof value !== "string") {
+      throw new TypeError("Semantic content projection fact values must be strings");
     }
     if (SECRET_LOOKING_VALUE.test(value)) {
       throw new Error(
         `Semantic content projection refuses fact "${key}": value looks like a secret/credential`,
       );
     }
-  }
+    return Object.freeze([key, value] as const);
+  });
+  const compare = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+  const sortedFacts = validatedFacts
+    .sort(([aKey, aValue], [bKey, bValue]) => compare(aKey, bKey) || compare(aValue, bValue))
+    .filter(([key, value], index, facts) =>
+      index === 0 || key !== facts[index - 1][0] || value !== facts[index - 1][1],
+    );
 
   return Object.freeze({
     subjectKind: input.subjectKind,

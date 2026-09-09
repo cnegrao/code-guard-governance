@@ -75,7 +75,9 @@ Both durable contracts (`gov_repo.canonical_objects`, `gov_repo.discovery_candid
 
 ## 6. Semantic content projection contract
 
-`packages/scanner/src/semantic/content-projection.ts`: `SemanticContentProjectionInput { subjectKind, objectKind, knownTechnicalFacts: [key, value][] }`. `buildSemanticContentProjection` normalizes to a stable (key-ascending) order, rejects an empty `objectKind`/fact key, and refuses (throws) any fact value that looks like a secret/credential (conservative regex allowlist-refusal, not a full secret detector — callers remain responsible for only ever supplying evidence-backed, already-vetted facts). No raw file content, no secrets, no full Prompt string content is ever accepted as a fact value by design (callers are expected to pass only already-governed technical facts, e.g. a fingerprint value or a declaration key — never a source excerpt).
+`packages/scanner/src/semantic/content-projection.ts`: `SemanticContentProjectionInput { subjectKind, objectKind, knownTechnicalFacts: [key, value][] }`. `buildSemanticContentProjection` validates fact keys/values before sorting, normalizes to canonical key+value order, deduplicates exact `[key,value]` pairs while preserving distinct values under the same key, and rejects an empty `objectKind`/fact key, and refuses (throws) any fact value that looks like a secret/credential (conservative regex allowlist-refusal, not a full secret detector — callers remain responsible for only ever supplying evidence-backed, already-vetted facts). No raw file content, no secrets, no full Prompt string content is ever accepted as a fact value by design (callers are expected to pass only already-governed technical facts, e.g. a fingerprint value or a declaration key — never a source excerpt).
+
+`CONTENT_CANONICALIZATION`: `FACT_ORDER = canonical key+value order`; `DUPLICATE_FACTS = exact-pair deduplicated`. Reversing same-key distinct values or repeating exact facts leaves both projection and fingerprint unchanged; a genuinely changed value set changes the fingerprint.
 
 ## 7. Projection schema/version
 
@@ -83,11 +85,13 @@ Both durable contracts (`gov_repo.canonical_objects`, `gov_repo.discovery_candid
 
 ## 8. Content fingerprint algorithm/input
 
-`sha256(canonicalize(projection))`, truncated to 32 hex characters, where `canonicalize` recursively sorts object keys and preserves array order (arrays are already normalized upstream by `buildSemanticContentProjection`'s own key-ascending fact sort). Inputs: `subjectKind`, `objectKind`, the sorted `knownTechnicalFacts` pairs, and the schema version. No timestamp, no random value, no database row id, no Evidence/Assertion id, no line-number or traversal-order sensitivity (proven by `packages/scanner/test/semantic/content-projection.test.ts`).
+`sha256(canonicalize(projection))`, truncated to 32 hex characters, where `canonicalize` recursively sorts object keys and preserves array order (arrays are already normalized upstream by `buildSemanticContentProjection`'s key+value fact sort and exact-pair deduplication). Inputs: `subjectKind`, `objectKind`, the sorted `knownTechnicalFacts` pairs, and the schema version. No timestamp, no random value, no database row id, no Evidence/Assertion id, no line-number or traversal-order sensitivity (proven by `packages/scanner/test/semantic/content-projection.test.ts`).
+
+`CONTENT_FINGERPRINT` is the full `SemanticContentFingerprint` tuple `{ algorithm, schemaVersion, value }`; provenance remains outside semantic content identity.
 
 ## 9. SemanticRepresentation contract
 
-`packages/canonical-contracts/src/semantic-representation.ts`: `SemanticRepresentation { representationId, organisationId, subject, projectionSchemaVersion, contentFingerprint, embeddingProvider, vector, support, generatedAt }`. `createSemanticRepresentation` validates and freezes: organisationId must match the subject's own organisationId; `projectionSchemaVersion` non-empty; `embeddingProvider.dimension` a positive integer; `vector.length` must equal the declared dimension (fails closed via `SemanticRepresentationDimensionMismatchError`, never truncates/pads); every vector component must be finite. `representationId` itself is never computed by this package — it is expected to be content-addressed by the caller, matching the existing `NormalizedCandidateId`/`proposalId` idiom elsewhere in this codebase.
+`packages/canonical-contracts/src/semantic-representation.ts`: `SemanticRepresentation { representationId, organisationId, subject, projectionSchemaVersion, contentFingerprint, embeddingProvider, vector, support, generatedAt }`. `createSemanticRepresentation` validates and freezes: at least one assertion/evidence support id is required (`SEMANTIC_REPRESENTATION_SUPPORT_REQUIRED` otherwise); organisationId must match the subject's own organisationId; `projectionSchemaVersion` non-empty; `embeddingProvider.dimension` a positive integer; `vector.length` must equal the declared dimension (fails closed via `SemanticRepresentationDimensionMismatchError`, never truncates/pads); every vector component must be finite. `representationId` itself is never computed by this package — it is expected to be content-addressed by the caller, matching the existing `NormalizedCandidateId`/`proposalId` idiom elsewhere in this codebase.
 
 ## 10. EmbeddingProviderPort
 
@@ -95,11 +99,15 @@ Both durable contracts (`gov_repo.canonical_objects`, `gov_repo.discovery_candid
 
 ## 11. Production embedding-provider status
 
-**NOT_IMPLEMENTED — by design.** The only implementation shipped is `TestOnlyDeterministicEmbeddingProvider`, explicitly and pervasively labeled non-production (`providerId = "TEST_ONLY_DETERMINISTIC"`, `modelId` contains `"test-only"`, docstring states it is not a real semantic embedding model and must never be presented as one). Its vector is derived purely from the content fingerprint's own SHA-256 bytes and carries zero real semantic meaning. No live external embedding API call exists anywhere in this milestone's code.
+**PRODUCTION_EMBEDDING_PROVIDER = NOT_IMPLEMENTED.** `PRODUCTION_EMBEDDING_PROVIDER_STATUS = NOT_IMPLEMENTED`. The only implementation is the fixture `packages/scanner/test/semantic/test-only-deterministic-embedding-provider.ts` (`TestOnlyDeterministicEmbeddingProvider`), explicitly and pervasively labeled non-production (`providerId = "TEST_ONLY_DETERMINISTIC"`, `modelId` contains `"test-only"`, docstring states it is not a real semantic embedding model and must never be presented as one). Its vector is derived purely from the content fingerprint's own SHA-256 bytes and carries zero real semantic meaning. No live external embedding API call exists anywhere in this milestone's code.
+
+`TEST_PROVIDER = test-only fixture, absent from production export surface`. `TEST_ONLY_PROVIDER is not production-exported`. Production `src/semantic/embedding-provider.ts` retains only `EmbeddingProviderPort` and `EmbeddingResult`; the scanner barrel exports those types and no fake provider.
 
 ## 12. Representation identity inputs
 
-`representationId = sha256(canonicalize([subjectKey, projectionSchemaVersion, contentFingerprint.value, providerId, modelId, modelVersion, dimension]))[0:32]`, where `subjectKey = semanticRepresentationSubjectKey(subject)` (a stable JSON-encoded tuple distinguishing `CANONICAL_OBJECT` from `NORMALIZED_CANDIDATE` and including `organisationId`). Proven deterministic and input-sensitive by `packages/scanner/test/semantic/semantic-representation-builder.test.ts`: identical inputs reproduce the identical id; a changed content fingerprint, model version, declared dimension, subject family, or organisationId each independently changes the id.
+`representationId = sha256(canonicalize([subjectKey, projectionSchemaVersion, contentFingerprint.algorithm, contentFingerprint.schemaVersion, contentFingerprint.value, providerId, modelId, modelVersion, dimension]))[0:32]`, where `subjectKey = semanticRepresentationSubjectKey(subject)` (a stable JSON-encoded tuple distinguishing `CANONICAL_OBJECT` from `NORMALIZED_CANDIDATE` and including `organisationId`). Proven deterministic and input-sensitive by `packages/scanner/test/semantic/semantic-representation-builder.test.ts`: identical inputs reproduce the identical id; a changed content fingerprint, model version, declared dimension, subject family, or organisationId each independently changes the id.
+
+`REPRESENTATION_IDENTITY_INPUTS`: subject (including tenant and subject family), projectionSchemaVersion, contentFingerprint.algorithm, contentFingerprint.schemaVersion, contentFingerprint.value, providerId, modelId, modelVersion, dimension. `REPRESENTATION_ID includes full SemanticContentFingerprint tuple`. Provenance ids, generatedAt, vector values, row ids and timestamps are excluded. Tests independently vary algorithm/schemaVersion with the fingerprint value held constant, and verify provenance/time independence.
 
 ## 13. Representation versioning rule
 
@@ -117,13 +125,17 @@ Multiple representations may coexist for the same subject (different provider/mo
 
 **REUSE, no new architectural direction needed.** pgvector is already enabled (`create extension if not exists "vector"`, already applied by `20260818004009_agent_registry_graph_part_1.sql`; re-declared idempotently in the new migration). The `embedding` column is declared as an **unconstrained `vector`** (no fixed dimension typmod) rather than `vector(N)`, because this table must support multiple coexisting representation spaces (different providers/models/dimensions) for the same or different subjects simultaneously (§12/§13) — a single fixed-width column would force premature truncation/padding or forbid that coexistence. Dimension safety is instead enforced by the explicit `embedding_dimension` column plus the `vector_dims(embedding) = embedding_dimension` CHECK. No ANN index (HNSW/IVFFlat) was created — nearest-neighbor search and similarity are explicitly out of scope for this milestone (L8). This resolves what would otherwise have been a `STOP_REQUIRES_ARCHITECTURE_DECISION` under §14 of the milestone instructions without actually requiring an architecture-owner decision, because the smallest-safe-option analysis was conclusive: an application-and-database-dual-enforced explicit dimension column is strictly safer than either premature truncation/padding or a single fixed-width column that would forbid multi-space coexistence.
 
+Exact replay comparison is supported by pgvector: upstream [v0.8.0 SQL operator declarations](https://github.com/pgvector/pgvector/blob/v0.8.0/sql/vector.sql#L207-L216) map equality to `vector_eq`, whose [implementation](https://github.com/pgvector/pgvector/blob/v0.8.0/src/vector.c#L945-L1007) compares each stored numeric component and dimension exactly. The existing repository migration enables `vector` without a version pin; no installed/live extension version was queried. The correction uses `v_existing.embedding IS DISTINCT FROM p_embedding` (null-safe exact equality over pgvector values, at pgvector numeric precision), following the RPC's existing SQL search-path/type conventions. No distance, tolerance, cosine comparison, or similarity is involved.
+
 ## 17. Persistence schema
 
-`supabase/migrations/20260909120000_semantic_representation_persistence_v1.sql` (additive, single transaction, preflight-guarded): `gov_repo.semantic_representations` (one immutable row per representation; CHECK-enforced mutually-exclusive subject shape; FKs to `canonical_objects`/`discovery_candidates` by `(organisation_id, id)`), `gov_repo.semantic_representation_assertions` and `gov_repo.semantic_representation_evidence` (representation-level, not per-field, provenance junction tables — a `SemanticRepresentation` is one atomic projection, unlike `AgentVersionTechnicalProfile`'s five independently-enrichable fields). All three tables are append-only (`do instead nothing` rules forbid UPDATE/DELETE). The single write path, `gov_repo.record_semantic_representation`, verifies subject existence/kind-match and dimension consistency before any write, and is idempotent on `(organisation_id, representation_id)` (checked and returned before any write; a reused id with different scalar content fails closed with `SEMANTIC_REPRESENTATION_IDEMPOTENCY_CONFLICT`, including under the `unique_violation` race-condition path). No new `outbox_events` event type was added — a deliberate scope decision: a `SemanticRepresentation` carries zero canonical authority and is not a governance decision or materialization event, so wiring it into the outbox would blur the same "DISCOVERY != GOVERNANCE AUTHORITY" boundary this milestone otherwise protects; roadmap milestone 20 explicitly defers outbox consumer-building until real consumers exist, and there are none for this event type yet. **Known limitation:** the idempotency-conflict check compares scalar identity fields (content fingerprint, provider/model/version, dimension) but not exact numeric equality of the stored embedding vector itself — sufficient for this milestone's deterministic test-only provider, called out explicitly in the migration's own function comment as something a future round wiring a live, potentially non-bit-exact provider should revisit.
+`supabase/migrations/20260909120000_semantic_representation_persistence_v1.sql` (additive, single transaction, preflight-guarded): `gov_repo.semantic_representations` (one immutable row per representation; CHECK-enforced mutually-exclusive subject shape; FKs to `canonical_objects`/`discovery_candidates` by `(organisation_id, id)`), `gov_repo.semantic_representation_assertions` and `gov_repo.semantic_representation_evidence` (representation-level, not per-field, provenance junction tables — a `SemanticRepresentation` is one atomic projection, unlike `AgentVersionTechnicalProfile`'s five independently-enrichable fields). All three tables are append-only (`do instead nothing` rules forbid UPDATE/DELETE). The single write path, `gov_repo.record_semantic_representation`, verifies subject existence/kind-match, non-empty assertion/evidence support, and dimension consistency before replay or any write, and is idempotent on `(organisation_id, representation_id)` (checked and returned before any write; a reused id with different scalar identity fields or an exactly different vector fails closed with `SEMANTIC_REPRESENTATION_IDEMPOTENCY_CONFLICT`, including under the `unique_violation` race-condition path). No new `outbox_events` event type was added — a deliberate scope decision: a `SemanticRepresentation` carries zero canonical authority and is not a governance decision or materialization event, so wiring it into the outbox would blur the same "DISCOVERY != GOVERNANCE AUTHORITY" boundary this milestone otherwise protects; roadmap milestone 20 explicitly defers outbox consumer-building until real consumers exist, and there are none for this event type yet.
+
+`IDEMPOTENCY_RULE`: same organisation_id + representation_id with all scalar identity fields and exact vector equal returns replay; a vector difference raises `SEMANTIC_REPRESENTATION_IDEMPOTENCY_CONFLICT` without overwriting or inserting a second row. Both ordinary replay and `unique_violation` recovery compare the identical full scalar/vector tuple; recovery also fails closed if no winner row is found. Support and generatedAt remain first-insert-wins and are not identity inputs. Null vectors are rejected before replay.
 
 ## 18. Provenance model
 
-Every representation's `support: { assertionIds, evidenceIds }` is persisted via the two junction tables (§17), each FK-constrained to the already-durable `gov_repo.source_assertions`/`gov_repo.discovery_evidence` tables. Provenance ids never participate in the content fingerprint computation (§8) — provenance identity and semantic content identity are kept structurally separate, exactly as required.
+`PROVENANCE_MODEL`: `assertionIds.length > 0 OR evidenceIds.length > 0`; `EMPTY_PROVENANCE = REJECTED`. Assertion-only, evidence-only, and both-family support are accepted. The TypeScript constructor and the database RPC independently reject both-empty support; the RPC treats null arrays as empty and checks before replay or insert. No third provenance family, invented durable provenance, or arbitrary metadata is added. Unit-test identifiers remain isolated test fixtures. Every representation's `support: { assertionIds, evidenceIds }` is persisted via the two junction tables (§17), each FK-constrained to the already-durable `gov_repo.source_assertions`/`gov_repo.discovery_evidence` tables. Provenance ids never participate in the content fingerprint computation (§8) — provenance identity and semantic content identity are kept structurally separate, exactly as required.
 
 ## 19. Tenant/RLS model
 
@@ -151,22 +163,24 @@ Statically proven (migration structural test, §21) that `record_semantic_repres
 
 ## 25. Migration status
 
-One new, purely additive migration (`20260909120000_semantic_representation_persistence_v1.sql`), verified by full re-read and by 21 static structural tests (`apps/dashboard/tests/semantic-representation-persistence-migration.test.ts`) — not by execution against a live database (none authorized or available in this environment). No historical migration file was modified.
+One new, purely additive migration (`20260909120000_semantic_representation_persistence_v1.sql`), verified by full re-read and by 25 static structural tests (`apps/dashboard/tests/semantic-representation-persistence-migration.test.ts`) — not by execution against a live database (none authorized or available in this environment). No historical migration file was modified.
 
 ## 26. Test results
 
 | Suite | Command | Result |
 |---|---|---|
-| `packages/canonical-contracts` | `npm test` | **95/95 passing** (48 pre-existing + 47 new: subject model, content fingerprint, `createSemanticRepresentation`) |
+| `packages/canonical-contracts` | `npm test` | **99/99 passing** (includes four support-presence cases) |
 | `packages/canonical-contracts` typecheck | `npm run typecheck` | clean |
-| `packages/governance-review` | `npm test` | **117/117 passing** (113 pre-existing + 4 new: `SemanticRepresentationPersistencePort` reference-implementation tests) |
-| `packages/governance-review` typecheck | `npm run typecheck` | clean |
-| `packages/scanner` new semantic module | `npm run test:semantic` (new script) | **20/20 passing** |
+| `packages/governance-review` | `npm test` | **117/117 passing at original head**; unchanged package, not rerun for this correction |
+| `packages/governance-review` typecheck | `npm run typecheck` | clean at original head; not rerun (no files changed) |
+| `packages/scanner` new semantic module | `npm run test:semantic` (new script) | **32/32 passing** |
 | `packages/scanner` typecheck (src) | `npm run typecheck` | clean |
 | `packages/scanner` discovery-engine (regression check — index.ts export surface changed) | `npm run typecheck:discovery-engine` + `npm run test:discovery-engine` | **164/164 passing**, typecheck clean, no regression |
-| `apps/dashboard` new migration structural test | `node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/semantic-representation-persistence-migration.test.ts` | **21/21 passing** |
+| `apps/dashboard` new migration structural test | `node --conditions=react-server --experimental-test-module-mocks --import tsx --test --test-isolation=none tests/semantic-representation-persistence-migration.test.ts` | **25/25 passing** |
 | `apps/dashboard` full workspace typecheck | `npx tsc --noEmit` | clean |
 | `git diff --check` | repo root | clean |
+
+Semantic and migration test runners initially hit sandbox `spawn EPERM`; authorized reruns passed. SQL verification remains static: the migration suite checks the empty/null support guard and the full ordinary/race conflict predicates and replay branches; it does not claim database execution.
 
 Discovery Validation Lab (51/51, unrelated to this milestone's changes) was not re-run — no scanner detection/discovery-strategy file was touched, only a new, independent `src/semantic/**` module and its own export surface addition to `src/index.ts`, confirmed non-regressing by the discovery-engine suite above.
 
@@ -187,13 +201,12 @@ One pass performed against the checklist in the milestone instructions:
 - **K. Legacy vector tables improperly reused as canonical foundation** — not found; `agent_embeddings`/`coding_memory` were inspected and explicitly classified `LEGACY_DO_NOT_EXTEND` (§3), never touched.
 - **L. Arbitrary metadata JSON replacing typed contract** — not found; every new table column is explicitly typed (no `jsonb` column anywhere in the new migration, verified by the migration's own structural test).
 
-No defect required a fix; no second review loop was started.
+PR #25 surgical correction of `ab724c1`: closed empty support acceptance, same-key fact ordering/duplicate sensitivity, incomplete fingerprint identity binding, missing vector replay integrity, and production exposure of the test provider. The race recovery now checks the same full scalar/vector tuple as ordinary replay. No broad architecture re-audit was performed.
 
 ## 28. Known limitations
 
 - L6 (Business Domain/Term/Information Domain/purpose/capability) remains entirely `NOT_POPULATED` — this milestone is a representation foundation only, not an L6 discovery pipeline.
-- No production embedding provider exists; only a test-only deterministic provider is implemented.
-- Idempotency-conflict detection on `record_semantic_representation` does not compare the stored embedding vector's exact numeric values, only scalar identity fields (§17) — acceptable for this milestone's deterministic provider, flagged for revisit once/if a live, potentially non-bit-exact provider is wired in a future round.
+- No production embedding provider exists; the deterministic provider is a test-only fixture outside production exports.
 - No "current"/supersession pointer exists for coexisting representations of the same subject (§13) — deliberately deferred, not fabricated.
 - No live Discovery-triggered or UI-triggered call path invokes `record_semantic_representation` — the port/adapter/migration exist and are tested directly, but nothing under `apps/dashboard/app/**` calls them yet (consistent with this milestone's "foundation only" scope and the same honesty already established for the broader Discovery Engine in milestone 3's evidence).
 - The migration's internal consistency was verified by full re-read and its own structural test suite, not by execution against a live Supabase/Postgres instance (none authorized).
@@ -234,6 +247,10 @@ Added:
 
 No file under `docs/architecture/**` (other than reading them), `.claude/**`, `codex-recovery-6101-6240.txt`, `packages/scanner/test/discovery-validation-lab/**`, or any historical migration was modified.
 
+Correction-only file scope: contract constructor + contract test; scanner semantic projection/provider/builder + scanner barrel and three semantic tests; new test-only provider helper; the existing unmerged milestone migration + its dashboard structural test; this evidence document. No second migration.
+
 ## 32. Verdict
 
-**SEMANTIC_INTELLIGENCE_FOUNDATION_L6_L7_V1_READY_FOR_REVIEW**
+**PR25_SEMANTIC_FOUNDATION_HARDENING_READY_FOR_REVIEW**
+
+PR #25 remains open for review. MERGE STATUS: NOT MERGED. Production: not deployed; no live Supabase or embedding API access. Milestone 5: NOT STARTED.

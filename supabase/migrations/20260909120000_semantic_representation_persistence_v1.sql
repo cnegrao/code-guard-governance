@@ -257,23 +257,14 @@ create policy "Service role access to semantic_representation_evidence" on gov_r
 --    kind; the declared embedding_dimension matches the actual vector
 --    length. Idempotent on (organisation_id, representation_id): a replay
 --    of an identical id is detected and returned before any write; a reused
---    id whose stored scalar identity fields differ fails closed rather than
+--    id whose stored scalar identity fields or vector differ fails closed rather than
 --    silently discarding either value. Never creates, mutates, certifies,
 --    or reconciles a canonical object or relationship — there is no
 --    governance gate here because a SemanticRepresentation carries zero
 --    canonical authority, unlike AgentVersionTechnicalProfile.
 --
---    Known limitation: exact numeric equality of the stored embedding
---    vector itself is not part of the idempotency-conflict check (only the
---    scalar identity fields — content fingerprint, provider/model/version,
---    dimension — are compared). Because representation_id is expected to be
---    content-addressed over exactly those same scalar fields plus the
---    subject and projection schema version, and because the current
---    round's embedding-provider is a deterministic test-only function
---    (never a live external API), this is sufficient for this milestone;
---    a future round wiring a live, potentially non-bit-exact provider
---    should revisit this before relying on it for anything beyond
---    replay detection.
+--    Replay requires exact pgvector equality as well as all scalar identity
+--    fields. Provenance and generated_at remain first-insert-wins.
 -- -----------------------------------------------------------------------------
 
 create or replace function gov_repo.record_semantic_representation(
@@ -359,10 +350,16 @@ begin
     raise exception using errcode = '22023', message = 'SUBJECT_KIND_INVALID', detail = coalesce(p_subject_kind, '<null>');
   end if;
 
+  if coalesce(cardinality(p_assertion_ids), 0) = 0
+     and coalesce(cardinality(p_evidence_ids), 0) = 0 then
+    raise exception using
+      errcode = '22023', message = 'SEMANTIC_REPRESENTATION_SUPPORT_REQUIRED';
+  end if;
+
   if p_embedding_dimension is null or p_embedding_dimension <= 0 then
     raise exception using errcode = '22023', message = 'EMBEDDING_DIMENSION_INVALID';
   end if;
-  if vector_dims(p_embedding) <> p_embedding_dimension then
+  if p_embedding is null or vector_dims(p_embedding) <> p_embedding_dimension then
     raise exception using
       errcode = '22023', message = 'EMBEDDING_DIMENSION_MISMATCH',
       detail = format('declared dimension %s does not match actual vector length %s', p_embedding_dimension, vector_dims(p_embedding));
@@ -386,6 +383,7 @@ begin
        or v_existing.embedding_model_id is distinct from p_embedding_model_id
        or v_existing.embedding_model_version is distinct from p_embedding_model_version
        or v_existing.embedding_dimension is distinct from p_embedding_dimension
+       or v_existing.embedding is distinct from p_embedding
     then
       raise exception using
         errcode = '23514', message = 'SEMANTIC_REPRESENTATION_IDEMPOTENCY_CONFLICT',
@@ -433,11 +431,20 @@ begin
       from gov_repo.semantic_representations as r
       where r.organisation_id = p_organisation_id and r.representation_id = p_representation_id;
 
-      if v_existing.content_fingerprint_value is distinct from p_content_fingerprint_value
+      if not found or v_existing.subject_kind is distinct from p_subject_kind
+         or v_existing.subject_canonical_object_id is distinct from p_subject_canonical_object_id
+         or v_existing.subject_canonical_object_kind is distinct from p_subject_canonical_object_kind
+         or v_existing.subject_candidate_id is distinct from p_subject_candidate_id
+         or v_existing.subject_candidate_kind is distinct from p_subject_candidate_kind
+         or v_existing.projection_schema_version is distinct from p_projection_schema_version
+         or v_existing.content_fingerprint_algorithm is distinct from p_content_fingerprint_algorithm
+         or v_existing.content_fingerprint_schema_version is distinct from p_content_fingerprint_schema_version
+         or v_existing.content_fingerprint_value is distinct from p_content_fingerprint_value
          or v_existing.embedding_provider_id is distinct from p_embedding_provider_id
          or v_existing.embedding_model_id is distinct from p_embedding_model_id
          or v_existing.embedding_model_version is distinct from p_embedding_model_version
          or v_existing.embedding_dimension is distinct from p_embedding_dimension
+         or v_existing.embedding is distinct from p_embedding
       then
         raise exception using
           errcode = '23514', message = 'SEMANTIC_REPRESENTATION_IDEMPOTENCY_CONFLICT',
@@ -450,7 +457,7 @@ end;
 $$;
 
 comment on function gov_repo.record_semantic_representation is
-  'The only write path for a SemanticRepresentation. Verifies the subject (CanonicalObject or NormalizedCandidate) exists in this organisation and that its actual kind matches the declared subject kind, and that the declared embedding_dimension matches the actual vector length, before any write. Idempotent on (organisation_id, representation_id), checked and returned before any write. Never creates, mutates, certifies, or reconciles a canonical object or relationship — a SemanticRepresentation carries zero canonical authority. SECURITY INVOKER, service_role only.';
+  'The only write path for a SemanticRepresentation. Verifies the subject (CanonicalObject or NormalizedCandidate) exists in this organisation and that its actual kind matches the declared subject kind, that assertion/evidence support is non-empty, and that the declared embedding_dimension matches the actual vector length, before any write. Idempotent on (organisation_id, representation_id), checked and returned before any write. Never creates, mutates, certifies, or reconciles a canonical object or relationship — a SemanticRepresentation carries zero canonical authority. SECURITY INVOKER, service_role only.';
 
 -- -----------------------------------------------------------------------------
 -- G. PERMISSIONS — EXECUTE revoked from PUBLIC/anon/authenticated, granted

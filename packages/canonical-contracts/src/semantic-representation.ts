@@ -131,7 +131,7 @@ export interface EmbeddingProviderMetadata {
   readonly dimension: number;
 }
 
-/** Mirrors TechnicalMetadataSupport's shape exactly — provenance only, never a semantic value. */
+/** Provenance only, never a semantic value. At least one assertion or evidence id is required. */
 export interface SemanticRepresentationSupport {
   readonly assertionIds: readonly SourceAssertionId[];
   readonly evidenceIds: readonly EvidenceId[];
@@ -186,6 +186,9 @@ export function createSemanticRepresentation(
     readonly generatedAt: string;
   }>,
 ): SemanticRepresentation {
+  if (draft.support.assertionIds.length === 0 && draft.support.evidenceIds.length === 0) {
+    throw new TypeError("SEMANTIC_REPRESENTATION_SUPPORT_REQUIRED");
+  }
   if (draft.organisationId !== draft.subject.organisationId) {
     throw new TypeError("SemanticRepresentation organisationId must match its subject's organisationId");
   }

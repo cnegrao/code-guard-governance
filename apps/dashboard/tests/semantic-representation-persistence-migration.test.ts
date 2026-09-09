@@ -198,6 +198,47 @@ test("SQL: the idempotency replay check runs before the first INSERT into semant
   assert.ok(replayCheckIndex < firstInsertIndex, "idempotency conflict check must run before the first write");
 });
 
+test("SQL: RPC rejects empty or null support before replay or writes, independently of TS validation", () => {
+  const code = stripSqlComments(readMigration());
+  const guard = code.match(/if coalesce\(cardinality\(p_assertion_ids\), 0\) = 0\s+and coalesce\(cardinality\(p_evidence_ids\), 0\) = 0 then\s+raise exception using\s+errcode = '22023', message = 'SEMANTIC_REPRESENTATION_SUPPORT_REQUIRED';\s+end if;/);
+  assert.ok(guard, "both collections must be empty to reject; either non-empty collection satisfies presence");
+  assert.ok(guard.index! < code.indexOf("select * into v_existing"), "empty support cannot be accepted as replay");
+  assert.ok(guard.index! < code.indexOf("insert into gov_repo.semantic_representations"));
+  assert.match(code, /unnest\(coalesce\(p_assertion_ids, '\{\}'\)\)/);
+  assert.match(code, /unnest\(coalesce\(p_evidence_ids, '\{\}'\)\)/);
+});
+
+for (const race of [false, true]) {
+  test(`SQL: ${race ? 'unique_violation recovery' : 'ordinary replay'} requires exact vector and scalar equality before returning replay`, () => {
+    const code = stripSqlComments(readMigration());
+    const start = code.indexOf(race ? 'when unique_violation then' : '  if found then');
+    assert.ok(start >= 0);
+    const branch = code.slice(start, code.indexOf('return query select true, p_representation_id;', start));
+    const condition = branch.match(/if ([\s\S]*?)\s+then\s+raise exception using\s+errcode = '23514', message = 'SEMANTIC_REPRESENTATION_IDEMPOTENCY_CONFLICT',[\s\S]*?end if;\s*$/);
+    assert.ok(condition, "conflict must raise before replay, which follows the conditional");
+    const expectedFields = [
+      'subject_kind', 'subject_canonical_object_id', 'subject_canonical_object_kind',
+      'subject_candidate_id', 'subject_candidate_kind', 'projection_schema_version',
+      'content_fingerprint_algorithm', 'content_fingerprint_schema_version', 'content_fingerprint_value',
+      'embedding_provider_id', 'embedding_model_id', 'embedding_model_version', 'embedding_dimension', 'embedding',
+    ];
+    const expectedCondition = (race ? 'not found or ' : '') + expectedFields
+      .map((field) => `v_existing.${field} is distinct from p_${field}`).join(' or ');
+    const actualCondition = condition[1].replace(/^found then\s+if /, '').replace(/\s+/g, ' ').trim();
+    assert.equal(actualCondition, expectedCondition,
+      'identical vector and scalar inputs must replay; any exact vector difference must conflict');
+    assert.doesNotMatch(branch, /insert into|update gov_repo|<=>|<->|cosine|round\(/i);
+    if (race) {
+      assert.match(branch, /where r.organisation_id = p_organisation_id and r.representation_id = p_representation_id;/);
+    }
+  });
+}
+
+test("SQL: null vectors cannot bypass dimension validation on replay", () => {
+  const code = stripSqlComments(readMigration());
+  assert.match(code, /if p_embedding is null or vector_dims\(p_embedding\) <> p_embedding_dimension then/);
+});
+
 test("SQL: the function never creates, mutates, certifies, or reconciles a canonical object or relationship", () => {
   const code = stripSqlComments(readMigration());
   const fnStart = code.indexOf("create or replace function gov_repo.record_semantic_representation(");

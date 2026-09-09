@@ -29,6 +29,23 @@ function canonicalizeParts(parts: readonly string[]): string {
   return createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32);
 }
 
+/** Binds identity to the complete fingerprint contract, never provenance or vector values. */
+export function computeSemanticRepresentationId(
+  input: Pick<SemanticRepresentation, "subject" | "projectionSchemaVersion" | "contentFingerprint" | "embeddingProvider">,
+) {
+  return asSemanticRepresentationId(canonicalizeParts([
+    semanticRepresentationSubjectKey(input.subject),
+    input.projectionSchemaVersion,
+    input.contentFingerprint.algorithm,
+    input.contentFingerprint.schemaVersion,
+    input.contentFingerprint.value,
+    input.embeddingProvider.providerId,
+    input.embeddingProvider.modelId,
+    input.embeddingProvider.modelVersion,
+    String(input.embeddingProvider.dimension),
+  ]));
+}
+
 /**
  * Builds one immutable SemanticRepresentation snapshot (roadmap milestone 4,
  * §7/§19). representationId is content-addressed — deterministic across
@@ -48,17 +65,12 @@ export async function buildSemanticRepresentation(
   const contentFingerprint = computeSemanticContentFingerprint(projection);
   const { vector } = await input.provider.embed(projection, contentFingerprint);
 
-  const representationId = asSemanticRepresentationId(
-    canonicalizeParts([
-      semanticRepresentationSubjectKey(input.subject),
-      SEMANTIC_CONTENT_PROJECTION_SCHEMA_VERSION,
-      contentFingerprint.value,
-      input.provider.providerId,
-      input.provider.modelId,
-      input.provider.modelVersion,
-      String(input.provider.dimension),
-    ]),
-  );
+  const representationId = computeSemanticRepresentationId({
+    subject: input.subject,
+    projectionSchemaVersion: projection.projectionSchemaVersion,
+    contentFingerprint,
+    embeddingProvider: input.provider,
+  });
 
   return createSemanticRepresentation({
     representationId,

@@ -5,13 +5,16 @@ import {
   asCanonicalObjectId,
   asNormalizedCandidateId,
   asOrganisationId,
+  asSourceAssertionId,
+  asEvidenceId,
+  createSemanticContentFingerprint,
   type CanonicalObjectKind,
   type DiscoveryCandidateKind,
   type SemanticRepresentationSubjectReference,
 } from '@council/canonical-contracts';
 
-import { TestOnlyDeterministicEmbeddingProvider } from '../../src/semantic/embedding-provider';
-import { buildSemanticRepresentation } from '../../src/semantic/semantic-representation-builder';
+import { TestOnlyDeterministicEmbeddingProvider } from './test-only-deterministic-embedding-provider';
+import { buildSemanticRepresentation, computeSemanticRepresentationId } from '../../src/semantic/semantic-representation-builder';
 
 const organisationId = asOrganisationId('org-1');
 
@@ -39,10 +42,59 @@ const projectionInput = {
   knownTechnicalFacts: [['runtimeFramework', 'LangGraph']] as ReadonlyArray<readonly [string, string]>,
 };
 
-const support = { assertionIds: [], evidenceIds: [] };
+// Isolated unit-test support; no durable rows or production provenance are fabricated.
+const support = { assertionIds: [asSourceAssertionId('assertion-1')], evidenceIds: [] };
 const generatedAt = '2026-09-09T00:00:00.000Z';
 
 describe('buildSemanticRepresentation', () => {
+  it('rejects empty support', async () => {
+    await assert.rejects(buildSemanticRepresentation({
+      subject: canonicalSubject(), projection: projectionInput,
+      provider: new TestOnlyDeterministicEmbeddingProvider(4),
+      support: { assertionIds: [], evidenceIds: [] }, generatedAt,
+    }), /SEMANTIC_REPRESENTATION_SUPPORT_REQUIRED/);
+  });
+
+  it('rejects provider dimension mismatch', async () => {
+    const provider = new TestOnlyDeterministicEmbeddingProvider(4);
+    provider.embed = async () => ({ vector: [0.1, 0.2] });
+    await assert.rejects(buildSemanticRepresentation({
+      subject: canonicalSubject(), projection: projectionInput, provider, support, generatedAt,
+    }), { name: 'SemanticRepresentationDimensionMismatchError' });
+  });
+
+  for (const field of ['algorithm', 'schemaVersion', 'value'] as const) {
+    it(`binds representationId to fingerprint ${field}`, async () => {
+      const rep = await buildSemanticRepresentation({
+        subject: canonicalSubject(), projection: projectionInput,
+        provider: new TestOnlyDeterministicEmbeddingProvider(4), support, generatedAt,
+      });
+      assert.equal(computeSemanticRepresentationId(rep), rep.representationId);
+      const changed = createSemanticContentFingerprint({ ...rep.contentFingerprint, [field]: 'different' });
+      assert.notEqual(computeSemanticRepresentationId({ ...rep, contentFingerprint: changed }), rep.representationId);
+    });
+  }
+
+  it('provenance changes do not change representation identity or fingerprint', async () => {
+    const input = { subject: canonicalSubject(), projection: projectionInput,
+      provider: new TestOnlyDeterministicEmbeddingProvider(4), support, generatedAt };
+    const a = await buildSemanticRepresentation(input);
+    const b = await buildSemanticRepresentation({ ...input, support: {
+      assertionIds: [], evidenceIds: [asEvidenceId('evidence-1')],
+    } });
+    assert.equal(a.representationId, b.representationId);
+    assert.deepEqual(a.contentFingerprint, b.contentFingerprint);
+    assert.notDeepEqual(a.support, b.support);
+  });
+
+  it('generatedAt changes do not change representation identity', async () => {
+    const input = { subject: canonicalSubject(), projection: projectionInput,
+      provider: new TestOnlyDeterministicEmbeddingProvider(4), support, generatedAt };
+    const a = await buildSemanticRepresentation(input);
+    const b = await buildSemanticRepresentation({ ...input, generatedAt: '2026-09-10T00:00:00.000Z' });
+    assert.equal(a.representationId, b.representationId);
+  });
+
   it('produces a frozen, dimension-matching SemanticRepresentation', async () => {
     const provider = new TestOnlyDeterministicEmbeddingProvider(6);
     const rep = await buildSemanticRepresentation({
