@@ -6,9 +6,12 @@
 import type { DiscoveryCandidateKind, TrustState } from '@council/canonical-contracts';
 
 import type { SourceArtifactContent } from './source-adapter';
+import type { SqlDataDeclaration } from './strategies/sql-create-table';
 
 /** One textual match a specification found inside a single artifact. */
 export interface DetectionMatch {
+  /** Exact SQL statement binding, separate from display text and row identity. */
+  readonly dataDeclaration?: SqlDataDeclaration;
   /** Human-readable label for the detected thing (e.g. a model reference literal). */
   readonly displayValue: string;
   readonly lineStart: number;

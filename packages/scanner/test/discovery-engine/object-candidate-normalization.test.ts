@@ -339,7 +339,7 @@ describe('Object Candidate Normalization V1: FAIL CLOSED', () => {
     );
   });
 
-  it('an unsupported/dormant candidateKind (e.g. a future DATA_ASSET finding) fails closed rather than being normalized', () => {
+  it('a DATA_ASSET without supported declaration evidence fails closed rather than being normalized', () => {
     const fabricated: DiscoveryCandidate = {
       finding: {
         findingId: 'discovery-finding:fabricated' as never,
@@ -362,7 +362,7 @@ describe('Object Candidate Normalization V1: FAIL CLOSED', () => {
     const result = normalizeObjectCandidate(fabricated);
     assert.equal(result.status, 'NOT_SAFELY_NORMALIZABLE');
     if (result.status === 'NOT_SAFELY_NORMALIZABLE') {
-      assert.equal(result.reasonCode, OBJECT_NORMALIZATION_REASON_CODE.UNSUPPORTED_CANDIDATE_KIND);
+      assert.equal(result.reasonCode, OBJECT_NORMALIZATION_REASON_CODE.DATA_DECLARATION_NOT_SUPPORTED);
     }
   });
 

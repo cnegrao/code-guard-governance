@@ -14,6 +14,7 @@ import {
   ApiDeclarationSpecification,
   KnowledgeBaseDeclarationSpecification,
   SkillListDeclarationSpecification,
+  SqlCreateTableSpecification,
   FrameworkImportSignalSpecification,
   OrchestrationFrameworkSignalSpecification,
   createSourceConnection,
@@ -22,6 +23,7 @@ import {
   type AgentVersionCorrelationResult,
   type DiscoveryCandidate,
   type DiscoveryRunResult,
+  type ObjectNormalizationContext,
   type RelationshipCorrelationResult,
   type TechnicalProfileSignal,
 } from "@council/scanner";
@@ -52,7 +54,7 @@ import {
 
 import { governanceReviewPersistence } from "./persistence";
 import { materializationPersistence } from "./materialization";
-import { discoveryIntakePersistence } from "./discovery-intake-persistence";
+import { discoveryIntakePersistence, normalizedCandidateEnvelopeHash } from "./discovery-intake-persistence";
 import { agentVersionTechnicalProfilePersistence } from "./agent-version-technical-profile-persistence";
 
 /**
@@ -298,6 +300,7 @@ async function processObjectCandidate(
   ctx: GovernanceExecutionContext,
   ports: DiscoveryIntakePorts,
   tally: ScanTally,
+  normalizationContext: ObjectNormalizationContext,
 ): Promise<void> {
   const { finding } = candidate;
   try {
@@ -308,8 +311,19 @@ async function processObjectCandidate(
     await ports.intake.recordEvidence(ctx.organisationId, candidate.evidence);
     await ports.intake.recordSourceAssertion(ctx.organisationId, candidate.assertion);
 
-    const normalization = normalizeObjectCandidate(candidate);
+    const normalization = normalizeObjectCandidate(candidate, normalizationContext);
     const normalizedCandidate = normalization.status === "NORMALIZED" ? normalization.candidate : undefined;
+    if ((finding.candidateKind === "DATA_ASSET" || finding.candidateKind === "DATA_ELEMENT") && !normalizedCandidate) {
+      throw new Error("DATA_DECLARATION_NOT_SAFELY_NORMALIZABLE");
+    }
+    const parent = normalization.status === "NORMALIZED" ? normalization.parentDataAsset : undefined;
+    if (normalizedCandidate?.candidateKind === "DATA_ELEMENT") {
+      const durable = parent ? await ports.intake.getNormalizedCandidateForFinding(ctx.organisationId, parent.findingId) : undefined;
+      if (!parent || durable?.candidateKind !== "DATA_ASSET" ||
+        normalizedCandidateEnvelopeHash(durable) !== normalizedCandidateEnvelopeHash(parent)) {
+        throw new Error("DATA_ELEMENT_PARENT_NOT_DURABLE");
+      }
+    }
     // Retain exact durable endpoint inputs even when object governance already happened.
     const mapping = normalizedCandidate ? await ports.materialization.findActiveObjectSourceMapping({
       organisationId: ctx.organisationId,
@@ -317,7 +331,7 @@ async function processObjectCandidate(
       sourceExternalType: finding.sourceObject.externalType,
       sourceExternalId: finding.sourceObject.externalId,
       canonicalObjectKind: normalizedCandidate.candidateKind,
-      normalizedObjectIdentity: normalizedObjectIdentity(normalizedCandidate),
+      normalizedObjectIdentity: normalizedObjectIdentity(normalizedCandidate, parent),
     }) : undefined;
     if (mapping) {
       await ports.intake.recordDiscoveryFinding(ctx.organisationId, finding, acquisitionRunId);
@@ -503,6 +517,8 @@ export async function runGovernanceDiscoveryScan(
       new ApiDeclarationSpecification(),
       new KnowledgeBaseDeclarationSpecification(),
       new SkillListDeclarationSpecification(),
+      new SqlCreateTableSpecification("DATA_ASSET"),
+      new SqlCreateTableSpecification("DATA_ELEMENT"),
     ],
     {
       // AgentVersion technical-profile signal detectors: structurally
@@ -595,8 +611,12 @@ export async function runGovernanceDiscoveryScan(
     failures: [],
   };
 
-  for (const candidate of candidates) {
-    await processObjectCandidate(candidate, run.runId, ctx, ports, tally);
+  // Parent durability precedes child review, independently of detector/traversal order.
+  const normalizationContext = { candidates };
+  const orderedCandidates = [...candidates.filter(c => c.finding.candidateKind !== "DATA_ELEMENT"),
+    ...candidates.filter(c => c.finding.candidateKind === "DATA_ELEMENT")];
+  for (const candidate of orderedCandidates) {
+    await processObjectCandidate(candidate, run.runId, ctx, ports, tally, normalizationContext);
   }
   for (const signal of technicalProfileSignals) {
     await processTechnicalProfileSignal(signal, ctx, ports, tally);
@@ -610,7 +630,7 @@ export async function runGovernanceDiscoveryScan(
   }
   const endpointCandidates = new Map<string, NormalizedCandidate>();
   for (const item of candidates) {
-    const normalized = normalizeObjectCandidate(item);
+    const normalized = normalizeObjectCandidate(item, normalizationContext);
     if (normalized.status === "NORMALIZED") endpointCandidates.set(normalized.candidate.candidateId, normalized.candidate);
   }
   for (const item of agentVersionResults) endpointCandidates.set(item.candidate.candidateId, item.candidate);

@@ -402,6 +402,156 @@ function makePorts(intake = new FakeIntakePersistence()) {
   return { review, materialization, intake, agentVersionTechnicalProfile };
 }
 
+describe("Milestone 8: strict SQL discovery through existing intake", () => {
+  const dataCandidates = (ports: ReturnType<typeof makePorts>) => [...ports.intake.candidatesByFinding.values()]
+    .filter(c => c.candidateKind === "DATA_ASSET" || c.candidateKind === "DATA_ELEMENT");
+  const scanSql = (root: string, ports: ReturnType<typeof makePorts>, organisationId = ORG_A) => runGovernanceDiscoveryScan({
+    executionContext: { organisationId }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root },
+  }, ports);
+
+  test("SQL assets/elements preserve exact parents, durable support, normalized envelopes and PROPOSED review continuity", async () => {
+    await withFixtureRepository(async root => {
+      await writeFile(join(root, "schema.sql"), "CREATE TABLE a (id INT, name TEXT); CREATE TABLE b (id INT);");
+      const ports = makePorts();
+      const result = await scanSql(root, ports);
+      assert.equal(result.status, "SUCCEEDED");
+      assert.deepEqual(result.failures, []);
+      assert.equal(result.relationshipCandidates, 0);
+      const candidates = dataCandidates(ports);
+      assert.equal(candidates.length, 5);
+      const { rehydrateNormalizedCandidate } = await import("@/lib/governance/discovery-intake-persistence");
+      for (const candidate of candidates) {
+        assert.deepEqual(rehydrateNormalizedCandidate(JSON.parse(JSON.stringify(candidate))), candidate);
+        const subject = [...ports.review.subjects.values()].find(s => s.findingId === candidate.findingId)!;
+        assert.equal(subject.state, "PROPOSED");
+        const finding = await ports.intake.getDiscoveryFinding(ORG_A, candidate.findingId);
+        assert.equal(recoverReconciliationInput({ reviewSubject: subject, finding, candidate }).status,
+          RECONCILIATION_INPUT_STATUS.OBJECT_INPUT_AVAILABLE);
+        for (const id of candidate.evidenceIds) assert.ok(ports.intake.hasDurableEvidence(ORG_A, id));
+        for (const id of candidate.assertionIds) {
+          assert.equal(ports.intake.assertions.get(tenantKey(ORG_A, id))!.trustState, "DECLARED");
+        }
+        if (candidate.candidateKind === "DATA_ELEMENT") {
+          const ref = candidate.proposedIdentity.parentDataAsset;
+          assert.equal(ref.referenceKind, "CANDIDATE");
+          if (ref.referenceKind !== "CANDIDATE") throw new Error("missing exact parent");
+          const parent = candidates.find(c => c.candidateId === ref.candidateId);
+          assert.equal(parent?.candidateKind, "DATA_ASSET");
+          assert.ok(normalizedObjectIdentity(candidate, parent));
+        }
+      }
+      assert.equal(ports.agentVersionTechnicalProfile.proposals.size, 0);
+      // All canonical/authorization/reconciliation write ports throw in these fakes.
+    });
+  });
+
+  test("identical SQL rescans replay without duplicate candidates/reviews", async () => {
+    await withFixtureRepository(async root => {
+      await writeFile(join(root, "schema.sql"), "CREATE TABLE t (id INT);");
+      const ports = makePorts();
+      await scanSql(root, ports);
+      const first = dataCandidates(ports);
+      const result = await scanSql(root, ports);
+      assert.deepEqual(result.failures, []);
+      assert.equal(result.reviewSubjectsCreated, 0);
+      assert.deepEqual(dataCandidates(ports), first);
+    });
+  });
+
+  test("exact M7 asset/element mappings survive movement/datatype changes and do not suppress other same-file objects", async () => {
+    await withFixtureRepository(async root => {
+      await writeFile(join(root, "schema.sql"), "CREATE TABLE a (id INT); CREATE TABLE b (id INT);");
+      const probe = makePorts();
+      await scanSql(root, probe);
+      const initial = dataCandidates(probe);
+      const parent = initial.find(c => c.candidateKind === "DATA_ASSET" && c.proposedIdentity.sourceReference === "a")!;
+      const child = initial.find(c => c.candidateKind === "DATA_ELEMENT" &&
+        c.proposedIdentity.parentDataAsset.referenceKind === "CANDIDATE" &&
+        c.proposedIdentity.parentDataAsset.candidateId === parent.candidateId)!;
+      const ports = makePorts();
+      for (const candidate of [parent, child]) {
+        ports.materialization.seedMapping({ organisationId: ORG_A,
+          sourceConnectionId: candidate.sourceObject.connectionId, sourceExternalType: candidate.sourceObject.externalType,
+          sourceExternalId: candidate.sourceObject.externalId, canonicalObjectKind: candidate.candidateKind,
+          normalizedObjectIdentity: normalizedObjectIdentity(candidate, parent),
+        }, { mappingId: `mapping:${candidate.candidateKind}`, canonicalObjectId: `canonical:${candidate.candidateKind}`,
+          canonicalObjectKind: candidate.candidateKind });
+      }
+      await writeFile(join(root, "schema.sql"), "-- moved\nCREATE TABLE b (id INT);\nCREATE TABLE a (id TEXT);");
+      const result = await scanSql(root, ports);
+      assert.deepEqual(result.failures, []);
+      assert.equal(result.alreadyGoverned, 2);
+      assert.equal(dataCandidates(ports).length, 4, "mapped parent/child remain durable");
+      const subjects = [...ports.review.subjects.values()].filter(s => s.candidateKind === "DATA_ASSET" || s.candidateKind === "DATA_ELEMENT");
+      assert.equal(subjects.length, 2, "only table b and its column enter review");
+    });
+  });
+
+  test("tenant A cannot borrow a durable SQL parent from tenant B", async () => {
+    await withFixtureRepository(async root => {
+      await writeFile(join(root, "schema.sql"), "CREATE TABLE t (id INT);");
+      const ports = makePorts();
+      assert.deepEqual((await scanSql(root, ports, ORG_B)).failures, []);
+      const record = ports.intake.recordNormalizedCandidate.bind(ports.intake);
+      ports.intake.recordNormalizedCandidate = async (org, candidate, run) => {
+        if (org === ORG_A && candidate.candidateKind === "DATA_ASSET") throw new Error("parent persistence unavailable");
+        return record(org, candidate, run);
+      };
+      const result = await scanSql(root, ports);
+      assert.equal(result.status, "PARTIAL");
+      assert.ok(result.failures.some(f => f.reason === "DATA_ELEMENT_PARENT_NOT_DURABLE"));
+      assert.equal([...ports.review.subjects.values()].filter(s => s.organisationId === ORG_A && s.candidateKind === "DATA_ELEMENT").length, 0);
+      assert.equal(dataCandidates(ports).length, 2, "only tenant B's data candidates persisted");
+    });
+  });
+
+  test("same-source data rows remain tenant-scoped and foreign mappings do not suppress review", async () => {
+    await withFixtureRepository(async root => {
+      await writeFile(join(root, "schema.sql"), "CREATE TABLE t (id INT);");
+      const ports = makePorts();
+      await scanSql(root, ports, ORG_A);
+      const parent = dataCandidates(ports).find(c => c.candidateKind === "DATA_ASSET")!;
+      ports.materialization.seedMapping({ organisationId: ORG_A, sourceConnectionId: parent.sourceObject.connectionId,
+        sourceExternalType: parent.sourceObject.externalType, sourceExternalId: parent.sourceObject.externalId,
+        canonicalObjectKind: "DATA_ASSET", normalizedObjectIdentity: normalizedObjectIdentity(parent),
+      }, { mappingId: "mapping:a", canonicalObjectId: "canonical:a", canonicalObjectKind: "DATA_ASSET" });
+      const result = await scanSql(root, ports, ORG_B);
+      assert.deepEqual(result.failures, []);
+      assert.equal(result.alreadyGoverned, 0);
+      assert.equal(dataCandidates(ports).length, 4);
+      assert.equal([...ports.review.subjects.values()].filter(s => s.organisationId === ORG_B &&
+        (s.candidateKind === "DATA_ASSET" || s.candidateKind === "DATA_ELEMENT")).length, 2);
+    });
+  });
+
+  test("a durable parent with substituted support cannot back element review", async () => {
+    await withFixtureRepository(async root => {
+      await writeFile(join(root, "schema.sql"), "CREATE TABLE t (id INT);");
+      const ports = makePorts();
+      const read = ports.intake.getNormalizedCandidateForFinding.bind(ports.intake);
+      ports.intake.getNormalizedCandidateForFinding = async (org, findingId) => {
+        const candidate = await read(org, findingId);
+        return candidate?.candidateKind === "DATA_ASSET" ? { ...candidate, evidenceIds: [] } : candidate;
+      };
+      const result = await scanSql(root, ports);
+      assert.ok(result.failures.some(f => f.reason === "DATA_ELEMENT_PARENT_NOT_DURABLE"));
+      assert.equal(dataCandidates(ports).filter(c => c.candidateKind === "DATA_ELEMENT").length, 0);
+      assert.equal([...ports.review.subjects.values()].filter(s => s.candidateKind === "DATA_ELEMENT").length, 0);
+    });
+  });
+
+  test("unsupported SQL creates no data review, lineage or canonical operation", async () => {
+    await withFixtureRepository(async root => {
+      await writeFile(join(root, "schema.sql"), "-- CREATE TABLE fake (id INT);\nCREATE TABLE t AS SELECT id FROM source; SELECT 'CREATE TABLE hidden (id INT);';");
+      const ports = makePorts();
+      const result = await scanSql(root, ports);
+      assert.deepEqual(result.failures, []);
+      assert.deepEqual(dataCandidates(ports), []);
+      assert.equal(result.relationshipCandidates, 0);
+    });
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Legacy fixture: bare Agent marker plus module-level Model and Tool list.
 // L9 fails closed: no identifiable AgentVersion or direct declaration binding.
