@@ -53,8 +53,11 @@ test("boundary: canonical-object-lookup.ts additionally scopes every list/get qu
   }
 });
 
-test("availableOutcomesFor: RELATIONSHIP offers only REJECT/DEFER — CREATE_NEW/MATCH_EXISTING require an AGENT_VERSION/DATA_ELEMENT source endpoint that no current normalizer produces", () => {
-  assert.deepEqual(availableOutcomesFor("RELATIONSHIP"), ["REJECT", "DEFER"]);
+test("availableOutcomesFor: relationship outcomes use the existing vocabulary; query applies exact endpoint readiness", () => {
+  assert.deepEqual(availableOutcomesFor("RELATIONSHIP"), ["CREATE_NEW", "MATCH_EXISTING", "REJECT", "DEFER"]);
+  const source = readSource("lib/governance/decision-query.ts");
+  assert.match(source, /listExactRelationshipMatches/);
+  assert.match(source, /availableOutcomes = \["REJECT", "DEFER"\]/);
 });
 
 test("availableOutcomesFor: every non-RELATIONSHIP object kind offers the full outcome set", () => {

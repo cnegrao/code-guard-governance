@@ -1,4 +1,6 @@
 import "server-only";
+import { EndpointResolutionError } from "@council/governance-review";
+import { listExactRelationshipMatches, type RelationshipMatchCandidate } from "./relationship-resolution";
 
 import type { CanonicalObjectKind, DiscoveryCandidateKind, OrganisationId } from "@council/canonical-contracts";
 import {
@@ -56,6 +58,8 @@ export interface GovernanceDecisionDetail {
   readonly readiness: ReconciliationReadiness;
   readonly availableOutcomes: readonly RequestableReconciliationOutcome[];
   readonly matchCandidates?: readonly CanonicalObjectMatchCandidate[];
+  readonly relationshipMatchCandidates?: readonly RelationshipMatchCandidate[];
+  readonly endpointResolutionReason?: string;
   readonly reconciliation?: ReconciliationDecisionSummary;
   readonly materialization?: MaterializationSummary;
 }
@@ -133,18 +137,8 @@ function summarizeChainEntry(chain: ReconciliationAuditChainEntry): Reconciliati
   };
 }
 
-/**
- * RELATIONSHIP CREATE_NEW/MATCH_EXISTING both require a governed source
- * endpoint of kind AGENT_VERSION or DATA_ELEMENT (canonical-contracts'
- * RELATIONSHIP_ENDPOINT_CONSTRAINTS — every one of the twelve governed
- * relationship types requires one of those two source kinds). Neither kind
- * has a production normalizer yet (Object Candidate Normalization V1, closed,
- * proves only MODEL/TOOL/RELATIONSHIP), so no relationship's source endpoint
- * can currently resolve to an existing canonical object. REJECT/DEFER need no
- * endpoint and remain fully safe to offer.
- */
-function availableOutcomesFor(candidateKind: DiscoveryCandidateKind): RequestableReconciliationOutcome[] {
-  if (candidateKind === "RELATIONSHIP") return ["REJECT", "DEFER"];
+/** Availability is further restricted by exact endpoint readiness below. */
+function availableOutcomesFor(_candidateKind: DiscoveryCandidateKind): RequestableReconciliationOutcome[] {
   return ["CREATE_NEW", "MATCH_EXISTING", "REJECT", "DEFER"];
 }
 
@@ -175,7 +169,7 @@ export async function getGovernanceDecisionDetail(
     isMaterializedApplied: materialization?.status === "APPLIED",
   });
 
-  const availableOutcomes = readiness.ready ? availableOutcomesFor(subject.candidateKind) : [];
+  let availableOutcomes = readiness.ready ? availableOutcomesFor(subject.candidateKind) : [];
   const matchCandidates =
     readiness.ready &&
     subject.candidateKind !== "RELATIONSHIP" &&
@@ -183,12 +177,25 @@ export async function getGovernanceDecisionDetail(
       ? await listCanonicalObjectsForMatch(organisationId, subject.candidateKind as CanonicalObjectKind)
       : undefined;
 
+  let relationshipMatchCandidates: RelationshipMatchCandidate[] | undefined;
+  let endpointResolutionReason: string | undefined;
+  if (readiness.ready && recovery.status === RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {
+    try { relationshipMatchCandidates = await listExactRelationshipMatches(organisationId, recovery.candidate); }
+    catch (error) {
+      if (!(error instanceof EndpointResolutionError)) throw error;
+      endpointResolutionReason = error.reason;
+      availableOutcomes = ["REJECT", "DEFER"];
+    }
+  }
+
   return {
     reviewSubjectId: subject.reviewSubjectId,
     candidateKind: subject.candidateKind,
     readiness,
     availableOutcomes,
     ...(matchCandidates ? { matchCandidates } : {}),
+    ...(relationshipMatchCandidates ? { relationshipMatchCandidates } : {}),
+    ...(endpointResolutionReason ? { endpointResolutionReason } : {}),
     ...(reconciliation ? { reconciliation } : {}),
     ...(materialization ? { materialization } : {}),
   };

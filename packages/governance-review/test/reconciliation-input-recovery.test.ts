@@ -1,3 +1,4 @@
+import { relationshipEndpointFixture } from "./fixtures.ts";
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 
@@ -244,6 +245,7 @@ describe("recoverReconciliationInput", () => {
     };
 
     const result = await invokeRelationshipReconciliation({
+    endpointResolution: relationshipEndpointFixture(candidate, source.canonicalObject, target.canonicalObject),
       commandId: "cmd:continuity-rel-1",
       organisationId: ORG_A,
       reviewSubject: recovered.reviewSubject,

@@ -242,7 +242,7 @@ export async function materializeReconciliationDecision(
       `No persisted reconciliation decision ${input.reconciliationDecisionId} for organisation ${input.organisationId}`,
     );
   }
-  if (chain.decision.organisationId !== input.organisationId) {
+  if (chain.decision.decisionId !== input.reconciliationDecisionId || chain.decision.organisationId !== input.organisationId) {
     throw new MaterializationAuthorityError(
       `Reconciliation decision ${input.reconciliationDecisionId} organisation does not match the requested organisation`,
     );

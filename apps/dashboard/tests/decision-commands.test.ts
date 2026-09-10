@@ -11,6 +11,8 @@ import {
 } from "@council/canonical-contracts";
 import {
   RECONCILIATION_INPUT_STATUS,
+  normalizedObjectIdentity,
+  EndpointResolutionError,
   REVIEW_STATE,
   asReviewSubjectId,
   type GovernanceReviewPersistencePort,
@@ -183,6 +185,14 @@ mock.module("@/lib/governance/canonical-object-lookup", {
   },
 });
 
+mock.module("@/lib/governance/relationship-resolution", {
+  namedExports: {
+    objectMappingIdentity: async (_org: unknown, candidate: Parameters<typeof normalizedObjectIdentity>[0]) => normalizedObjectIdentity(candidate),
+    canonicalEndpointResolution: { getRelationshipCandidate: async () => world.recovery.candidate },
+    relationshipRequestedDecision: async () => { throw new EndpointResolutionError("ENDPOINT_NOT_CANONICAL"); },
+  },
+});
+
 mock.module("@/lib/governance/decision-query", {
   namedExports: {
     findReconciliationDecisionIdForReviewSubject: async () => world.existingDecisionId,
@@ -259,7 +269,7 @@ test("submitReconciliationDecision: RELATIONSHIP CERTIFIED + RELATIONSHIP_INPUT_
   assert.equal(world.persistCalls[0]!.family, "RELATIONSHIP");
 });
 
-test("submitReconciliationDecision: RELATIONSHIP CREATE_NEW/MATCH_EXISTING are rejected as INVALID_REQUEST — never fabricated, since no endpoint can currently resolve to a governed AGENT_VERSION/DATA_ELEMENT", async () => {
+test("submitReconciliationDecision: RELATIONSHIP CREATE_NEW/MATCH_EXISTING fail closed when exact canonical endpoints are unavailable", async () => {
   resetWorld();
   world.subject = buildSubject({ candidateKind: "RELATIONSHIP" });
   world.recovery = {

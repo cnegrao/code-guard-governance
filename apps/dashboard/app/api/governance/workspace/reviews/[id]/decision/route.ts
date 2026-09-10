@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { id } = await params;
 
     const body = (await request.json().catch(() => null)) as
-      | { requestedOutcome?: unknown; matchCanonicalObjectId?: unknown; reasonCode?: unknown }
+      | { requestedOutcome?: unknown; matchCanonicalObjectId?: unknown; matchCanonicalRelationshipId?: unknown; reasonCode?: unknown }
       | null;
 
     const requestedOutcome = typeof body?.requestedOutcome === "string" ? body.requestedOutcome : undefined;
@@ -50,6 +50,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       reviewSubjectId: asReviewSubjectId(id),
       requestedOutcome: requestedOutcome as RequestedReconciliationOutcome,
       matchCanonicalObjectId,
+      matchCanonicalRelationshipId: typeof body?.matchCanonicalRelationshipId === "string" ? body.matchCanonicalRelationshipId : undefined,
       reasonCode,
     });
 

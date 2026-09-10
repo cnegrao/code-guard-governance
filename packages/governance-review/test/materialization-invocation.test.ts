@@ -1,3 +1,4 @@
+import { relationshipEndpointFixture } from "./fixtures.ts";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -243,6 +244,7 @@ async function buildRelationshipDecisionChain(
         : { outcome };
 
   const result = await invokeRelationshipReconciliation({
+    endpointResolution: relationshipEndpointFixture(candidate, source.canonicalObject, target.canonicalObject),
     commandId: `cmd:${seed}:reconcile`,
     organisationId: org,
     reviewSubject: subject,
