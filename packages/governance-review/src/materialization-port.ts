@@ -72,6 +72,9 @@ export interface RelationshipMaterializationResult {
 }
 
 export interface ObjectSourceMappingLookupInput {
+  /** Exact typed lookup for new intake; omitted only by legacy read callers. */
+  readonly canonicalObjectKind?: CanonicalObjectKind;
+  readonly normalizedObjectIdentity?: string;
   readonly organisationId: OrganisationId;
   readonly sourceConnectionId: string;
   readonly sourceExternalType: string;

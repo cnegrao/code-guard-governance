@@ -1662,7 +1662,7 @@ export interface RelationshipEndpointIdentityByKind {
 
 export type RelationshipEndpointIdentity<
   Kind extends CanonicalObjectKind,
-> = RelationshipEndpointIdentityByKind[Kind];
+> = { readonly canonicalObject: CanonicalObjectIdentity<Kind> } | RelationshipEndpointIdentityByKind[Kind];
 
 /** Compile-time endpoint-kind matrix; runtime factories enforce the same map. */
 export interface GovernedRelationshipEndpointKinds {
@@ -1766,8 +1766,8 @@ export type LineageTransformation =
 
 /**
  * One immutable valid-time state of an assigned logical relationship. IDs are
- * opaque allocations: type + source + target is only a duplicate-detection
- * signal and never relationship identity or a uniqueness promise.
+ * assigned by governed reconciliation. Under the accepted endpoint ADR, new
+ * logical IDs are deterministic over organisation, type and directed canonical endpoints.
  *
  * Future persistence must normalize logical identity, temporal state, support,
  * behavior binding, and lineage transformation grains with tenant-safe FKs.
@@ -2590,69 +2590,17 @@ function canonicalObjectIdentitiesEqual(
   );
 }
 
+/** Accepted endpoint ADR: canonical identity is sufficient after object governance. */
+function copyCanonicalRelationshipEndpoint(value: unknown, kind: CanonicalObjectKind): RelationshipEndpointIdentity<CanonicalObjectKind> {
+  const endpoint = asObjectRecord(value, "Canonical relationship endpoint");
+  return Object.freeze({ canonicalObject: copyCanonicalObjectIdentity(endpoint.canonicalObject, kind) });
+}
+
 function relationshipEndpointsEqual(
   left: RelationshipEndpointIdentity<CanonicalObjectKind>,
   right: RelationshipEndpointIdentity<CanonicalObjectKind>,
 ): boolean {
-  if (!canonicalObjectIdentitiesEqual(left.canonicalObject, right.canonicalObject)) {
-    return false;
-  }
-  switch (left.canonicalObject.kind) {
-    case "AGENT": {
-      const leftAgent = left as AgentIdentity;
-      const rightAgent = right as AgentIdentity;
-      return (
-        leftAgent.agentId === rightAgent.agentId &&
-        leftAgent.agentCode === rightAgent.agentCode
-      );
-    }
-    case "AGENT_VERSION": {
-      const leftVersion = left as AgentVersionIdentity;
-      const rightVersion = right as AgentVersionIdentity;
-      return (
-        leftVersion.agentVersionId === rightVersion.agentVersionId &&
-        leftVersion.versionCode === rightVersion.versionCode &&
-        relationshipEndpointsEqual(leftVersion.agent, rightVersion.agent)
-      );
-    }
-    case "MODEL":
-      return (left as ModelIdentity).modelId === (right as ModelIdentity).modelId;
-    case "TOOL":
-      return (left as ToolIdentity).toolId === (right as ToolIdentity).toolId;
-    case "MCP_SERVER":
-      return (
-        (left as McpServerIdentity).mcpServerId ===
-        (right as McpServerIdentity).mcpServerId
-      );
-    case "API":
-      return (left as ApiIdentity).apiId === (right as ApiIdentity).apiId;
-    case "PROMPT":
-      return (
-        (left as PromptIdentity).promptId ===
-        (right as PromptIdentity).promptId
-      );
-    case "KNOWLEDGE_BASE":
-      return (
-        (left as KnowledgeBaseIdentity).knowledgeBaseId ===
-        (right as KnowledgeBaseIdentity).knowledgeBaseId
-      );
-    case "SKILL":
-      return (left as SkillIdentity).skillId === (right as SkillIdentity).skillId;
-    case "DATA_ASSET":
-      return (
-        (left as DataAssetIdentity).dataAssetId ===
-        (right as DataAssetIdentity).dataAssetId
-      );
-    case "DATA_ELEMENT": {
-      const leftElement = left as DataElementIdentity;
-      const rightElement = right as DataElementIdentity;
-      return (
-        leftElement.dataElementId === rightElement.dataElementId &&
-        leftElement.dataAssetId === rightElement.dataAssetId &&
-        leftElement.elementPath === rightElement.elementPath
-      );
-    }
-  }
+  return canonicalObjectIdentitiesEqual(left.canonicalObject, right.canonicalObject);
 }
 
 function copyBehaviorBindingConfiguration(
@@ -2787,11 +2735,11 @@ function copyGovernedRelationshipDraft(
     draft.organisationId,
     "Relationship organisationId",
   ) as OrganisationId;
-  const source = copyRelationshipEndpoint(
+  const source = copyCanonicalRelationshipEndpoint(
     draft.source,
     constraint.source,
   );
-  const target = copyRelationshipEndpoint(
+  const target = copyCanonicalRelationshipEndpoint(
     draft.target,
     targetCanonical.kind as CanonicalObjectKind,
   );
@@ -2999,8 +2947,8 @@ function copyMatchReference(value: unknown): RelationshipMatchReference {
     reference.organisationId,
     "Matched relationship organisationId",
   ) as OrganisationId;
-  const source = copyRelationshipEndpoint(reference.source, constraint.source);
-  const target = copyRelationshipEndpoint(
+  const source = copyCanonicalRelationshipEndpoint(reference.source, constraint.source);
+  const target = copyCanonicalRelationshipEndpoint(
     reference.target,
     targetCanonical.kind as CanonicalObjectKind,
   );
