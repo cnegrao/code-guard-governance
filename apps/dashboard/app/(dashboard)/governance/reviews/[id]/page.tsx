@@ -116,6 +116,8 @@ interface GovernanceDecisionDetail {
   readiness: { ready: boolean; reason: string };
   availableOutcomes: string[];
   matchCandidates?: CanonicalObjectMatchCandidate[];
+  relationshipMatchCandidates?: { relationshipId: string; relationshipType: string; sourceId: string; targetId: string }[];
+  endpointResolutionReason?: string;
   reconciliation?: ReconciliationDecisionSummary;
   materialization?: MaterializationSummary;
 }
@@ -291,7 +293,8 @@ export default function ReviewSubjectDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requestedOutcome: decisionOutcome,
-          matchCanonicalObjectId: decisionOutcome === "MATCH_EXISTING" ? matchTarget : undefined,
+          matchCanonicalObjectId: decisionOutcome === "MATCH_EXISTING" && decision?.candidateKind !== "RELATIONSHIP" ? matchTarget : undefined,
+          matchCanonicalRelationshipId: decisionOutcome === "MATCH_EXISTING" && decision?.candidateKind === "RELATIONSHIP" ? matchTarget : undefined,
           reasonCode: decisionReason,
         }),
       });
@@ -624,13 +627,14 @@ export default function ReviewSubjectDetailPage() {
                   <p className="text-sm text-gray-500 mb-3">{READINESS_REASON_TEXT[decision.readiness.reason] ?? decision.readiness.reason}</p>
                 )}
 
+              {decision.endpointResolutionReason && <p className="text-sm text-gray-400">Both endpoints need an unambiguous governed canonical mapping before this relationship can be created or matched.</p>}
               {decisionError && <p className="text-sm text-danger mb-3">{decisionError}</p>}
 
               {!decision.reconciliation && decision.readiness.ready && (
                 <div className="space-y-3">
                   {decisionOutcome ? (
                     <div className="space-y-3">
-                      {decisionOutcome === "MATCH_EXISTING" && (
+                      {decisionOutcome === "MATCH_EXISTING" && decision.candidateKind !== "RELATIONSHIP" && (
                         <div>
                           <label className="block text-sm text-gray-300 mb-1">Match to existing canonical object</label>
                           {(decision.matchCandidates ?? []).length === 0 ? (
@@ -653,6 +657,14 @@ export default function ReviewSubjectDetailPage() {
                             </select>
                           )}
                         </div>
+                      )}
+                      {decisionOutcome === "MATCH_EXISTING" && decision.candidateKind === "RELATIONSHIP" && (
+                        <label className="block text-sm text-gray-300">Exact canonical relationship
+                          <select className="block w-full bg-surface-dark" value={matchTarget ?? ""} onChange={e => setMatchTarget(e.target.value || null)}>
+                            <option value="">Select the existing directed relationship</option>
+                            {(decision.relationshipMatchCandidates ?? []).map(match => <option key={match.relationshipId} value={match.relationshipId}>{match.sourceId} &rarr; {match.relationshipType} &rarr; {match.targetId}</option>)}
+                          </select>
+                        </label>
                       )}
                       <label className="block text-sm text-gray-300">Reason</label>
                       <textarea

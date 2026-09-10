@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { stableCandidateContent, requireExactCanonicalMapping, type CanonicalEndpointResolutionPort } from "./canonical-endpoint-resolution";
 
 import {
   RECONCILIATION_AUTHORITY_KIND,
@@ -547,6 +548,8 @@ export interface RelationshipReconciliationInvocationCommand<
   readonly reasonCode: string;
   readonly requestedAt: IsoTimestamp;
   readonly requestedDecision: RelationshipReconciliationRequestedDecision<Type>;
+  /** Mandatory durable candidate read; exact canonical mapping reads only for materializing outcomes. */
+  readonly endpointResolution?: CanonicalEndpointResolutionPort;
   readonly evidenceIds?: readonly EvidenceId[];
   readonly priorInvocation?: ReconciliationInvocationAuditEvent;
 }
@@ -683,6 +686,25 @@ export async function invokeRelationshipReconciliation<Type extends GovernedRela
     }
   } catch (cause) {
     throw new CanonicalReconciliationRejectedError(cause);
+  }
+
+  if (!command.endpointResolution) throw new SubjectMismatchError("Durable relationship candidate resolution is required");
+  const durable = await command.endpointResolution.getRelationshipCandidate(organisationId, candidate.candidateId);
+  if (!durable || stableCandidateContent(durable) !== stableCandidateContent(candidate)) {
+    throw new SubjectMismatchError("Persisted relationship candidate does not match the reviewed candidate");
+  }
+  if (requestedDecision.outcome === "CREATE_NEW" || requestedDecision.outcome === "MATCH_EXISTING") {
+    if ((!candidate.assertionIds.length && !candidate.evidenceIds.length) ||
+        decidedEvidenceIds.some(id => !candidate.evidenceIds.includes(id))) throw new EvidenceMismatchError();
+    const state = requestedDecision.outcome === "CREATE_NEW" ? requestedDecision.authorizedState : requestedDecision.matchedState;
+    for (const [reference, endpoint] of [[candidate.sourceEndpoint, state.source], [candidate.targetEndpoint, state.target]] as const) {
+      const resolved = requireExactCanonicalMapping(organisationId, reference.candidateKind,
+        [await command.endpointResolution.resolveEndpoint(organisationId, reference)]);
+      if (resolved.objectId !== endpoint.canonicalObject.objectId || resolved.kind !== endpoint.canonicalObject.kind ||
+          resolved.organisationId !== endpoint.canonicalObject.organisationId) {
+        throw new SubjectMismatchError("Canonical endpoint differs from the exact governed candidate mapping");
+      }
+    }
   }
 
   const audit = buildAuditEvent({

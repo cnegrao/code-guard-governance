@@ -28,6 +28,8 @@ import {
   type MaterializationApplicationResult,
 } from "@council/governance-review";
 
+import { assertLegacyObjectCompatibility, LegacyObjectMappingConflict } from "./legacy-object-mapping";
+import { canonicalEndpointResolution, relationshipRequestedDecision, objectMappingIdentity } from "./relationship-resolution";
 import { governanceReviewPersistence } from "./persistence";
 import { materializationPersistence } from "./materialization";
 import { getReconciliationInputForReviewSubject } from "./reconciliation-input";
@@ -63,6 +65,7 @@ export interface SubmitReconciliationDecisionInput {
   readonly requestedOutcome: RequestedReconciliationOutcome;
   /** Required only for MATCH_EXISTING; re-verified against gov_repo.canonical_objects before use. */
   readonly matchCanonicalObjectId?: string;
+  readonly matchCanonicalRelationshipId?: string;
   readonly reasonCode: string;
 }
 
@@ -95,6 +98,19 @@ export async function submitReconciliationDecision(
     ? await findMaterializationForDecision(input.organisationId, existingDecisionId)
     : undefined;
 
+  if (existingDecisionId && recovery.status === RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {
+    const chain = await governanceReviewPersistence.getReconciliationAuditChain(input.organisationId, existingDecisionId);
+    const decision = chain?.family === "RELATIONSHIP" ? chain.decision as import("@council/canonical-contracts").RelationshipReconciliationDecision : undefined;
+    if (decision && decision.organisationId === input.organisationId && decision.decisionId === existingDecisionId &&
+        decision.relationshipCandidateId === recovery.candidate.candidateId && decision.outcome === input.requestedOutcome &&
+        decision.reasonCode === input.reasonCode && decision.authority.authorityKind === "HUMAN" &&
+        decision.authority.actorReference === input.actorUserId &&
+        (decision.outcome !== "MATCH_EXISTING" || decision.matchedState.relationshipId === input.matchCanonicalRelationshipId)) {
+      return { kind: "REPLAYED", reconciliationDecisionId: existingDecisionId, outcome: input.requestedOutcome };
+    }
+    return { kind: "PERSISTENCE_CONFLICT", message: "This relationship review already has a different finalized decision." };
+  }
+
   // Read-before-write concurrency guard: another operator (or another tab)
   // may already have reconciled or materialized this exact review subject
   // since the screen was loaded. Never issue a second reconciliation command
@@ -122,15 +138,10 @@ export async function submitReconciliationDecision(
 
   try {
     if (recovery.status === RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {
-      if (input.requestedOutcome === "CREATE_NEW" || input.requestedOutcome === "MATCH_EXISTING") {
-        return {
-          kind: "INVALID_REQUEST",
-          message:
-            "RELATIONSHIP reconciliation currently supports REJECT/DEFER only: every governed relationship type requires an AGENT_VERSION or DATA_ELEMENT source endpoint, and neither kind has a production normalizer yet.",
-        };
-      }
-
-      const requestedDecision: RelationshipReconciliationRequestedDecision = { outcome: input.requestedOutcome };
+      const requestedDecision: RelationshipReconciliationRequestedDecision =
+        input.requestedOutcome === "CREATE_NEW" || input.requestedOutcome === "MATCH_EXISTING"
+          ? await relationshipRequestedDecision(input.organisationId, recovery.candidate, input.requestedOutcome, requestedAt, input.matchCanonicalRelationshipId)
+          : { outcome: input.requestedOutcome };
       const commandId = stableCommandId([
         "RELATIONSHIP",
         input.organisationId,
@@ -138,9 +149,11 @@ export async function submitReconciliationDecision(
         input.requestedOutcome,
         input.reasonCode,
         input.actorUserId,
+        input.matchCanonicalRelationshipId ?? null,
       ]);
 
       const result = await invokeRelationshipReconciliation({
+        endpointResolution: canonicalEndpointResolution,
         commandId,
         organisationId: input.organisationId,
         reviewSubject: recovery.reviewSubject,
@@ -178,11 +191,15 @@ export async function submitReconciliationDecision(
       candidateKind: candidate.candidateKind,
     };
 
+    if (input.requestedOutcome === "CREATE_NEW" || input.requestedOutcome === "MATCH_EXISTING") {
+      await assertLegacyObjectCompatibility(input.organisationId, candidate, input.requestedOutcome, input.matchCanonicalObjectId);
+    }
     let requestedDecision: ObjectReconciliationRequestedDecision;
     if (input.requestedOutcome === "CREATE_NEW") {
+      const normalizedIdentity = await objectMappingIdentity(input.organisationId, candidate);
       const objectId = asCanonicalObjectId(
         `canonical-object:${createHash("sha256")
-          .update(JSON.stringify([input.organisationId, input.reviewSubjectId, candidate.candidateId]))
+          .update(JSON.stringify([input.organisationId, candidate.sourceObject.connectionId, candidate.sourceObject.externalType, candidate.sourceObject.externalId, candidate.candidateKind, normalizedIdentity]))
           .digest("hex")}`,
       );
       requestedDecision = {
@@ -281,8 +298,14 @@ export async function submitReconciliationDecision(
     ) {
       return { kind: "INVALID_REQUEST", message: error.message };
     }
+    if (error instanceof LegacyObjectMappingConflict) {
+      return { kind: "PERSISTENCE_CONFLICT", message: error.message };
+    }
     if (error instanceof IdempotencyConflictError) {
       return { kind: "PERSISTENCE_CONFLICT", message: "This reconciliation command conflicts with a prior one." };
+    }
+    if (error instanceof Error && /FINALIZED_REVIEW_DECISION_CONFLICT|FINALIZED_REVIEW_CANDIDATE_MISMATCH|IDEMPOTENCY_CONFLICT/.test(error.message)) {
+      return { kind: "PERSISTENCE_CONFLICT", message: "This review conflicts with an already finalized decision." };
     }
     throw error;
   }
@@ -359,6 +382,9 @@ export async function triggerMaterialization(
     // list, discovered as two separate candidates sharing one source
     // identity) — surfaced as a controlled conflict, never a raw 500.
     const message = error instanceof Error ? error.message : String(error);
+    if (/LEGACY_OBJECT_|ENDPOINT_|RELATIONSHIP_.*MISMATCH|RELATIONSHIP_.*MISSING|NORMALIZED_MAPPING_CONFLICT|PARENT_NOT_CANONICAL|DUPLICATE_GOVERNED_RELATIONSHIP_EDGE|CANONICAL_OBJECT_IDENTITY_CONFLICT|MATERIALIZATION_IDEMPOTENCY_CONFLICT|OBJECT_CANDIDATE_BINDING_MISMATCH/.test(message)) {
+      return { kind: "PERSISTENCE_CONFLICT", message: "The governed binding is missing, ambiguous, or conflicts with canonical truth." };
+    }
     if (/SOURCE_IDENTITY_ALREADY_MAPPED/i.test(message)) {
       return {
         kind: "PERSISTENCE_CONFLICT",

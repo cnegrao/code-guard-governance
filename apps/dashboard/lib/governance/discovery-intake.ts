@@ -27,6 +27,7 @@ import {
 } from "@council/scanner";
 import {
   IneligibleFindingError,
+  normalizedObjectIdentity,
   PassThroughSemanticProposalStrategy,
   REVIEW_STATE,
   asReviewSubjectId,
@@ -307,30 +308,23 @@ async function processObjectCandidate(
     await ports.intake.recordEvidence(ctx.organisationId, candidate.evidence);
     await ports.intake.recordSourceAssertion(ctx.organisationId, candidate.assertion);
 
-    // ALREADY_GOVERNED: consult the durable canonical source mapping
-    // (Canonical Materialization V1) as a read-only signal only. A mapping
-    // never mutates, never suppresses a relationship finding, and is always
-    // organisation-scoped so another tenant's mapping can never suppress
-    // this one's finding.
-    const mapping = await ports.materialization.findActiveObjectSourceMapping({
+    const normalization = normalizeObjectCandidate(candidate);
+    const normalizedCandidate = normalization.status === "NORMALIZED" ? normalization.candidate : undefined;
+    // Retain exact durable endpoint inputs even when object governance already happened.
+    const mapping = normalizedCandidate ? await ports.materialization.findActiveObjectSourceMapping({
       organisationId: ctx.organisationId,
       sourceConnectionId: finding.sourceObject.connectionId,
       sourceExternalType: finding.sourceObject.externalType,
       sourceExternalId: finding.sourceObject.externalId,
-    });
+      canonicalObjectKind: normalizedCandidate.candidateKind,
+      normalizedObjectIdentity: normalizedObjectIdentity(normalizedCandidate),
+    }) : undefined;
     if (mapping) {
+      await ports.intake.recordDiscoveryFinding(ctx.organisationId, finding, acquisitionRunId);
+      await ports.intake.recordNormalizedCandidate(ctx.organisationId, normalizedCandidate!, acquisitionRunId);
       tally.alreadyGoverned += 1;
       return;
     }
-
-    // Object Candidate Normalization V1: the scanner's normalizeObjectCandidate
-    // is the sole producer of a NormalizedObjectCandidate — this call site
-    // never invents identity itself. A NOT_SAFELY_NORMALIZABLE result (today,
-    // every AGENT finding — see object-candidate-normalization.ts) passes no
-    // candidate through, preserving the existing FINDING_ONLY recovery outcome
-    // exactly as before this milestone.
-    const normalization = normalizeObjectCandidate(candidate);
-    const normalizedCandidate = normalization.status === "NORMALIZED" ? normalization.candidate : undefined;
 
     await ensureReviewSubjectAndPropose(finding, normalizedCandidate, acquisitionRunId, ctx, ports, tally, "object");
   } catch (error) {

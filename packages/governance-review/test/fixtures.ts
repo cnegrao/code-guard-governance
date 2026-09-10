@@ -264,3 +264,13 @@ export const DENY_ALL_AUTHORIZATION_PORT: ReconciliationAuthorizationPort = {
     });
   },
 };
+
+/** Explicit fixture mapping, independent of the invocation's authorization port. */
+export function relationshipEndpointFixture(candidate: import("@council/canonical-contracts").NormalizedRelationshipCandidate,
+  source: import("@council/canonical-contracts").CanonicalObjectIdentity,
+  target: import("@council/canonical-contracts").CanonicalObjectIdentity): import("../src/index.ts").CanonicalEndpointResolutionPort {
+  return {
+    async getRelationshipCandidate(org, id) { return org === source.organisationId && id === candidate.candidateId ? candidate : undefined; },
+    async resolveEndpoint(_org, ref) { return JSON.stringify(ref) === JSON.stringify(candidate.sourceEndpoint) ? source : target; },
+  };
+}

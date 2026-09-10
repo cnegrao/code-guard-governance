@@ -2597,7 +2597,7 @@ describe("Canonical Contract V1A", () => {
     const usesSkill = relationships[6];
     assert.equal(usesSkill.relationshipType, "USES_SKILL");
     assert.equal(usesSkill.target.canonicalObject.kind, "SKILL");
-    assert.equal(usesSkill.target.skillId, ids.skill.skillId);
+    assert.equal(usesSkill.target.canonicalObject.objectId, ids.skill.canonicalObject.objectId);
   });
 
   it("accepts both DataAsset and DataElement access without adding fingerprints", () => {
@@ -4018,9 +4018,9 @@ describe("Canonical Contract V1A", () => {
     });
     const relationship = approveRelationship(draft).relationship;
 
-    assert.equal(relationship.source.elementPath, "mail");
-    assert.equal(relationship.target.elementPath, "email");
-    assert.notEqual(relationship.source.dataAssetId, relationship.target.dataAssetId);
+    assert.deepEqual(relationship.source.canonicalObject, ids.dataElement.canonicalObject);
+    assert.deepEqual(relationship.target.canonicalObject, ids.originDataElement.canonicalObject);
+    assert.notEqual(relationship.source.canonicalObject.objectId, relationship.target.canonicalObject.objectId);
     assert.equal(Object.hasOwn(relationship.source, "sourceSystemId"), false);
     assert.equal(Object.hasOwn(relationship.target, "sourceSystemId"), false);
     assert.equal(Object.isFrozen(relationship.transformation), true);
@@ -5199,4 +5199,50 @@ describe("Canonical Contract V1A", () => {
       }
     });
   });
+});
+
+
+describe("Accepted canonical endpoint ADR", () => {
+  for (const [type, sourceKey, targetKey] of [
+    ["USES_MODEL", "agentVersion", "model"], ["USES_TOOL", "agentVersion", "tool"],
+    ["USES_MCP", "agentVersion", "mcpServer"], ["INVOKES", "agentVersion", "api"],
+    ["USES_PROMPT", "agentVersion", "prompt"], ["USES_KNOWLEDGE_BASE", "agentVersion", "knowledgeBase"],
+    ["USES_SKILL", "agentVersion", "skill"], ["EXPOSES", "mcpServer", "tool"],
+    ["HANDOFF_TO", "agentVersion", "agent"], ["READS_FROM", "agentVersion", "dataAsset"],
+    ["WRITES_TO", "agentVersion", "dataElement"], ["DERIVED_FROM", "dataElement", "originDataElement"],
+  ]) {
+    it(`${type} accepts canonical references without reconstructing endpoint attributes`, () => {
+      const ids = relationshipIdentities();
+      const behavior = type.startsWith("USES_") || type === "INVOKES";
+      const draft = relationshipStateDraft({ type,
+        source: { canonicalObject: ids[sourceKey].canonicalObject },
+        target: { canonicalObject: ids[targetKey].canonicalObject },
+        ...(behavior ? { boundTechnicalFingerprint: { algorithm: "sha256", schemaVersion: "v1", value: "supported-fixture" }, support: behaviorBindingSupport() } : {}),
+      });
+      const { decision, relationship } = approveRelationship(draft);
+      assert.deepEqual(relationship.source, draft.source);
+      assert.deepEqual(relationship.target, draft.target);
+      assert.equal(Object.hasOwn(relationship.source, "versionCode"), false);
+      const match = contracts.createRelationshipReconciliationDecision({
+        decisionId: contracts.asReconciliationDecisionId(`decision:match:${type}`), organisationId: ids.organisationId,
+        relationshipCandidateId: `candidate:${type}`, relationshipCandidate: relationshipCandidateFor(draft, { candidateId: `candidate:${type}` }),
+        outcome: "MATCH_EXISTING", authority: decision.authority, reasonCode: "EXACT", assertionIds: [], evidenceIds: [], decidedAt: reconciliationTimestamp,
+        matchedState: { organisationId: ids.organisationId, relationshipId: draft.relationshipId, relationshipStateId: draft.relationshipStateId, relationshipType: type, source: draft.source, target: draft.target },
+      });
+      assert.deepEqual(match.matchedState.source, draft.source);
+    });
+  }
+});
+
+
+it("canonical endpoint acceptance never permits canonical references in discovery candidates", () => {
+  const ids = relationshipIdentities();
+  const state = relationshipStateDraft({ type: "EXPOSES", source: { canonicalObject: ids.mcpServer.canonicalObject }, target: { canonicalObject: ids.tool.canonicalObject } });
+  const candidate = relationshipCandidateFor(state);
+  for (const endpoint of ["sourceEndpoint", "targetEndpoint"]) {
+    const canonicalObject = endpoint === "sourceEndpoint" ? state.source.canonicalObject : state.target.canonicalObject;
+    for (const injected of [{ canonicalObject }, { ...candidate[endpoint], canonicalObject }]) {
+      assert.throws(() => approveRelationship(state, { candidate: { ...candidate, [endpoint]: injected } }), TypeError);
+    }
+  }
 });

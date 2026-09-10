@@ -1,3 +1,4 @@
+import { relationshipEndpointFixture } from "./fixtures.ts";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -238,7 +239,7 @@ describe("success paths", () => {
       requestedDecision: { outcome: "CREATE_NEW", authorizedState },
     };
 
-    const result = await invokeRelationshipReconciliation(command);
+    const result = await invokeRelationshipReconciliation({ ...command, endpointResolution: relationshipEndpointFixture(candidate, authorizedState.source.canonicalObject, authorizedState.target.canonicalObject) });
     assert.equal(result.kind, "APPLIED");
     assert.equal(result.decision.outcome, "CREATE_NEW");
     assert.equal(result.decision.relationshipTypeCode, "HANDOFF_TO");

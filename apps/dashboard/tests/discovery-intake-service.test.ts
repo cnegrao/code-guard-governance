@@ -19,6 +19,7 @@ import {
 } from "@council/canonical-contracts";
 import {
   createReviewSubject,
+  normalizedObjectIdentity,
   asReviewSubjectId,
   recoverReconciliationInput,
   RECONCILIATION_INPUT_STATUS,
@@ -351,7 +352,7 @@ class FakeMaterializationPersistence implements MaterializationPersistencePort {
   }
 
   private key(input: ObjectSourceMappingLookupInput): string {
-    return [input.organisationId, input.sourceConnectionId, input.sourceExternalType, input.sourceExternalId].join("::");
+    return [input.organisationId, input.sourceConnectionId, input.sourceExternalType, input.sourceExternalId, input.canonicalObjectKind ?? "LEGACY", input.normalizedObjectIdentity ?? "LEGACY"].join("::");
   }
 
   async materializeObjectReconciliation(_input: ObjectMaterializationInput): Promise<ObjectMaterializationResult> {
@@ -535,30 +536,20 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
     await withFixtureRepository(async (root) => {
       const ports = makePorts();
 
-      // Discover once to learn the real, content-addressed source identity
-      // this single-file fixture's object candidates resolve to, then seed a
-      // mapping for it exactly as Canonical Materialization V1 would have
-      // already recorded. All three object candidates (AGENT/MODEL/TOOL) are
-      // detected within the same one file, so — matching the real, closed
-      // canonical_object_source_mappings' own granularity (organisation +
-      // source connection + external type + external id, never candidate
-      // kind) — they share one SourceObjectIdentity and one mapping
-      // legitimately suppresses all three at once.
+      // Only the exact MODEL mapping suppresses its review. The same-file
+      // AGENT/TOOL remain independent, and the MODEL candidate stays durable.
       const probe = makePorts();
       await runGovernanceDiscoveryScan(
         { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
         probe,
       );
-      const agentSubject = [...probe.review.subjects.values()].find((s) => s.candidateKind === "AGENT")!;
-
+      const model = [...probe.intake.candidatesByFinding.values()].find(c => c.candidateKind === "MODEL")!;
+      if (model.candidateKind !== "MODEL") throw new Error("missing model");
       ports.materialization.seedMapping(
-        {
-          organisationId: ORG_A,
-          sourceConnectionId: agentSubject.sourceObject.connectionId,
-          sourceExternalType: agentSubject.sourceObject.externalType,
-          sourceExternalId: agentSubject.sourceObject.externalId,
-        },
-        { mappingId: "mapping:1", canonicalObjectId: "canonical-object:agent-1", canonicalObjectKind: "AGENT" },
+        { organisationId: ORG_A, sourceConnectionId: model.sourceObject.connectionId,
+          sourceExternalType: model.sourceObject.externalType, sourceExternalId: model.sourceObject.externalId,
+          canonicalObjectKind: "MODEL", normalizedObjectIdentity: normalizedObjectIdentity(model) },
+        { mappingId: "mapping:model", canonicalObjectId: "canonical:model", canonicalObjectKind: "MODEL" },
       );
 
       const result = await runGovernanceDiscoveryScan(
@@ -566,8 +557,9 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
         ports,
       );
 
-      assert.equal(result.alreadyGoverned, 3, "AGENT/MODEL/TOOL all share this fixture's one file-level source identity");
-      assert.equal(result.reviewSubjectsCreated, 0, "no NEW object ReviewSubject for any already-governed identity");
+      assert.equal(result.alreadyGoverned, 1, "only the exact typed MODEL mapping is already governed");
+      assert.equal(result.reviewSubjectsCreated, 2, "same-file AGENT and TOOL still require review");
+      assert.deepEqual([...ports.intake.candidatesByFinding.values()].find(c => c.candidateKind === "MODEL"), model);
       assert.equal(
         result.relationshipSubjectsCreated,
         0,
@@ -576,10 +568,10 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
       // Evidence/assertions for every already-governed object are still preserved for future drift analysis.
       assert.equal(ports.intake.evidence.size, 3);
       assert.equal(ports.intake.assertions.size, 3);
-      // No object review subject exists at all for the mapped identity.
+      // Only the unmapped objects enter review.
       assert.equal(
         [...ports.review.subjects.values()].filter((s) => s.candidateKind !== "RELATIONSHIP").length,
-        0,
+        2,
       );
       assert.equal(
         [...ports.review.subjects.values()].filter((s) => s.candidateKind === "RELATIONSHIP").length,

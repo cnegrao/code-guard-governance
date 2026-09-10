@@ -22,3 +22,4 @@ export * from "./discovery-intake-port.ts";
 export * from "./reconciliation-input-recovery.ts";
 export * from "./agent-version-technical-profile-port.ts";
 export * from "./semantic-representation-port.ts";
+export * from "./canonical-endpoint-resolution";

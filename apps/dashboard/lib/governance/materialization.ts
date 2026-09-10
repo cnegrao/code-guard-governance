@@ -97,6 +97,16 @@ export const materializationPersistence: MaterializationPersistencePort = {
   async findActiveObjectSourceMapping(
     input: ObjectSourceMappingLookupInput,
   ): Promise<ActiveObjectSourceMapping | undefined> {
+    if (input.canonicalObjectKind && input.normalizedObjectIdentity) {
+      const { data, error } = await privilegedDb.from("canonical_normalized_object_mappings")
+        .select("mapping_id,canonical_object_id,canonical_object_kind")
+        .eq("organisation_id", input.organisationId).eq("source_connection_id", input.sourceConnectionId)
+        .eq("source_external_type", input.sourceExternalType).eq("source_external_id", input.sourceExternalId)
+        .eq("canonical_object_kind", input.canonicalObjectKind).eq("normalized_object_identity", input.normalizedObjectIdentity).maybeSingle();
+      if (error) throw new Error(`Exact source mapping lookup failed: ${error.message}`);
+      return data ? { mappingId: data.mapping_id, canonicalObjectId: data.canonical_object_id, canonicalObjectKind: data.canonical_object_kind } : undefined;
+    }
+    // Compatibility read only. Canonical relationship resolution never calls this coarse path.
     const { data, error } = await privilegedDb
       .from("canonical_object_source_mappings")
       .select("mapping_id, canonical_object_id, canonical_object_kind")
