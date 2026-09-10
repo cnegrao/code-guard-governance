@@ -91,6 +91,57 @@ begin
 end;
 $$;
 
+-- Legacy compatibility is proved from the original governed candidate, never file co-presence.
+-- NULL means no same-identity legacy object, not permission to infer a legacy version.
+create function gov_repo.legacy_canonical_object_for_candidate(p_organisation_id uuid, p_candidate jsonb)
+returns text language plpgsql stable strict security invoker set search_path = 'gov_repo', 'pg_catalog' as $$
+declare
+  v_count integer;
+  v_mapping gov_repo.canonical_object_source_mappings%rowtype;
+  v_original gov_repo.discovery_candidates%rowtype;
+  v_original_identity text;
+  v_current_identity text;
+begin
+  select count(*) into v_count from gov_repo.canonical_object_source_mappings m
+    where m.organisation_id = p_organisation_id and m.canonical_object_kind = p_candidate->>'candidateKind'
+      and m.source_connection_id = p_candidate#>>'{sourceObject,connectionId}'
+      and m.source_external_type = p_candidate#>>'{sourceObject,externalType}'
+      and m.source_external_id = p_candidate#>>'{sourceObject,externalId}' and m.valid_to is null;
+  if v_count = 0 then return null; end if;
+  if v_count <> 1 then raise exception using errcode = '23514', message = 'LEGACY_OBJECT_MAPPING_AMBIGUOUS'; end if;
+  select m.* into strict v_mapping from gov_repo.canonical_object_source_mappings m
+    where m.organisation_id = p_organisation_id and m.canonical_object_kind = p_candidate->>'candidateKind'
+      and m.source_connection_id = p_candidate#>>'{sourceObject,connectionId}'
+      and m.source_external_type = p_candidate#>>'{sourceObject,externalType}'
+      and m.source_external_id = p_candidate#>>'{sourceObject,externalId}' and m.valid_to is null;
+  select dc.* into v_original from gov_repo.reconciliation_decisions rd
+    join gov_repo.discovery_candidates dc on dc.organisation_id = rd.organisation_id and dc.candidate_id = rd.subject_candidate_id
+    join gov_repo.canonical_objects co on co.organisation_id = rd.organisation_id
+      and co.canonical_object_id = rd.canonical_object_id and co.kind = rd.canonical_object_kind
+    where rd.organisation_id = p_organisation_id and rd.decision_id = v_mapping.created_by_decision_id
+      and rd.family = 'OBJECT' and rd.outcome in ('CREATE_NEW','MATCH_EXISTING')
+      and rd.canonical_object_id = v_mapping.canonical_object_id and rd.canonical_object_kind = v_mapping.canonical_object_kind
+      and dc.candidate_family = 'OBJECT' and dc.candidate_kind = v_mapping.canonical_object_kind
+      and dc.source_connection_id = v_mapping.source_connection_id
+      and dc.source_external_type = v_mapping.source_external_type and dc.source_external_id = v_mapping.source_external_id;
+  if not found or v_original.envelope->>'candidateId' is distinct from v_original.candidate_id
+    or v_original.envelope->>'candidateKind' is distinct from v_mapping.canonical_object_kind
+    or v_original.envelope->'sourceObject' is distinct from p_candidate->'sourceObject' then
+    raise exception using errcode = '23514', message = 'LEGACY_OBJECT_MAPPING_AMBIGUOUS';
+  end if;
+  begin
+    v_original_identity := gov_repo.normalized_object_identity(p_organisation_id, v_original.envelope);
+    v_current_identity := gov_repo.normalized_object_identity(p_organisation_id, p_candidate);
+  exception when sqlstate '22023' or sqlstate '23514' then
+    raise exception using errcode = '23514', message = 'LEGACY_OBJECT_MAPPING_AMBIGUOUS';
+  end;
+  if v_original_identity = v_current_identity then return v_mapping.canonical_object_id; end if;
+  return null;
+end;
+$$;
+comment on function gov_repo.legacy_canonical_object_for_candidate is
+  'Read-only exact comparison with historical governed candidate identity. Same-kind unresolved history fails closed; distinct kinds/revisions stay independent. No backfill or implicit mapping migration.';
+
 -- Exact candidate resolution; source-only references must identify one normalized identity.
 -- Never consult legacy coarse mappings, select newest, or create an endpoint.
 create function gov_repo.resolve_canonical_endpoint(p_organisation_id uuid, p_reference jsonb)
@@ -200,6 +251,7 @@ declare
   v_candidate gov_repo.discovery_candidates%rowtype;
   v_identity text;
   v_parent text;
+  v_legacy_object_id text;
 begin
   if p_outcome not in ('CREATE_NEW', 'MATCH_EXISTING') then
     raise exception using errcode = '22023', message = 'UNSUPPORTED_MATERIALIZATION_OUTCOME';
@@ -286,6 +338,15 @@ begin
       v_candidate.envelope->'proposedIdentity'->(case p_canonical_object_kind when 'AGENT_VERSION' then 'agent' else 'parentDataAsset' end)) ep
       where ep.canonical_object_kind = case p_canonical_object_kind when 'AGENT_VERSION' then 'AGENT' else 'DATA_ASSET' end;
     if not found then raise exception using errcode = 'P0002', message = 'PARENT_NOT_CANONICAL'; end if;
+  end if;
+  -- Repeat the preflight inside this authoritative transaction before any canonical write.
+  v_legacy_object_id := gov_repo.legacy_canonical_object_for_candidate(p_organisation_id, v_candidate.envelope);
+  if v_legacy_object_id is not null then
+    if p_outcome = 'CREATE_NEW' then
+      raise exception using errcode = '23514', message = 'LEGACY_OBJECT_ALREADY_CANONICAL';
+    elsif p_canonical_object_id is distinct from v_legacy_object_id then
+      raise exception using errcode = '23514', message = 'LEGACY_OBJECT_MATCH_MISMATCH';
+    end if;
   end if;
   -- We hold the lock uncontested for this decision: perform materialization.
   if p_outcome = 'CREATE_NEW' then
@@ -593,8 +654,8 @@ comment on function gov_repo.materialize_object_reconciliation is
   'Governed object materialization with exact typed normalized mappings. Existing APPLIED legacy operations replay; new writes never use coarse mappings. Object, mapping, operation and outbox commit atomically.';
 comment on function gov_repo.materialize_relationship_reconciliation is
   'Governed exact relationship materialization. Revalidates persisted decision, candidate, support, endpoint mappings, canonical tuple and kind. Canonical edge, operation and outbox are atomic; no discovery authority.';
-revoke all on function gov_repo.frame_identity, gov_repo.normalized_object_identity, gov_repo.resolve_canonical_endpoint, gov_repo.guard_final_review_decision from public, anon, authenticated;
-grant execute on function gov_repo.frame_identity, gov_repo.normalized_object_identity, gov_repo.resolve_canonical_endpoint, gov_repo.guard_final_review_decision to service_role;
+revoke all on function gov_repo.legacy_canonical_object_for_candidate, gov_repo.frame_identity, gov_repo.normalized_object_identity, gov_repo.resolve_canonical_endpoint, gov_repo.guard_final_review_decision from public, anon, authenticated;
+grant execute on function gov_repo.legacy_canonical_object_for_candidate, gov_repo.frame_identity, gov_repo.normalized_object_identity, gov_repo.resolve_canonical_endpoint, gov_repo.guard_final_review_decision to service_role;
 revoke all on function gov_repo.materialize_object_reconciliation, gov_repo.materialize_relationship_reconciliation from public, anon, authenticated;
 grant execute on function gov_repo.materialize_object_reconciliation, gov_repo.materialize_relationship_reconciliation to service_role;
 commit;

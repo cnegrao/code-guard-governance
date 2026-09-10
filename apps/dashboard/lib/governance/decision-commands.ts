@@ -28,6 +28,7 @@ import {
   type MaterializationApplicationResult,
 } from "@council/governance-review";
 
+import { assertLegacyObjectCompatibility, LegacyObjectMappingConflict } from "./legacy-object-mapping";
 import { canonicalEndpointResolution, relationshipRequestedDecision, objectMappingIdentity } from "./relationship-resolution";
 import { governanceReviewPersistence } from "./persistence";
 import { materializationPersistence } from "./materialization";
@@ -190,6 +191,9 @@ export async function submitReconciliationDecision(
       candidateKind: candidate.candidateKind,
     };
 
+    if (input.requestedOutcome === "CREATE_NEW" || input.requestedOutcome === "MATCH_EXISTING") {
+      await assertLegacyObjectCompatibility(input.organisationId, candidate, input.requestedOutcome, input.matchCanonicalObjectId);
+    }
     let requestedDecision: ObjectReconciliationRequestedDecision;
     if (input.requestedOutcome === "CREATE_NEW") {
       const normalizedIdentity = await objectMappingIdentity(input.organisationId, candidate);
@@ -294,6 +298,9 @@ export async function submitReconciliationDecision(
     ) {
       return { kind: "INVALID_REQUEST", message: error.message };
     }
+    if (error instanceof LegacyObjectMappingConflict) {
+      return { kind: "PERSISTENCE_CONFLICT", message: error.message };
+    }
     if (error instanceof IdempotencyConflictError) {
       return { kind: "PERSISTENCE_CONFLICT", message: "This reconciliation command conflicts with a prior one." };
     }
@@ -375,7 +382,7 @@ export async function triggerMaterialization(
     // list, discovered as two separate candidates sharing one source
     // identity) — surfaced as a controlled conflict, never a raw 500.
     const message = error instanceof Error ? error.message : String(error);
-    if (/ENDPOINT_|RELATIONSHIP_.*MISMATCH|RELATIONSHIP_.*MISSING|NORMALIZED_MAPPING_CONFLICT|PARENT_NOT_CANONICAL|DUPLICATE_GOVERNED_RELATIONSHIP_EDGE|CANONICAL_OBJECT_IDENTITY_CONFLICT|MATERIALIZATION_IDEMPOTENCY_CONFLICT|OBJECT_CANDIDATE_BINDING_MISMATCH/.test(message)) {
+    if (/LEGACY_OBJECT_|ENDPOINT_|RELATIONSHIP_.*MISMATCH|RELATIONSHIP_.*MISSING|NORMALIZED_MAPPING_CONFLICT|PARENT_NOT_CANONICAL|DUPLICATE_GOVERNED_RELATIONSHIP_EDGE|CANONICAL_OBJECT_IDENTITY_CONFLICT|MATERIALIZATION_IDEMPOTENCY_CONFLICT|OBJECT_CANDIDATE_BINDING_MISMATCH/.test(message)) {
       return { kind: "PERSISTENCE_CONFLICT", message: "The governed binding is missing, ambiguous, or conflicts with canonical truth." };
     }
     if (/SOURCE_IDENTITY_ALREADY_MAPPED/i.test(message)) {

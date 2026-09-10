@@ -1,3 +1,6 @@
+> Final external legacy gate (2026-09-10): **PR28_M7_HARDENING_READY_FOR_REVIEW**.
+> Sections 43-46 supersede the earlier delivery verdict for this follow-up.
+
 > Current status (2026-09-10): **RELATIONSHIP_DECISION_TO_TRUTH_V1_READY_FOR_REVIEW**.
 > Sections 1-32 below preserve the original preimplementation STOP history.
 > Sections 33-42 record the accepted architecture resolution and completed continuation;
@@ -683,3 +686,126 @@ in that delivery rather than requiring a third metadata-only commit.
 
 Merge status: **NOT MERGED**. Production status: **UNTOUCHED**.
 Milestone 8: **NOT STARTED**. No amend, force push or protected-file operation.
+
+
+## 43. PR #28 external legacy compatibility gate
+
+Starting branch: `feat/relationship-decision-to-truth-v1`.
+Starting HEAD: `fb46fcc5e1cb5b4bd4943d7312959e29947c6bd0`.
+Required base checks passed; only the protected recovery entry was untracked.
+This was the requested surgical external-review gate, not a milestone restart
+or broad audit. Earlier STOP and continuation evidence remain above unchanged.
+
+The external compatibility finding was valid. Exact-only intake no longer
+suppressed a legacy-only semantic object, while the new CREATE_NEW object ID
+could differ from the historical ID. The new exact mapping constraint alone
+could therefore allow a second canonical object when no exact mapping existed.
+The earlier evidence did not prove this compatibility case; this follow-up fixes it.
+
+The new server preflight follows the active legacy mapping's original governed
+OBJECT decision to its durable normalized candidate, within the same organisation,
+source scope and object kind. It checks the historical canonical object/kind,
+candidate envelope/hash and exact normalized identity. It never recovers identity
+from a latest review, first candidate, filename alone or arbitrary version label.
+The materialization transaction repeats the historical decision/candidate proof
+using `legacy_canonical_object_for_candidate` before any canonical object write.
+
+| External case | Final behavior and focused proof |
+| --- | --- |
+| A. Legacy-only same kind and normalized semantic object | CREATE_NEW returns a controlled conflict before authorization persistence, including a rescan with different candidate/finding row IDs. RPC independently rejects LEGACY_OBJECT_ALREADY_CANONICAL. |
+| B. Legacy AGENT versus same-source AGENT_VERSION | Kind-scoped compatibility lookup leaves the version independent. Existing canonical-parent requirements still apply to actual materialization. |
+| C. Legacy AgentVersion V1 versus V2 | Existing normalized revision discriminators compare exactly: identical V1 is blocked from CREATE_NEW; proven V2 is independent. No versionCode fabricated. |
+| D. Ambiguous same-kind history | Missing decision/candidate/discriminator, multiple mappings, mismatched tenant/kind/source, or substituted envelope fail closed. No first/newest/current guessing. |
+| E. Deterministic reconstruction | Repeated preflight is read-only and stable; all reads are tenant-scoped. Exact MATCH_EXISTING must select the historical canonical object. Foreign-tenant legacy rows cannot affect this tenant. |
+
+The item may remain in the review queue. The server rejects duplicate CREATE_NEW
+with an explicit instruction to use governed MATCH_EXISTING. No coarse
+ALREADY_GOVERNED suppression was restored. When history proves the same semantic
+identity, only an explicitly governed MATCH_EXISTING to that historical object
+can establish the new exact mapping; no automatic backfill or legacy row mutation
+occurs. If history cannot prove identity, positive reconciliation fails closed.
+Different typed semantic identities continue through normal independent governance.
+
+## 44. Identity, contract and transaction re-confirmation
+
+Inspected the actual AgentVersion producer once for this gate. Its discriminator
+is `SHA256(JSON.stringify([sourceScope, technicalRevisionFingerprint]))[:32]`.
+Source scope hashes only connection/type/external ID. The technical projection
+contains normalized Agent code and labeled normalized technical values, sorted
+and deduplicated in fixed family order, plus protected Prompt content fingerprints.
+Technical profile signal families and values are also sorted. The hash inputs
+exclude timestamps, UUIDs, database row IDs, ReviewSubject IDs, Evidence IDs,
+SourceAssertion IDs and line numbers. Evidence/assertion union and observed time
+are assembled after the discriminator. Real Model changes alter the projection;
+input enumeration and irrelevant location changes do not. The existing 22-test
+AgentVersion correlation suite passed again. No scanner code changed.
+
+The governed canonical-only endpoint adaptation remains separate from discovery.
+The existing explicit candidate-injection test rejects both replacement and
+augmentation of either discovery endpoint with canonicalObject. That test and
+all twelve minimal governed endpoint cases passed (13 selected contract tests).
+No canonical-contract change was needed.
+
+The object RPC retains its original per-decision lock/replay path. Its new legacy
+proof runs after durable decision/candidate and parent checks, before inserting
+canonical object, exact mapping, APPLIED operation or outbox. A same-object CREATE
+or wrong-target MATCH raises and rolls back the transaction; old APPLIED operations
+still replay before any new compatibility interpretation. Exact mapping uniqueness
+and operation fingerprint replay remain authoritative. The legacy rows are
+immutable, and this PR's object writer creates only exact mappings, so application
+preflight is not the duplicate-prevention boundary.
+
+The relationship RPC is unchanged by this gate. Its directed semantic tuple
+remains protected by the existing database unique index. Object/mapping/operation/
+outbox and relationship/operation/outbox transaction structure and tenant/linkage
+foreign keys passed the structural checks again. These are structural SQL proofs,
+not live SQL, RLS or concurrency execution claims.
+
+The already-unmerged PR migration
+`20260909210640_relationship_decision_to_truth_v1.sql` was extended in this new
+follow-up commit. There remains one new migration in PR #28. No historical/main
+migration was edited, no prior Git commit was amended, and no migration was run.
+The compatibility helper is SECURITY INVOKER with fixed search_path, service-role
+execute access and public/anon/authenticated access revoked.
+
+## 45. Focused gate validation
+
+| Command / suite | Final result |
+| --- | --- |
+| Dashboard legacy-object-mapping.test.ts | 14 passed |
+| Dashboard decision-commands.test.ts | 17 passed; includes sanitized legacy RPC conflicts |
+| Dashboard relationship-resolution.test.ts | 25 passed |
+| Dashboard relationship-decision-to-truth-migration.test.ts | 12 passed; SQL structural only |
+| Governance materialization-invocation.test.ts + relationship-decision-to-truth.test.ts | 61 passed |
+| Canonical selected minimal endpoint and discovery-injection boundary tests | 13 passed |
+| Scanner existing agent-version-correlation.test.ts | 22 passed |
+| `npm run typecheck:dashboard -- --incremental false` | Passed |
+| `git diff --check` and exact changed-file whitespace check | Passed |
+
+Total **164 focused tests passed**, without double-counting reruns. Dashboard
+files ran with `node --conditions=react-server --experimental-test-module-mocks
+--import tsx --test tests/<file>`, using normal test isolation. Governance/scanner
+used `node --import tsx --test` with the named files. Canonical selection used
+`node --test --test-isolation=none --test-name-pattern='canonical endpoint acceptance
+never permits|Accepted canonical endpoint ADR' test/contracts.test.mjs`.
+
+One initial new MATCH_EXISTING test failed because its database query mock lacked
+`.in()` used by the existing source-summary lookup; completing that mock fixed it.
+No unresolved test failure. Dashboard is the only changed TypeScript package;
+canonical, governance domain and scanner production contracts are unchanged.
+No Validation Lab, live Supabase, production or external model calls.
+
+## 46. External gate delivery
+
+Seven changed files: new legacy preflight module and its focused tests; existing
+object command service and command tests; the PR's new migration and structural
+tests; this evidence. No intake detector, canonical contract, L8, LLM or Graph change.
+
+One authorized follow-up commit:
+`fix(governance): harden legacy canonical mapping compatibility`.
+Push normally to the existing PR #28; the final handoff records the resulting SHA.
+No amend, force push, merge or milestone 8 work. Protected recovery file untouched;
+no `.claude/**` inspection. Production remains **UNTOUCHED**.
+
+Verdict: **PR28_M7_HARDENING_READY_FOR_REVIEW**.
+Merge status: **NOT MERGED**. Milestone 8: **NOT STARTED**.

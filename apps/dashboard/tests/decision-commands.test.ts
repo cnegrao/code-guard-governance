@@ -185,6 +185,10 @@ mock.module("@/lib/governance/canonical-object-lookup", {
   },
 });
 
+mock.module("@/lib/governance/legacy-object-mapping", {
+  namedExports: { assertLegacyObjectCompatibility: async () => {}, LegacyObjectMappingConflict: class extends Error {} },
+});
+
 mock.module("@/lib/governance/relationship-resolution", {
   namedExports: {
     objectMappingIdentity: async (_org: unknown, candidate: Parameters<typeof normalizedObjectIdentity>[0]) => normalizedObjectIdentity(candidate),
@@ -454,10 +458,12 @@ test("triggerMaterialization: a SOURCE_IDENTITY_ALREADY_MAPPED rejection from th
       canonicalObject: { organisationId: ORG, objectId: "canonical-object:2", kind: "TOOL" },
     },
   };
-  world.materializeObjectError = "materialize_object_reconciliation failed: SOURCE_IDENTITY_ALREADY_MAPPED";
-  const outcome = await triggerMaterialization({ organisationId: ORG, sessionRole: "org_admin", reviewSubjectId: SUBJECT_ID });
-  assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
-  assert.equal(JSON.stringify(outcome).includes("SOURCE_IDENTITY_ALREADY_MAPPED"), false);
+  for (const code of ["SOURCE_IDENTITY_ALREADY_MAPPED", "LEGACY_OBJECT_ALREADY_CANONICAL", "LEGACY_OBJECT_MAPPING_AMBIGUOUS", "LEGACY_OBJECT_MATCH_MISMATCH"]) {
+    world.materializeObjectError = `materialize_object_reconciliation failed: ${code}`;
+    const outcome = await triggerMaterialization({ organisationId: ORG, sessionRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+    assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
+    assert.equal(JSON.stringify(outcome).includes(code), false);
+  }
 });
 
 test("triggerMaterialization: a review subject with no persisted reconciliation decision cannot materialize", async () => {

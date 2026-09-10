@@ -21,7 +21,7 @@ test("mapping uniqueness distinguishes source scope, kind and semantic identity;
   assert.match(mapping, /foreign key \(organisation_id, canonical_object_id, canonical_object_kind\)/);
   for (const target of ["discovery_candidates", "reconciliation_decisions", "canonical_objects"]) assert.match(mapping, new RegExp(`references gov_repo\\.${target} \\(organisation_id,`));
 });
-test("new object writes use exact mappings and canonical parent proof; legacy operations can only replay", () => {
+test("new object writes use exact mappings and canonical parent proof; legacy rows are never rewritten", () => {
   assert.match(object, /v_decision\.subject_candidate_id/);
   assert.match(object, /rs\.review_subject_id = v_invocation\.review_subject_id/);
   assert.match(object, /rs\.state = 'CERTIFIED'/);
@@ -85,4 +85,38 @@ test("RLS and RPC privileges remain private, service-role scoped and invoker bas
   assert.doesNotMatch(sql, /security definer/i);
   for (const name of ["resolve_canonical_endpoint", "materialize_object_reconciliation", "materialize_relationship_reconciliation"]) assert.match(body(name), /security invoker/);
   assert.match(sql, /grant execute on function gov_repo\.materialize_object_reconciliation, gov_repo\.materialize_relationship_reconciliation to service_role/);
+});
+
+
+test("legacy compatibility reconstructs only the mapping's original governed typed candidate", () => {
+  const legacy = body("legacy_canonical_object_for_candidate");
+  for (const predicate of ["m.organisation_id = p_organisation_id", "m.canonical_object_kind = p_candidate->>'candidateKind'",
+    "rd.decision_id = v_mapping.created_by_decision_id", "dc.candidate_id = rd.subject_candidate_id", "dc.organisation_id = rd.organisation_id",
+    "dc.candidate_kind = v_mapping.canonical_object_kind", "dc.source_external_id = v_mapping.source_external_id",
+    "co.kind = rd.canonical_object_kind", "rd.canonical_object_id = v_mapping.canonical_object_id"]) assert.ok(legacy.includes(predicate), predicate);
+  assert.match(legacy, /normalized_object_identity\(p_organisation_id, v_original\.envelope\)/);
+  assert.match(legacy, /normalized_object_identity\(p_organisation_id, p_candidate\)/);
+  assert.match(legacy, /if v_original_identity = v_current_identity then return v_mapping\.canonical_object_id; end if;\s+return null;/);
+});
+
+test("ambiguous legacy identity has no coarse, newest or first fallback and no backfill", () => {
+  const legacy = body("legacy_canonical_object_for_candidate");
+  assert.match(legacy, /v_count <> 1.*LEGACY_OBJECT_MAPPING_AMBIGUOUS/);
+  assert.match(legacy, /select m\.\* into strict v_mapping/);
+  assert.match(legacy, /if not found[\s\S]+LEGACY_OBJECT_MAPPING_AMBIGUOUS/);
+  assert.match(legacy, /exception when sqlstate '22023' or sqlstate '23514'[\s\S]+LEGACY_OBJECT_MAPPING_AMBIGUOUS/);
+  assert.doesNotMatch(legacy, /order by|limit\s+1|insert into|update gov_repo|delete from|versionCode|gen_random_uuid/i);
+  assert.match(legacy, /security invoker/);
+  assert.match(sql, /revoke all on function gov_repo\.legacy_canonical_object_for_candidate,/);
+  assert.match(sql, /grant execute on function gov_repo\.legacy_canonical_object_for_candidate,[^;]+to service_role;/);
+});
+
+test("object transaction rejects duplicate legacy CREATE and wrong MATCH before any canonical or mapping write", () => {
+  const guard = object.indexOf("v_legacy_object_id := gov_repo.legacy_canonical_object_for_candidate");
+  assert.ok(guard > object.indexOf("MATERIALIZATION_IDEMPOTENCY_CONFLICT"));
+  assert.ok(guard > object.indexOf("OBJECT_CANDIDATE_BINDING_MISMATCH"));
+  for (const write of ["insert into gov_repo.canonical_objects", "insert into gov_repo.canonical_normalized_object_mappings", "insert into gov_repo.materialization_operations", "insert into gov_repo.outbox_events"]) assert.ok(guard < object.indexOf(write));
+  assert.match(object, /if p_outcome = 'CREATE_NEW' then\s+raise exception[^;]+LEGACY_OBJECT_ALREADY_CANONICAL/);
+  assert.match(object, /p_canonical_object_id is distinct from v_legacy_object_id[\s\S]+LEGACY_OBJECT_MATCH_MISMATCH/);
+  assert.match(object, /on conflict on constraint normalized_mapping_identity_unique do nothing/);
 });
