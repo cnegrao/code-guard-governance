@@ -6,6 +6,8 @@ import {
   asIsoTimestamp,
   asNormalizedCandidateId,
   type NormalizedRelationshipCandidate,
+  type NormalizedObjectCandidate,
+  type NormalizedDataAssetCandidate,
   type OrganisationId,
   type RelationshipDiscoveryFinding,
   type SourceConnectionId,
@@ -15,6 +17,7 @@ import { correlateAgentVersions, type AgentVersionCorrelationResult } from './ag
 import type { DiscoveryCandidate } from './evidence-assembly';
 import { normalizeObjectCandidate } from './object-candidate-normalization';
 import type { TechnicalProfileSignal } from './technical-profile-signal';
+import { SqlInsertSelectSpecification } from './strategies/sql-create-table';
 
 /** Existing finding + normalized candidate boundary; never governed truth. */
 export interface RelationshipCorrelationResult {
@@ -49,6 +52,100 @@ function hasEvidence(candidate: DiscoveryCandidate): boolean {
       'lineStart' in location && typeof location.lineStart === 'number' && location.lineStart > 0) &&
     candidate.evidence.hashes.some((hash) => hash.algorithm === 'sha256' &&
       hash.value === candidate.assertion.snapshot?.contentHash?.value);
+}
+
+/** Shared relationship normalization envelope; inputs remain pre-canonical. */
+function normalizeRelationship(
+  suffix: string, relationshipTypeCode: string, sourceObject: SourceObjectIdentity,
+  source: NormalizedObjectCandidate, target: NormalizedObjectCandidate,
+  support: readonly Pick<DiscoveryCandidate['finding'], 'assertionIds' | 'evidenceIds'>[],
+  confidence: number, observedAt: string,
+): RelationshipCorrelationResult {
+  const assertionIds = unique(support.flatMap(item => [...item.assertionIds]));
+  const evidenceIds = unique(support.flatMap(item => [...item.evidenceIds]));
+  const finding: RelationshipDiscoveryFinding = {
+    findingId: asDiscoveryFindingId(`discovery-finding:relationship:${suffix}`),
+    findingNature: 'CANDIDATE', candidateKind: 'RELATIONSHIP', sourceObject, assertionIds, evidenceIds,
+    confidence, reviewStatus: FINDING_REVIEW_STATUS.UNREVIEWED, requiresReview: true,
+    createsCanonicalObject: false, detectedAt: asIsoTimestamp(observedAt),
+  };
+  return { finding, candidate: {
+    candidateId: asNormalizedCandidateId(`candidate:relationship:${suffix}`), candidateKind: 'RELATIONSHIP',
+    sourceObject, findingId: finding.findingId, assertionIds, evidenceIds, confidence,
+    requiresReconciliation: true, relationshipTypeCode,
+    sourceEndpoint: { referenceKind: 'CANDIDATE', candidateKind: source.candidateKind, candidateId: source.candidateId },
+    targetEndpoint: { referenceKind: 'CANDIDATE', candidateKind: target.candidateKind, candidateId: target.candidateId },
+  } };
+}
+
+function correlateColumnLineage(
+  candidates: readonly DiscoveryCandidate[], observedAt: string, context?: RelationshipCorrelationContext,
+): readonly RelationshipCorrelationResult[] {
+  if (!context?.organisationId?.trim() || !context.connectionId?.trim() ||
+      candidates.some(item => item.finding.sourceObject.connectionId !== context.connectionId)) return [];
+  const inventory = candidates.flatMap(item => {
+    if (!['DATA_ASSET', 'DATA_ELEMENT'].includes(item.finding.candidateKind)) return [];
+    const normalized = normalizeObjectCandidate(item, { candidates });
+    return normalized.status === 'NORMALIZED' ? [normalized] : [];
+  });
+  const resolve = (assetReference: string, elementPath: string) => {
+    // Count all matching asset declarations BEFORE validity filtering. A second
+    // pre-canonical owner cannot disappear because its support is incomplete.
+    const declared = candidates.filter(item => item.finding.candidateKind === 'DATA_ASSET' &&
+      item.dataDeclaration?.sourceReference === assetReference);
+    if (declared.length !== 1) return undefined;
+    const assets = inventory.filter(item => item.candidate.candidateKind === 'DATA_ASSET' &&
+      item.candidate.proposedIdentity.sourceReference === assetReference);
+    if (assets.length !== 1) return undefined;
+    const asset = assets[0].candidate as NormalizedDataAssetCandidate;
+    const declaredElements = candidates.filter(item => item.finding.candidateKind === 'DATA_ELEMENT' &&
+      sourceKey(item.finding.sourceObject) === sourceKey(asset.sourceObject) &&
+      item.dataDeclaration?.sourceReference === assetReference && item.dataDeclaration.elementPath === elementPath);
+    if (declaredElements.length !== 1) return undefined;
+    const elements = inventory.filter(item => item.candidate.candidateKind === 'DATA_ELEMENT' &&
+      item.parentDataAsset?.candidateId === asset.candidateId && item.candidate.proposedIdentity.elementPath === elementPath);
+    if (elements.length !== 1) return undefined;
+    // M8/M7 semantic components: exact parent source scope + effective table
+    // reference + effective column path. Row IDs/locations never define the edge.
+    return { candidate: elements[0].candidate, asset,
+      identity: [sourceKey(asset.sourceObject), assetReference, elementPath] };
+  };
+  const results = new Map<string, RelationshipCorrelationResult>();
+  for (const declaration of candidates) {
+    const binding = declaration.transformation;
+    if (!binding || declaration.finding.candidateKind !== 'RELATIONSHIP' || !hasEvidence(declaration) ||
+        declaration.assertion.method.code !== 'sql-insert-select-column-lineage' ||
+        declaration.assertion.method.version !== '1.0.0' || declaration.assertion.trustState !== 'DECLARED' ||
+        !declaration.assertion.snapshot?.snapshotId?.trim() || declaration.assertion.snapshot.contentHash.algorithm !== 'sha256' ||
+        declaration.finding.sourceObject.externalType !== 'file' ||
+        !declaration.finding.sourceObject.externalId.endsWith('.sql') ||
+        !declaration.evidence.hashes.some(hash => hash.algorithm === 'sha256' && hash.value === binding.statementFingerprint)) continue;
+    // Reparse the durable safe token excerpt: binding metadata alone is never
+    // transformation evidence. Fingerprint and every positional pair must agree.
+    const proof = new SqlInsertSelectSpecification().isSatisfiedBy({
+      locator: declaration.finding.sourceObject.externalId, text: declaration.evidence.redactedExcerpt ?? '',
+      encoding: 'utf8', contentHash: declaration.assertion.snapshot!.contentHash!.value,
+    });
+    if (proof.length !== 1 || JSON.stringify(proof[0].transformation) !== JSON.stringify(binding)) continue;
+    const pairs = binding.pairs.map(pair => ({
+      target: resolve(binding.targetAsset, pair.targetElement), source: resolve(binding.sourceAsset, pair.sourceElement),
+    }));
+    // The statement is atomic for discovery: never salvage only resolvable pairs.
+    if (!pairs.length || pairs.some(pair => !pair.target || !pair.source)) continue;
+    for (const pair of pairs) {
+      const target = pair.target!, source = pair.source!;
+      const suffix = createHash('sha256').update(JSON.stringify([
+        'sql-column-lineage-v1', context.organisationId, 'DERIVED_FROM',
+        sourceKey(declaration.finding.sourceObject), target.identity, source.identity,
+      ])).digest('hex').slice(0, 32);
+      const previous = results.get(suffix);
+      results.set(suffix, normalizeRelationship(suffix, GOVERNED_RELATIONSHIP_TYPE.DERIVED_FROM,
+        declaration.finding.sourceObject, target.candidate, source.candidate,
+        [target.candidate, target.asset, source.candidate, source.asset, declaration.finding,
+          ...(previous ? [previous.candidate] : [])], 1, observedAt));
+    }
+  }
+  return [...results.values()];
 }
 
 function correlateBehaviorRelationships(
@@ -106,26 +203,10 @@ function correlateBehaviorRelationships(
         'agent-version-behavior-v1', context.organisationId, relationshipTypeCode,
         expected.candidate.candidateId, object.candidateKind, object.candidateId,
       ])).digest('hex').slice(0, 32);
-      const assertionIds = unique([...expected.candidate.assertionIds, ...object.assertionIds]);
-      const evidenceIds = unique([...expected.candidate.evidenceIds, ...object.evidenceIds]);
-      const finding: RelationshipDiscoveryFinding = {
-        findingId: asDiscoveryFindingId(`discovery-finding:relationship:${suffix}`),
-        findingNature: 'CANDIDATE', candidateKind: 'RELATIONSHIP',
-        sourceObject: expected.candidate.sourceObject, assertionIds, evidenceIds,
-        confidence: Math.min(expected.candidate.confidence, object.confidence),
-        reviewStatus: FINDING_REVIEW_STATUS.UNREVIEWED, requiresReview: true,
-        createsCanonicalObject: false, detectedAt: asIsoTimestamp(observedAt),
-      };
-      // Existing normalization envelope with exact normalized object IDs.
-      const candidate: NormalizedRelationshipCandidate = {
-        candidateId: asNormalizedCandidateId(`candidate:relationship:${suffix}`),
-        candidateKind: 'RELATIONSHIP', sourceObject: finding.sourceObject,
-        findingId: finding.findingId, assertionIds, evidenceIds,
-        confidence: finding.confidence, requiresReconciliation: true, relationshipTypeCode,
-        sourceEndpoint: { referenceKind: 'CANDIDATE', candidateKind: 'AGENT_VERSION', candidateId: expected.candidate.candidateId },
-        targetEndpoint: { referenceKind: 'CANDIDATE', candidateKind: object.candidateKind, candidateId: object.candidateId },
-      };
-      results.set(candidate.candidateId, { finding, candidate });
+      const result = normalizeRelationship(suffix, relationshipTypeCode, expected.candidate.sourceObject,
+        expected.candidate, object, [expected.candidate, object],
+        Math.min(expected.candidate.confidence, object.confidence), observedAt);
+      results.set(result.candidate.candidateId, result);
     }
   }
   return Object.freeze([...results.values()].sort((a, b) => a.candidate.candidateId.localeCompare(b.candidate.candidateId)));
@@ -151,6 +232,8 @@ export function correlateAgentUsesToolRelationships(
 
 export class RelationshipCorrelationStrategy {
   correlate(candidates: readonly DiscoveryCandidate[], observedAt: string, context?: RelationshipCorrelationContext): readonly RelationshipCorrelationResult[] {
-    return correlateBehaviorRelationships(candidates, observedAt, context);
+    return Object.freeze([...correlateBehaviorRelationships(candidates, observedAt, context),
+      ...correlateColumnLineage(candidates, observedAt, context)]
+      .sort((a, b) => a.candidate.candidateId.localeCompare(b.candidate.candidateId)));
   }
 }

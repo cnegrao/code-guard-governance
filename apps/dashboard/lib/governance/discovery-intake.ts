@@ -15,6 +15,7 @@ import {
   KnowledgeBaseDeclarationSpecification,
   SkillListDeclarationSpecification,
   SqlCreateTableSpecification,
+  SqlInsertSelectSpecification,
   FrameworkImportSignalSpecification,
   OrchestrationFrameworkSignalSpecification,
   createSourceConnection,
@@ -369,11 +370,9 @@ async function processRelationshipCandidate(
         throw new Error("L9_ENDPOINT_CANDIDATE_NOT_DURABLE");
       }
     }
-    // Relationship findings reuse the Evidence/SourceAssertion already made
-    // durable while processing their endpoint object candidates (relationship
-    // correlation runs after every object candidate in this same scan has
-    // already been processed); no new evidence is fabricated for the edge
-    // itself. No governed endpoint resolution or reconciliation is performed.
+    // Relationship findings cite support already made durable from endpoints
+    // and, for SQL lineage, the explicit transformation statement. No governed
+    // endpoint resolution or reconciliation is performed.
     await ensureReviewSubjectAndPropose(result.finding, result.candidate, acquisitionRunId, ctx, ports, tally, "relationship");
   } catch (error) {
     tally.failures.push({
@@ -519,6 +518,7 @@ export async function runGovernanceDiscoveryScan(
       new SkillListDeclarationSpecification(),
       new SqlCreateTableSpecification("DATA_ASSET"),
       new SqlCreateTableSpecification("DATA_ELEMENT"),
+      new SqlInsertSelectSpecification(),
     ],
     {
       // AgentVersion technical-profile signal detectors: structurally
@@ -613,13 +613,24 @@ export async function runGovernanceDiscoveryScan(
 
   // Parent durability precedes child review, independently of detector/traversal order.
   const normalizationContext = { candidates };
-  const orderedCandidates = [...candidates.filter(c => c.finding.candidateKind !== "DATA_ELEMENT"),
-    ...candidates.filter(c => c.finding.candidateKind === "DATA_ELEMENT")];
+  const objectCandidates = candidates.filter(c => c.finding.candidateKind !== "RELATIONSHIP");
+  const orderedCandidates = [...objectCandidates.filter(c => c.finding.candidateKind !== "DATA_ELEMENT"),
+    ...objectCandidates.filter(c => c.finding.candidateKind === "DATA_ELEMENT")];
   for (const candidate of orderedCandidates) {
     await processObjectCandidate(candidate, run.runId, ctx, ports, tally, normalizationContext);
   }
   for (const signal of technicalProfileSignals) {
     await processTechnicalProfileSignal(signal, ctx, ports, tally);
+  }
+  // Explicit SQL transformation support is durable before any edge cites it.
+  // The raw statement match is not a separate review subject or object.
+  for (const declaration of candidates.filter(c => c.finding.candidateKind === "RELATIONSHIP")) {
+    try {
+      await ports.intake.recordEvidence(ctx.organisationId, declaration.evidence);
+      await ports.intake.recordSourceAssertion(ctx.organisationId, declaration.assertion);
+    } catch (error) {
+      tally.failures.push({ candidateKind: "RELATIONSHIP", reason: error instanceof Error ? error.message : String(error) });
+    }
   }
   for (const agentVersionResult of agentVersionResults) {
     await processAgentVersionCandidate(agentVersionResult, run.runId, ctx, ports, tally);
@@ -638,7 +649,7 @@ export async function runGovernanceDiscoveryScan(
     await processRelationshipCandidate(relationshipResult, endpointCandidates, run.runId, ctx, ports, tally);
   }
 
-  const objectCandidateCount = candidates.length + agentVersionResults.length;
+  const objectCandidateCount = objectCandidates.length + agentVersionResults.length;
   const counts: AcquisitionRunCounts = {
     artifactsScanned,
     findingsDetected: objectCandidateCount + relationshipResults.length,

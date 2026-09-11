@@ -402,6 +402,126 @@ function makePorts(intake = new FakeIntakePersistence()) {
   return { review, materialization, intake, agentVersionTechnicalProfile };
 }
 
+describe("Milestone 9: column lineage through existing governed intake", () => {
+  const sql = "INSERT INTO target (id) SELECT s.id FROM source s;";
+  const scan = (root: string, ports: ReturnType<typeof makePorts>, organisationId = ORG_A) => runGovernanceDiscoveryScan({
+    executionContext: { organisationId }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root },
+  }, ports);
+  const prepare = async (root: string) => {
+    await writeFile(join(root, "schema.sql"), "CREATE TABLE source (id INT); CREATE TABLE target (id INT);");
+    await writeFile(join(root, "load.sql"), sql);
+  };
+  const relationships = (ports: ReturnType<typeof makePorts>) => [...ports.intake.candidatesByFinding.values()]
+    .filter(candidate => candidate.candidateKind === "RELATIONSHIP");
+
+  test("exact DATA_ELEMENT lineage retains durable transformation evidence, PROPOSED review and M7 recovery", async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      const result = await scan(root, ports);
+      assert.equal(result.status, "SUCCEEDED");
+      assert.deepEqual(result.failures, []);
+      assert.equal(result.relationshipCandidates, 1);
+      assert.equal(result.relationshipSubjectsCreated, 1);
+      const [candidate] = relationships(ports);
+      assert.equal(candidate.relationshipTypeCode, "DERIVED_FROM");
+      assert.equal(candidate.sourceObject.externalId, "load.sql");
+      const { rehydrateNormalizedCandidate } = await import("@/lib/governance/discovery-intake-persistence");
+      assert.deepEqual(rehydrateNormalizedCandidate(JSON.parse(JSON.stringify(candidate))), candidate);
+      const subject = [...ports.review.subjects.values()].find(item => item.findingId === candidate.findingId)!;
+      assert.equal(subject.state, "PROPOSED");
+      assert.equal(recoverReconciliationInput({ reviewSubject: subject,
+        finding: await ports.intake.getDiscoveryFinding(ORG_A, candidate.findingId), candidate }).status,
+      RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE);
+      for (const [ref, expectedAsset] of [[candidate.sourceEndpoint, "target"], [candidate.targetEndpoint, "source"]] as const) {
+        assert.equal(ref.referenceKind, "CANDIDATE");
+        if (ref.referenceKind !== "CANDIDATE") throw new Error("missing exact endpoint");
+        const element = [...ports.intake.candidatesByFinding.values()].find(item => item.candidateId === ref.candidateId)!;
+        assert.equal(element.candidateKind, "DATA_ELEMENT");
+        if (element.candidateKind !== "DATA_ELEMENT") throw new Error("wrong endpoint");
+        const parentRef = element.proposedIdentity.parentDataAsset;
+        if (parentRef.referenceKind !== "CANDIDATE") throw new Error("wrong parent");
+        const parent = [...ports.intake.candidatesByFinding.values()].find(item => item.candidateId === parentRef.candidateId)!;
+        assert.equal(parent.candidateKind, "DATA_ASSET");
+        if (parent.candidateKind !== "DATA_ASSET") throw new Error("wrong parent kind");
+        assert.equal(parent.proposedIdentity.sourceReference, expectedAsset);
+        assert.ok(normalizedObjectIdentity(element, parent));
+      }
+      const support = candidate.assertionIds.map(id => ports.intake.assertions.get(tenantKey(ORG_A, id))!);
+      const transformation = support.find(item => item.method.code === "sql-insert-select-column-lineage")!;
+      assert.equal(transformation.trustState, "DECLARED");
+      assert.equal(transformation.method.version, "1.0.0");
+      assert.equal(transformation.snapshot!.sourceObject.externalId, "load.sql");
+      const evidence = ports.intake.evidence.get(tenantKey(ORG_A, transformation.evidenceIds[0]))!;
+      assert.equal(evidence.hashes.length, 2);
+      assert.match(evidence.redactedExcerpt!, /INSERT INTO target/);
+      assert.ok(candidate.evidenceIds.includes(evidence.evidenceId));
+      for (const id of candidate.evidenceIds) assert.ok(ports.intake.hasDurableEvidence(ORG_A, id));
+      assert.ok(support.every(item => item.trustState === "DECLARED"));
+      // All canonical, authorization and reconciliation write ports throw.
+    });
+  });
+  test("identical replay creates no duplicate relationship candidate or review", async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      await scan(root, ports);
+      const first = relationships(ports);
+      const second = await scan(root, ports);
+      assert.deepEqual(second.failures, []);
+      assert.equal(second.relationshipSubjectsCreated, 0);
+      assert.deepEqual(relationships(ports), first);
+    });
+  });
+  test("changed evidence for the same semantic edge preserves history and reports existing immutable-candidate conflict", async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      await scan(root, ports);
+      const [first] = relationships(ports);
+      const evidenceCount = ports.intake.evidence.size;
+      await writeFile(join(root, "load.sql"), "-- moved\n" + sql);
+      const changed = await scan(root, ports);
+      assert.equal(changed.status, "FAILED");
+      assert.ok(changed.failures.some(failure => failure.reason.includes("DISCOVERY_CANDIDATE_CONFLICT")));
+      assert.deepEqual(relationships(ports), [first]);
+      assert.ok(ports.intake.evidence.size > evidenceCount);
+      assert.equal(changed.relationshipSubjectsCreated, 0);
+    });
+  });
+  test("missing durable transformation support cannot produce a relationship review", async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      const record = ports.intake.recordSourceAssertion.bind(ports.intake);
+      ports.intake.recordSourceAssertion = async (org, assertion) => {
+        if (assertion.method.code === "sql-insert-select-column-lineage") throw new Error("TRANSFORMATION_SUPPORT_UNAVAILABLE");
+        return record(org, assertion);
+      };
+      const result = await scan(root, ports);
+      assert.equal(result.status, "PARTIAL");
+      assert.equal(result.relationshipSubjectsCreated, 0);
+      assert.deepEqual(relationships(ports), []);
+    });
+  });
+  test("foreign tenant endpoint durability cannot satisfy lineage review", async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      await scan(root, ports, ORG_B);
+      const get = ports.intake.getNormalizedCandidateForFinding.bind(ports.intake);
+      ports.intake.getNormalizedCandidateForFinding = async (org, id) => {
+        const candidate = await get(org, id);
+        return org === ORG_A && candidate?.candidateKind === "DATA_ELEMENT" ? undefined : candidate;
+      };
+      const result = await scan(root, ports, ORG_A);
+      assert.equal(result.relationshipSubjectsCreated, 0);
+      assert.ok(result.failures.some(failure => failure.reason === "L9_ENDPOINT_CANDIDATE_NOT_DURABLE"));
+      assert.equal([...ports.review.subjects.values()].filter(item => item.organisationId === ORG_A && item.candidateKind === "RELATIONSHIP").length, 0);
+    });
+  });
+});
+
 describe("Milestone 8: strict SQL discovery through existing intake", () => {
   const dataCandidates = (ports: ReturnType<typeof makePorts>) => [...ports.intake.candidatesByFinding.values()]
     .filter(c => c.candidateKind === "DATA_ASSET" || c.candidateKind === "DATA_ELEMENT");
