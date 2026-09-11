@@ -17,6 +17,7 @@ import {
 
 import { canonicalStringify, privilegedDb, sha256Hex } from "./persistence";
 import { governanceReviewPersistence } from "./persistence";
+import { discoveryIntakePersistence } from "./discovery-intake-persistence";
 
 /**
  * Governance Workspace read side (CQRS query path). Server-only: never
@@ -276,6 +277,13 @@ export interface GovernanceHistoryEntry {
 }
 
 export interface ReviewSubjectDetail {
+  /** Discovery context only; never folded into the ReviewSubject/M7 support. */
+  readonly lineageObservations?: readonly {
+    readonly findingId: string;
+    readonly detectedAt: string;
+    readonly evidence: readonly EvidencePresentation[];
+    readonly assertions: readonly SourceAssertionPresentation[];
+  }[];
   readonly reviewSubjectId: string;
   readonly organisationId: string;
   readonly candidateKind: DiscoveryCandidateKind;
@@ -455,6 +463,31 @@ export async function getReviewSubjectDetail(
   const runIds = [...new Set(assertions.map((assertion) => assertion.runId))];
   const acquisitionRuns = await hydrateAcquisitionRuns(organisationId, runIds);
 
+  const lineageObservations: NonNullable<ReviewSubjectDetail["lineageObservations"]>[number][] = [];
+  if (subject.candidateKind === "RELATIONSHIP") {
+    const candidate = await discoveryIntakePersistence.getNormalizedCandidateForFinding(organisationId, subject.findingId);
+    if (candidate?.candidateKind === "RELATIONSHIP" && candidate.relationshipTypeCode === "DERIVED_FROM") {
+      // Page the append-only links instead of silently truncating history at
+      // the Data API's default row limit. All reads keep trusted tenant scope.
+      for (let offset = 0; ; offset += 100) {
+        const { data, error } = await privilegedDb.from("lineage_candidate_observations")
+          .select("observation_finding_id").eq("organisation_id", organisationId)
+          .eq("candidate_id", candidate.candidateId).order("observation_finding_id").range(offset, offset + 99);
+        if (error) throw new Error(`Lineage observation history query failed: ${error.message}`);
+        for (const row of data ?? []) {
+          const finding = await discoveryIntakePersistence.getDiscoveryFinding(organisationId, row.observation_finding_id);
+          if (!finding || finding.candidateKind !== "RELATIONSHIP") throw new Error("LINEAGE_OBSERVATION_FINDING_MISSING");
+          const [observationEvidence, observationAssertions] = await Promise.all([
+            hydrateEvidence(organisationId, finding.evidenceIds), hydrateAssertions(organisationId, finding.assertionIds),
+          ]);
+          lineageObservations.push({ findingId: finding.findingId, detectedAt: finding.detectedAt,
+            evidence: observationEvidence, assertions: observationAssertions });
+        }
+        if ((data?.length ?? 0) < 100) break;
+      }
+    }
+  }
+
   return {
     reviewSubjectId: subject.reviewSubjectId,
     organisationId: subject.organisationId,
@@ -469,6 +502,7 @@ export async function getReviewSubjectDetail(
     assertions,
     acquisitionRuns,
     history: events.map(historyEntryFromEvent),
+    ...(lineageObservations.length ? { lineageObservations } : {}),
   };
 }
 

@@ -299,7 +299,7 @@ describe('L9 exact AgentVersion declaration bindings', () => {
   it('L8 inputs and governance/Graph authority are absent; legacy behavior emission removed', () => {
     const correlation = readFileSync(new URL('../../src/discovery/relationship-correlation.ts', import.meta.url), 'utf8');
     assert.doesNotMatch(correlation, /from ['"].*(?:semantic|governance-review|graphos)|PossibleMatchCandidate|createReviewSubject\(|materializ\w*\(|reconcil\w*\(|\.rpc\(/i);
-    for (const unrelated of ['EXPOSES', 'HANDOFF_TO', 'READS_FROM', 'WRITES_TO', 'DERIVED_FROM']) {
+    for (const unrelated of ['EXPOSES', 'HANDOFF_TO', 'READS_FROM', 'WRITES_TO']) {
       assert.ok(!correlation.includes(unrelated), `${unrelated} remains outside discovery correlation`);
     }
     const legacy = readFileSync(new URL('../../src/unified.ts', import.meta.url), 'utf8');

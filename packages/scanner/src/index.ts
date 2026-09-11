@@ -77,7 +77,7 @@ export type {
   SourceDescriptor,
 } from './discovery/source-adapter';
 export { LocalRepositoryAdapter } from './discovery/adapters/local-repository-adapter';
-export { SqlCreateTableSpecification } from './discovery/strategies/sql-create-table';
+export { SqlCreateTableSpecification, SqlInsertSelectSpecification } from './discovery/strategies/sql-create-table';
 export type { DetectionMatch, DetectionSpecification } from './discovery/detection-specification';
 export { AgentKindDeclarationSpecification } from './discovery/strategies/agent-kind-declaration';
 export { ModelReferenceDeclarationSpecification } from './discovery/strategies/model-reference-declaration';

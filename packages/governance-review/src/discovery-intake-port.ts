@@ -7,6 +7,8 @@ import type {
   EvidenceId,
   NormalizedCandidate,
   NormalizedCandidateId,
+  NormalizedRelationshipCandidate,
+  RelationshipDiscoveryFinding,
   OrganisationId,
   SourceAssertion,
   SourceAssertionId,
@@ -92,6 +94,17 @@ export interface NormalizedCandidatePersistenceResult {
 }
 
 export interface DiscoveryIntakePersistencePort {
+  /** Optional capability for SQL lineage adapters. Atomically preserves the
+   * origin candidate/finding and attaches a separately identified observation.
+   * Returned envelopes are always the immutable origin used by review/M7.
+   * Implementations without this capability must fail closed for lineage.
+   */
+  recordLineageObservation?(
+    organisationId: OrganisationId,
+    finding: RelationshipDiscoveryFinding,
+    candidate: NormalizedRelationshipCandidate,
+    acquisitionRunId: AcquisitionRun["runId"],
+  ): Promise<{ readonly finding: RelationshipDiscoveryFinding; readonly candidate: NormalizedRelationshipCandidate }>;
   /** Idempotent: identical content under an already-used runId replays; conflicting content fails closed. */
   startAcquisitionRun(
     organisationId: OrganisationId,

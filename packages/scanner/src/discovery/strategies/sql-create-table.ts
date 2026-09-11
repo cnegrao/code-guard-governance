@@ -245,7 +245,7 @@ function parseTable(tokens: Token[]): Table {
 }
 
 /** Only semicolon-terminated, balanced statements. Invalid lexing fails the file. */
-function tables(text: string): Table[] {
+function statements(text: string): Token[][] {
   const tokens = lex(text), statements: Token[][] = [];
   let start = 0, depth = 0;
   for (let i = 0; i < tokens.length; i++) {
@@ -259,8 +259,12 @@ function tables(text: string): Table[] {
     }
   }
   if (depth || start !== tokens.length) invalid();
+  return statements;
+}
+
+function tables(text: string): Table[] {
   const parsed: Table[] = [], counts = new Map<string, number>();
-  for (const statement of statements) {
+  for (const statement of statements(text)) {
     if (!keyword(statement[0], 'CREATE') || !keyword(statement[1], 'TABLE')) continue;
     try {
       const key = reference(header(new Cursor(statement)));
@@ -271,6 +275,72 @@ function tables(text: string): Table[] {
   // Repeated physical declarations (even identical ones) are ambiguous: no
   // first/latest selection, and no candidate multiplication.
   return parsed.filter(table => counts.get(reference(table.name)) === 1);
+}
+
+/** Scanner-only explicit transformation binding, not a new canonical kind. */
+export interface SqlColumnTransformation {
+  readonly targetAsset: string;
+  readonly sourceAsset: string;
+  readonly pairs: readonly { readonly targetElement: string; readonly sourceElement: string }[];
+  readonly statementFingerprint: string;
+}
+
+function parseProjection(tokens: Token[]): SqlColumnTransformation {
+  const c = new Cursor(tokens);
+  c.requireWord('INSERT'); c.requireWord('INTO');
+  const targetAsset = reference(c.qualified());
+  c.requireSymbol('(');
+  const targets = [canonicalIdentifier(c.name())];
+  while (c.symbol(',')) targets.push(canonicalIdentifier(c.name()));
+  c.requireSymbol(')'); c.requireWord('SELECT');
+  // Only bare columns or one exact qualifier. No expression grammar is used.
+  const projections = [c.qualified()];
+  while (c.symbol(',')) projections.push(c.qualified());
+  c.requireWord('FROM');
+  const sourceName = c.qualified(), sourceAsset = reference(sourceName);
+  let alias: string | undefined;
+  if (c.word('AS')) alias = canonicalIdentifier(c.name());
+  else if (!c.done()) alias = canonicalIdentifier(c.name());
+  if (!c.done() || targets.length !== projections.length || new Set(targets).size !== targets.length) invalid();
+  const qualifier = alias ?? canonicalIdentifier(sourceName.at(-1)!);
+  const pairs = projections.map((projection, i) => {
+    if (projection.length === 2 && canonicalIdentifier(projection[0]) !== qualifier) invalid();
+    return { targetElement: targets[i], sourceElement: canonicalIdentifier(projection.at(-1)!) };
+  });
+  return { targetAsset, sourceAsset, pairs,
+    statementFingerprint: createHash('sha256').update(JSON.stringify(tokens.map(t => [t.kind, t.raw]))).digest('hex') };
+}
+
+export class SqlInsertSelectSpecification implements DetectionSpecification {
+  readonly code = 'sql-insert-select-column-lineage';
+  readonly version = '1.0.0';
+  readonly candidateKind = 'RELATIONSHIP' as const;
+  isSatisfiedBy(artifact: SourceArtifactContent): readonly DetectionMatch[] {
+    if (!artifact.locator.endsWith('.sql')) return [];
+    let parsed: Token[][];
+    try { parsed = statements(artifact.text); } catch { return []; }
+    // SQL-standard routine bodies (BEGIN ATOMIC) can contain unquoted
+    // semicolons. This bounded parser does not model routine scope, so reject
+    // the artifact rather than interpreting an inner INSERT as top-level SQL.
+    if (parsed.some(tokens => {
+      const c = new Cursor(tokens);
+      if (c.word('DO')) return true;
+      if (!c.word('CREATE')) return false;
+      if (c.word('OR') && !c.word('REPLACE')) return true;
+      return c.word('FUNCTION') || c.word('PROCEDURE');
+    })) return [];
+    return parsed.flatMap(tokens => {
+      if (!keyword(tokens[0], 'INSERT')) return [];
+      try {
+        const transformation = parseProjection(tokens);
+        return [{ transformation, displayValue: 'DERIVED_FROM', confidence: 1,
+          trustState: TRUST_STATE.DECLARED, lineStart: tokens[0].line, lineEnd: tokens.at(-1)!.line,
+          // Accepted tokens contain only keywords, identifiers and punctuation.
+          // Comments, values and arbitrary expressions cannot enter this excerpt.
+          excerpt: tokens.map(t => t.raw).join(' ') + ';' }];
+      } catch { return []; }
+    });
+  }
 }
 
 export class SqlCreateTableSpecification implements DetectionSpecification {

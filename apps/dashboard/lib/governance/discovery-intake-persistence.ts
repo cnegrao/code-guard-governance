@@ -19,6 +19,7 @@ import {
   type NormalizedCandidate,
   type NormalizedObjectCandidate,
   type NormalizedRelationshipCandidate,
+  type RelationshipDiscoveryFinding,
   type OrganisationId,
   type PreCanonicalObjectReference,
   type SourceAssertion,
@@ -36,6 +37,7 @@ import type {
 } from "@council/governance-review";
 
 import { canonicalStringify, privilegedDb, sha256Hex } from "./persistence";
+import { lineageObservationFinding } from "./lineage-observation";
 
 /**
  * Discovery Intake V1 — server-only Supabase adapter.
@@ -580,6 +582,27 @@ export const discoveryIntakePersistence: DiscoveryIntakePersistencePort = {
     if (error) throw new Error(`record_discovery_candidate failed: ${error.message}`);
     const row = (Array.isArray(data) ? data[0] : data) as { replay: boolean; candidate_id: string };
     return { replay: row.replay, candidateId: asNormalizedCandidateId(row.candidate_id) };
+  },
+
+  async recordLineageObservation(organisationId, finding, candidate, acquisitionRunId) {
+    const observation = lineageObservationFinding(finding, candidate);
+    const { data, error } = await privilegedDb.rpc("record_lineage_observation", {
+      p_organisation_id: organisationId, p_acquisition_run_id: acquisitionRunId,
+      p_candidate: candidate, p_candidate_hash: normalizedCandidateEnvelopeHash(candidate),
+      p_finding: finding, p_finding_hash: sha256Hex(canonicalStringify(finding)),
+      p_observation: observation, p_observation_hash: sha256Hex(canonicalStringify(observation)),
+    });
+    if (error) throw new Error(`record_lineage_observation failed: ${error.message}`);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || sha256Hex(canonicalStringify(row.candidate)) !== row.candidate_hash ||
+        sha256Hex(canonicalStringify(row.finding)) !== row.finding_hash) throw new Error("LINEAGE_ORIGIN_HASH_MISMATCH");
+    const origin = rehydrateNormalizedCandidate(row.candidate);
+    const originFinding = rehydrateDiscoveryFinding(row.finding);
+    if (origin.candidateKind !== "RELATIONSHIP" || originFinding.candidateKind !== "RELATIONSHIP" ||
+        origin.candidateId !== candidate.candidateId || origin.findingId !== originFinding.findingId) {
+      throw new Error("LINEAGE_ORIGIN_CONTEXT_MISMATCH");
+    }
+    return { candidate: origin, finding: originFinding as RelationshipDiscoveryFinding };
   },
 
   async getNormalizedCandidateForFinding(

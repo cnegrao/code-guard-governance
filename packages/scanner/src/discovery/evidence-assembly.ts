@@ -24,11 +24,12 @@ import {
 
 import type { DetectionMatch, DetectionSpecification } from './detection-specification';
 import type { SourceArtifactContent } from './source-adapter';
-import type { SqlDataDeclaration } from './strategies/sql-create-table';
+import type { SqlDataDeclaration, SqlColumnTransformation } from './strategies/sql-create-table';
 import { findBehaviorDeclarationBinding, type BehaviorDeclarationBinding } from './behavior-declaration-binding';
 
 /** One evidence-backed candidate: never governed truth (see DiscoveryFinding). */
 export interface DiscoveryCandidate {
+  readonly transformation?: SqlColumnTransformation;
   readonly dataDeclaration?: SqlDataDeclaration;
   readonly finding: DiscoveryFinding<DiscoveryCandidateKind>;
   readonly assertion: SourceAssertion;
@@ -86,6 +87,7 @@ export function assembleDiscoveryCandidate(params: {
     idSeed.push(artifact.contentHash, match.dataDeclaration.sourceReference,
       match.dataDeclaration.statementFingerprint, match.dataDeclaration.elementPath ?? '');
   }
+  if (match.transformation) idSeed.push(artifact.contentHash, match.transformation.statementFingerprint);
 
   const sanitizedLocator = sanitizeEvidenceLocator(artifact.locator);
   const observed = asIsoTimestamp(observedAt);
@@ -102,7 +104,8 @@ export function assembleDiscoveryCandidate(params: {
         lineEnd: match.lineEnd,
       },
     ],
-    hashes: [{ algorithm: 'sha256', value: artifact.contentHash }],
+    hashes: [{ algorithm: 'sha256', value: artifact.contentHash },
+      ...(match.transformation ? [{ algorithm: 'sha256' as const, value: match.transformation.statementFingerprint }] : [])],
     redactedExcerpt: match.excerpt,
     capturedAt: observed,
   });
@@ -159,6 +162,7 @@ export function assembleDiscoveryCandidate(params: {
     assertion,
     evidence,
     displayValue: match.displayValue,
+    ...(match.transformation === undefined ? {} : { transformation: match.transformation }),
     ...(match.dataDeclaration === undefined ? {} : { dataDeclaration: match.dataDeclaration }),
     ...(match.contentFingerprint === undefined ? {} : { contentFingerprint: match.contentFingerprint }),
     ...(behaviorBinding === undefined ? {} : { behaviorBinding }),
