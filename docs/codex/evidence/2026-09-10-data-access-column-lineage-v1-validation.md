@@ -1,5 +1,9 @@
 # Milestone 9 — Data Access & Column Lineage V1
 
+Current external gate status: **PR30_M9_HARDENING_READY_FOR_REVIEW**. The
+2026-09-11 support-evolution gate below supersedes the original immutable-candidate
+conflict limitation; original implementation/validation history is preserved.
+
 ## Base and pre-implementation gate
 
 Base main = origin/main = `c806782fff8bdb8b81fdf01ace8eeffef4ab1c06` after fetch.
@@ -280,3 +284,170 @@ handoff records actual commit/PR identifiers. **NOT MERGED**. Production **UNTOU
 Next milestone **10 — MULTIVENDOR EXCHANGE MVP V1 — NOT STARTED**.
 
 Verdict: **DATA_ACCESS_COLUMN_LINEAGE_V1_READY_FOR_REVIEW**.
+
+## PR30 support-evolution gate — pre-edit persistence inspection
+
+Gate base: `e926584577b794e3873d1badc2facd44e77e892a`, expected branch;
+only the protected untracked recovery entry. No parser change or milestone restart.
+The external finding is accepted: the original immutable-candidate conflict
+limitation above does not satisfy observation/provenance continuity.
+
+REUSE_AS_IS: immutable Evidence, SourceAssertion, DiscoveryFinding and their
+tenant-scoped support junctions; original candidate envelope and M7 review input.
+ADAPT: intake persistence with a narrow additive candidate-to-observation-finding
+junction for DERIVED_FROM. NOT_PRESENT: an existing many-observation attachment
+RPC/read path for one immutable semantic relationship candidate.
+
+Existing candidate_assertions/candidate_evidence are normalized membership of the
+original candidate envelope, not independent observation history. They will not
+be reinterpreted or overwritten. ReviewSubject and M7 recover the original
+finding/candidate/support, so appended observations can remain separately visible
+without acquiring certification or replacing approved support. The additive
+representation reuses observation findings and their existing support tables;
+it does not add a generic candidate lifecycle/revision model.
+
+## PR30 support-evolution gate — implemented correction (2026-09-11)
+
+Root cause: correlation correctly reuses the semantic candidate ID, but the
+original intake resubmitted changing evidence/assertion IDs and current endpoint
+row references as a replacement immutable candidate envelope. The existing
+`record_discovery_candidate` conflict was correct for replacement, but there was
+no independent observation attachment path. Persisting unattached new support
+and failing the rescan was insufficient; that earlier accepted limitation is fixed.
+
+The original scanner semantic candidate ID, relationship direction, source scope,
+M8 normalized endpoint identities and closed parser are unchanged. The new narrow
+`recordLineageObservation` persistence capability is used only for DERIVED_FROM.
+Adapters without it fail explicitly instead of silently dropping observations.
+
+### Observation identity and append-only storage
+
+One additive migration, generated using the local Supabase CLI:
+`20260911120904_lineage_support_observations_v1.sql`.
+
+`lineage_candidate_observations` links `(organisation_id, candidate_id)` to
+independent immutable observation findings and their exact current source/target
+DATA_ELEMENT candidate rows. The existing finding assertion/evidence junctions
+provide each observation's support. Existing Evidence/SourceAssertion storage
+deduplicates content by tenant and ID; common evidence can support multiple
+observations without copying or replacing its envelope.
+
+Observation finding identity hashes the semantic candidate ID, explicit endpoint
+row-reference components and sorted distinct assertion/evidence IDs. It excludes
+capture time and endpoint property enumeration order. Snapshot/location changes
+are carried through new support IDs; they never enter semantic candidate identity.
+The normalized candidate envelope and its original finding remain immutable.
+New observation findings do not acquire separate normalized candidates or reviews.
+
+The SECURITY INVOKER RPC serializes each tenant/candidate using a transaction
+advisory lock, validates the acquisition source and durable current endpoints,
+and compares each directed endpoint's exact source scope plus the existing M7
+`normalized_object_identity` against the origin. Different endpoint rows with
+the same M8 semantic identity are allowed; changed physical identities or reversed
+endpoints under a reused candidate ID fail closed. Current endpoint support and
+a DECLARED transformation assertion/evidence in the SQL source scope are required.
+
+On first observation the RPC reuses existing finding/candidate persistence.
+On later observations it preserves and returns the origin envelopes, records
+the separate observation finding/support and appends the junction. The transaction
+checks existing immutable finding content (excluding capture time on replay) and
+exact attachment identity; failures roll back the attachment and any transaction
+writes. The client verifies returned origin hashes/kinds/IDs before using them
+for existing review processing. No historical migration, candidate envelope,
+support membership or evidence/assertion content is updated or deleted.
+
+### Replay and temporal provenance
+
+Exact snapshot/support replay is idempotent: same observation finding, same
+candidate, no duplicated support or review, successful intake. Comment-only,
+line-only, whitespace-only and other harmless snapshot changes produce a new
+observation with traceable assertion/evidence while retaining the same candidate.
+Moving M8 declarations also succeeds despite changed exact endpoint row IDs.
+Relationship source change, target change and reversal produce distinct semantic
+candidates. No confidence-based collapse or inferred temporal closure.
+
+Existing pre-gate candidates retain their original finding/candidate support.
+There is no guessed historical observation backfill. Subsequent scans attach new
+observations; the origin support remains accessible through the existing review
+evidence and candidate linkage even when it predates the new junction.
+
+### Review continuity, tenancy and M7 boundary
+
+The RPC returns the immutable origin finding/candidate to the unchanged review
+workflow. The same ReviewSubject is reused; PROPOSED/REJECTED/CERTIFIED states
+are not reopened or automatically advanced. Supplemental observations are visible
+in the existing review detail as a separate lineage history, using tenant-scoped,
+hash-verified finding/evidence reads and the existing evidence sensitivity policy.
+HASH_ONLY excerpts remain withheld. Observation history is paged rather than
+silently limited to the Data API's default page size.
+
+The ReviewSubject's original assertion/evidence arrays and M7 reconciliation
+input are unchanged. Supplemental support is discovery context, not automatically
+approved support: existing transition/decision support gates cannot use it as if
+it had been reviewed. No new post-decision recertification or enrichment authority
+is defined. A later governance feature would need an explicit rule to approve
+such new support; raw discovery no longer fails while that rule is absent.
+REJECT/DEFER decision regressions and terminal-review tests preserve authority.
+
+All four junction foreign keys include organisation_id. RLS is enabled, public/
+anon/authenticated access is revoked, service_role has SELECT/INSERT, update/delete
+are blocked, and function execution is service_role-only with a fixed search_path.
+Trusted tenant filters scope both persistence and review-history queries. Foreign
+tenant support and endpoints cannot enrich the current candidate. No canonical
+identity change, rematerialization, certification, VALIDATED/OBSERVED trust,
+Graph/Vector/LLM work, SQL expansion or new access binding.
+
+### Final focused validation and review
+
+| Check | Result |
+| --- | --- |
+| Dashboard discovery-intake-service.test.ts | 61 passed |
+| Dashboard lineage-support-persistence.test.ts | 4 passed |
+| Dashboard lineage-support-migration.test.ts | 5 passed, structural SQL only |
+| Dashboard discovery-intake-persistence-domain.test.ts | 4 passed |
+| Dashboard discovery-governance-input-persistence-domain.test.ts | 15 passed |
+| Dashboard workspace-query.test.ts | 10 passed |
+| Dashboard decision-commands.test.ts | 18 passed, including REJECT and DEFER |
+| Scanner sql-column-lineage.test.ts | 64 passed |
+| Dashboard typecheck, incremental disabled | Passed |
+| Governance-review typecheck | Passed |
+| git diff --check | Passed; repeated at delivery |
+
+Total **181 distinct passing tests** (117 dashboard + 64 scanner). Dashboard
+commands used `node --conditions=react-server --experimental-test-module-mocks
+--import tsx --test` with the seven named files; scanner used `node --import tsx
+--test test/discovery-engine/sql-column-lineage.test.ts`. Final focused reruns
+covered observation identity, migration structure and decision authority after
+the review correction; typecheck fixture branding was corrected explicitly.
+No full scanner/relationship suite rerun was needed: scanner code is unchanged.
+
+One focused manual adversarial check completed for support loss, historical
+overwrite, duplicate candidate/review, identity pollution, cross-tenant support,
+endpoint-change collapse, canonical authority and harmless replay failure.
+It corrected observation hashing to use explicit endpoint components rather than
+object property order. The tests exercise reordered/deduplicated support, preserved
+history, moved endpoint rows, terminal review states and hash/identity substitution.
+No second broad audit or subagents. No unresolved test failure.
+
+SQL constraints, transaction structure and RLS permissions were inspected and
+structurally tested only. No migration execution, live Supabase/RLS/concurrency
+test, production action, Validation Lab, external model or application API call.
+The review-history UI is typechecked and its server data/sensitivity path tested;
+no browser/runtime deployment verification is claimed. The migration must be
+deployed through the normal later release process before the new RPC can run.
+
+### Gate delivery
+
+Twelve files: optional governance persistence capability; narrow observation-ID
+helper; dashboard persistence, intake, review query and review UI; intake,
+observation persistence, migration and decision tests; one new migration; this
+evidence. No scanner, canonical-contract, frozen architecture, historical
+migration, dependency or lockfile change.
+
+One follow-up commit: `fix(lineage): preserve evolving relationship support`.
+Normal push to existing PR #30; no amend, force push or new PR. Commit ID is
+reported in the final handoff. **NOT MERGED**. Production **UNTOUCHED**.
+READS_FROM and WRITES_TO remain **BLOCKED_AGENT_BINDING**.
+Milestone **10 — NOT STARTED**.
+
+Verdict: **PR30_M9_HARDENING_READY_FOR_REVIEW**.

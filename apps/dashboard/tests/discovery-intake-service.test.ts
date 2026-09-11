@@ -14,9 +14,12 @@ import {
   type DiscoveryFindingId,
   type Evidence,
   type NormalizedCandidate,
+  type NormalizedRelationshipCandidate,
+  type RelationshipDiscoveryFinding,
   type SourceAssertion,
   type AcquisitionRun,
 } from "@council/canonical-contracts";
+import { lineageObservationFinding } from "@/lib/governance/lineage-observation";
 import {
   createReviewSubject,
   normalizedObjectIdentity,
@@ -95,6 +98,36 @@ class FakeIntakePersistence implements DiscoveryIntakePersistencePort {
   // UNIQUE (organisation_id, finding_id) on gov_repo.discovery_candidates
   // (at most one durable candidate per finding, the real current cardinality).
   readonly candidatesByFinding = new Map<string, NormalizedCandidate>();
+  readonly lineageObservations = new Map<string, { candidateId: string; findingId: DiscoveryFindingId }>();
+
+  async recordLineageObservation(org: OrganisationId, finding: RelationshipDiscoveryFinding,
+    candidate: NormalizedRelationshipCandidate, runId: AcquisitionRun["runId"]) {
+    const observation = lineageObservationFinding(finding, candidate);
+    const origin = await this.getNormalizedCandidateForFinding(org, candidate.findingId);
+    const endpointIdentity = (ref: NormalizedRelationshipCandidate["sourceEndpoint"]): string => {
+      if (ref.referenceKind !== "CANDIDATE" || ref.candidateKind !== "DATA_ELEMENT") throw new Error("LINEAGE_OBSERVATION_ENDPOINT_KIND");
+      const element = [...this.candidatesByFinding.entries()].find(([key, item]) => key.startsWith(`${org}::`) && item.candidateId === ref.candidateId)?.[1];
+      if (!element || element.candidateKind !== "DATA_ELEMENT") throw new Error("LINEAGE_OBSERVATION_ENDPOINT_MISSING");
+      const parentRef = element.proposedIdentity.parentDataAsset;
+      if (parentRef.referenceKind !== "CANDIDATE") throw new Error("LINEAGE_OBSERVATION_PARENT_MISSING");
+      const parent = [...this.candidatesByFinding.entries()].find(([key, item]) => key.startsWith(`${org}::`) && item.candidateId === parentRef.candidateId)?.[1];
+      if (parent?.candidateKind !== "DATA_ASSET") throw new Error("LINEAGE_OBSERVATION_PARENT_MISSING");
+      return JSON.stringify([element.sourceObject, normalizedObjectIdentity(element, parent)]);
+    };
+    const tuple = (item: NormalizedRelationshipCandidate) => JSON.stringify([
+      item.candidateId, item.sourceObject, item.relationshipTypeCode, endpointIdentity(item.sourceEndpoint), endpointIdentity(item.targetEndpoint),
+    ]);
+    const identity = tuple(candidate);
+    if (origin && (origin.candidateKind !== "RELATIONSHIP" || tuple(origin) !== identity)) throw new Error("LINEAGE_OBSERVATION_SEMANTIC_CONFLICT");
+    await this.recordDiscoveryFinding(org, observation, runId);
+    if (!origin) {
+      await this.recordDiscoveryFinding(org, finding, runId);
+      await this.recordNormalizedCandidate(org, candidate, runId);
+    }
+    this.lineageObservations.set(tenantKey(org, observation.findingId), { candidateId: candidate.candidateId, findingId: observation.findingId });
+    return { candidate: (origin ?? candidate) as NormalizedRelationshipCandidate,
+      finding: (await this.getDiscoveryFinding(org, candidate.findingId)) as RelationshipDiscoveryFinding };
+  }
   evidenceCallCount = 0;
   assertionCallCount = 0;
   findingCallCount = 0;
@@ -473,20 +506,43 @@ describe("Milestone 9: column lineage through existing governed intake", () => {
       assert.deepEqual(relationships(ports), first);
     });
   });
-  test("changed evidence for the same semantic edge preserves history and reports existing immutable-candidate conflict", async () => {
+  for (const [label, evolved] of [
+    ["comment", "-- moved\n" + sql], ["line", "\n\n" + sql],
+    ["whitespace", sql.replace("SELECT", "SELECT   ")],
+    ["snapshot", sql + "\nSELECT 1;"],
+  ]) test(`${label} evolution appends traceable support without changing candidate/review or failing discovery`, async () => {
     await withFixtureRepository(async root => {
       await prepare(root);
       const ports = makePorts();
       await scan(root, ports);
       const [first] = relationships(ports);
       const evidenceCount = ports.intake.evidence.size;
-      await writeFile(join(root, "load.sql"), "-- moved\n" + sql);
+      const originalEvidence = new Map(ports.intake.evidence);
+      const originalAssertions = new Map(ports.intake.assertions);
+      const reviewCount = ports.review.subjects.size;
+      await writeFile(join(root, "load.sql"), evolved);
       const changed = await scan(root, ports);
-      assert.equal(changed.status, "FAILED");
-      assert.ok(changed.failures.some(failure => failure.reason.includes("DISCOVERY_CANDIDATE_CONFLICT")));
+      assert.equal(changed.status, "SUCCEEDED");
+      assert.deepEqual(changed.failures, []);
       assert.deepEqual(relationships(ports), [first]);
       assert.ok(ports.intake.evidence.size > evidenceCount);
       assert.equal(changed.relationshipSubjectsCreated, 0);
+      assert.equal(ports.review.subjects.size, reviewCount);
+      assert.equal(ports.intake.lineageObservations.size, 2);
+      for (const [key, value] of originalEvidence) assert.deepEqual(ports.intake.evidence.get(key), value);
+      for (const [key, value] of originalAssertions) assert.deepEqual(ports.intake.assertions.get(key), value);
+      const observations = [...ports.intake.lineageObservations.values()];
+      assert.ok(observations.every(item => item.candidateId === first.candidateId));
+      const supports = observations.map(item => ports.intake.findings.get(tenantKey(ORG_A, item.findingId))!);
+      assert.notDeepEqual(supports[0].evidenceIds, supports[1].evidenceIds);
+      assert.notDeepEqual(supports[0].assertionIds, supports[1].assertionIds);
+      for (const support of supports) {
+        for (const id of support.evidenceIds) assert.ok(ports.intake.hasDurableEvidence(ORG_A, id));
+        for (const id of support.assertionIds) assert.ok(ports.intake.hasDurableAssertion(ORG_A, id));
+      }
+      const replay = await scan(root, ports);
+      assert.deepEqual(replay.failures, []);
+      assert.equal(ports.intake.lineageObservations.size, 2);
     });
   });
   test("missing durable transformation support cannot produce a relationship review", async () => {
@@ -502,6 +558,80 @@ describe("Milestone 9: column lineage through existing governed intake", () => {
       assert.equal(result.status, "PARTIAL");
       assert.equal(result.relationshipSubjectsCreated, 0);
       assert.deepEqual(relationships(ports), []);
+    });
+  });
+  test("moved data declarations retain the same semantic edge with new exact endpoint rows", async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      await scan(root, ports);
+      const origin = relationships(ports);
+      await writeFile(join(root, "schema.sql"), "\n-- moved declarations\nCREATE TABLE source (id INT); CREATE TABLE target (id INT);");
+      const result = await scan(root, ports);
+      assert.deepEqual(result.failures, []);
+      assert.equal(result.relationshipSubjectsCreated, 0);
+      assert.deepEqual(relationships(ports), origin);
+      assert.equal(ports.intake.lineageObservations.size, 2);
+    });
+  });
+  for (const [label, changedSql] of [
+    ["relationship source", "INSERT INTO target (other) SELECT id FROM source;"],
+    ["relationship target", "INSERT INTO target (id) SELECT other FROM source;"],
+    ["reversed direction", "INSERT INTO source (id) SELECT id FROM target;"],
+  ]) test(`${label} change produces a distinct semantic candidate`, async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      await writeFile(join(root, "schema.sql"), "CREATE TABLE source (id INT, other INT); CREATE TABLE target (id INT, other INT);");
+      const ports = makePorts();
+      await scan(root, ports);
+      const [origin] = relationships(ports);
+      await writeFile(join(root, "load.sql"), changedSql);
+      const result = await scan(root, ports);
+      assert.deepEqual(result.failures, []);
+      assert.equal(result.relationshipSubjectsCreated, 1);
+      assert.equal(relationships(ports).length, 2);
+      assert.equal(new Set(relationships(ports).map(item => item.candidateId)).size, 2);
+      assert.ok(relationships(ports).some(item => item.candidateId === origin.candidateId));
+    });
+  });
+  for (const state of [REVIEW_STATE.REJECTED, REVIEW_STATE.CERTIFIED]) test(`${state} review remains unchanged when support evolves`, async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      await scan(root, ports);
+      const [origin] = relationships(ports);
+      const entry = [...ports.review.subjects.entries()].find(([, item]) => item.findingId === origin.findingId)!;
+      const finalized = { ...entry[1], state };
+      ports.review.subjects.set(entry[0], finalized);
+      await writeFile(join(root, "load.sql"), "-- later support\n" + sql);
+      const result = await scan(root, ports);
+      assert.deepEqual(result.failures, []);
+      assert.deepEqual(ports.review.subjects.get(entry[0]), finalized);
+      assert.equal(result.relationshipSubjectsCreated, 0);
+      assert.equal(result.proposalsCreated, 0);
+      assert.equal(ports.intake.lineageObservations.size, 2);
+      const recovered = recoverReconciliationInput({ reviewSubject: finalized,
+        finding: await ports.intake.getDiscoveryFinding(ORG_A, origin.findingId), candidate: origin });
+      assert.equal(recovered.status, RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE);
+    });
+  });
+  test("tenant B evidence/assertions cannot be appended to tenant A candidate", async () => {
+    await withFixtureRepository(async root => {
+      await prepare(root);
+      const ports = makePorts();
+      await scan(root, ports);
+      const [origin] = relationships(ports);
+      await writeFile(join(root, "load.sql"), "-- tenant B snapshot\n" + sql);
+      await scan(root, ports, ORG_B);
+      const foreignObservation = [...ports.intake.lineageObservations.entries()].find(([key]) => key.startsWith(`${ORG_B}::`))![1];
+      const foreignFinding = (await ports.intake.getDiscoveryFinding(ORG_B, foreignObservation.findingId))!;
+      const changed = { ...origin, assertionIds: foreignFinding.assertionIds, evidenceIds: foreignFinding.evidenceIds };
+      const originFinding = (await ports.intake.getDiscoveryFinding(ORG_A, origin.findingId)) as RelationshipDiscoveryFinding;
+      const observationCount = ports.intake.lineageObservations.size;
+      await assert.rejects(ports.intake.recordLineageObservation(ORG_A,
+        { ...originFinding, assertionIds: changed.assertionIds, evidenceIds: changed.evidenceIds }, changed,
+        [...ports.intake.runs.values()][0].run.runId), /FK_VIOLATION/);
+      assert.equal(ports.intake.lineageObservations.size, observationCount);
     });
   });
   test("foreign tenant endpoint durability cannot satisfy lineage review", async () => {

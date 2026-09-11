@@ -373,7 +373,13 @@ async function processRelationshipCandidate(
     // Relationship findings cite support already made durable from endpoints
     // and, for SQL lineage, the explicit transformation statement. No governed
     // endpoint resolution or reconciliation is performed.
-    await ensureReviewSubjectAndPropose(result.finding, result.candidate, acquisitionRunId, ctx, ports, tally, "relationship");
+    if (result.candidate.relationshipTypeCode === "DERIVED_FROM") {
+      if (!ports.intake.recordLineageObservation) throw new Error("LINEAGE_OBSERVATION_PERSISTENCE_UNAVAILABLE");
+      const origin = await ports.intake.recordLineageObservation(ctx.organisationId, result.finding, result.candidate, acquisitionRunId);
+      await ensureReviewSubjectAndPropose(origin.finding, origin.candidate, acquisitionRunId, ctx, ports, tally, "relationship");
+    } else {
+      await ensureReviewSubjectAndPropose(result.finding, result.candidate, acquisitionRunId, ctx, ports, tally, "relationship");
+    }
   } catch (error) {
     tally.failures.push({
       findingId: result.finding.findingId,

@@ -259,7 +259,7 @@ test("submitReconciliationDecision: TOOL CERTIFIED + OBJECT_INPUT_AVAILABLE with
   assert.equal(outcome.kind, "APPLIED");
 });
 
-test("submitReconciliationDecision: RELATIONSHIP CERTIFIED + RELATIONSHIP_INPUT_AVAILABLE with REJECT applies and persists a RELATIONSHIP-family decision", async () => {
+for (const requestedOutcome of ["REJECT", "DEFER"] as const) test(`submitReconciliationDecision: RELATIONSHIP CERTIFIED + RELATIONSHIP_INPUT_AVAILABLE with ${requestedOutcome} applies and persists a RELATIONSHIP-family decision`, async () => {
   resetWorld();
   world.subject = buildSubject({ candidateKind: "RELATIONSHIP" });
   world.recovery = {
@@ -268,7 +268,7 @@ test("submitReconciliationDecision: RELATIONSHIP CERTIFIED + RELATIONSHIP_INPUT_
     finding: relationshipFinding(),
     candidate: relationshipCandidate(),
   };
-  const outcome = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+  const outcome = await submitReconciliationDecision({ ...baseInput, requestedOutcome });
   assert.equal(outcome.kind, "APPLIED");
   assert.equal(world.persistCalls[0]!.family, "RELATIONSHIP");
 });

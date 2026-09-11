@@ -71,6 +71,7 @@ interface AllowedGovernanceActions {
   canReject: boolean;
 }
 interface ReviewSubjectDetail {
+  lineageObservations?: { findingId: string; detectedAt: string; evidence: EvidencePresentation[]; assertions: SourceAssertionPresentation[] }[];
   reviewSubjectId: string;
   candidateKind: string;
   state: string;
@@ -502,6 +503,32 @@ export default function ReviewSubjectDetailPage() {
               ))}
             </div>
           </Card>
+
+          {!!detail.lineageObservations?.length && (
+            <Card>
+              <h3 className="text-sm font-semibold text-gray-300 mb-3">Lineage observation history</h3>
+              <p className="text-sm text-gray-400 mb-3">
+                Source observations are retained here. New observations do not change this review or approve additional evidence.
+              </p>
+              {detail.lineageObservations.map(observation => (
+                <details key={observation.findingId} className="mb-3 rounded border border-border-dark/50 p-3">
+                  <summary className="text-sm text-gray-300">Captured {formatTimestamp(observation.detectedAt)}</summary>
+                  {observation.evidence.map(item => (
+                    <div key={item.evidenceId} className="mt-2 text-xs text-gray-400 break-all">
+                      <div>{item.evidenceId}</div>
+                      <div>{item.hashes.map(hash => `${hash.algorithm}:${hash.value}`).join(", ")}</div>
+                      {item.redactedExcerpt && <pre className="whitespace-pre-wrap mt-1">{item.redactedExcerpt}</pre>}
+                    </div>
+                  ))}
+                  {observation.assertions.map(assertion => (
+                    <div key={assertion.assertionId} className="mt-2 text-xs text-gray-400 break-all">
+                      {assertion.assertionId} · {assertion.trustState} · {assertion.methodCode} · {assertion.methodVersion} · {assertion.sourceExternalId}
+                    </div>
+                  ))}
+                </details>
+              ))}
+            </Card>
+          )}
 
           <Card>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
