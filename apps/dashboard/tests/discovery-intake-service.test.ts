@@ -487,6 +487,41 @@ describe("Milestone 8: strict SQL discovery through existing intake", () => {
     });
   });
 
+  for (const [label, firstTable, firstColumn, nextTable, nextColumn, mapped] of [
+    ["unquoted schema/table/column case", 'CRM.Customer', 'ID', 'crm.customer', 'id', 2],
+    ["quoted lowercase equivalence", '"crm"."customer"', '"id"', 'crm.customer', 'id', 2],
+    ["quoted table case differs", '"Customer"', 'id', 'customer', 'id', 0],
+    ["quoted schema case differs", '"CRM".Customer', 'id', 'crm.customer', 'id', 0],
+    ["quoted column case differs", 't', '"ID"', 't', 'id', 1],
+  ] as const) {
+    test(`M7 physical SQL identity gate: ${label}`, async () => {
+      await withFixtureRepository(async root => {
+        await writeFile(join(root, "schema.sql"), `CREATE TABLE ${firstTable} (${firstColumn} INT);`);
+        const probe = makePorts();
+        assert.deepEqual((await scanSql(root, probe)).failures, []);
+        const initial = dataCandidates(probe);
+        const parent = initial.find(c => c.candidateKind === "DATA_ASSET")!;
+        const ports = makePorts();
+        for (const candidate of initial) {
+          ports.materialization.seedMapping({ organisationId: ORG_A,
+            sourceConnectionId: candidate.sourceObject.connectionId, sourceExternalType: candidate.sourceObject.externalType,
+            sourceExternalId: candidate.sourceObject.externalId, canonicalObjectKind: candidate.candidateKind,
+            normalizedObjectIdentity: normalizedObjectIdentity(candidate, parent),
+          }, { mappingId: `mapping:${candidate.candidateKind}`, canonicalObjectId: `canonical:${candidate.candidateKind}`,
+            canonicalObjectKind: candidate.candidateKind });
+        }
+        await writeFile(join(root, "schema.sql"), `CREATE TABLE ${nextTable} (${nextColumn} INT);`);
+        const result = await scanSql(root, ports);
+        assert.deepEqual(result.failures, []);
+        assert.equal(result.alreadyGoverned, mapped);
+        assert.equal(dataCandidates(ports).length, 2, "both snapshot candidates stay durable");
+        const subjects = [...ports.review.subjects.values()].filter(s => s.candidateKind === "DATA_ASSET" || s.candidateKind === "DATA_ELEMENT");
+        assert.equal(subjects.length, 2 - mapped);
+        assert.equal(result.relationshipCandidates, 0);
+      });
+    });
+  }
+
   test("tenant A cannot borrow a durable SQL parent from tenant B", async () => {
     await withFixtureRepository(async root => {
       await writeFile(join(root, "schema.sql"), "CREATE TABLE t (id INT);");

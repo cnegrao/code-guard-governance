@@ -1,9 +1,11 @@
 # Milestone 8 - Data Asset & Data Element Discovery V1
 
-Current status: **DATA_ASSET_DATA_ELEMENT_DISCOVERY_V1_READY_FOR_REVIEW**.
+Current status: **PR29_M8_FINAL_GATE_READY_FOR_MERGE** (not merged).
 The original pre-implementation STOP and readiness record are preserved in
 sections 1-27. The architect-authorized continuation and final validation are
 recorded in sections 28-36; those sections supersede the earlier pending status.
+The external physical-identity gate is recorded in sections 37-40 and supersedes
+the raw-spelling identity behavior and limitation described in sections 30-35.
 
 ## 1. Base gate
 
@@ -506,3 +508,115 @@ session handoff; no metadata-only follow-up commit is needed.
 Verdict: **DATA_ASSET_DATA_ELEMENT_DISCOVERY_V1_READY_FOR_REVIEW**.
 Merge status: **NOT MERGED**. Production status: **UNTOUCHED**.
 Next milestone: **9 - DATA ACCESS & COLUMN LINEAGE V1 - NOT STARTED**.
+
+## 37. PR #29 final SQL physical identity gate
+
+Reviewed HEAD: `7d743f6b212805a5fbf331d6c81666bdb64cfb25`.
+Branch: `feat/data-asset-data-element-discovery-v1`.
+Base gate passed with exactly the permitted protected recovery entry untracked.
+No protected-file content operation or `.claude/**` inspection. This is the
+single requested surgical external-review gate, not a milestone restart or
+another broad audit. Architecture GOVIA-L0L16-CIA-v1.0 remains frozen.
+
+The external finding was **confirmed**. Before this gate, physicalName decoded
+quoted identifiers and lowercased unquoted identifiers for duplicate detection,
+but reference and elementPath retained raw SQL spelling. Therefore equivalent
+unquoted case variants or lowercase quoted/unquoted forms could disagree with
+the duplicate check and reach M7 as different semantic identities.
+
+The correction uses one canonicalIdentifier function for table/column duplicate
+checks and proposed sourceReference/elementPath. It computes effective content:
+unquoted ASCII identifiers are lowercased; quoted contents are decoded without
+case changes. It then renders that component as unquoted text only when safe
+(lowercase identifier syntax and not a reserved name); otherwise it uses double
+quotes and doubles embedded quotes. Schema/table components are rendered
+independently and joined with a qualification dot. No parser acceptance rule,
+source family, canonical taxonomy or M7 architecture changed.
+
+| Inputs | Final semantic representation / comparison |
+| --- | --- |
+| Customer, CUSTOMER, customer, "customer" | customer |
+| "Customer" versus customer | Distinct: quoted mixed-case content is preserved |
+| CRM.Customer versus crm.customer versus "crm"."customer" | crm.customer |
+| "CRM".Customer versus crm.customer | Distinct: "CRM".customer versus crm.customer |
+| ID, id, "id" under one effective parent | elementPath id |
+| "ID" versus id | Distinct elementPath values |
+| "crm.customer" versus crm.customer | Distinct: one dotted component versus two components |
+| "a.b".c versus a."b.c" | Distinct component boundaries |
+| "a""b" | Embedded quote remains escaped inside one component |
+
+This replaces the prior raw-spelling limitation for equivalent effective names.
+Case changes inside quoted content that alter the effective name still alter
+identity. Different sources remain independently scoped; no cross-file or
+cross-tenant physical merge is introduced.
+
+## 38. Exact mapping and evidence continuity after the identity correction
+
+The existing normalizeObjectCandidate and normalizedObjectIdentity functions
+are unchanged. They consume the corrected sourceReference and elementPath
+produced by the SQL detector. Parent candidates remain exact typed references,
+and parent durability/envelope checks are unchanged.
+
+Five new real intake tests with fake persistence seed existing M7 exact mappings
+and then rescan equivalent/different SQL spellings. Unquoted schema/table/column
+case changes and lowercase quoted equivalence retain both asset/element mappings.
+Quoted table/schema case differences retain neither mapping; a quoted column
+case difference retains only its unchanged asset mapping. Both current snapshot
+candidates remain durable, and only unmapped semantic objects enter review.
+
+No migration is required: this unmerged producer has not entered main. No
+canonical_normalized_object_mappings schema, lookup algorithm or governed
+materialization implementation changed. No live database validation is claimed.
+
+Raw token spelling remains in the existing redacted evidence projections:
+`CREATE TABLE CRM . Customer` / `ID INT` remain different excerpts from
+`CREATE TABLE "crm" . "customer"` / `"id" INT`, while both scans have the same
+semantic identities. Snapshot-specific evidence/candidate row IDs may differ;
+they do not define physical semantic identity. Datatype, default, nullability,
+ordinal, line, timestamp and support row IDs remain outside semantic identity.
+
+Parser scope, DECLARED trust, PROPOSED ceiling and no-lineage boundary remain
+unchanged. No Graph, Vector, LLM, canonical materialization or L9 behavior code
+changed. Production **UNTOUCHED**; milestone 9 **NOT STARTED**.
+
+## 39. Focused gate validation
+
+| Check | Result |
+| --- | --- |
+| Scanner sql-data-discovery.test.ts | 77 passed, including 15 new physical-identity cases |
+| Scanner object-candidate-normalization.test.ts | 25 passed |
+| Dashboard discovery-intake-service.test.ts | 46 passed, including five new M7 mapping cases |
+| Scanner npm run typecheck:discovery-engine | Passed (affected source and tests) |
+| Root npm run typecheck:dashboard -- --incremental false | Passed |
+| git diff --check | Passed; repeated at the final staging gate |
+
+Total: **148 focused tests passed**, no failures. Commands use the same local
+Node/tsx invocations recorded in section 34, narrowed to these three test files.
+No Validation Lab, live Supabase, production, external model call or unrelated
+scanner regression suite. No new dependency, migration or architecture edit.
+
+External acceptance A-D: table/schema case, quoted case and lowercase quoted
+equivalence tested through real normalization. E-G: column equivalence and
+distinction under an exact parent. H: every table-pair case compares normalized
+semantic equality to combined-declaration duplicate behavior; column-pair cases
+do the same within a table. I: explicit raw excerpt assertions plus stable
+semantic comparison. J: existing line/whitespace/comment/datatype/replay tests
+remain passing. Canonical SQL rendering is also roundtrip-tested for punctuation,
+qualification and escaped quotes.
+
+## 40. Gate delivery
+
+Four changed files only:
+
+- `packages/scanner/src/discovery/strategies/sql-create-table.ts`
+- `packages/scanner/test/discovery-engine/sql-data-discovery.test.ts`
+- `apps/dashboard/tests/discovery-intake-service.test.ts`
+- This existing Milestone-8 evidence document.
+
+One follow-up commit: `fix(discovery): normalize sql physical identifiers`.
+Push normally to existing PR #29; no amend, force push or merge. The resulting
+commit SHA and remote PR state are reported in the session handoff.
+
+Verdict: **PR29_M8_FINAL_GATE_READY_FOR_MERGE**.
+Merge status: **NOT MERGED**. Production status: **UNTOUCHED**.
+Milestone 9: **NOT STARTED**.

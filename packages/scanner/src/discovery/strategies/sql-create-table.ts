@@ -31,10 +31,18 @@ const RESERVED_NAMES = new Set(`ALL ANALYSE ANALYZE AND ANY ARRAY AS ASC ASYMMET
 const identifier = (token: Token | undefined): token is Token => !!token &&
   (token.kind === 'identifier' || (token.kind === 'word' && !RESERVED_NAMES.has(token.raw.toUpperCase()))) &&
   Buffer.byteLength(token.raw, 'utf8') <= 63;
-const physicalName = (token: Token) => token.kind === 'identifier'
-  ? token.raw.slice(1, -1).replaceAll('""', '"') : token.raw.toLowerCase();
-const tableKey = (name: Token[]) => JSON.stringify(name.map(physicalName));
-const reference = (name: Token[]) => name.map(t => t.raw).join('.');
+/** One physical-name rule for duplicate detection and proposed semantic identity.
+ * Quote only when required to preserve the effective component's exact content;
+ * dots/escaped quotes stay inside their component, never qualification syntax.
+ * Raw spelling belongs to evidence, not to PostgreSQL physical identity.
+ */
+function canonicalIdentifier(token: Token): string {
+  const effective = token.kind === 'identifier'
+    ? token.raw.slice(1, -1).replaceAll('""', '"') : token.raw.toLowerCase();
+  return /^[a-z_][a-z0-9_$]*$/.test(effective) && !RESERVED_NAMES.has(effective.toUpperCase())
+    ? effective : `"${effective.replaceAll('"', '""')}"`;
+}
+const reference = (name: Token[]) => name.map(canonicalIdentifier).join('.');
 
 /** Bounded lexer: comments and quoted bodies never become SQL tokens. */
 function lex(text: string): Token[] {
@@ -232,7 +240,7 @@ function parseTable(tokens: Token[]): Table {
     }
   }
   c.requireSymbol(')');
-  if (!c.done() || !columns.length || new Set(columns.map(col => physicalName(col.name))).size !== columns.length) invalid();
+  if (!c.done() || !columns.length || new Set(columns.map(col => canonicalIdentifier(col.name))).size !== columns.length) invalid();
   return { name, columns, header: head, tokens };
 }
 
@@ -255,14 +263,14 @@ function tables(text: string): Table[] {
   for (const statement of statements) {
     if (!keyword(statement[0], 'CREATE') || !keyword(statement[1], 'TABLE')) continue;
     try {
-      const key = tableKey(header(new Cursor(statement)));
+      const key = reference(header(new Cursor(statement)));
       counts.set(key, (counts.get(key) ?? 0) + 1);
       parsed.push(parseTable(statement));
     } catch { /* Unsupported statement produces no candidate, including no columns. */ }
   }
   // Repeated physical declarations (even identical ones) are ambiguous: no
   // first/latest selection, and no candidate multiplication.
-  return parsed.filter(table => counts.get(tableKey(table.name)) === 1);
+  return parsed.filter(table => counts.get(reference(table.name)) === 1);
 }
 
 export class SqlCreateTableSpecification implements DetectionSpecification {
@@ -282,11 +290,11 @@ export class SqlCreateTableSpecification implements DetectionSpecification {
       if (this.candidateKind === 'DATA_ASSET') return [{ ...base, displayValue: sourceReference,
         lineStart: table.header[0].line, lineEnd: table.header.at(-1)!.line,
         excerpt: table.header.map(t => t.raw).join(' '), dataDeclaration: { sourceReference, statementFingerprint } }];
-      return table.columns.map(col => ({ ...base, displayValue: col.name.raw,
+      return table.columns.map(col => ({ ...base, displayValue: canonicalIdentifier(col.name),
         lineStart: col.name.line, lineEnd: col.type.at(-1)!.line,
         // Minimal token projection: excludes comments/default literals (secrets).
         excerpt: [col.name, ...col.type].map(t => t.raw).join(' '),
-        dataDeclaration: { sourceReference, statementFingerprint, elementPath: col.name.raw } }));
+        dataDeclaration: { sourceReference, statementFingerprint, elementPath: canonicalIdentifier(col.name) } }));
     });
   }
 }

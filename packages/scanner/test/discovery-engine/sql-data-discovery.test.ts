@@ -163,6 +163,61 @@ describe('Strict SQL data discovery: declarations, normalization and M7 identity
     const { candidates } = await scan('CREATE TABLE "A" ("ID" INT); CREATE TABLE "a" ("id" INT);');
     assert.equal(new Set(identities(candidates)).size, 4);
   });
+  for (const [label, left, right, same] of [
+    ['unquoted table case', 'Customer', 'customer', true],
+    ['uppercase table', 'CUSTOMER', 'customer', true],
+    ['unquoted schema and table', 'CRM.Customer', 'crm.customer', true],
+    ['quoted table case', '"Customer"', 'customer', false],
+    ['quoted lowercase table', '"customer"', 'customer', true],
+    ['quoted schema case', '"CRM".Customer', 'crm.customer', false],
+    ['quoted lowercase components', '"crm"."customer"', 'crm.customer', true],
+    ['dot inside one component', '"crm.customer"', 'crm.customer', false],
+    ['qualification boundaries', '"a.b".c', 'a."b.c"', false],
+    ['escaped quote content', '"a""b"', '"a""B"', false],
+  ] as const) {
+    it(`physical identity gate: ${label} agrees with duplicate detection`, async () => {
+      const first = (await scan(`CREATE TABLE ${left} (id INT);`)).candidates;
+      const second = (await scan(`CREATE TABLE ${right} (id INT);`)).candidates;
+      if (same) assert.deepEqual(identities(first), identities(second));
+      else assert.notDeepEqual(identities(first), identities(second));
+      const combined = await scan(`CREATE TABLE ${left} (id INT); CREATE TABLE ${right} (id INT);`);
+      assert.equal(combined.candidates.length, same ? 0 : 4);
+      // The canonical reference is valid SQL and roundtrips component boundaries.
+      const asset = normalized(first)[0].candidate;
+      assert.equal(asset.candidateKind, 'DATA_ASSET');
+      if (asset.candidateKind !== 'DATA_ASSET') throw new Error('missing asset');
+      assert.deepEqual(identities(first), identities((await scan(`CREATE TABLE ${asset.proposedIdentity.sourceReference} (id INT);`)).candidates));
+    });
+  }
+  for (const [left, right, same] of [
+    ['ID', 'id', true], ['"ID"', 'id', false], ['"id"', 'id', true],
+    ['"a.b"', '"a""b"', false],
+  ] as const) {
+    it(`physical identity gate: column ${left} versus ${right}`, async () => {
+      const first = normalized((await scan(`CREATE TABLE t (${left} INT);`)).candidates);
+      const second = normalized((await scan(`CREATE TABLE t (${right} INT);`)).candidates);
+      assert.equal(normalizedObjectIdentity(first[0].candidate), normalizedObjectIdentity(second[0].candidate));
+      const leftIdentity = normalizedObjectIdentity(first[1].candidate, first[1].parentDataAsset);
+      const rightIdentity = normalizedObjectIdentity(second[1].candidate, second[1].parentDataAsset);
+      assert.equal(leftIdentity === rightIdentity, same);
+      const combined = await scan(`CREATE TABLE t (${left} INT, ${right} INT);`);
+      assert.equal(combined.candidates.length, same ? 0 : 3);
+    });
+  }
+  it('physical identity gate: raw evidence spelling is retained independently of effective names', async () => {
+    const first = (await scan('CREATE TABLE CRM.Customer (ID INT);')).candidates;
+    const second = (await scan('CREATE TABLE "crm"."customer" ("id" INT);')).candidates;
+    assert.deepEqual(identities(first), identities(second));
+    assert.equal(first[0].evidence.redactedExcerpt, 'CREATE TABLE CRM . Customer');
+    assert.equal(second[0].evidence.redactedExcerpt, 'CREATE TABLE "crm" . "customer"');
+    assert.equal(first[1].evidence.redactedExcerpt, 'ID INT');
+    assert.equal(second[1].evidence.redactedExcerpt, '"id" INT');
+    assert.notEqual(first[0].evidence.evidenceId, second[0].evidence.evidenceId);
+    const [asset, child] = normalized(first);
+    assert.deepEqual(asset.candidate.proposedIdentity, { sourceReference: 'crm.customer' });
+    assert.equal(child.candidate.candidateKind, 'DATA_ELEMENT');
+    if (child.candidate.candidateKind === 'DATA_ELEMENT') assert.equal(child.candidate.proposedIdentity.elementPath, 'id');
+  });
   it('requires an exact parent, rejecting missing, duplicate, wrong-table and stale-snapshot parents', async () => {
     const { candidates } = await scan('CREATE TABLE t (id INT);');
     const [parent, child] = candidates;
