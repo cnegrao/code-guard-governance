@@ -19,6 +19,7 @@ export { McpServerDeclarationSpecification } from './strategies/mcp-server-decla
 export { ApiDeclarationSpecification } from './strategies/api-declaration';
 export { KnowledgeBaseDeclarationSpecification } from './strategies/knowledge-base-declaration';
 export { SkillListDeclarationSpecification } from './strategies/skill-list-declaration';
+export { SqlCreateTableSpecification } from './strategies/sql-create-table';
 export {
   FRAMEWORK_IMPORT_PATTERNS,
   FrameworkImportSignalSpecification,
@@ -40,6 +41,7 @@ export type {
   ObjectCandidateNormalizationResult,
   ObjectCandidateNormalizationStrategy,
   ObjectNormalizationReasonCode,
+  ObjectNormalizationContext,
 } from './object-candidate-normalization';
 export {
   AgentCandidateNormalizationStrategy,

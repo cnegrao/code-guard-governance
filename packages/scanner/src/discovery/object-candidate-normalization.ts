@@ -7,6 +7,7 @@ import {
   type DiscoveryCandidateKind,
   type NormalizedAgentCandidate,
   type NormalizedApiCandidate,
+  type NormalizedDataAssetCandidate,
   type NormalizedKnowledgeBaseCandidate,
   type NormalizedMcpServerCandidate,
   type NormalizedModelCandidate,
@@ -34,8 +35,7 @@ import type { DiscoveryCandidate } from './evidence-assembly';
  * mirrors). No LLM, no fuzzy matching, no filename guessing.
  *
  * Only the CURRENT production object kinds actually wired into
- * apps/dashboard/lib/governance/discovery-intake.ts (AGENT, AGENT_VERSION,
- * MODEL, TOOL, PROMPT, MCP_SERVER, API, KNOWLEDGE_BASE, SKILL) have a
+ * apps/dashboard/lib/governance/discovery-intake.ts have a
  * registered strategy or an intentional AGENT_VERSION-only fail-closed
  * dispatch (AGENT_VERSION candidates never normalize through this map — see
  * agent-version-correlation.ts, the sole producer of a normalized
@@ -45,10 +45,9 @@ import type { DiscoveryCandidate } from './evidence-assembly';
  * (technical-profile-signal.ts), never a `DiscoveryCandidate` of any kind —
  * see agent-version-correlation.ts for how those signals are folded into
  * the AGENT_VERSION technical revision without ever being normalized here.
- * DATA_ASSET and DATA_ELEMENT remain dormant, with no detector emitting
- * either — they fail closed via the same NOT_SAFELY_NORMALIZABLE outcome
- * rather than being silently normalized the moment a future detector starts
- * producing them.
+ * DATA_ASSET/DATA_ELEMENT accept only supported SQL declaration evidence.
+ * Elements require an unambiguous parent from the same parsed statement and
+ * snapshot; a file or display label alone cannot supply that parent.
  */
 
 export const OBJECT_NORMALIZATION_REASON_CODE = {
@@ -58,6 +57,8 @@ export const OBJECT_NORMALIZATION_REASON_CODE = {
   EMPTY_IDENTITY_VALUE: 'EMPTY_IDENTITY_VALUE',
   /** No normalization strategy exists for this candidateKind (dormant/future kind, or RELATIONSHIP routed here by mistake). */
   UNSUPPORTED_CANDIDATE_KIND: 'UNSUPPORTED_CANDIDATE_KIND',
+  DATA_DECLARATION_NOT_SUPPORTED: 'DATA_DECLARATION_NOT_SUPPORTED',
+  DATA_PARENT_NOT_RESOLVABLE: 'DATA_PARENT_NOT_RESOLVABLE',
 } as const;
 
 export type ObjectNormalizationReasonCode =
@@ -67,6 +68,8 @@ export type ObjectCandidateNormalizationResult =
   | {
       readonly status: 'NORMALIZED';
       readonly candidate: NormalizedObjectCandidate;
+      /** Exact parent resolved by scanner normalization, for intake durability/mapping checks. */
+      readonly parentDataAsset?: NormalizedDataAssetCandidate;
     }
   | {
       readonly status: 'NOT_SAFELY_NORMALIZABLE';
@@ -82,7 +85,11 @@ export type ObjectCandidateNormalizationResult =
  */
 export interface ObjectCandidateNormalizationStrategy {
   readonly candidateKind: CanonicalObjectKind;
-  normalize(candidate: DiscoveryCandidate): ObjectCandidateNormalizationResult;
+  normalize(candidate: DiscoveryCandidate, context?: ObjectNormalizationContext): ObjectCandidateNormalizationResult;
+}
+
+export interface ObjectNormalizationContext {
+  readonly candidates: readonly DiscoveryCandidate[];
 }
 
 function stableSuffix(parts: readonly string[]): string {
@@ -410,6 +417,78 @@ export class SkillCandidateNormalizationStrategy implements ObjectCandidateNorma
   }
 }
 
+function sourceScope(candidate: DiscoveryCandidate): string {
+  const source = candidate.finding.sourceObject;
+  return JSON.stringify([source.connectionId, source.externalType, source.externalId]);
+}
+
+/** Internal consistency boundary for trusted scanner output, not authentication. */
+function hasSqlDeclarationEvidence(candidate: DiscoveryCandidate): boolean {
+  const { finding, assertion, evidence, dataDeclaration: declaration } = candidate;
+  const method = finding.candidateKind === 'DATA_ASSET' ? 'sql-create-table-asset' : 'sql-create-table-element';
+  return !!declaration?.sourceReference.trim() && /^[a-f0-9]{64}$/.test(declaration.statementFingerprint) &&
+    !!finding.sourceObject.connectionId && finding.sourceObject.externalType === 'file' &&
+    finding.sourceObject.externalId.endsWith('.sql') && assertion.method?.code === method &&
+    assertion.method.version === '1.0.0' && assertion.trustState === 'DECLARED' &&
+    assertion.snapshot?.contentHash?.algorithm === 'sha256' && !!assertion.snapshot.contentHash.value &&
+    JSON.stringify(assertion.sourceObject) === JSON.stringify(finding.sourceObject) &&
+    JSON.stringify(assertion.snapshot.sourceObject) === JSON.stringify(finding.sourceObject) &&
+    finding.assertionIds.includes(assertion.assertionId) && finding.evidenceIds.includes(evidence.evidenceId) &&
+    assertion.evidenceIds.includes(evidence.evidenceId) && !!evidence.redactedExcerpt?.trim() &&
+    evidence.hashes.some(hash => hash.algorithm === 'sha256' && hash.value === assertion.snapshot!.contentHash!.value) &&
+    evidence.locations.some(location => location.kind === 'REPOSITORY' &&
+      location.path === finding.sourceObject.externalId && typeof location.lineStart === 'number' && location.lineStart > 0);
+}
+
+class SqlDataCandidateNormalizationStrategy implements ObjectCandidateNormalizationStrategy {
+  constructor(readonly candidateKind: 'DATA_ASSET' | 'DATA_ELEMENT') {}
+  normalize(candidate: DiscoveryCandidate, context?: ObjectNormalizationContext): ObjectCandidateNormalizationResult {
+    const fail = (reasonCode: ObjectNormalizationReasonCode): ObjectCandidateNormalizationResult => ({
+      status: 'NOT_SAFELY_NORMALIZABLE', candidateKind: candidate.finding.candidateKind, reasonCode,
+    });
+    if (!hasSqlDeclarationEvidence(candidate)) return fail(OBJECT_NORMALIZATION_REASON_CODE.DATA_DECLARATION_NOT_SUPPORTED);
+    const declaration = candidate.dataDeclaration!;
+    const base = {
+      candidateId: buildObjectCandidateId(this.candidateKind, candidate.finding.findingId),
+      sourceObject: candidate.finding.sourceObject, findingId: candidate.finding.findingId,
+      assertionIds: candidate.finding.assertionIds, evidenceIds: candidate.finding.evidenceIds,
+      confidence: candidate.finding.confidence, requiresReconciliation: true as const,
+    };
+    if (this.candidateKind === 'DATA_ASSET') {
+      if (declaration.elementPath !== undefined || candidate.displayValue !== declaration.sourceReference) {
+        return fail(OBJECT_NORMALIZATION_REASON_CODE.DATA_DECLARATION_NOT_SUPPORTED);
+      }
+      return { status: 'NORMALIZED', candidate: { ...base, candidateKind: 'DATA_ASSET',
+        proposedIdentity: { sourceReference: declaration.sourceReference } } };
+    }
+    if (!declaration.elementPath?.trim() || candidate.displayValue !== declaration.elementPath) {
+      return fail(OBJECT_NORMALIZATION_REASON_CODE.DATA_DECLARATION_NOT_SUPPORTED);
+    }
+    const parents = (context?.candidates ?? []).filter(parent => parent.finding.candidateKind === 'DATA_ASSET' &&
+      sourceScope(parent) === sourceScope(candidate) &&
+      parent.dataDeclaration?.sourceReference === declaration.sourceReference);
+    // Count before filtering for validity: a second conflicting parent must not
+    // disappear merely because its evidence/statement/snapshot is different.
+    if (parents.length !== 1) return fail(OBJECT_NORMALIZATION_REASON_CODE.DATA_PARENT_NOT_RESOLVABLE);
+    const parent = parents[0];
+    if (parent.dataDeclaration?.statementFingerprint !== declaration.statementFingerprint ||
+      parent.assertion.snapshot?.snapshotId !== candidate.assertion.snapshot?.snapshotId ||
+      parent.assertion.snapshot?.contentHash?.value !== candidate.assertion.snapshot?.contentHash?.value) {
+      return fail(OBJECT_NORMALIZATION_REASON_CODE.DATA_PARENT_NOT_RESOLVABLE);
+    }
+    const result = normalizeObjectCandidate(parent);
+    if (result.status !== 'NORMALIZED' || result.candidate.candidateKind !== 'DATA_ASSET') {
+      return fail(OBJECT_NORMALIZATION_REASON_CODE.DATA_PARENT_NOT_RESOLVABLE);
+    }
+    return { status: 'NORMALIZED', parentDataAsset: result.candidate, candidate: {
+      ...base, candidateKind: 'DATA_ELEMENT', proposedIdentity: {
+        parentDataAsset: { referenceKind: 'CANDIDATE', candidateKind: 'DATA_ASSET', candidateId: result.candidate.candidateId },
+        elementPath: declaration.elementPath,
+      },
+    } };
+  }
+}
+
 const OBJECT_NORMALIZATION_STRATEGIES: ReadonlyMap<CanonicalObjectKind, ObjectCandidateNormalizationStrategy> =
   new Map([
     [CANONICAL_OBJECT_KIND.AGENT, new AgentCandidateNormalizationStrategy()],
@@ -420,19 +499,20 @@ const OBJECT_NORMALIZATION_STRATEGIES: ReadonlyMap<CanonicalObjectKind, ObjectCa
     [CANONICAL_OBJECT_KIND.API, new ApiCandidateNormalizationStrategy()],
     [CANONICAL_OBJECT_KIND.KNOWLEDGE_BASE, new KnowledgeBaseCandidateNormalizationStrategy()],
     [CANONICAL_OBJECT_KIND.SKILL, new SkillCandidateNormalizationStrategy()],
+    [CANONICAL_OBJECT_KIND.DATA_ASSET, new SqlDataCandidateNormalizationStrategy('DATA_ASSET')],
+    [CANONICAL_OBJECT_KIND.DATA_ELEMENT, new SqlDataCandidateNormalizationStrategy('DATA_ELEMENT')],
   ]);
 
 /**
  * Object Candidate Normalization V1 dispatch boundary — the single entry
  * point callers (apps/dashboard's Discovery Intake) should use. Routes a
  * DiscoveryCandidate to the strategy registered for its candidateKind; a
- * kind with no registered strategy (every CanonicalObjectKind besides AGENT/
- * MODEL/TOOL today, and defensively RELATIONSHIP, since this function's input
- * type does not statically exclude it) fails closed rather than fabricating
- * a candidate for a kind no current detector actually produces.
+ * kind with no registered strategy (AGENT_VERSION uses its existing dedicated
+ * correlation producer; RELATIONSHIP is not an object) fails closed.
  */
 export function normalizeObjectCandidate(
   candidate: DiscoveryCandidate,
+  context?: ObjectNormalizationContext,
 ): ObjectCandidateNormalizationResult {
   const { candidateKind } = candidate.finding;
 
@@ -453,5 +533,5 @@ export function normalizeObjectCandidate(
     };
   }
 
-  return strategy.normalize(candidate);
+  return strategy.normalize(candidate, context);
 }

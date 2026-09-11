@@ -77,6 +77,7 @@ export type {
   SourceDescriptor,
 } from './discovery/source-adapter';
 export { LocalRepositoryAdapter } from './discovery/adapters/local-repository-adapter';
+export { SqlCreateTableSpecification } from './discovery/strategies/sql-create-table';
 export type { DetectionMatch, DetectionSpecification } from './discovery/detection-specification';
 export { AgentKindDeclarationSpecification } from './discovery/strategies/agent-kind-declaration';
 export { ModelReferenceDeclarationSpecification } from './discovery/strategies/model-reference-declaration';
@@ -104,6 +105,7 @@ export type {
   ObjectCandidateNormalizationResult,
   ObjectCandidateNormalizationStrategy,
   ObjectNormalizationReasonCode,
+  ObjectNormalizationContext,
 } from './discovery/object-candidate-normalization';
 export {
   AgentCandidateNormalizationStrategy,

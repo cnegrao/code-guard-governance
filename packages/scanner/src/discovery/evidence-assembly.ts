@@ -24,10 +24,12 @@ import {
 
 import type { DetectionMatch, DetectionSpecification } from './detection-specification';
 import type { SourceArtifactContent } from './source-adapter';
+import type { SqlDataDeclaration } from './strategies/sql-create-table';
 import { findBehaviorDeclarationBinding, type BehaviorDeclarationBinding } from './behavior-declaration-binding';
 
 /** One evidence-backed candidate: never governed truth (see DiscoveryFinding). */
 export interface DiscoveryCandidate {
+  readonly dataDeclaration?: SqlDataDeclaration;
   readonly finding: DiscoveryFinding<DiscoveryCandidateKind>;
   readonly assertion: SourceAssertion;
   readonly evidence: Evidence;
@@ -77,6 +79,13 @@ export function assembleDiscoveryCandidate(params: {
     String(match.lineEnd),
     match.displayValue,
   ];
+  // Data declarations retain snapshot-specific evidence/candidate rows when
+  // datatype/default/containment changes at the same location. Semantic object
+  // identity remains sourceReference / parent + elementPath, never this seed.
+  if (match.dataDeclaration) {
+    idSeed.push(artifact.contentHash, match.dataDeclaration.sourceReference,
+      match.dataDeclaration.statementFingerprint, match.dataDeclaration.elementPath ?? '');
+  }
 
   const sanitizedLocator = sanitizeEvidenceLocator(artifact.locator);
   const observed = asIsoTimestamp(observedAt);
@@ -150,6 +159,7 @@ export function assembleDiscoveryCandidate(params: {
     assertion,
     evidence,
     displayValue: match.displayValue,
+    ...(match.dataDeclaration === undefined ? {} : { dataDeclaration: match.dataDeclaration }),
     ...(match.contentFingerprint === undefined ? {} : { contentFingerprint: match.contentFingerprint }),
     ...(behaviorBinding === undefined ? {} : { behaviorBinding }),
   };
