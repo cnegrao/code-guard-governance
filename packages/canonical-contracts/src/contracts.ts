@@ -4492,4 +4492,5 @@ export interface InboundAdapterEnvelope {
   readonly findings: readonly DiscoveryFinding[];
   readonly evidence: readonly Evidence[];
   readonly candidates: readonly NormalizedCandidate[];
+  readonly technicalFacts?: readonly import('./technical-facts.ts').TechnicalFactTransport[];
 }

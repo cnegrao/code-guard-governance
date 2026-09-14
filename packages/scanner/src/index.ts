@@ -1,4 +1,5 @@
 // Core scanner (graphos-complete canonical source of truth)
+export { purviewInbound, parsePurviewEntities, PURVIEW_ADAPTER, PURVIEW_PROVIDER, PURVIEW_TYPE_MAPPING } from './exchange/purview';
 export type {
   DetectedAgent, DetectedRisk, ScannerRequest, ScannerResult,
   PackageAnalysis, ConfigAnalysis, SourceAnalysis, ShadowAIFinding,

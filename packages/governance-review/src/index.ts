@@ -20,6 +20,8 @@ export * from "./materialization-port.ts";
 export * from "./materialization-invocation.ts";
 export * from "./discovery-intake-port.ts";
 export * from "./reconciliation-input-recovery.ts";
+export * from "./technical-facts.ts";
+export * from "./inbound-exchange.ts";
 export * from "./agent-version-technical-profile-port.ts";
 export * from "./semantic-representation-port.ts";
 export * from "./canonical-endpoint-resolution";
