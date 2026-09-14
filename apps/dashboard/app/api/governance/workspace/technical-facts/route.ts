@@ -17,6 +17,6 @@ export async function POST(request: Request) {
   } catch(error) {
     const message = error instanceof Error ? error.message : '';
     return NextResponse.json({error:message.includes('FIELD_AUTHORIZATION_DENIED') ? 'Not authorized.' : 'Field review changed or decision is invalid. Reload and review again.',
-      code:message.includes('FIELD_STALE_SOURCE') ? 'FIELD_STALE_SOURCE' : 'FIELD_DECISION_REJECTED'},{status:message.includes('FIELD_AUTHORIZATION_DENIED') ? 403 : 409});
+      code:message.includes('FIELD_STALE_SOURCE') ? 'FIELD_STALE_SOURCE' : message.includes('FIELD_STALE_POLICY') ? 'FIELD_STALE_POLICY' : 'FIELD_DECISION_REJECTED'},{status:message.includes('FIELD_AUTHORIZATION_DENIED') ? 403 : 409});
   }
 }

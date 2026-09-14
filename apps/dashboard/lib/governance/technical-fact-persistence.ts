@@ -2,13 +2,13 @@ import 'server-only';
 import { asOrganisationId, asCanonicalObjectId, asSourceConnectionId, asSourceSystemId, asExternalId, asIsoTimestamp,
   validateTechnicalFact, type AcquisitionRun, type TechnicalFact, type TechnicalFactProposal, type TechnicalFactObservation, type FieldAuthorityPolicy,
   type FieldReconciliationDecision, type GovernedTechnicalFieldState, type OrganisationId, type TrustedInboundConnection } from '@council/canonical-contracts';
-import { StaleFieldDecisionError, type TechnicalFactPersistencePort, type FieldReviewContext } from '@council/governance-review';
+import { StaleFieldDecisionError, StaleFieldPolicyError, type TechnicalFactPersistencePort, type FieldReviewContext } from '@council/governance-review';
 import { privilegedDb } from './persistence';
 
 // JSON is database transport only. Domain values are reconstructed from the
 // explicit SQL columns; no vendor JSON or arbitrary fact-value column exists.
 type Row = Record<string, any>;
-type Table = 'technical_source_connections' | 'technical_field_policies' | 'technical_fact_proposals' |
+type Table = 'technical_source_connections' | 'technical_field_policies' | 'technical_field_policy_heads' | 'technical_fact_proposals' |
   'technical_fact_observations' | 'technical_fact_observation_assertions' | 'technical_fact_observation_evidence' |
   'technical_fact_source_heads' | 'technical_field_decisions' | 'technical_field_decision_observations' |
   'technical_source_snapshot_heads' |
@@ -19,12 +19,14 @@ async function rows(table: Table, org: OrganisationId, filter: Readonly<Record<s
     let query = privilegedDb.from(table).select('*').eq('organisation_id',org);
     for (const [k,v] of Object.entries(filter)) query = query.eq(k,v);
     // Stable ordering for paging; all these tables have an immutable key.
-    const order = table === 'technical_source_connections' ? 'connection_id' : table === 'technical_field_policies' ? 'policy_id' :
+    const order = table === 'technical_source_connections' ? 'connection_id' : table === 'technical_field_policies' || table === 'technical_field_policy_heads' ? 'policy_id' :
       table === 'technical_fact_observation_assertions' ? 'assertion_id' : table === 'technical_fact_observation_evidence' ? 'evidence_id' :
       table === 'technical_field_decisions' ? 'decision_id' : table === 'technical_field_states' ? 'state_id' :
       table === 'canonical_normalized_object_mappings' ? 'mapping_id' : table === 'canonical_objects' ? 'canonical_object_id' :
       table === 'technical_fact_proposals' ? 'proposal_id' : table === 'technical_source_snapshot_heads' ? 'snapshot_id' : 'observation_id';
-    const { data,error } = await query.order(order).range(start,start+499);
+    query = query.order(order);
+    if (table === 'technical_field_policies') query = query.order('version'); // Paging only, never applicability.
+    const { data,error } = await query.range(start,start+499);
     if (error) throw new Error(`TECHNICAL_FACT_READ_FAILED: ${table}`);
     result.push(...(data ?? [])); if (!data || data.length < 500) return result;
   }
@@ -103,7 +105,9 @@ export const technicalFactPersistence: TechnicalFactPersistencePort = {
       }
     }
     return {proposal,observations:await observations(org,id),canonicalObjects:objects,currentSourceObservationId:sourceHead.observation_id,currentSourceSnapshotId:snapshotHead.snapshot_id,
-      policies:(await rows('technical_field_policies',org,{object_kind:proposal.fact.objectKind,field_key:proposal.fact.field})).map(policy),...(current ? {current}:{})};
+      policies:(await rows('technical_field_policies',org)).map(policy),
+      policyHeads:(await rows('technical_field_policy_heads',org)).map(h=>({organisationId:asOrganisationId(h.organisation_id),policyId:h.policy_id,version:h.version})),
+      ...(current ? {current}:{})};
   },
   async getDecision(org,id) {
     const found=await rows('technical_field_decisions',org,{decision_id:id}); if (!found.length) return undefined;
@@ -121,6 +125,7 @@ export const technicalFactPersistence: TechnicalFactPersistencePort = {
   async recordDecision(decision) {
     const {data,error}=await privilegedDb.rpc('record_technical_field_decision',{p_organisation_id:decision.organisationId,p_decision:decision});
     if (error?.message?.includes('FIELD_STALE_SOURCE')) throw new StaleFieldDecisionError();
+    if (error?.message?.includes('FIELD_STALE_POLICY')) throw new StaleFieldPolicyError();
     if (error) throw new Error(`FIELD_DECISION_FAILED: ${error.message}`);
     const r=one(data??[],'FIELD_DECISION_RESULT_MISSING');
     return {replay:r.replay,...(r.state_id ? {stateId:r.state_id}:{})};

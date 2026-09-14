@@ -21,7 +21,7 @@ export async function importAzureSqlCatalog(json: string, organisationId: Organi
 export async function technicalFieldReviewQueue(org: OrganisationId) {
   return Promise.all((await listTechnicalFactProposalIds(org)).map(async id => {
     const context = await technicalFactPersistence.getReviewContext(org,id);
-    return { ...context, comparison:compareTechnicalFact(context), policy:evaluateFieldAuthority(context.proposal,context.policies),decisions:await technicalFieldDecisionHistory(org,id),
+    return { ...context, comparison:compareTechnicalFact(context), policy:evaluateFieldAuthority(context.proposal,context.policies,context.policyHeads),decisions:await technicalFieldDecisionHistory(org,id),
       isCurrentSource:context.observations.some(o=>o.observationId===context.currentSourceObservationId&&o.snapshotId===context.currentSourceSnapshotId) };
   }));
 }

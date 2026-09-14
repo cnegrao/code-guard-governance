@@ -49,6 +49,12 @@ export interface FieldAuthorityPolicy {
   readonly disposition: FieldAuthorityDisposition;
   readonly deterministicRule?: { readonly code: string; readonly version: string };
 }
+/** Explicit trusted configuration; version strings have no implicit ordering. */
+export interface FieldAuthorityPolicyHead {
+  readonly organisationId: OrganisationId;
+  readonly policyId: string;
+  readonly version: string;
+}
 export interface GovernedTechnicalFieldState {
   readonly stateId: string;
   readonly organisationId: OrganisationId;

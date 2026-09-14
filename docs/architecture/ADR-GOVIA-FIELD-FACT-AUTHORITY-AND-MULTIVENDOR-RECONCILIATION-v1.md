@@ -26,6 +26,32 @@ contributing facts require explicit human approval. Deterministic acceptance is
 limited to an explicitly configured versioned rule, authoritative disposition,
 complete support and no different current value. Conflicts require human review.
 
+The PR #31 final policy-version gate makes applicability explicit: immutable
+versions have identity (organisationId, policyId, version). A separate tenant-local
+head selects exactly one version of each logical policy. This reuses the repository
+pattern of governance_policies.current_version_id and immutable policy_versions;
+those documentary policy tables do not encode technical field/source scope and
+are not repurposed. Version strings have no ordering or automatic activation.
+Trusted server configuration first inserts an immutable version and then explicitly
+inserts/updates technical_field_policy_heads; removing a head deactivates that
+logical policy without deleting history. No adapter or review client can configure
+these heads. Head identity cannot be changed to another tenant or logical policy.
+
+Only pointed versions participate in authority evaluation. Historical versions
+cannot create ambiguity; two distinct applicable current policies still fail
+closed, including overlapping general and connection-specific policies. There is
+no specificity precedence. No rule or authority is inherited from an older version.
+New decisions bind the exact current policyId/version (or explicit absence for
+nonmaterializing outcomes). A changed/missing applicable policy produces
+FIELD_STALE_POLICY before recording any decision or state; acceptance without
+current authority remains forbidden. KEEP_CURRENT, DEFER and REJECT_PROPOSED
+preserve their nonmaterializing semantics and reviewed policy context.
+Head insert/update/delete and new decisions share a tenant-scoped transaction
+lock, including activation of a previously absent or overlapping policy. Completed
+decision replay returns the original durable outcome before current-policy lookup;
+its exact version FK remains valid without reinterpreting history under today's
+policy. Policy activation does not mutate previous versions, decisions or states.
+
 Typed proposals are pre-canonical and retain exact candidate/source/support.
 Only existing M7 exact mappings can resolve a governed subject. Zero mapping
 leaves a pending proposal; ambiguity fails closed. Append-only observations

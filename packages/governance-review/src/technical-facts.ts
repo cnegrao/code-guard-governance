@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { validateTechnicalFact, isTechnicalField, sourceObjectIdentityKey, type TechnicalFactProposal, type TechnicalFactObservation, type TechnicalFactTransport, type FieldAuthorityPolicy, type FieldReconciliationDecision, type GovernedTechnicalFieldState, type CanonicalObjectIdentity, type DataObjectKind, type OrganisationId, type TrustedInboundConnection, type NormalizedObjectCandidate } from '@council/canonical-contracts';
+import { validateTechnicalFact, isTechnicalField, sourceObjectIdentityKey, type TechnicalFactProposal, type TechnicalFactObservation, type TechnicalFactTransport, type FieldAuthorityPolicy, type FieldAuthorityPolicyHead, type FieldReconciliationDecision, type GovernedTechnicalFieldState, type CanonicalObjectIdentity, type DataObjectKind, type OrganisationId, type TrustedInboundConnection, type NormalizedObjectCandidate } from '@council/canonical-contracts';
 import { normalizedObjectIdentity, stableCandidateContent } from './canonical-endpoint-resolution.ts';
 
 export function factDigest(parts: readonly unknown[]): string {
@@ -27,8 +27,15 @@ export function factObservation(proposal: TechnicalFactProposal, observedAt: Tec
   return { observationId: `fact-observation:${factDigest([proposal.proposalId, proposal.candidateId, support])}`,
     organisationId: proposal.organisationId, proposalId: proposal.proposalId, candidateId: proposal.candidateId, support, observedAt };
 }
-export function evaluateFieldAuthority(proposal: TechnicalFactProposal, policies: readonly FieldAuthorityPolicy[]): FieldAuthorityPolicy | undefined {
-  const matches = policies.filter(p => p.organisationId === proposal.organisationId && p.objectKind === proposal.fact.objectKind &&
+export function evaluateFieldAuthority(proposal: TechnicalFactProposal, policies: readonly FieldAuthorityPolicy[], heads: readonly FieldAuthorityPolicyHead[]): FieldAuthorityPolicy | undefined {
+  const localHeads = heads.filter(h => h.organisationId === proposal.organisationId);
+  if (new Set(localHeads.map(h => h.policyId)).size !== localHeads.length) throw new TypeError('FIELD_POLICY_HEAD_AMBIGUOUS');
+  const currentPolicies = localHeads.map(h => {
+    const versions = policies.filter(p => p.organisationId === h.organisationId && p.policyId === h.policyId && p.version === h.version);
+    if (!h.policyId || !h.version || versions.length !== 1) throw new TypeError('FIELD_POLICY_HEAD_INVALID');
+    return versions[0];
+  });
+  const matches = currentPolicies.filter(p => p.objectKind === proposal.fact.objectKind &&
     p.field === proposal.fact.field && p.sourceSystemId === proposal.sourceSystem.sourceSystemId &&
     p.providerCode === proposal.sourceSystem.provider.providerCode && (!p.connectionId || p.connectionId === proposal.sourceObject.connectionId));
   if (matches.length > 1) throw new TypeError('FIELD_POLICY_AMBIGUOUS');
@@ -43,6 +50,7 @@ export interface FieldReviewContext {
   readonly observations: readonly TechnicalFactObservation[];
   readonly canonicalObjects: readonly CanonicalObjectIdentity<DataObjectKind>[];
   readonly policies: readonly FieldAuthorityPolicy[];
+  readonly policyHeads: readonly FieldAuthorityPolicyHead[];
   readonly current?: GovernedTechnicalFieldState;
   readonly currentSourceObservationId: string;
   readonly currentSourceSnapshotId: string;
@@ -50,6 +58,10 @@ export interface FieldReviewContext {
 export class StaleFieldDecisionError extends Error {
   readonly code = 'FIELD_STALE_SOURCE';
   constructor() { super('FIELD_STALE_SOURCE'); }
+}
+export class StaleFieldPolicyError extends Error {
+  readonly code = 'FIELD_STALE_POLICY';
+  constructor() { super('FIELD_STALE_POLICY'); }
 }
 export function resolveFactObject(context: FieldReviewContext): CanonicalObjectIdentity<DataObjectKind> | undefined {
   if (context.canonicalObjects.length > 1) throw new TypeError('FACT_MAPPING_AMBIGUOUS');
@@ -96,13 +108,13 @@ export async function reconcileTechnicalFact(decision: FieldReconciliationDecisi
       !ctx.observations.some(o=>o.observationId===decision.expectedSourceObservationId && o.snapshotId===decision.expectedSourceSnapshotId)) throw new StaleFieldDecisionError();
   if (decision.expectedCurrentStateId !== ctx.current?.stateId) throw new TypeError('FIELD_STALE_STATE');
   const object = resolveFactObject(ctx);
-  const policy = evaluateFieldAuthority(ctx.proposal, ctx.policies);
+  const policy = evaluateFieldAuthority(ctx.proposal, ctx.policies, ctx.policyHeads);
+  if (decision.policyId !== policy?.policyId || decision.policyVersion !== policy?.version) throw new StaleFieldPolicyError();
   if (!object || ctx.proposal.organisationId !== decision.organisationId || ctx.proposal.proposalId !== decision.proposalId ||
     decision.canonicalObject.organisationId !== decision.organisationId || object.objectId !== decision.canonicalObject.objectId ||
     object.kind !== decision.canonicalObject.kind || decision.field !== ctx.proposal.fact.field ||
     !['ACCEPT_PROPOSED','KEEP_CURRENT','DEFER','REJECT_PROPOSED'].includes(decision.outcome) ||
     !decision.decisionId || !Number.isFinite(Date.parse(decision.decidedAt)) ||
-    decision.policyId !== policy?.policyId || decision.policyVersion !== policy?.version ||
     !decision.observationIds.length || new Set(decision.observationIds).size !== decision.observationIds.length ||
     decision.observationIds.some(id => !ctx.observations.some(o => o.observationId === id && o.proposalId === decision.proposalId &&
       o.organisationId === decision.organisationId && o.support.assertionIds.length && o.support.evidenceIds.length))) throw new TypeError('FIELD_DECISION_CONTEXT_MISMATCH');

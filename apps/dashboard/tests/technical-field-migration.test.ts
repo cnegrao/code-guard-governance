@@ -10,7 +10,7 @@ test('one additive migration uses closed typed value columns and immutable propo
 });
 test('all new tables enable RLS, revoke public clients and explicitly scope service permissions',()=>{
   const tables=[...sql.matchAll(/create table gov_repo\.(\w+)/g)].map(m=>m[1]);
-  assert.equal(tables.length,12);
+  assert.equal(tables.length,13);
   for(const table of tables){assert.ok(sql.includes(`alter table gov_repo.${table} enable row level security`));assert.ok(sql.includes(`revoke all on gov_repo.${table} from public, anon, authenticated`));}
   assert.doesNotMatch(sql,/security definer/i);assert.match(sql,/security invoker set search_path = 'gov_repo', 'pg_catalog'/);
   assert.match(sql,/revoke all on function gov_repo.technical_field_valid, gov_repo.record_technical_fact, gov_repo.record_technical_field_decision from public, anon, authenticated/);
@@ -27,7 +27,7 @@ test('source/candidate/evidence substitution fails closed before proposal insert
 test('source and canonical stale guards are inside the atomic decision transaction',()=>{
   const d=sql.slice(sql.indexOf('create function gov_repo.record_technical_field_decision'));
   const write=d.indexOf('insert into gov_repo.technical_field_decisions');
-  assert.ok(d.indexOf('pg_advisory_xact_lock')<write);for(const guard of ['FIELD_STALE_SOURCE','FIELD_STALE_STATE','FIELD_SUBJECT_SUBSTITUTION','FIELD_POLICY_MISMATCH','FIELD_OBSERVATION_SUBSTITUTION'])assert.ok(d.indexOf(guard)<write);
+  assert.ok(d.indexOf('pg_advisory_xact_lock')<write);for(const guard of ['FIELD_STALE_SOURCE','FIELD_STALE_STATE','FIELD_SUBJECT_SUBSTITUTION','FIELD_STALE_POLICY','FIELD_OBSERVATION_SUBSTITUTION'])assert.ok(d.indexOf(guard)<write);
   assert.match(d,/h.snapshot_id = d.expected_source_snapshot_id/);assert.match(d,/sa.snapshot_id = d.expected_source_snapshot_id/);
   assert.match(d,/current_state.state_id is distinct from d.expected_current_state_id/);
 });
@@ -48,4 +48,42 @@ test('accepted state is append-only, previous state unique, all other decisions 
   assert.match(sql,/if d.outcome = 'ACCEPT_PROPOSED' then[\s\S]*insert into gov_repo.technical_field_states/);
   assert.match(sql,/foreign key \(organisation_id, previous_state_id\) references gov_repo.technical_field_states/);
   assert.doesNotMatch(sql,/update gov_repo.technical_field_states/);
+});
+
+test('one logical policy durably supports multiple immutable versions and exact historical decision FKs',()=>{
+  const table=sql.slice(sql.indexOf('create table gov_repo.technical_field_policies'),sql.indexOf('create table gov_repo.technical_field_policy_heads'));
+  assert.match(table,/primary key \(organisation_id, policy_id, version\)/);
+  assert.doesNotMatch(table,/(?:primary key|unique) \(organisation_id, policy_id\)/);
+  assert.match(sql,/grant select, insert on gov_repo.technical_field_policies to service_role/);
+  assert.match(sql,/technical_field_policies_no_update as on update[^;]*do instead nothing/);
+  assert.match(sql,/technical_field_policies_no_delete as on delete[^;]*do instead nothing/);
+  assert.match(sql,/foreign key \(organisation_id, policy_id, policy_version\) references gov_repo.technical_field_policies\(organisation_id, policy_id, version\)/);
+});
+
+test('explicit tenant-scoped head references an exact version and never infers version order',()=>{
+  const head=sql.slice(sql.indexOf('create table gov_repo.technical_field_policy_heads'),sql.indexOf('create function gov_repo.lock_technical_field_policy_head'));
+  assert.match(head,/primary key \(organisation_id, policy_id\)/);
+  assert.match(head,/foreign key \(organisation_id, policy_id, version\)\s+references gov_repo.technical_field_policies\(organisation_id, policy_id, version\)/);
+  const d=sql.slice(sql.indexOf('create function gov_repo.record_technical_field_decision'));
+  assert.equal([...d.matchAll(/join gov_repo.technical_field_policy_heads ph on ph.organisation_id = pol.organisation_id and ph.policy_id = pol.policy_id and ph.version = pol.version/g)].length,2);
+  assert.doesNotMatch(d,/max\(.*version|order by.*version/i);
+});
+
+test('activation, deactivation and first head insertion serialize with new decisions, including missing-policy races',()=>{
+  assert.match(sql,/before insert or update or delete\s+on gov_repo.technical_field_policy_heads/);
+  assert.match(sql,/new.organisation_id is distinct from old.organisation_id[\s\S]*FIELD_POLICY_HEAD_IDENTITY_IMMUTABLE/);
+  assert.match(sql,/array\[tenant::text,'technical-field-policy-heads'\]/);
+  const d=sql.slice(sql.indexOf('create function gov_repo.record_technical_field_decision'));
+  const lock=d.indexOf("array[p_organisation_id::text,'technical-field-policy-heads']");
+  assert.ok(lock>0&&lock<d.indexOf('select count(*) into policy_count'));
+  assert.ok(d.indexOf('FIELD_STALE_POLICY')<d.indexOf('insert into gov_repo.technical_field_decisions'));
+});
+
+test('completed replay precedes current-policy lookup and acceptance uses only the exact current rule',()=>{
+  const d=sql.slice(sql.indexOf('create function gov_repo.record_technical_field_decision'));
+  assert.ok(d.indexOf('return;',d.indexOf('FIELD_DECISION_REPLAY_CONFLICT'))<d.indexOf('select count(*) into policy_count'));
+  assert.match(d,/policy.policy_id is distinct from d.policy_id or policy.version is distinct from d.policy_version then raise exception 'FIELD_STALE_POLICY'/);
+  assert.match(d,/policy.rule_code is distinct from d.actor_reference or policy.rule_version is distinct from d.rule_version/);
+  assert.match(d,/if policy_count > 1 then raise exception 'FIELD_POLICY_AMBIGUOUS'/);
+  assert.match(d,/pol.connection_id is null or pol.connection_id = p.connection_id/);
 });

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {before,beforeEach,mock,test} from 'node:test';
 import {asOrganisationId} from '@council/canonical-contracts';
+import {evaluateFieldAuthority,StaleFieldPolicyError} from '@council/governance-review';
 type Row=Record<string,any>;
 const org=asOrganisationId('11111111-1111-1111-1111-111111111111'),foreign=asOrganisationId('22222222-2222-2222-2222-222222222222');
 let tables:Record<string,Row[]>={},calls:{table:string;filters:[string,unknown][]}[]=[],rpcResult:Row={data:[],error:null},rpcCalls:Row[]=[];
@@ -20,7 +21,7 @@ beforeEach(()=>{
     technical_fact_observation_evidence:[row({observation_id:'o1',evidence_id:'e1'}),row({observation_id:'o2',evidence_id:'e2'})],
     technical_fact_source_heads:[row({connection_id:'connection:catalog',external_type:'azure_sql_column',external_id:'guid:column',object_kind:'DATA_ELEMENT',field_key:'dataType.nativeType',observation_id:'o2'})],
     technical_source_snapshot_heads:[row({connection_id:'connection:catalog',external_type:'azure_sql_column',external_id:'guid:column',snapshot_id:'snapshot:2'})],
-    technical_field_policies:[],canonical_normalized_object_mappings:[],canonical_objects:[],technical_field_states:[],technical_field_decisions:[],technical_field_decision_observations:[]};
+    technical_field_policies:[],technical_field_policy_heads:[],canonical_normalized_object_mappings:[],canonical_objects:[],technical_field_states:[],technical_field_decisions:[],technical_field_decision_observations:[]};
 });
 test('tenant-bound rehydration exposes immutable origin, both observations and current snapshot without authority',async()=>{
   const ctx=await persistence.technicalFactPersistence.getReviewContext(org,'p1');assert.equal(ctx.proposal.fact.value,'varchar(100)');assert.equal(ctx.proposal.trustState,'IMPORTED');
@@ -53,4 +54,36 @@ test('decision RPC preserves exact reviewed input and translates SQL source-stal
 test('acquisition wrapper delegates to additive replay gate, preserving run and tenant',async()=>{
   rpcResult={data:[{replay:true,run_id:'r',status:'SUCCEEDED'}],error:null};const r={runId:'r'} as never;
   const result=await persistence.startExchangeAcquisitionRun(org,r);assert.equal(result.replay,true);assert.equal(rpcCalls[0].name,'start_exchange_acquisition_run');assert.equal(rpcCalls[0].args.p_organisation_id,org);
+});
+
+test('persisted v1 and v2 rehydrate separately while explicit head selects current v2',async()=>{
+  const v1={organisation_id:org,policy_id:'P',version:'v1',object_kind:'DATA_ELEMENT',field_key:'dataType.nativeType',source_system_id:'system:catalog',provider_code:'microsoft-purview',disposition:'AUTHORITATIVE',rule_code:'old-rule',rule_version:'1'};
+  const v2={...v1,version:'v2',rule_code:null,rule_version:null};tables.technical_field_policies=[v1,v2];
+  tables.technical_field_policy_heads=[{organisation_id:org,policy_id:'P',version:'v2'}];
+  const ctx=await persistence.technicalFactPersistence.getReviewContext(org,'p1');assert.equal(ctx.policies.length,2);
+  const current=evaluateFieldAuthority(ctx.proposal,ctx.policies,ctx.policyHeads);assert.equal(current?.version,'v2');assert.equal(current?.deterministicRule,undefined);
+  assert.equal(ctx.policies.find(p=>p.version==='v1')?.deterministicRule?.code,'old-rule');assert.deepEqual(tables.technical_field_policies,[v1,v2]);
+});
+
+test('foreign version and current pointer are excluded from local persistence reads',async()=>{
+  tables.technical_field_policies=[{organisation_id:foreign,policy_id:'P',version:'v2'}];
+  tables.technical_field_policy_heads=[{organisation_id:foreign,policy_id:'P',version:'v2'}];
+  const ctx=await persistence.technicalFactPersistence.getReviewContext(org,'p1');assert.deepEqual(ctx.policies,[]);assert.deepEqual(ctx.policyHeads,[]);
+  assert.equal(evaluateFieldAuthority(ctx.proposal,ctx.policies,ctx.policyHeads),undefined);
+  assert.ok(calls.filter(c=>c.table.startsWith('technical_field_polic')).every(c=>c.filters.some(([k,v])=>k==='organisation_id'&&v===org)));
+});
+
+test('historical decision rehydration retains its durable policy version without reading current heads',async()=>{
+  tables.technical_field_policy_heads=[{organisation_id:org,policy_id:'P',version:'v2'}];
+  tables.technical_field_decisions=[{organisation_id:org,decision_id:'d1',canonical_object_id:'canonical:column',object_kind:'DATA_ELEMENT',field_key:'dataType.nativeType',proposal_id:'p1',expected_source_observation_id:'o1',expected_source_snapshot_id:'snapshot:1',policy_id:'P',policy_version:'v1',outcome:'DEFER',actor_kind:'HUMAN',actor_reference:'reviewer',decided_at:'2026-09-11T00:00:00Z'}];
+  tables.technical_field_decision_observations=[{organisation_id:org,decision_id:'d1',observation_id:'o1'}];
+  const result=await persistence.technicalFactPersistence.getDecision(org,'d1');assert.equal(result?.decision.policyVersion,'v1');
+  assert.ok(!calls.some(c=>c.table==='technical_field_policy_heads'||c.table==='technical_field_policies'));
+});
+
+test('SQL policy-stale result preserves reviewed input and becomes a typed reload failure',async()=>{
+  const d={organisationId:org,decisionId:'d',policyId:'P',policyVersion:'v1'} as never;
+  rpcResult={data:null,error:{message:'FIELD_STALE_POLICY'}};
+  await assert.rejects(persistence.technicalFactPersistence.recordDecision(d),StaleFieldPolicyError);
+  assert.deepEqual(rpcCalls[0].args.p_decision,d);
 });

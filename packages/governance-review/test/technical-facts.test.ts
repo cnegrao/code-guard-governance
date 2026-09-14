@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import {asOrganisationId,asSourceSystemId,asSourceConnectionId,asIsoTimestamp,asCanonicalObjectId,validateTechnicalFact,type TrustedInboundConnection,
-  type TechnicalFactProposal,type TechnicalFactObservation,type FieldAuthorityPolicy,type FieldReconciliationDecision,type GovernedTechnicalFieldState,type NormalizedObjectCandidate,type InboundAdapterEnvelope} from '@council/canonical-contracts';
+  type TechnicalFactProposal,type TechnicalFactObservation,type FieldAuthorityPolicy,type FieldAuthorityPolicyHead,type FieldReconciliationDecision,type GovernedTechnicalFieldState,type NormalizedObjectCandidate,type InboundAdapterEnvelope} from '@council/canonical-contracts';
 import {purviewInbound,PURVIEW_ADAPTER} from '../../scanner/src/exchange/purview';
-import {bindTechnicalFact,factObservation,evaluateFieldAuthority,compareTechnicalFact,reconcileTechnicalFact,StaleFieldDecisionError,type TechnicalFactPersistencePort,type FieldReviewContext} from '../src/technical-facts';
+import {bindTechnicalFact,factObservation,evaluateFieldAuthority,compareTechnicalFact,reconcileTechnicalFact,StaleFieldDecisionError,StaleFieldPolicyError,type TechnicalFactPersistencePort,type FieldReviewContext} from '../src/technical-facts';
 import {validateInboundExchange,intakeInboundExchange,type InboundExchangePorts} from '../src/inbound-exchange';
 const org=asOrganisationId('11111111-1111-1111-1111-111111111111'),foreign=asOrganisationId('99999999-9999-9999-9999-999999999999');
 const cfg:TrustedInboundConnection={organisationId:org,sourceSystem:{sourceSystemId:asSourceSystemId('system:purview'),family:'CATALOG',displayName:'Purview',provider:{providerCode:'microsoft-purview',resolution:'EXPLICIT'}},connection:{connectionId:asSourceConnectionId('connection:purview'),sourceSystemId:asSourceSystemId('system:purview')}};
@@ -18,6 +18,7 @@ class Store implements TechnicalFactPersistencePort {
   proposals=new Map<string,TechnicalFactProposal>(); observations=new Map<string,TechnicalFactObservation>();
   decisions=new Map<string,FieldReconciliationDecision>();states:GovernedTechnicalFieldState[]=[];head='';snapshot='snapshot:1';mapped=true;
   policies:FieldAuthorityPolicy[]=[{organisationId:org,policyId:'policy:datatype',version:'1',objectKind:'DATA_ELEMENT',field:'dataType.nativeType',sourceSystemId:cfg.sourceSystem.sourceSystemId,providerCode:'microsoft-purview',disposition:'AUTHORITATIVE'}];
+  policyHeads:FieldAuthorityPolicyHead[]=[{organisationId:org,policyId:'policy:datatype',version:'1'}];
   async recordProposal(p:TechnicalFactProposal,o:TechnicalFactObservation) {
     if(p.organisationId!==org||o.organisationId!==org||o.proposalId!==p.proposalId)throw Error('TENANT');
     if(!this.proposals.has(p.proposalId))this.proposals.set(p.proposalId,structuredClone(p));
@@ -25,7 +26,7 @@ class Store implements TechnicalFactPersistencePort {
   }
   async getReviewContext(tenant:typeof org,id:string):Promise<FieldReviewContext>{
     if(tenant!==org||!this.proposals.has(id))throw Error('NOT_FOUND');
-    return {proposal:this.proposals.get(id)!,observations:[...this.observations.values()].filter(o=>o.proposalId===id),canonicalObjects:this.mapped?[object]:[],policies:this.policies,
+    return {proposal:this.proposals.get(id)!,observations:[...this.observations.values()].filter(o=>o.proposalId===id),canonicalObjects:this.mapped?[object]:[],policies:this.policies,policyHeads:this.policyHeads,
       currentSourceObservationId:this.head,currentSourceSnapshotId:this.snapshot,...(this.states.length?{current:this.states.at(-1)!}:{})};
   }
   async getDecision(tenant:typeof org,id:string){if(tenant!==org)throw Error('TENANT');const decision=this.decisions.get(id);return decision?{decision,...(this.states.find(s=>s.decisionId===id)?{stateId:this.states.find(s=>s.decisionId===id)!.stateId}:{})}:undefined;}
@@ -33,6 +34,8 @@ class Store implements TechnicalFactPersistencePort {
     // Storage emulates the independent SQL transaction guards; no adapter truth port.
     if(d.expectedSourceObservationId!==this.head||d.expectedSourceSnapshotId!==this.snapshot)throw new StaleFieldDecisionError();
     if(d.expectedCurrentStateId!==this.states.at(-1)?.stateId)throw Error('FIELD_STALE_STATE');
+    const policy=evaluateFieldAuthority(this.proposals.get(d.proposalId)!,this.policies,this.policyHeads);
+    if(d.policyId!==policy?.policyId||d.policyVersion!==policy?.version)throw new StaleFieldPolicyError();
     this.decisions.set(d.decisionId,structuredClone(d));
     if(d.outcome==='ACCEPT_PROPOSED'){
       const state:GovernedTechnicalFieldState={organisationId:org,stateId:`state:${d.decisionId}`,canonicalObject:object,fact:this.proposals.get(d.proposalId)!.fact,
@@ -42,10 +45,10 @@ class Store implements TechnicalFactPersistencePort {
   }
 }
 async function setup(){const s=new Store(),p=proposal();await s.recordProposal(p,factObservation(p,time));return {s,p};}
-function decision(s:Store,p:TechnicalFactProposal,id='decision:1'):FieldReconciliationDecision{return {decisionId:id,organisationId:org,canonicalObject:object,field:p.fact.field,proposalId:p.proposalId,
+function decision(s:Store,p:TechnicalFactProposal,id='decision:1'):FieldReconciliationDecision{const policy=evaluateFieldAuthority(p,s.policies,s.policyHeads);return {decisionId:id,organisationId:org,canonicalObject:object,field:p.fact.field,proposalId:p.proposalId,
   observationIds:[...s.observations.values()].filter(o=>o.proposalId===p.proposalId).map(o=>o.observationId).sort(),expectedSourceObservationId:s.head,
   expectedSourceSnapshotId:s.snapshot,
-  ...(s.states.length?{expectedCurrentStateId:s.states.at(-1)!.stateId}:{}),policyId:s.policies[0]?.policyId,policyVersion:s.policies[0]?.version,
+  ...(s.states.length?{expectedCurrentStateId:s.states.at(-1)!.stateId}:{}),policyId:policy?.policyId,policyVersion:policy?.version,
   outcome:'ACCEPT_PROPOSED',actor:{authorityKind:'HUMAN',actorReference:'reviewer:1'},decidedAt:time};}
 test('semantic proposal ignores observation version and support; changed value is distinct',()=>{
   const a=proposal(),b=proposal(env(2)),c=proposal(env(3,'nvarchar'));
@@ -59,13 +62,94 @@ test('exact replay and same-value changed snapshot retain immutable origin and b
   const head=s.head;await s.recordProposal(p,factObservation(p,time));assert.equal(s.head,head);
 });
 test('field authority is source and field specific; mapping conveys no authority',async()=>{
-  const {s,p}=await setup();assert.equal(evaluateFieldAuthority(p,s.policies)?.disposition,'AUTHORITATIVE');
-  assert.equal(evaluateFieldAuthority({...p,fact:{objectKind:'DATA_ELEMENT',field:'technicalName',value:'reference'}},s.policies),undefined);
-  assert.equal(evaluateFieldAuthority({...p,sourceSystem:{...p.sourceSystem,sourceSystemId:asSourceSystemId('other')}},s.policies),undefined);
-  assert.equal(evaluateFieldAuthority(p,[{...s.policies[0],connectionId:'unrelated'}]),undefined);
+  const {s,p}=await setup();assert.equal(evaluateFieldAuthority(p,s.policies,s.policyHeads)?.disposition,'AUTHORITATIVE');
+  assert.equal(evaluateFieldAuthority({...p,fact:{objectKind:'DATA_ELEMENT',field:'technicalName',value:'reference'}},s.policies,s.policyHeads),undefined);
+  assert.equal(evaluateFieldAuthority({...p,sourceSystem:{...p.sourceSystem,sourceSystemId:asSourceSystemId('other')}},s.policies,s.policyHeads),undefined);
+  assert.equal(evaluateFieldAuthority(p,[{...s.policies[0],connectionId:'unrelated'}],s.policyHeads),undefined);
   assert.equal(p.trustState,'IMPORTED');
 });
-test('policy ambiguity fails closed without precedence',async()=>{const {s,p}=await setup();assert.throws(()=>evaluateFieldAuthority(p,[s.policies[0],{...s.policies[0],policyId:'second'}]),/AMBIGUOUS/);});
+test('policy ambiguity fails closed without precedence',async()=>{const {s,p}=await setup();assert.throws(()=>evaluateFieldAuthority(p,[s.policies[0],{...s.policies[0],policyId:'second'}],[...s.policyHeads,{...s.policyHeads[0],policyId:'second'}]),/AMBIGUOUS/);});
+
+test('immutable versions coexist; only an explicit head selects authority, independent of ordering',async()=>{
+  const {s,p}=await setup(),v1=structuredClone(s.policies[0]);
+  s.policies.push({...v1,version:'2',disposition:'NON_AUTHORITATIVE'});
+  assert.equal(evaluateFieldAuthority(p,s.policies,s.policyHeads)?.version,'1');
+  s.policies.reverse();assert.equal(evaluateFieldAuthority(p,s.policies,s.policyHeads)?.version,'1');
+  s.policyHeads=[{organisationId:org,policyId:v1.policyId,version:'2'}];
+  assert.equal(evaluateFieldAuthority(p,s.policies,s.policyHeads)?.disposition,'NON_AUTHORITATIVE');
+  assert.deepEqual(s.policies.find(x=>x.version==='1'),v1);
+  assert.equal(s.states.length,0);assert.equal(s.decisions.size,0);
+});
+
+test('v1 completed decision replays unchanged after v2 activation; new decision binds v2',async()=>{
+  const {s,p}=await setup(),d=decision(s,p);await reconcileTechnicalFact(d,s,auth);
+  const history=structuredClone({decisions:[...s.decisions.values()],states:s.states});
+  s.policies.push({...s.policies[0],version:'2'});s.policyHeads=[{...s.policyHeads[0],version:'2'}];
+  assert.equal((await reconcileTechnicalFact(d,s,auth)).replay,true);
+  assert.deepEqual({decisions:[...s.decisions.values()],states:s.states},history);
+  const next=decision(s,p,'v2-decision');assert.equal(next.policyVersion,'2');await reconcileTechnicalFact(next,s,auth);
+  assert.equal(s.decisions.get(d.decisionId)?.policyVersion,'1');assert.equal(s.decisions.get(next.decisionId)?.policyVersion,'2');
+  await assert.rejects(reconcileTechnicalFact({...d,policyVersion:'2'},s,auth),/REPLAY_CONFLICT/);
+});
+
+test('pending v1 review is stale after explicit v2 activation, even with unchanged authority',async()=>{
+  const {s,p}=await setup(),d=decision(s,p);s.policies.push({...s.policies[0],version:'2'});s.policyHeads=[{...s.policyHeads[0],version:'2'}];
+  await assert.rejects(reconcileTechnicalFact(d,s,auth),StaleFieldPolicyError);
+  assert.equal(s.decisions.size,0);assert.equal(s.states.length,0);assert.equal(d.policyVersion,'1');
+});
+
+test('policy activation between application validation and durable write is rejected',async()=>{
+  const {s,p}=await setup(),original=s.recordDecision.bind(s);s.policies.push({...s.policies[0],version:'2'});
+  s.recordDecision=async d=>{s.policyHeads=[{...s.policyHeads[0],version:'2'}];return original(d);};
+  await assert.rejects(reconcileTechnicalFact(decision(s,p),s,auth),StaleFieldPolicyError);assert.equal(s.states.length,0);
+});
+
+test('v1 deterministic rule is not inherited by current v2',async()=>{
+  const {s,p}=await setup();s.policies=[{...s.policies[0],deterministicRule:{code:'safe-import',version:'rule-v1'}}];
+  const machine={authorityKind:'DETERMINISTIC_RULE' as const,ruleCode:'safe-import',ruleVersion:'rule-v1'};
+  const old={...decision(s,p),actor:machine};await reconcileTechnicalFact(old,s,auth);
+  const {deterministicRule:unused,...base}=s.policies[0];s.policies.push({...base,version:'2'});s.policyHeads=[{...s.policyHeads[0],version:'2'}];
+  assert.equal((await reconcileTechnicalFact(old,s,auth)).replay,true);
+  await assert.rejects(reconcileTechnicalFact({...decision(s,p,'new-rule'),actor:machine},s,auth),/FIELD_MACHINE_AUTHORITY_FORBIDDEN/);
+  assert.equal(s.states.length,1);
+});
+
+test('missing head denies acceptance even when immutable authoritative versions exist',async()=>{
+  const {s,p}=await setup(),old=decision(s,p);s.policyHeads=[];
+  assert.equal(evaluateFieldAuthority(p,s.policies,s.policyHeads),undefined);
+  await assert.rejects(reconcileTechnicalFact(old,s,auth),StaleFieldPolicyError);
+  await assert.rejects(reconcileTechnicalFact(decision(s,p),s,auth),/FIELD_NOT_AUTHORITATIVE/);
+});
+
+test('foreign policy versions and heads cannot confer or change local authority',async()=>{
+  const {s,p}=await setup();const foreignPolicy={...s.policies[0],organisationId:foreign,version:'2',disposition:'NON_AUTHORITATIVE' as const};
+  s.policies.push(foreignPolicy);s.policyHeads.push({organisationId:foreign,policyId:foreignPolicy.policyId,version:'2'});
+  assert.equal(evaluateFieldAuthority(p,s.policies,s.policyHeads)?.version,'1');
+  s.policyHeads=[{organisationId:org,policyId:foreignPolicy.policyId,version:'2'}];
+  assert.throws(()=>evaluateFieldAuthority(p,s.policies,s.policyHeads),/FIELD_POLICY_HEAD_INVALID/);
+  s.policyHeads=[{organisationId:foreign,policyId:foreignPolicy.policyId,version:'2'}];
+  await assert.rejects(reconcileTechnicalFact(decision(s,p),s,auth),/FIELD_NOT_AUTHORITATIVE/);
+});
+
+test('general and connection-specific current policies remain ambiguous; inactive versions do not compete',async()=>{
+  const {s,p}=await setup();s.policies.push({...s.policies[0],version:'2',connectionId:cfg.connection.connectionId});
+  assert.equal(evaluateFieldAuthority(p,s.policies,s.policyHeads)?.version,'1');
+  s.policies.push({...s.policies[0],policyId:'specific',connectionId:cfg.connection.connectionId});
+  s.policyHeads.push({organisationId:org,policyId:'specific',version:'1'});
+  assert.throws(()=>evaluateFieldAuthority(p,s.policies,s.policyHeads),/FIELD_POLICY_AMBIGUOUS/);
+});
+
+for(const outcome of ['KEEP_CURRENT','DEFER','REJECT_PROPOSED'] as const)test(`${outcome} binds current policy, preserves v1 replay and supports explicit policy absence`,async()=>{
+  const {s,p}=await setup();await reconcileTechnicalFact(decision(s,p,'initial'),s,auth);
+  const old={...decision(s,p,'old-outcome'),outcome};await reconcileTechnicalFact(old,s,auth);
+  const pending={...decision(s,p,'pending'),outcome};s.policies.push({...s.policies[0],version:'2'});s.policyHeads=[{...s.policyHeads[0],version:'2'}];
+  assert.equal((await reconcileTechnicalFact(old,s,auth)).replay,true);
+  await assert.rejects(reconcileTechnicalFact(pending,s,auth),StaleFieldPolicyError);
+  await reconcileTechnicalFact({...decision(s,p,'new-outcome'),outcome},s,auth);
+  assert.equal(s.decisions.get('new-outcome')?.policyVersion,'2');
+  s.policyHeads=[];await reconcileTechnicalFact({...decision(s,p,'no-policy'),outcome},s,auth);
+  assert.equal(s.decisions.get('no-policy')?.policyId,undefined);assert.equal(s.states.length,1);
+});
 test('unmapped proposal stays pending; ambiguous and foreign canonical targets rejected',async()=>{
   const {s,p}=await setup();s.mapped=false;assert.equal(compareTechnicalFact(await s.getReviewContext(org,p.proposalId)).status,'UNMAPPED');await assert.rejects(reconcileTechnicalFact(decision(s,p),s,auth));
   const context=await s.getReviewContext(org,p.proposalId);assert.throws(()=>compareTechnicalFact({...context,canonicalObjects:[object,object]}),/AMBIGUOUS/);
@@ -110,7 +194,7 @@ test('new snapshot omitting the reviewed field invalidates old and silently refr
   assert.equal(s.states.length,0);assert.equal(s.proposals.size,1);
 });
 for(const disposition of ['absent','NON_AUTHORITATIVE'] as const)test(`${disposition} policy cannot materialize`,async()=>{
-  const {s,p}=await setup();s.policies=disposition==='absent'?[]:[{...s.policies[0],disposition}];await assert.rejects(reconcileTechnicalFact(decision(s,p),s,auth),/FIELD_NOT_AUTHORITATIVE/);assert.equal(s.states.length,0);
+  const {s,p}=await setup();s.policies=disposition==='absent'?[]:[{...s.policies[0],disposition}];if(disposition==='absent')s.policyHeads=[];await assert.rejects(reconcileTechnicalFact(decision(s,p),s,auth),/FIELD_NOT_AUTHORITATIVE/);assert.equal(s.states.length,0);
 });
 test('contributing values need human governance; no machine unilateral acceptance',async()=>{
   const {s,p}=await setup();s.policies=[{...s.policies[0],disposition:'CONTRIBUTING'}];

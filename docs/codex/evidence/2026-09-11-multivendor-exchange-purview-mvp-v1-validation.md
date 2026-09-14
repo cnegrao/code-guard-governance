@@ -1,4 +1,4 @@
-> Current status (2026-09-14): **MULTIVENDOR_EXCHANGE_MVP_V1_READY_FOR_REVIEW**.
+> Current status (2026-09-14): **PR31_M10_HARDENING_READY_FOR_REVIEW**.
 > Sections 1-31 preserve the original accepted STOP and readiness history.
 > Sections 32 onward record the authorized continuation and implementation.
 
@@ -621,3 +621,90 @@ Delivery: one logical feature commit preferred, normal push of the existing bran
 and one PR against main. Actual commit/PR identifiers are reported at handoff.
 No amend, force push or merge. **PRODUCTION UNTOUCHED; NOT MERGED; milestone 11
 NOT STARTED.** Final verdict: **MULTIVENDOR_EXCHANGE_MVP_V1_READY_FOR_REVIEW**.
+
+## 43. PR #31 final policy-versioning gate
+
+Reviewed HEAD: `180f5305fa58c0fd429ac1958e9bc78fe0c67c6d`, on
+`feat/multivendor-exchange-purview-mvp-v1`. The initial gate matched exactly;
+only the protected untracked recovery file was present. That file was not read,
+hashed, staged, changed, copied or deleted. No `.claude/**` inspection, branch
+reset, milestone restart, subagent or broad audit. This section preserves all
+earlier STOP, implementation and validation history.
+
+External finding **CONFIRMED**: the two-column primary key on
+technical_field_policies prevented P/v1 and P/v2 from coexisting despite the
+three-column UNIQUE and exact decision policyVersion binding. The policyId is
+a logical identity, not an implicitly version-specific ID.
+
+Reuse inspection found governance_policies.current_version_id pointing to
+policy_versions (20260818003755/20260818003822 migrations). These are documentary
+governance policies with content and approval metadata, not technical field/source
+authority. Reuse their explicit-current-pointer pattern with the smallest typed
+adaptation: immutable technical_field_policies keyed by
+(organisation_id, policy_id, version), plus technical_field_policy_heads keyed by
+(organisation_id, policy_id) with a composite FK to the exact tenant/version.
+No JSON policy storage, unrelated policy IDs or inferred MAX/version/time order.
+
+The existing unmerged milestone migration is corrected in place. It is absent
+from local main and origin/main; PR #31 is OPEN and mergedAt is null. No main or
+historical migration is edited and no SQL is applied. The migration now creates
+13 tables, including this one additional head table. Immutable policy rows retain
+insert/select-only service grants and no-update/no-delete rules. Heads have RLS,
+public/anon/authenticated revocation and trusted service configuration only.
+
+Activation is explicit: trusted configuration inserts the new version row, then
+inserts or updates its same-tenant logical-policy head to that exact version.
+Deleting a head deactivates the policy but retains every version. Head identity
+cannot be moved across organisation/policy. Inserting a version alone changes
+no authority. No policy administration UI, adapter control or live configuration
+action was added. Configuration deployment must explicitly seed heads; existing
+version rows without heads confer no authority.
+
+TypeScript and SQL select only explicitly pointed versions. Historical versions
+do not compete. General plus connection-specific policies with different logical
+IDs remain ambiguous when both heads are applicable, exactly as the accepted ADR
+requires; no silent specificity precedence. Policies/rules never inherit authority
+from previous versions. A new v2 decision must name v2; pending v1 fails with typed
+FIELD_STALE_POLICY after activation/deactivation changes the reviewed applicable
+version. An overlapping second policy still yields FIELD_POLICY_AMBIGUOUS. The API
+returns the typed stale-policy reload result with HTTP 409.
+
+A BEFORE INSERT/UPDATE/DELETE head trigger and new decision validation share the
+same tenant-scoped transaction advisory lock, guarding both existing-head changes
+and first-head/overlap activation. The decision transaction checks current policy
+after acquiring the lock and before durable decision/state writes. Completed exact
+replay returns before current-policy lookup, using its immutable recorded input and
+exact historical policy FK. Activating v2 leaves v1 decisions/states unchanged.
+KEEP_CURRENT, DEFER and REJECT_PROPOSED bind their reviewed current policy but may
+record explicit policy absence; they never materialize a field value. Acceptance
+without a current authoritative/contributing policy still fails closed.
+
+Focused validation for this gate:
+
+| Check | Result |
+| --- | --- |
+| governance-review technical-facts.test.ts | 65 passed (11 new policy-history/current/replay/stale/tenancy/outcome cases) |
+| dashboard technical-fact-persistence.test.ts | 12 passed (4 new version/head/history/stale cases) |
+| dashboard technical-field-migration.test.ts | 12 passed (4 new structural version/FK/head/locking/replay cases) |
+| scanner exchange/purview.test.ts | 36 passed |
+| canonical-contracts typecheck, including technical-fact negative typing | Passed |
+| governance-review typecheck | Passed |
+
+Final gate checks: dashboard `tsc --noEmit --incremental false` passed;
+`git diff --check` passed.
+
+**125 distinct passing tests in this gate**, including the unchanged Purview
+fixture intake and M7 exact mapping checks. No canonical runtime implementation
+changed: the new policy-head contract is an interface verified by typechecking.
+SQL coexistence/immutability/foreign-key/locking claims are structural checks;
+the persistence tests use a fake database and the governance race test emulates
+the transactional guard. No live SQL/RLS/concurrency or browser verification is
+claimed. No Validation Lab, external provider API, production or milestone 11 work.
+The initial dashboard npm typecheck command found no script; validation uses its
+installed TypeScript compiler directly. The follow-up commit identifier is
+reported at handoff.
+
+Delivery remains one follow-up commit on PR #31, no amend or force push. This is
+the authorized surgical external-review correction, not a second broad audit.
+**NOT MERGED. PRODUCTION UNTOUCHED. MILESTONE 11 NOT STARTED.**
+Gate verdict: **PR31_M10_HARDENING_READY_FOR_REVIEW**.

@@ -29,14 +29,39 @@ create table gov_repo.technical_field_policies (
   disposition text not null check (disposition in ('AUTHORITATIVE','CONTRIBUTING','NON_AUTHORITATIVE')),
   rule_code text,
   rule_version text,
-  primary key (organisation_id, policy_id),
-  unique (organisation_id, policy_id, version),
+  primary key (organisation_id, policy_id, version),
   foreign key (organisation_id) references gov_repo.organisations(organisation_id),
   foreign key (organisation_id, connection_id) references gov_repo.technical_source_connections(organisation_id, connection_id),
   check (gov_repo.technical_field_valid(object_kind, field_key)),
   check ((rule_code is null and rule_version is null) or
     (rule_code is not null and rule_version is not null and length(btrim(rule_code)) > 0 and length(btrim(rule_version)) > 0 and disposition = 'AUTHORITATIVE'))
 );
+-- Reuse the repository's immutable versions + explicit current pointer pattern.
+-- Trusted server configuration inserts a version, then explicitly inserts/updates
+-- its head. Deleting a head deactivates the policy, never its version history.
+create table gov_repo.technical_field_policy_heads (
+  organisation_id uuid not null,
+  policy_id text not null,
+  version text not null,
+  primary key (organisation_id, policy_id),
+  foreign key (organisation_id, policy_id, version)
+    references gov_repo.technical_field_policies(organisation_id, policy_id, version)
+);
+-- Serialize all applicability changes within the tenant, including first heads
+-- and deactivation, with decision validation. No inferred version ordering.
+create function gov_repo.lock_technical_field_policy_head() returns trigger
+language plpgsql security invoker set search_path = 'gov_repo', 'pg_catalog' as $$
+declare tenant uuid;
+begin
+  if TG_OP = 'UPDATE' and (new.organisation_id is distinct from old.organisation_id
+    or new.policy_id is distinct from old.policy_id) then raise exception 'FIELD_POLICY_HEAD_IDENTITY_IMMUTABLE'; end if;
+  if TG_OP = 'DELETE' then tenant := old.organisation_id; else tenant := new.organisation_id; end if;
+  perform pg_advisory_xact_lock(hashtextextended(gov_repo.frame_identity(array[tenant::text,'technical-field-policy-heads']),0));
+  if TG_OP = 'DELETE' then return old; else return new; end if;
+end;
+$$;
+create trigger technical_field_policy_head_lock before insert or update or delete
+  on gov_repo.technical_field_policy_heads for each row execute function gov_repo.lock_technical_field_policy_head();
 -- Closed typed columns, no arbitrary field/value JSON. Exactly the selected
 -- existing profile leaf has a value. Origin candidate and support never change.
 create table gov_repo.technical_fact_proposals (
@@ -339,7 +364,9 @@ begin
     where s.organisation_id = p_organisation_id and s.canonical_object_id = d.canonical_object_id and s.field_key = p.field_key
     and not exists (select 1 from gov_repo.technical_field_states successor where successor.organisation_id = p_organisation_id and successor.previous_state_id = s.state_id);
   if current_state.state_id is distinct from d.expected_current_state_id then raise exception 'FIELD_STALE_STATE'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(gov_repo.frame_identity(array[p_organisation_id::text,'technical-field-policy-heads']),0));
   select count(*) into policy_count from gov_repo.technical_field_policies pol
+    join gov_repo.technical_field_policy_heads ph on ph.organisation_id = pol.organisation_id and ph.policy_id = pol.policy_id and ph.version = pol.version
     join gov_repo.technical_source_connections cfg on cfg.organisation_id = pol.organisation_id and cfg.connection_id = p.connection_id
     where pol.organisation_id = p_organisation_id and pol.object_kind = p.object_kind and pol.field_key = p.field_key
     and pol.source_system_id = p.source_system_id and pol.provider_code = cfg.provider_code
@@ -347,12 +374,13 @@ begin
   if policy_count > 1 then raise exception 'FIELD_POLICY_AMBIGUOUS'; end if;
   if policy_count = 1 then
     select pol.* into strict policy from gov_repo.technical_field_policies pol
+      join gov_repo.technical_field_policy_heads ph on ph.organisation_id = pol.organisation_id and ph.policy_id = pol.policy_id and ph.version = pol.version
       join gov_repo.technical_source_connections cfg on cfg.organisation_id = pol.organisation_id and cfg.connection_id = p.connection_id
       where pol.organisation_id = p_organisation_id and pol.object_kind = p.object_kind and pol.field_key = p.field_key
       and pol.source_system_id = p.source_system_id and pol.provider_code = cfg.provider_code
       and (pol.connection_id is null or pol.connection_id = p.connection_id);
   end if;
-  if policy.policy_id is distinct from d.policy_id or policy.version is distinct from d.policy_version then raise exception 'FIELD_POLICY_MISMATCH'; end if;
+  if policy.policy_id is distinct from d.policy_id or policy.version is distinct from d.policy_version then raise exception 'FIELD_STALE_POLICY'; end if;
   if d.outcome = 'ACCEPT_PROPOSED' and (policy_count = 0 or policy.disposition = 'NON_AUTHORITATIVE') then raise exception 'FIELD_AUTHORITY_DENIED'; end if;
   if d.outcome = 'KEEP_CURRENT' and current_state.state_id is null then raise exception 'FIELD_CURRENT_REQUIRED'; end if;
   if d.actor_kind = 'DETERMINISTIC_RULE' then
@@ -390,6 +418,13 @@ grant select, insert on gov_repo.technical_field_policies to service_role;
 create policy technical_field_policies_service on gov_repo.technical_field_policies for all to service_role using (true) with check (true);
 create rule technical_field_policies_no_update as on update to gov_repo.technical_field_policies do instead nothing;
 create rule technical_field_policies_no_delete as on delete to gov_repo.technical_field_policies do instead nothing;
+
+alter table gov_repo.technical_field_policy_heads enable row level security;
+revoke all on gov_repo.technical_field_policy_heads from public, anon, authenticated;
+grant select, insert, update, delete on gov_repo.technical_field_policy_heads to service_role;
+create policy technical_field_policy_heads_service on gov_repo.technical_field_policy_heads for all to service_role using (true) with check (true);
+revoke all on function gov_repo.lock_technical_field_policy_head from public, anon, authenticated;
+grant execute on function gov_repo.lock_technical_field_policy_head to service_role;
 
 alter table gov_repo.technical_fact_proposals enable row level security;
 revoke all on gov_repo.technical_fact_proposals from public, anon, authenticated;
