@@ -1,0 +1,34 @@
+{
+  "entities": [
+    {
+      "guid": "11111111-aaaa-bbbb-cccc-111111111111",
+      "typeName": "azure_sql_table",
+      "status": "ACTIVE",
+      "version": 1,
+      "attributes": {
+        "qualifiedName": "mssql://example.database.windows.net/sales/dbo/orders",
+        "name": "orders",
+        "description": "Sales order records"
+      },
+      "relationshipAttributes": {
+        "columns": [{"guid": "22222222-aaaa-bbbb-cccc-222222222222", "typeName": "azure_sql_column"}]
+      },
+      "classifications": [{"typeName": "MICROSOFT.PERSONAL.EMAIL"}],
+      "labels": ["unmapped-context"]
+    },
+    {
+      "guid": "22222222-aaaa-bbbb-cccc-222222222222",
+      "typeName": "azure_sql_column",
+      "status": "ACTIVE",
+      "version": 1,
+      "attributes": {
+        "qualifiedName": "mssql://example.database.windows.net/sales/dbo/orders#reference",
+        "name": "reference",
+        "data_type": "varchar(100)"
+      },
+      "relationshipAttributes": {
+        "table": {"guid": "11111111-aaaa-bbbb-cccc-111111111111", "typeName": "azure_sql_table"}
+      }
+    }
+  ]
+}

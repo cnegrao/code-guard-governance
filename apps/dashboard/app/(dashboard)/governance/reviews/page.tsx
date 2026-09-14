@@ -141,6 +141,7 @@ export default function GovernanceReviewQueuePage() {
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-bold text-white">Governance Review Queue</h2>
+        <Link href="/governance/technical-facts" className="text-sm text-primary">Technical field reviews</Link>
         <p className="text-sm text-gray-400 mt-1">
           Triage discovered AI/data findings: inspect evidence and provenance, then confirm, certify, or reject.
         </p>

@@ -7,3 +7,4 @@
 export * from "./contracts.ts";
 export * from "./identifiers.ts";
 export * from "./semantic-representation.ts";
+export * from "./technical-facts.ts";
