@@ -2333,6 +2333,15 @@ const BEHAVIOR_BINDING_RELATIONSHIP_TYPES = new Set<string>([
   "USES_SKILL",
 ]);
 
+/** Read projections reuse the same closed endpoint rules as governed factories. */
+export function hasCanonicalRelationshipEndpoints(
+  type: unknown, sourceKind: unknown, targetKind: unknown,
+): type is GovernedRelationshipType {
+  if (!isGovernedRelationshipType(type)) return false;
+  const rule = RELATIONSHIP_ENDPOINT_CONSTRAINTS[type];
+  return sourceKind === rule.source && (rule.targets as readonly unknown[]).includes(targetKind);
+}
+
 function isGovernedRelationshipType(
   value: unknown,
 ): value is GovernedRelationshipType {
