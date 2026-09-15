@@ -11,11 +11,12 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "jsx": "preserve",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["governed.ts", "src/**/*.ts", "test/**/*.ts"],
   "exclude": ["node_modules"]
 }
