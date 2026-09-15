@@ -10,7 +10,9 @@
     "lint": "next lint",
     "seed": "tsx seed.ts",
     "validate:repo": "tsx scripts/validate-repository.ts",
-    "test": "node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/*.test.ts"
+    "test": "node --conditions=react-server --experimental-test-module-mocks --import tsx --test \"tests/!(passport-ui-route).test.ts\" && npm run test:passport-ui",
+    "test:passport": "node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/passport-query.test.ts && npm run test:passport-ui",
+    "test:passport-ui": "node --experimental-test-module-mocks --import tsx --test tests/passport-ui-route.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
