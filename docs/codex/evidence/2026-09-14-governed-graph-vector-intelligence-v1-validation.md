@@ -386,3 +386,50 @@ ordering was also made explicit in the typed context. Only affected tests were r
 
 One feature commit is intended: `feat(intelligence): add governed graph vector retrieval`.
 PR targets main on the existing M12 branch. No merge or M13 execution is authorized.
+
+## PR #33 external package-boundary gate (2026-09-15)
+
+Reviewed HEAD before this surgical gate:
+`b4e499b8abb6de1df224df0a57c522d8a232c058`. Branch and working tree matched the
+expected state; only the protected recovery file was untracked and remained untouched.
+
+The external finding was confirmed: GraphOS production and governed tests imported
+M5 through relative sibling-package `scanner/src` paths. The dashboard's preferred
+`@council/scanner/semantic/similarity` spelling worked through a TypeScript path
+alias, but the scanner package did not actually export that subpath; plain Node
+resolution returned MODULE_NOT_FOUND before the correction.
+
+The scanner package now explicitly exports `./semantic/similarity` to its existing
+M5 implementation and preserves its root export at `./src/index.ts`. GraphOS
+production and tests both import `@council/scanner/semantic/similarity`. No GraphOS
+path alias was added: package resolution supplies compareSemanticRepresentations,
+semanticSpaceIdentity, semanticSpaceKey, snapshotEndpoint, SemanticComparisonFamily,
+SemanticSpaceIdentity, SimilarityEndpoint and COSINE_ALGORITHM_VERSION. Node
+`require.resolve` verifies both the package root and semantic subpath resolve.
+
+Dependency direction: **GraphOS → declared @council/scanner package export → M5
+semantic capability**. M5 remains the sole owner of comparison validation, semantic
+space, similarity endpoints and cosine. No algorithm moved, changed or was duplicated.
+The test change is import-only; test semantics remain unchanged.
+
+Focused validation after correction:
+
+- GraphOS governed tests: **50 passed**.
+- Scanner semantic tests (export surface changed): **114 passed**.
+- Dashboard intelligence tests: **17 passed**.
+- GraphOS typecheck: **PASS**.
+- Dashboard typecheck with incremental output disabled: **PASS**.
+- `git diff --check`: **PASS**.
+
+These **181 affected tests** preserve exact anchors, five-component spaces,
+tenant-before-cosine, zero-vector rejection, raw [-1,1] cosine, canonical-only
+results, immutable representation metadata, independent hybrid signals and
+ANALYTICAL authority. The earlier 373-test milestone validation remains recorded
+above; it was not rerun in full for this gate.
+
+Only scanner package exports, the two GraphOS import statements and this evidence
+changed. Temporal behavior, blast-radius/direction policies, M5/M7/M9/M10/M11
+semantics, canonical contracts/persistence, migrations and production configuration
+remain unchanged. One follow-up commit; no amendment or force push.
+
+**MERGE STATUS = NOT MERGED. PRODUCTION STATUS = UNTOUCHED. M13 NOT STARTED.**

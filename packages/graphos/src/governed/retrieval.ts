@@ -3,7 +3,7 @@ import { createSemanticRepresentation, createSemanticContentFingerprint,
 // Import only the pure M5 module, never the scanner pipeline/barrel or provider.
 import { compareSemanticRepresentations, semanticSpaceIdentity, semanticSpaceKey, snapshotEndpoint,
   type SemanticComparisonFamily, type SemanticSpaceIdentity, type SimilarityEndpoint,
-  COSINE_ALGORITHM_VERSION } from '../../../scanner/src/semantic/similarity';
+  COSINE_ALGORITHM_VERSION } from '@council/scanner/semantic/similarity';
 import { compareId, requireGraph, requireText, timestamp, type GovernedGraph, type GovernedNode } from './graph';
 import { traverseCanonicalGraph, type GraphContribution } from './traversal';
 

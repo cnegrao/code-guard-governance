@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { asOrganisationId, CANONICAL_OBJECT_KIND, GOVERNED_RELATIONSHIP_TYPE,
   type SemanticRepresentation } from '@council/canonical-contracts';
-import { compareSemanticRepresentations } from '../../scanner/src/semantic/similarity';
+import { compareSemanticRepresentations } from '@council/scanner/semantic/similarity';
 import { projectCanonicalGraph, governedNodeId, traverseCanonicalGraph,
   retrieveCanonicalVectors, buildAnalyticalContext, type CanonicalObjectRow, type CanonicalRelationshipRow } from '../governed';
 import { GraphEngine } from '../src/engine';
