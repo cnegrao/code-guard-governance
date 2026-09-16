@@ -57,6 +57,8 @@ import { governanceReviewPersistence } from "./persistence";
 import { materializationPersistence } from "./materialization";
 import { discoveryIntakePersistence, normalizedCandidateEnvelopeHash } from "./discovery-intake-persistence";
 import { agentVersionTechnicalProfilePersistence } from "./agent-version-technical-profile-persistence";
+import { executionContextPersistence } from './execution-context-persistence';
+import { recordExecutionSource } from './execution-context-intake';
 
 /**
  * Discovery Intake V1 — the trusted server-side application service that
@@ -141,6 +143,7 @@ export interface GovernanceDiscoveryScanResult {
 }
 
 export interface DiscoveryIntakePorts {
+  readonly executionContext?: import('@council/governance-review').ExecutionContextPersistencePort;
   readonly review: GovernanceReviewPersistencePort;
   readonly materialization: MaterializationPersistencePort;
   readonly intake: DiscoveryIntakePersistencePort;
@@ -148,6 +151,7 @@ export interface DiscoveryIntakePorts {
 }
 
 const defaultPorts: DiscoveryIntakePorts = {
+  executionContext: executionContextPersistence,
   review: governanceReviewPersistence,
   materialization: materializationPersistence,
   intake: discoveryIntakePersistence,
@@ -476,7 +480,7 @@ async function processAgentVersionTechnicalProfileProposal(
       proposalId,
       agentVersionCandidateId: result.candidate.candidateId,
       behaviorFingerprintAlgorithm: "sha256",
-      behaviorFingerprintSchemaVersion: "1.0",
+      behaviorFingerprintSchemaVersion: result.behaviorFingerprintSchemaVersion ?? "1.0",
       behaviorFingerprintValue: result.technicalRevisionFingerprint,
       runtimeFrameworkReference: result.runtimeFrameworkReference,
       support: {
@@ -644,6 +648,16 @@ export async function runGovernanceDiscoveryScan(
     // durable (recordNormalizedCandidate, called inside
     // ensureReviewSubjectAndPropose above) — must run strictly after.
     await processAgentVersionTechnicalProfileProposal(agentVersionResult, ctx, ports, tally);
+    if (agentVersionResult.executionFacts?.length) {
+      try {
+        if (!ports.executionContext) throw new Error('EXECUTION_PERSISTENCE_UNAVAILABLE');
+        const agent = candidates.find(c => c.executionDeclaration && c.finding.sourceObject.connectionId === agentVersionResult.candidate.sourceObject.connectionId &&
+          c.finding.sourceObject.externalType === agentVersionResult.candidate.sourceObject.externalType && c.finding.sourceObject.externalId === agentVersionResult.candidate.sourceObject.externalId);
+        if (!agent) throw new Error('EXECUTION_BINDING_MISSING');
+        await recordExecutionSource(ctx.organisationId, agentVersionResult, agent, run.connection.sourceSystemId,
+          adapter.describeSource().providerCode, ports.intake, ports.executionContext);
+      } catch { tally.failures.push({ candidateKind: 'AGENT_VERSION', reason: 'EXECUTION_SOURCE_PERSISTENCE_FAILED' }); }
+    }
   }
   const endpointCandidates = new Map<string, NormalizedCandidate>();
   for (const item of candidates) {

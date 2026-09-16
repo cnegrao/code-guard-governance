@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { before, beforeEach, mock, test } from 'node:test';
-import { asOrganisationId } from '@council/canonical-contracts';
+import { asOrganisationId, sourceObjectIdentityKey } from '@council/canonical-contracts';
+import { executionDigest } from '@council/governance-review';
 import { currentFieldState, PASSPORT_FAMILIES } from '@/lib/governance/agent-passport';
 
 type Row = Record<string, unknown>;
@@ -101,6 +102,85 @@ function addData() {
 }
 beforeEach(() => { tables = {}; calls = []; dbError = undefined; addObject('agent','AGENT'); });
 const section = (p: NonNullable<Awaited<ReturnType<typeof getPassport>>>, id: string) => p.families.find(f => f.id === id)!;
+
+function addExecution(accepted = true) {
+  addVersion('version:1');
+  const candidate = `candidate:agent-version:${'a'.repeat(32)}`;
+  tables.canonical_normalized_object_mappings[0].normalized_object_identity = candidate;
+  const source = { connectionId: 'repo', externalType: 'file', externalId: 'src/agent.ts' };
+  const scope = executionDigest([sourceObjectIdentityKey(source as never),'triageAgent']);
+  const facts = [
+    { field:'PRINCIPAL',principal:{kind:'SERVICE_ACCOUNT',providerCode:'fixture',authorityReference:'realm',principalReference:'account'} },
+    { field:'DECLARED_CONNECTIVITY',endpoint:'https://catalog.invalid/',protocol:{kind:'API',family:'HTTP'} },
+    { field:'REQUESTED_SCOPE',scopeReference:'catalog.read',resourceReference:'catalog' },
+    { field:'CAPABILITY',capabilityReference:'classifyRequest' },
+  ];
+  const items = facts.map((fact,i)=>({fact,assertionId:`assert:exec:${i}`,evidenceId:`evidence:exec:${i}`,...(fact.field==='CAPABILITY'?{toolCandidateId:'tool-candidate'}:{})}));
+  const id = `execution-snapshot:${executionDigest([org,scope,candidate,'source-snapshot',items])}`;
+  add('execution_source_snapshots',{snapshot_id:id,source_scope:scope,candidate_id:candidate,connection_id:'repo',source_system_id:'repository',provider_code:'fixture',
+    external_type:'file',external_id:'src/agent.ts',declaration_key:'triageAgent',source_snapshot_id:'source-snapshot',fingerprint_value:'b'.repeat(32),fingerprint_schema:'1.1',authorization_state:'UNKNOWN',recorded_at:at});
+  add('execution_source_heads',{source_scope:scope,snapshot_id:id});
+  items.forEach((item,i)=>{
+    const f=item.fact;
+    add('execution_source_facts',{snapshot_id:id,ordinal:i,field_key:f.field,assertion_id:item.assertionId,evidence_id:item.evidenceId,
+      principal_kind:f.principal?.kind,principal_provider:f.principal?.providerCode,principal_authority:f.principal?.authorityReference,principal_reference:f.principal?.principalReference,
+      endpoint:f.endpoint,protocol_kind:f.protocol?.kind,protocol_value:f.protocol?.family,scope_reference:f.scopeReference,resource_reference:f.resourceReference,
+      capability_reference:f.capabilityReference,tool_candidate_id:item.toolCandidateId});
+    addSupport(`exec:${i}`);
+    tables.source_assertions.at(-1)!.method_code='DIRECT_AGENT_EXECUTION_V1';
+    add('execution_field_policies',{policy_id:`policy:${i}`,version:'1',field_key:f.field,source_system_id:'repository',provider_code:'fixture',disposition:'CONTRIBUTING'});
+    add('execution_field_policy_heads',{policy_id:`policy:${i}`,version:'1'});
+    if(accepted){
+      add('execution_field_decisions',{decision_id:`exec-decision:${i}`,canonical_object_id:'version:1',snapshot_id:id,field_key:f.field,
+        expected_current_state_id:null,policy_id:`policy:${i}`,policy_version:'1',outcome:'ACCEPT_PROPOSED',actor_reference:'reviewer',decided_at:at});
+      add('execution_field_states',{state_id:`exec-state:${i}`,canonical_object_id:'version:1',field_key:f.field,snapshot_id:id,decision_id:`exec-decision:${i}`,previous_state_id:null,recorded_at:at});
+    }
+  });
+  return id;
+}
+
+test('M13 accepted fields populate families 15/16 with UNKNOWN authorization and declared provenance',async()=>{
+  addExecution();const p=(await getPassport(org,'agent','version:1'))!;
+  assert.equal(section(p,'authorization').facts.length,3);assert.equal(section(p,'connectivity').facts.length,1);
+  for(const id of ['authorization','connectivity']){
+    const family=section(p,id);assert.equal(family.status,'PARTIAL');
+    assert.ok(family.facts.every(f=>f.type==='execution'&&f.authorizationState==='UNKNOWN'&&f.versionId==='version:1'&&f.provenance.authority==='GOVERNED_FIELD_STATE'));
+  }
+  assert.equal(section(p,'runtime').status,'UNKNOWN');
+  assert.ok(calls.every(c=>c.filters.some(([key,value])=>key==='organisation_id'&&value===org)));
+  assert.ok(calls.every(c=>!c.selection.split(',').includes('envelope')));
+});
+test('M13 proposal alone cannot become Passport governed truth',async()=>{
+  addExecution(false);const p=(await getPassport(org,'agent','version:1'))!;
+  assert.equal(section(p,'authorization').status,'UNKNOWN');assert.equal(section(p,'connectivity').status,'UNKNOWN');
+});
+test('M13 governed fields require explicit selected version and never leak to another version',async()=>{
+  addExecution();addVersion('version:2');
+  for(const selected of [undefined,'version:2'])assert.equal(section((await getPassport(org,'agent',selected))!,'authorization').status,'UNKNOWN');
+  assert.equal(await getPassport(otherOrg,'agent','version:1'),undefined);
+});
+for(const [name,table,change] of [
+  ['foreign snapshot','execution_source_snapshots',{organisation_id:otherOrg}],
+  ['foreign decision','execution_field_decisions',{organisation_id:otherOrg}],
+  ['foreign evidence','discovery_evidence',{organisation_id:otherOrg}],
+  ['unaccepted decision','execution_field_decisions',{outcome:'DEFER'}],
+  ['wrong decision version','execution_field_decisions',{canonical_object_id:'version:other'}],
+  ['wrong predecessor','execution_field_decisions',{expected_current_state_id:'unrelated'}],
+  ['non-authoritative policy','execution_field_policies',{disposition:'NON_AUTHORITATIVE'}],
+  ['wrong policy source','execution_field_policies',{provider_code:'other'}],
+  ['wrong assertion method','source_assertions',{method_code:'copresence'}],
+] as const)test(`M13 ${name} fails closed`,async()=>{
+  addExecution();Object.assign(tables[table][0],change);
+  await assert.rejects(getPassport(org,'agent','version:1'),/EXECUTION_/);
+});
+test('M13 foreign state cannot materialize local Passport facts',async()=>{
+  addExecution();for(const state of tables.execution_field_states)state.organisation_id=otherOrg;
+  assert.equal(section((await getPassport(org,'agent','version:1'))!,'authorization').status,'UNKNOWN');
+});
+test('M13 immutable historical acceptance survives policy head evolution',async()=>{
+  addExecution();tables.execution_field_policy_heads=[];
+  assert.equal(section((await getPassport(org,'agent','version:1'))!,'authorization').facts.length,3);
+});
 
 test('canonical root has exact tenant/kind/ID and exactly 16 ordered families', async () => {
   const p = (await getPassport(org, 'agent'))!;

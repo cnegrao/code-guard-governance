@@ -1,6 +1,7 @@
 import type { AcquisitionRun } from '@council/canonical-contracts';
 
 import type { DetectionMatch, DetectionSpecification } from './detection-specification';
+import { attachExecutionDeclarations } from './execution-declaration';
 import { assembleDiscoveryCandidate, type DiscoveryCandidate } from './evidence-assembly';
 import {
   completeAcquisitionRun,
@@ -109,6 +110,7 @@ export class DiscoveryPipeline {
         continue;
       }
 
+      const artifactCandidateStart = candidates.length;
       for (const specification of this.specifications) {
         let matches: readonly DetectionMatch[];
         try {
@@ -136,6 +138,9 @@ export class DiscoveryPipeline {
           );
         }
       }
+
+      const attached = attachExecutionDeclarations(outcome.content, candidates.slice(artifactCandidateStart));
+      candidates.splice(artifactCandidateStart, candidates.length - artifactCandidateStart, ...attached);
 
       for (const specification of signalSpecifications) {
         let matches: readonly TechnicalProfileSignalMatch[];

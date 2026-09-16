@@ -29,6 +29,7 @@ import { findBehaviorDeclarationBinding, type BehaviorDeclarationBinding } from 
 
 /** One evidence-backed candidate: never governed truth (see DiscoveryFinding). */
 export interface DiscoveryCandidate {
+  readonly executionDeclaration?: import('./execution-declaration').ExecutionDeclaration;
   readonly transformation?: SqlColumnTransformation;
   readonly dataDeclaration?: SqlDataDeclaration;
   readonly finding: DiscoveryFinding<DiscoveryCandidateKind>;

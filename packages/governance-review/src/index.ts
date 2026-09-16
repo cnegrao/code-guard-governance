@@ -25,3 +25,4 @@ export * from "./inbound-exchange.ts";
 export * from "./agent-version-technical-profile-port.ts";
 export * from "./semantic-representation-port.ts";
 export * from "./canonical-endpoint-resolution";
+export * from './execution-context';

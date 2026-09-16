@@ -68,6 +68,7 @@ export type {
   AgentVersionTechnicalProfileFieldEvidence,
 } from './agent-version-correlation';
 export { AgentVersionCorrelationStrategy, correlateAgentVersions } from './agent-version-correlation';
+export type { ExecutionDeclarationFact } from './execution-declaration';
 
 export type {
   DiscoveryPipelineOptions,

@@ -5,6 +5,7 @@ import { family, type AgentPassport360, type IdentityFact, type MappingFact, typ
   type PassportVersionContext, type ProfileFact, type ProfileField, type RelationshipFact } from './agent-passport';
 import { passportReader, type ObjectRow, type RelationshipRow } from './passport-read-store';
 import { readPassportDataFields } from './passport-field-query';
+import { readPassportExecution } from './passport-execution-query';
 
 /** Server-only CQRS read composition. No command port, RPC, provider or generated facts. */
 export async function getAgentPassport(org: OrganisationId, canonicalObjectId: string, selectedVersionId?: string): Promise<AgentPassport360 | undefined> {
@@ -165,8 +166,9 @@ export async function getAgentPassport(org: OrganisationId, canonicalObjectId: s
   const model = relationships.filter(r => r.versionId === selected && r.relationshipType === 'USES_MODEL');
   const tools = relationships.filter(r => r.versionId === selected && ['USES_TOOL', 'USES_MCP', 'INVOKES'].includes(r.relationshipType));
   const technology = profileFacts.filter(f => f.field !== 'behaviorFingerprint');
+  const execution = selected ? await readPassportExecution(org, selected, support, readAt) : [];
   const versionGap = selected ? [] : ['Selected AgentVersion: UNKNOWN. Select an exactly associated version to inspect version-specific facts.'];
-  const allFacts = [...identityFacts, ...discovery, ...profileFacts, ...relationships, ...dataFields];
+  const allFacts = [...identityFacts, ...discovery, ...profileFacts, ...relationships, ...dataFields, ...execution];
   const families: AgentPassport360['families'] = [
     // V1 required Identity scope is the exact canonical tenant/kind/ID, not a friendly name.
     family('identity', identityFacts, []),
@@ -186,8 +188,8 @@ export async function getAgentPassport(org: OrganisationId, canonicalObjectId: s
     family('controls', [canonicalAgent], ['Canonical identity decision is available; control compliance and coverage: UNKNOWN.']),
     family('runtime', [], ['Executions and runtime observations: UNKNOWN.']),
     family('provenance', allFacts, allFacts.every(f => f.provenance.sources.length && f.provenance.evidence.length) ? [] : ['Source trust / evidence: UNKNOWN where no support is available.']),
-    family('authorization', [], ['Permissions and authorization: UNKNOWN. Tool capability does not establish authorization.']),
-    family('connectivity', [], ['Connectivity and network state: UNKNOWN.']),
+    family('authorization', execution.filter(f=>f.fact.field!=='DECLARED_CONNECTIVITY'), ['Permissions and authorization: UNKNOWN. Tool capability and requested scopes do not establish authorization. Runtime identity: UNKNOWN.']),
+    family('connectivity', execution.filter(f=>f.fact.field==='DECLARED_CONNECTIVITY'), ['Runtime reachability, network permission and topology coverage: UNKNOWN.']),
   ];
   return { canonicalAgent, displayName: null, versionContexts, selectedVersionId: selected, currentVersionId: null,
     families, provenanceSummary: allFacts.map(f => f.provenance) };

@@ -53,6 +53,16 @@ test('real Passport component renders exactly 16 accessible and navigable sectio
   assert.ok(html.includes('Selected AgentVersion: UNKNOWN')); assert.ok(html.includes('version%3A1'));assert.ok(html.includes('version%3A2'));
   assert.ok(html.includes('<details'));assert.ok(html.includes('Source, trust and provenance')); assert.ok(!html.includes('17. Risk'));
 });
+
+test('M13 Passport renders governed declaration with explicit unknown runtime and authorization',()=>{
+  const execution={type:'execution',id:'execution-state:1',versionId:'version:1',sourceSnapshotId:'source-snapshot',authorizationState:'UNKNOWN',
+    fact:{field:'PRINCIPAL',principal:{kind:'SERVICE_ACCOUNT',providerCode:'fixture',authorityReference:'realm',principalReference:'account'}},
+    provenance:{...provenance,storage:'execution_field_states',authority:'GOVERNED_FIELD_STATE'}} as const;
+  const view={...passport,families:passport.families.map(f=>f.id==='authorization'?{...f,status:'PARTIAL' as const,facts:[execution]}:f)};
+  const html=renderToStaticMarkup(createElement(Component,{passport:view}));
+  assert.match(html,/Declared principal: SERVICE_ACCOUNT/);assert.match(html,/authorization: UNKNOWN/);
+  assert.match(html,/Runtime identity and reachability remain UNKNOWN/);assert.match(html,/source-snapshot/);
+});
 test('page uses cryptographically verified cookie tenant, ignoring client organisation and spoofed headers',async()=>{
   const search = {version:'version:1',organisationId:'attacker-tenant',org:'attacker-tenant'};
   await Page({params:Promise.resolve({canonicalObjectId:'canonical:agent'}),searchParams:Promise.resolve(search)});
