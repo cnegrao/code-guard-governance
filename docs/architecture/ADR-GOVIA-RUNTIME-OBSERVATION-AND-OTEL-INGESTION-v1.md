@@ -1,6 +1,6 @@
 # Gov IA Runtime Observation & OTel Ingestion V1
 
-Status: **PROPOSED FOR ARCHITECTURE REVIEW**
+Status: ACCEPTED / FROZEN
 
 Date: 2026-09-16. Verified repository baseline: `cnegrao/code-guard-governance`,
 local `main` and `origin/main` at
@@ -10,6 +10,20 @@ local `main` and `origin/main` at
 the Enterprise API ADR is accepted, frozen and merged. **M14 IMPLEMENTATION
 NOT STARTED.** This document proposes the minimum architecture to freeze before
 implementation; its normative decisions become accepted only through section 19.
+
+## Freeze record
+
+An independent adversarial architecture review was completed against this
+document. Findings F1 (MEDIUM: cross-connection observation identity/
+aggregation), F2 (LOW: handoff/multi-agent span scope) and F3 (LOW:
+producer/instrumentation identity trigger) were raised, fixed by narrow
+clarifications in sections 3, 4, 7 and 9, and confirmed resolved by a focused
+re-review with verdict PASS_FOR_FREEZE_GATE and REGRESSION: NONE. No
+additional ADR is required before M14 implementation may begin. Explicit
+architecture-owner approval was given on 2026-09-16. GOVIA-L0L16-CIA-v1.0
+remains FROZEN AND UNCHANGED and the roadmap remains unchanged by this freeze.
+This freeze authorizes the architecture for M14 implementation; it does not
+itself start M14 implementation, and M15 remains out of scope and NOT STARTED.
 
 ## 1. Purpose, authority and current evidence
 
@@ -552,16 +566,18 @@ these implementation inputs already exist and does not authorize starting M14.
 
 ## 19. Review and freeze gate
 
-This document remains **PROPOSED FOR ARCHITECTURE REVIEW**. It is not
-ACCEPTED/FROZEN. Freeze requires independent adversarial review, resolution of
-all CRITICAL/HIGH findings, and explicit architecture-owner approval. Author
-self-review, documentation checks, a commit or opening a PR do not satisfy that
-gate. Outstanding findings and their disposition must remain visible to approval.
+This document is **ACCEPTED / FROZEN**. Independent adversarial architecture
+review found no CRITICAL or HIGH findings; findings F1 (MEDIUM), F2 (LOW) and
+F3 (LOW) were resolved by narrow clarifications and confirmed by a focused
+re-review returning PASS_FOR_FREEZE_GATE with REGRESSION: NONE. Explicit
+architecture-owner approval was given on 2026-09-16. Outstanding findings and
+their disposition remain visible in the review history above.
 
 This task creates only this ADR. It creates no migrations, runtime tables,
 ingestion routes, OTel dependencies or implementation changes; it does not modify
 the roadmap, start M14/M15, implement Enterprise API or apply remote SQL.
-The documentation PR must not be merged by this task.
+Freezing this ADR authorizes the architecture for M14 implementation; it does
+not itself start M14 implementation.
 
 Final document verdict:
-**CONFORMANT_WITH_GOVIA_L0L16_CIA_V1_0 — PROPOSED_FOR_FREEZE**
+**CONFORMANT_WITH_GOVIA_L0L16_CIA_V1_0 — ACCEPTED_AND_FROZEN**
