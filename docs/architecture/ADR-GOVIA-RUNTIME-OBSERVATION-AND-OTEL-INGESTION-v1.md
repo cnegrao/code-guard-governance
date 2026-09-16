@@ -92,6 +92,16 @@ semantics, not a guessed span name. One supported span yields one observation
 kind; nested spans may represent distinct operations, without duplicating one
 span into several counted calls.
 
+Handoff and multi-agent-transfer runtime spans are explicitly **OUT OF SCOPE**
+for M14 V1 as a typed observation kind. They must not be forced into EXECUTION
+merely because EXECUTION is the broadest existing kind. An unsupported handoff
+span follows the same unsupported-kind handling as any other unrecognized span:
+rejection or omission according to the accepted source/adapter contract, never
+a best-effort reinterpretation. Unsupported handoff spans must not auto-create
+a HANDOFF_TO canonical relationship. Adding a dedicated handoff observation kind
+requires an explicit future contract extension and architecture decision; this
+ADR does not add one.
+
 The envelope and each kind have explicitly typed, bounded fields. Their minimum
 semantic coverage is:
 
@@ -124,6 +134,18 @@ Trace ID alone is not globally authoritative. Span/parent lookups, read filters,
 caches, uniqueness and joins preserve tenant and source scope. Cross-source
 correlation requires explicit, supported scope; equal trace IDs do not authorize
 joining tenants or treating independent exporters as one accepted source.
+
+```text
+SOURCE-SCOPED OBSERVATION IDENTITY != GLOBAL EVENT IDENTITY
+SAME TRACE/SPAN ACROSS SOURCES != SAFE TO MERGE
+```
+
+Observations admitted through different accepted runtime source connections
+remain independent observations by design, even when their traceId/spanId
+match. They must never be silently merged across source connections. Matching
+traceId/spanId across connections is evidence of possible overlap, not proof
+of identity equivalence. M14 does not implement a global trace deduplication
+mechanism; cross-source duplicate/overlap reconciliation belongs to M15.
 
 Receipt time, persistence time, delivery-attempt IDs and database row IDs are not
 semantic replay identity. A durable observation ID identifies that scoped event;
@@ -210,6 +232,20 @@ binding proof contract. Trusted administration controls this configuration;
 the telemetry payload cannot declare itself accepted. Record the immutable
 configuration version used at admission. Missing, conflicting, unsupported or
 inactive admission configuration fails closed for new observations.
+
+```text
+AUTHENTICATED CONNECTION != UNAMBIGUOUS PRODUCER IDENTITY
+```
+
+Producer/instrumentation identity becomes mandatory whenever one accepted
+runtime source connection may carry telemetry from more than one distinct
+producer, instrumentation scope, deployment emitter or independently
+identifiable runtime emitter, such that source attribution would otherwise be
+ambiguous. If one accepted connection is contractually bound to exactly one
+producer, and the source contract makes that one-to-one binding immutable and
+auditable, a separate producer identity field need not be duplicated merely for
+formality. This trigger, not convenience, decides whether the field is required;
+over-scoping every source with unnecessary identifiers is not required either.
 
 Authentication establishes ingestion access. Source acceptance establishes which
 facts this source is allowed to assert as direct observations. Neither establishes
@@ -298,7 +334,10 @@ Out-of-order delivery must not rewrite event chronology. Preserve clock/basis
 limitations; do not impose invented cross-machine timestamp ordering. Missing
 parents and sampling gaps are explicit coverage limits, not absence of execution.
 Any bounded aggregation must retain its sample/window, unknown outcomes and
-collection limitations. No SLO/SLA architecture is introduced.
+collection limitations. No SLO/SLA architecture is introduced. M14 must not sum
+tokens, cost, latency-derived aggregates or call counts across multiple accepted
+source connections when overlap is possible, unless non-overlap is explicitly
+established; cross-source overlap reconciliation is M15 scope, not M14.
 
 Token counts are optional directly supplied facts. Preserve supported count type
 and units, including input/output distinctions where supplied. Validate supported
