@@ -1,15 +1,24 @@
 # Gov IA Enterprise API & Developer Platform V1
 
-Status: PROPOSED FOR ARCHITECTURE REVIEW
+Status: ACCEPTED / FROZEN
 
 Date: 2026-09-16. Verified repository baseline:
 `bc3bbdf4dc10688f7e4cfa38ec7a6543c2337cb5` (`main`, repository
 `cnegrao/code-guard-governance`).
 
 **GOVIA-L0L16-CIA-v1.0 remains FROZEN AND UNCHANGED.** This additive ADR
-proposes the Enterprise API architecture for freeze; it is not ACCEPTED/FROZEN.
-Implementation is intentionally deferred to M19, with the M19C placement
-recommended below. This task creates architecture documentation only.
+freezes the Enterprise API architecture. Implementation is intentionally
+deferred to M19, with the M19C placement recommended below. This task creates
+architecture documentation only.
+
+**Freeze record.** Independent adversarial architecture review identified
+three findings (F-01 MEDIUM, F-02 LOW, F-03 LOW) against the initial proposal.
+All three were corrected in the ADR text and re-reviewed independently, which
+returned PASS_FOR_FREEZE_GATE with REGRESSION: NONE. The architecture owner
+gave explicit approval for freeze and merge on 2026-09-16. This ADR is
+therefore ACCEPTED/FROZEN as of that date. GOVIA-L0L16-CIA-v1.0 remains
+FROZEN AND UNCHANGED, and implementation remains deferred to M19C; this
+freeze authorizes no work on M19 or M14.
 
 ## 1. Context, authority and current evidence
 
@@ -470,16 +479,19 @@ Graph authority; authorize direct canonical writes or vendor write-back; modify
 the frozen architecture/roadmap; create migrations; or apply anything remotely.
 All endpoint and payload examples are architectural direction for later design.
 
-The decision proposed for freeze is the exposure-plane boundary, three-surface
-separation, contract/versioning direction, semantic resource families, authority,
-tenancy, governance and quality invariants. Final schemas, compatibility policy
-details, infrastructure choices, supported operations and implementation readiness
+The decision frozen is the exposure-plane boundary, three-surface separation,
+contract/versioning direction, semantic resource families, authority, tenancy,
+governance and quality invariants. Final schemas, compatibility policy details,
+infrastructure choices, supported operations and implementation readiness
 belong to M19. No OpenAPI artifact or application code is created in this task.
 
-This ADR becomes **ACCEPTED/FROZEN only after independent adversarial architecture
+This ADR became **ACCEPTED/FROZEN only after independent adversarial architecture
 review and explicit architecture-owner approval**. Neither author self-review nor
-opening a PR satisfies that gate. Until both occur, its status remains
-PROPOSED FOR ARCHITECTURE REVIEW; no freeze or implementation approval is implied.
+opening a PR satisfied that gate alone. Both occurred: independent adversarial
+review resolved findings F-01/F-02/F-03 and returned PASS_FOR_FREEZE_GATE, and
+the architecture owner gave explicit freeze/merge approval on 2026-09-16. No
+implementation approval is implied; M19/M14 remain unauthorized to start by
+this freeze.
 
 Final verdict:
-**CONFORMANT_WITH_GOVIA_L0L16_CIA_V1_0 — PROPOSED_FOR_FREEZE**
+**CONFORMANT_WITH_GOVIA_L0L16_CIA_V1_0 — ACCEPTED_AND_FROZEN**
