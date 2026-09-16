@@ -1,4 +1,5 @@
 import type { SourceArtifactContent } from './source-adapter';
+import { directExecutionSources } from './direct-execution-source';
 
 /** Scanner-only proof coordinates, never an endpoint or semantic identity. */
 export interface BehaviorDeclarationBinding {
@@ -23,6 +24,19 @@ export function findBehaviorDeclarationBinding(
   artifact: SourceArtifactContent,
   targetLine: number,
 ): BehaviorDeclarationBinding | undefined {
+  const original = flatBinding(artifact, targetLine);
+  if (original) return original;
+  // Only fully validated M13 literal properties are masked. All pre-existing
+  // direct-binding rules then run unchanged, including exact declaration ownership.
+  const matches = directExecutionSources(artifact).flatMap(source => {
+    if (source.maskedText === artifact.text) return [];
+    const binding = flatBinding({ ...artifact, text: source.maskedText }, targetLine);
+    return binding?.agentDeclarationKey === source.declarationKey ? [binding] : [];
+  });
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function flatBinding(artifact: SourceArtifactContent, targetLine: number): BehaviorDeclarationBinding | undefined {
   if (!/\.(?:py|ts|js)$/.test(artifact.locator)) return undefined;
   if (/'''|"""|`|\/\*|\*\/|\\\s*$/m.test(artifact.text)) return undefined;
   const lines = artifact.text.split(/\r\n|\r|\n/);

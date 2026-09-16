@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import {
   CANONICAL_OBJECT_KIND,
   FINDING_REVIEW_STATUS,
+  declaredExecutionSemanticValues,
+  type DeclaredExecutionFact,
   asDiscoveryFindingId,
   asIsoTimestamp,
   asNormalizedCandidateId,
@@ -34,6 +36,8 @@ export interface AgentVersionTechnicalProfileFieldEvidence {
 }
 
 export interface AgentVersionCorrelationResult {
+  readonly executionFacts?: readonly import('./execution-declaration').ExecutionDeclarationFact[];
+  readonly behaviorFingerprintSchemaVersion?: '1.0' | '1.1';
   readonly finding: ObjectDiscoveryFinding<'AGENT_VERSION'>;
   readonly candidate: NormalizedAgentVersionCandidate;
   /**
@@ -317,6 +321,15 @@ export function correlateAgentVersions(
     if (normalizedAgent.status !== 'NORMALIZED' || normalizedAgent.candidate.candidateKind !== 'AGENT') continue;
     const { agentCode } = normalizedAgent.candidate.proposedIdentity;
     if (!agentCode) continue;
+    const declaration = agent.executionDeclaration;
+    if (declaration && (declaration.declarationKey !== agentCode || declaration.facts.some(f =>
+      f.assertion.trustState !== 'DECLARED' || f.assertion.method.code !== 'DIRECT_AGENT_EXECUTION_V1' ||
+      fileGroupKey(f.assertion.sourceObject) !== key ||
+      f.assertion.snapshot?.snapshotId !== agent.assertion.snapshot?.snapshotId ||
+      !f.assertion.evidenceIds.includes(f.evidence.evidenceId)))) continue;
+    const executionBehavior = declaredExecutionSemanticValues((declaration?.facts ?? [])
+      .map(f => f.fact).filter((f): f is DeclaredExecutionFact =>
+        f.field === 'DECLARED_CONNECTIVITY' || f.field === 'REQUESTED_SCOPE'));
 
     const models = bucket.filter((candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.MODEL);
     const tools = bucket.filter((candidate) => candidate.finding.candidateKind === CANONICAL_OBJECT_KIND.TOOL);
@@ -377,7 +390,7 @@ export function correlateAgentVersions(
       normalizedApiReferences.length === 0 &&
       normalizedKnowledgeBaseReferences.length === 0 &&
       normalizedSkillReferences.length === 0 &&
-      !hasTechnicalProfileSignalEvidence
+      !hasTechnicalProfileSignalEvidence && executionBehavior.length === 0
     ) {
       continue;
     }
@@ -393,7 +406,10 @@ export function correlateAgentVersions(
       skillDeclarationReferences: normalizedSkillReferences,
       technicalProfileSignalValues,
     });
-    const technicalRevisionFingerprint = stableSuffix(projection);
+    // Prospective extension of the SAME projection/hash. Old sources keep byte-for-byte
+    // 1.0 identity. Tools already contribute above; principal/evidence never contribute.
+    const technicalRevisionFingerprint = stableSuffix([...projection,
+      ...executionBehavior.map(value => `execution-v1:${value}`)]);
     const sourceScope = buildSourceScope(agent.finding.sourceObject);
     // sourceScopedAgentVersionCandidateId = HASH(sourceScope + technicalRevisionFingerprint):
     // provenance/source-scope and technical revision are combined only here,
@@ -467,6 +483,8 @@ export function correlateAgentVersions(
         : undefined;
 
     results.push({
+      ...(declaration ? { executionFacts: declaration.facts } : {}),
+      ...(executionBehavior.length ? { behaviorFingerprintSchemaVersion: '1.1' as const } : {}),
       finding,
       candidate,
       technicalRevisionFingerprint,

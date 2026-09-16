@@ -28,7 +28,7 @@ export interface PassportSource {
 }
 export interface PassportProvenance {
   storage: 'canonical_objects' | 'canonical_normalized_object_mappings' | 'canonical_object_source_mappings'
-    | 'agent_version_technical_profiles' | 'canonical_relationships' | 'technical_field_states';
+    | 'agent_version_technical_profiles' | 'canonical_relationships' | 'technical_field_states' | 'execution_field_states';
   authority: 'GOVERNED_IDENTITY' | 'GOVERNED_MAPPING' | 'GOVERNED_PROFILE' | 'GOVERNED_RELATIONSHIP' | 'GOVERNED_FIELD_STATE';
   sources: readonly PassportSource[];
   evidence: readonly { evidenceId: string; handling: string; capturedAt: string }[];
@@ -67,13 +67,17 @@ export interface DataFieldFact extends FactBase {
   /** Competing proposals are context only; their values never replace this accepted state. */
   competingProposalIds: readonly string[];
 }
-export type PassportFact = IdentityFact | MappingFact | ProfileFact | RelationshipFact | DataFieldFact;
+export interface ExecutionPassportFact extends FactBase {
+  type: 'execution'; versionId: string; fact: import('@council/canonical-contracts').DirectExecutionFact;
+  sourceSnapshotId: string; authorizationState: 'UNKNOWN';
+}
+export type PassportFact = IdentityFact | MappingFact | ProfileFact | RelationshipFact | DataFieldFact | ExecutionPassportFact;
 interface FamilyItems {
   identity: IdentityFact; discovery: MappingFact; ownership: never; business: never;
   technology: ProfileFact; model: RelationshipFact; behavior: ProfileFact | RelationshipFact;
   tools: RelationshipFact; data: RelationshipFact | DataFieldFact; privacy: never;
   relationships: RelationshipFact; controls: IdentityFact; runtime: never;
-  provenance: PassportFact; authorization: never; connectivity: never;
+  provenance: PassportFact; authorization: ExecutionPassportFact; connectivity: ExecutionPassportFact;
 }
 export type PassportFamily = { [K in PassportFamilyId]: {
   id: K; label: string; status: PassportCoverage; facts: readonly FamilyItems[K][]; unknowns: readonly string[];

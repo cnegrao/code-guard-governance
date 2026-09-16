@@ -35,6 +35,14 @@ function Provenance({ context }: { context: PassportProvenance }) {
 function Fact({ fact }: { fact: PassportFact }) {
   let content: React.ReactNode;
   switch (fact.type) {
+    case 'execution': content = <>
+      <p>{fact.fact.field === 'CAPABILITY' ? `Declared Tool capability: ${fact.fact.capabilityReference}` :
+        fact.fact.field === 'PRINCIPAL' ? `Declared principal: ${fact.fact.principal.kind} · ${fact.fact.principal.providerCode} · ${fact.fact.principal.authorityReference} · ${fact.fact.principal.principalReference}` :
+        fact.fact.field === 'REQUESTED_SCOPE' ? `Requested scope: ${fact.fact.scopeReference} · resource: ${fact.fact.resourceReference}` :
+        `Declared endpoint: ${fact.fact.endpoint} · ${fact.fact.protocol.kind === 'API' ? fact.fact.protocol.family : fact.fact.protocol.transport}`}</p>
+      <p className="text-xs text-gray-400">AgentVersion: {fact.versionId} · authorization: UNKNOWN.</p>
+      <p className="text-xs text-gray-400">Governed source declaration from snapshot {fact.sourceSnapshotId}. Runtime identity and reachability remain UNKNOWN.</p>
+    </>; break;
     case 'identity': content = <><p>{fact.objectKind}: {fact.objectId}</p><p className="text-xs text-gray-400">Organisation: {fact.organisationId}</p></>; break;
     case 'mapping': content = <><p>{fact.externalType}: {fact.externalId}</p><p className="text-xs text-gray-400">Canonical object: {fact.objectId} · source connection: {fact.connectionId}</p></>; break;
     case 'profile': content = <><p>{fact.field}: {fact.value}</p><p className="text-xs text-gray-400">AgentVersion: {fact.versionId}</p></>; break;

@@ -18,10 +18,13 @@ import {
   type RelationshipDiscoveryFinding,
   type SourceAssertion,
   type AcquisitionRun,
+  type ExecutionSourceSnapshot,
 } from "@council/canonical-contracts";
 import { lineageObservationFinding } from "@/lib/governance/lineage-observation";
 import {
   createReviewSubject,
+  validateExecutionSnapshot,
+  type ExecutionContextPersistencePort,
   normalizedObjectIdentity,
   asReviewSubjectId,
   recoverReconciliationInput,
@@ -432,7 +435,30 @@ function makePorts(intake = new FakeIntakePersistence()) {
   const review = new FakeReviewPersistence(intake);
   const materialization = new FakeMaterializationPersistence();
   const agentVersionTechnicalProfile = new FakeAgentVersionTechnicalProfilePersistence();
-  return { review, materialization, intake, agentVersionTechnicalProfile };
+  const snapshots = new Map<string, ExecutionSourceSnapshot>();
+  const executionContext: ExecutionContextPersistencePort = {
+    async recordSnapshot(snapshot) {
+      validateExecutionSnapshot(snapshot);
+      const org = snapshot.organisationId;
+      const candidates = [...intake.candidatesByFinding.entries()].filter(([key]) => key.startsWith(`${org}::`)).map(([,value]) => value);
+      assert.ok(candidates.some(c => c.candidateId === snapshot.agentVersionCandidateId && c.candidateKind === 'AGENT_VERSION'));
+      assert.ok([...agentVersionTechnicalProfile.proposals.values()].some(p => p.organisationId === org && p.agentVersionCandidateId === snapshot.agentVersionCandidateId));
+      for (const item of snapshot.facts) {
+        const assertion = intake.assertions.get(tenantKey(org,item.assertionId));
+        assert.equal(assertion?.trustState,'DECLARED');
+        assert.equal(assertion?.snapshot?.snapshotId,snapshot.sourceSnapshotId);
+        assert.ok(assertion?.evidenceIds.includes(item.evidenceId as never));
+        assert.equal(intake.evidence.get(tenantKey(org,item.evidenceId))?.handling,'HASH_ONLY');
+        if (item.fact.field === 'CAPABILITY') assert.ok(candidates.some(c => c.candidateId === item.toolCandidateId && c.candidateKind === 'TOOL'));
+      }
+      const key = tenantKey(org,snapshot.snapshotId);
+      if (!snapshots.has(key)) snapshots.set(key,structuredClone(snapshot));
+    },
+    async getReviewContext() { throw new Error('FORBIDDEN: discovery cannot review execution'); },
+    async getDecision() { throw new Error('FORBIDDEN: discovery cannot decide execution'); },
+    async recordDecision() { throw new Error('FORBIDDEN: discovery cannot govern execution'); },
+  };
+  return { review, materialization, intake, agentVersionTechnicalProfile, executionContext, snapshots };
 }
 
 describe("Milestone 9: column lineage through existing governed intake", () => {
@@ -1309,12 +1335,12 @@ describe("Discovery Governance Input Persistence V1: durable Finding/Candidate c
 // change to governance-review or the persistence adapter.
 // ---------------------------------------------------------------------------
 
-async function withIdentifiableAgentFixtureRepository(run: (root: string) => Promise<void>): Promise<void> {
+async function withIdentifiableAgentFixtureRepository(run: (root: string) => Promise<void>, source?: string): Promise<void> {
   const root = await mkdtemp(join(tmpdir(), "discovery-intake-agent-version-"));
   try {
     await writeFile(
-      join(root, "agent.py"),
-      [
+      join(root, source ? "agent.ts" : "agent.py"),
+      source ?? [
         "class CustomerSupportAgent:",
         '    kind = "agent"',
         '    modelReference = "gpt-x"',
@@ -1329,6 +1355,32 @@ async function withIdentifiableAgentFixtureRepository(run: (root: string) => Pro
 }
 
 describe("Agent Identity & Version Discovery V1: AGENT and AGENT_VERSION governance continuity", () => {
+  test('M13 direct source snapshots replay, retain temporal principal and isolate tenants without governing facts',async()=>{
+    const source=(principal:string)=>`export const triageAgent = {\n  kind: "agent",\n  tools: [alpha],\n  executionPrincipal: { kind: "SERVICE_ACCOUNT", provider: "fixture", authority: "realm", principal: "${principal}" },\n  connectivity: [{ endpoint: "https://catalog.invalid/v1", protocol: { kind: "API", family: "HTTP" } }],\n  requestedScopes: [{ scope: "catalog.read", resource: "catalog" }],\n};\n`;
+    await withIdentifiableAgentFixtureRepository(async root=>{
+      const ports=makePorts();
+      const scan=(organisationId=ORG_A)=>runGovernanceDiscoveryScan({executionContext:{organisationId},sourceConfiguration:{kind:'LOCAL_REPOSITORY',rootPath:root}},ports);
+      assert.deepEqual((await scan()).failures,[]);
+      const initial=[...ports.snapshots.values()][0];assert.equal(initial.facts.length,4);assert.equal(initial.authorizationState,'UNKNOWN');
+      assert.deepEqual((await scan()).failures,[]);assert.equal(ports.snapshots.size,1);
+      await writeFile(join(root,'agent.ts'),source('account-b'));
+      assert.deepEqual((await scan()).failures,[]);assert.equal(ports.snapshots.size,2);
+      const next=[...ports.snapshots.values()][1];assert.equal(initial.agentVersionCandidateId,next.agentVersionCandidateId);
+      assert.notEqual(initial.snapshotId,next.snapshotId);
+      assert.deepEqual((await scan(ORG_B)).failures,[]);assert.equal(ports.snapshots.size,3);
+      assert.ok([...ports.review.subjects.values()].every(s=>s.state==='PROPOSED'));
+      assert.equal(ports.agentVersionTechnicalProfile.materializations.size,0);
+    },source('account-a'));
+  });
+
+  test('M13 unavailable snapshot persistence reports failure and never silently drops declared capability',async()=>{
+    await withIdentifiableAgentFixtureRepository(async root=>{
+      const ports=makePorts();ports.executionContext.recordSnapshot=async()=>{throw new Error('unavailable');};
+      const result=await runGovernanceDiscoveryScan({executionContext:{organisationId:ORG_A},sourceConfiguration:{kind:'LOCAL_REPOSITORY',rootPath:root}},ports);
+      assert.ok(result.failures.some(f=>f.reason==='EXECUTION_SOURCE_PERSISTENCE_FAILED'));
+      assert.equal(ports.snapshots.size,0);assert.ok([...ports.review.subjects.values()].every(s=>s.state==='PROPOSED'));
+    });
+  });
   test("L9: persists exact version/target candidates before proposed relationship review, isolated by tenant", async () => {
     await withIdentifiableAgentFixtureRepository(async (root) => {
       const ports = makePorts();
