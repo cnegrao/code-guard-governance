@@ -220,19 +220,42 @@ AgentVersion has a DENIED execution authorization state.
 
 ## 7. Commands and governed materialization
 
-External API commands must NEVER directly mutate canonical truth. The following
-shortcut is forbidden:
+**Every externally reachable state-changing interface defined by this ADR —
+ENTERPRISE API and INTEGRATION API alike — must obey the applicable governed
+decision/materialization boundary.** Neither surface may directly create or
+overwrite canonical truth merely because the caller is authenticated, the
+connection is trusted, or the source is a bound integration. The following
+shortcut is forbidden on both surfaces:
 
 ```text
 PUT /v1/agents/{id} -> direct canonical table UPDATE
 ```
 
-Any future side-effecting operation must follow the governed flow:
+```text
+AUTHENTICATED/TRUSTED COMMAND OR ASSERTION
+  != GOVERNANCE AUTHORITY
+```
+
+Any future side-effecting operation must follow the applicable governed flow.
+For Enterprise API commands:
 
 ```text
 AUTHENTICATED COMMAND
   -> AUTHORIZATION
   -> PROPOSAL / REVIEW / POLICY GATE
+  -> GOVERNED DECISION
+  -> MATERIALIZATION when authorized
+```
+
+For Integration API inbound assertions, the same boundary applies through the
+existing M10 field/fact authority model rather than a human-command shape; an
+inbound connector assertion must not be forced into an inappropriate
+human-review flow:
+
+```text
+TRUSTED SOURCE ASSERTION
+  -> AUTHORIZATION / SOURCE BINDING
+  -> PROPOSAL / REVIEW / POLICY GATE as applicable
   -> GOVERNED DECISION
   -> MATERIALIZATION when authorized
 ```
@@ -245,13 +268,14 @@ POST /v1/reviews/{id}/decisions
 POST /v1/publications/requests
 ```
 
-Authentication, platform scopes and request acceptance never substitute for field
-authority or a governed decision. Preserve exact tenant/subject binding,
-applicable immutable policy version, reviewed source observation/snapshot,
-expected current state, actor and evidence. Recheck stale source, policy and
-state at the governed decision boundary. Preserve atomic decision/materialization
-semantics, append-only history and original completed replay outcomes; no
-last-write-wins or reinterpretation of history under a newer policy.
+Authentication, trusted connections, platform scopes and request acceptance
+never substitute for field authority or a governed decision, on either
+surface. Preserve exact tenant/subject binding, applicable immutable policy
+version, reviewed source observation/snapshot, expected current state, actor
+and evidence. Recheck stale source, policy and state at the governed decision
+boundary. Preserve atomic decision/materialization semantics, append-only
+history and original completed replay outcomes; no last-write-wins or
+reinterpretation of history under a newer policy.
 
 ## 8. Consumer security, tenancy and secrets
 
@@ -263,10 +287,11 @@ delegation or shared identity is inferred.
 
 Tenant/organisation context comes from trusted authenticated context. Never trust
 body/header `organisationId` as sufficient tenant authority. Validate tenant and
-resource authorization across object lookup, provenance, analytical traversal,
-commands and subscriptions. Client-provided identifiers or scopes cannot establish
-cross-tenant authority. Tenant isolation is mandatory throughout the read/write
-path, including caches, continuations and evidence references.
+resource authorization across, at minimum, object lookup, provenance, analytical
+traversal, commands, publication requests and subscriptions. Client-provided
+identifiers or scopes cannot establish cross-tenant authority. Tenant isolation
+is mandatory throughout the read/write path, including caches, continuations
+and evidence references.
 
 ```text
 CAPABILITY != AUTHORIZATION
@@ -328,19 +353,31 @@ business decision, and duplicate delivery must not repeat governed effects.
 **Webhook != System of Record.** This ADR implements neither subscriptions nor
 outbox workers and makes no durability, ordering or delivery guarantee today.
 
-## 11. Governed outbound publication is a different flow
+## 11. Governed outbound publication is a different, not-yet-decided flow
 
-Keep these flows explicit and separate:
+**Governed Outbound Publication is a FUTURE architecture. It does not exist
+today as an accepted ADR.** It requires its own separate architecture decision
+record before implementation. This ADR does not define Publication Policy
+semantics, vendor write-back authorization, publication evidence requirements
+or connector execution; the Enterprise API must not invent any of that
+semantics in the absence of that future ADR.
+
+Keep these flows conceptually explicit and separate regardless of which is
+decided first:
 
 ```text
 CONSUMER -> GOV IA ENTERPRISE API
 
-GOV IA -> PUBLICATION POLICY -> VENDOR CONNECTOR -> EXTERNAL PLATFORM
+GOV IA -> GOVERNED OUTBOUND PUBLICATION -> VENDOR CONNECTOR -> EXTERNAL PLATFORM
 ```
 
-The Enterprise API may expose publication status or accept an authorized
-publication request. It does NOT replace the Governed Outbound Publication
-architecture. A request enters the governed orchestration boundary; it is not
+The Enterprise API may read publication status once such governed publication
+state actually exists. Any Enterprise API publication WRITE capability
+(including `POST /v1/publications/requests`) is contingent on the future
+Governed Outbound Publication ADR being ACCEPTED first, and such operations
+must conform to that ADR once it exists; this Enterprise API ADR grants no
+independent authority to define or bypass it. A request, once that future
+architecture exists, enters its governed orchestration boundary; it is not
 permission for arbitrary vendor write-back. Publication policy and vendor
 connector execution remain separate from the public developer contract. A
 publication response cannot claim external completion without supporting evidence.
@@ -411,6 +448,11 @@ the architecture after review does not authorize starting M19 early.
 16. Compatibility and semantic versioning tests pass.
 17. Examples contain no fabricated governance claims or unsupported source coverage.
 18. Webhook boundary defined if needed; durable outbox/event delivery remains M20.
+19. If `/v1/publications` exposes any state-changing/write operation, the
+    Governed Outbound Publication ADR MUST already be ACCEPTED and those
+    operations MUST conform to it. Read-only publication status exposure may
+    exist only when such governed publication state actually exists; no
+    publication write capability may ship ahead of that ADR.
 
 ## 15. Consequences, non-goals and approval gate
 
