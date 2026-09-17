@@ -191,6 +191,68 @@ test('EXECUTION cannot carry a target or model usage', () => {
     assert.throws(() => createRuntimeObservation({ ...fixture('EXECUTION'), ...extra }), { message: 'RUNTIME_OBSERVATION_SHAPE_INVALID' });
   }
 });
+for (const [name, construct] of [['UnixNano', asRuntimeUnixNano], ['DurationNano', asRuntimeDurationNano]]) {
+  for (const value of ['0', '9223372036854775807']) test(`${name} preserves bounded value ${value}`, () => {
+    assert.equal(construct(value), value);
+  });
+  for (const value of ['9223372036854775808', '999999999999999999999999999999']) test(`${name} rejects overflow ${value}`, () => {
+    assert.throws(() => construct(value), { message: 'RUNTIME_OBSERVATION_SHAPE_INVALID' });
+  });
+}
+
+for (const field of ['startedAtUnixNano', 'endedAtUnixNano', 'sourceObservedAtUnixNano', 'duration']) {
+  test(`observation enforces exact nano bounds for ${field}`, () => {
+    for (const value of ['0', '9223372036854775807', '9223372036854775808', '999999999999999999999999999999']) {
+      const input = fixture();
+      input[field] = field === 'duration'
+        ? known({ value, unit: 'NANOSECOND', basis: 'MEASURED', method: { code: 'clock', version: '1' } })
+        : field === 'startedAtUnixNano' ? value : known(value);
+      if (value === '0' || value === '9223372036854775807') assert.deepEqual(createRuntimeObservation(input)[field], input[field]);
+      else assert.throws(() => createRuntimeObservation(input), { message: 'RUNTIME_OBSERVATION_SHAPE_INVALID' });
+    }
+  });
+}
+
+test('a structurally accepted URL-shaped reference still requires source-specific admission', () => {
+  const input = fixture(); input.target.observed.value.sourceReference = 'https://example.test/model';
+  assert.deepEqual(createRuntimeObservation(input).target, input.target);
+  assert.deepEqual(createRuntimeObservation(input).target.canonical, missing());
+});
+
+test('hostile Proxy get cannot synthesize accepted data or execute access side effects', () => {
+  const input = fixture(); let calls = 0;
+  // A direct-read copier would see forged valid tokens; descriptors expose invalid data.
+  input.tokens = new Proxy({ unit: 'TOKEN', input: null, output: missing(), total: missing() }, {
+    get(target, key) {
+      calls++;
+      input.sourceStatus = 'OK';
+      if (key === 'input') return known(1);
+      throw new Error('PRIVATE-PROXY-GET');
+    },
+  });
+  assert.throws(() => createRuntimeObservation(input), { message: 'RUNTIME_OBSERVATION_SHAPE_INVALID' });
+  assert.equal(calls, 0); assert.equal(input.sourceStatus, 'UNSET');
+});
+
+for (const trap of ['ownKeys', 'getOwnPropertyDescriptor']) test(`hostile Proxy ${trap} fails without leaking exception text or accepting side effects`, () => {
+  const input = fixture(); let calls = 0; let accepted;
+  input.tokens = new Proxy(input.tokens, {
+    [trap]() {
+      calls++; input.sourceStatus = 'OK';
+      throw new Error(`PRIVATE-PROXY-${trap}`);
+    },
+  });
+  assert.throws(() => { accepted = createRuntimeObservation(input); }, error => {
+    assert.equal(error.message, 'RUNTIME_OBSERVATION_SHAPE_INVALID');
+    assert.equal(error.cause, undefined);
+    assert.ok(!String(error.stack).includes('PRIVATE-PROXY'));
+    return true;
+  });
+  assert.equal(calls, 1); assert.equal(accepted, undefined);
+  // JavaScript traps can mutate their own input; no such mutation becomes accepted output.
+  assert.equal(input.sourceStatus, 'OK');
+});
+
 test('canonical taxonomies remain frozen', () => {
   assert.equal(Object.keys(CANONICAL_OBJECT_KIND).length, 11);
   assert.equal(Object.keys(GOVERNED_RELATIONSHIP_TYPE).length, 12);

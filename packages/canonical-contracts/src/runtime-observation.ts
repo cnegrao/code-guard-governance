@@ -44,7 +44,11 @@ export type RuntimeTargetKind = 'MODEL' | 'TOOL' | 'MCP_SERVER' | 'API';
 export interface RuntimeObservedTarget<K extends RuntimeTargetKind> {
   readonly kind: K;
   readonly providerCode: string;
-  /** Source-specific approved technical coordinate, not a display name or raw URL. */
+  /**
+   * M14.1 performs conservative structural validation only. Source-specific
+   * admission MUST apply exact allowlisting later; URL-shaped strings passing
+   * this validator are not thereby approved runtime target coordinates.
+   */
   readonly sourceReference: string;
 }
 export interface RuntimeCanonicalTarget<K extends RuntimeTargetKind> {
@@ -58,6 +62,12 @@ export interface RuntimeTarget<K extends RuntimeTargetKind> {
 }
 export type RuntimeParent = RuntimeUnknown | { readonly state: 'ROOT' }
   | { readonly state: 'SPAN_REFERENCE'; readonly parentSpanId: RuntimeSpanId };
+/**
+ * ERROR: execution/transport/protocol/provider error prevented a normal successful result.
+ * FAILURE: operation completed sufficiently to report an explicit non-success
+ * application/protocol result. OTel ERROR maps to ERROR; supported HTTP non-success
+ * maps to FAILURE. DIRECT_RESULT follows these source-specific semantics.
+ */
 export type RuntimeOutcome = RuntimeUnknown
   | { readonly state: 'SUCCESS' | 'ERROR' | 'FAILURE'; readonly basis: 'OTEL_STATUS' | 'HTTP_STATUS' | 'DIRECT_RESULT' };
 export interface RuntimeDuration {
@@ -74,6 +84,12 @@ export type RuntimeError =
   | { readonly category: 'PROVIDER'; readonly code: 'PROVIDER_REJECTED' }
   | { readonly category: 'APPLICATION'; readonly code: 'OPERATION_FAILED' };
 
+/**
+ * Input, output and total are independently source-reported facts. M14.1 neither
+ * infers total nor assumes total = input + output across providers. Source adapters
+ * MUST enforce provider-defined consistency: the future OpenAI adapter must check
+ * prompt_tokens + completion_tokens = total_tokens when all three are supplied.
+ */
 export interface RuntimeTokenUsage {
   readonly unit: 'TOKEN';
   readonly input: RuntimeAvailability<number>;
@@ -100,7 +116,13 @@ export interface RuntimeDerivedCost {
   readonly calculation: { readonly method: 'FLAT_TWO_BUCKET_TOKEN_TARIFF'; readonly version: '1.0.0';
     readonly rounding: 'HALF_EVEN'; readonly decimalPlaces: 9; readonly roundingStage: 'FINAL_SUM' };
 }
-/** Both bases can coexist without treating them as two charges. Neither is calculated here. */
+/**
+ * SUPPLIED and DERIVED are independent bases for the same observation, never summed
+ * or treated as duplicate spend. Their currencies may differ; direct comparison or
+ * aggregation across currencies requires an explicit governed FX/normalization basis.
+ * M14.1 has no FX/normalization. Source-specific admission/pricing may require equal
+ * currencies. No cost is generated here; domain validation verifies declared DERIVED amounts.
+ */
 export interface RuntimeCost {
   readonly supplied: RuntimeAvailability<RuntimeSuppliedCost>;
   readonly derived: RuntimeAvailability<RuntimeDerivedCost>;
@@ -184,7 +206,11 @@ const reference: Check = value => {
 const uuid = pattern(/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
 const trace: Check = value => { pattern(/^[a-f0-9]{32}$/)(value); if (value === '0'.repeat(32)) invalid(); };
 const span: Check = value => { pattern(/^[a-f0-9]{16}$/)(value); if (value === '0'.repeat(16)) invalid(); };
-const nano = pattern(/^(?:0|[1-9][0-9]{0,29})$/);
+// Lossless strings within the V1 signed-bigint-compatible persistence range.
+const nano: Check = value => {
+  if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]{0,18})$/.test(value) ||
+    BigInt(value) > BigInt('9223372036854775807')) invalid();
+};
 const decimal = pattern(/^(?:0|[1-9][0-9]{0,17})(?:\.[0-9]{1,9})?$/);
 const instant: Check = value => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) ||

@@ -92,7 +92,7 @@ test('exact target coordinates and proof are independently scoped', () => {
 test('nanosecond interval validates without float rounding or clock inference', () => {
   const input = { ...fixture(), endedAtUnixNano: known(asRuntimeUnixNano('1789516800000000002')),
     sourceObservedAtUnixNano: known(asRuntimeUnixNano('1')),
-    receivedAt: asIsoTimestamp('2020-01-01T00:00:00.000Z'), recordedAt: known(asIsoTimestamp('2019-01-01T00:00:00.000Z')),
+    receivedAt: asIsoTimestamp('2020-01-01T00:00:00.000Z'),
     duration: known({ value: asRuntimeDurationNano('1'), unit: 'NANOSECOND' as const, basis: 'START_END_DIFFERENCE' as const, method: { code: 'difference', version: '1' } }) };
   assert.deepEqual(validateRuntimeObservation(input), input);
 });
@@ -107,7 +107,7 @@ test('supported status and direct outcomes do not collapse UNSET', () => {
     assert.equal(result.sourceStatus, 'UNSET'); assert.equal(result.outcome.state, state);
   }
 });
-test('supplied costs and complete derived bases coexist without calculation or total inference', () => {
+test('supplied costs and verified derived bases coexist without cost generation or total inference', () => {
   const input = modelWithCost(); const result = validateRuntimeObservation(input); assert.deepEqual(result, input);
   if (result.kind === 'MODEL_CALL') { assert.deepEqual(result.tokens.total, missing()); assert.ok(Object.isFrozen(result.cost.derived)); }
 });
@@ -122,9 +122,9 @@ test('unresolved reasons remain explicit, with no parent inheritance', () => {
     assert.deepEqual(validateRuntimeObservation(input).binding, input.binding);
   }
 });
-test('source identity stays distinct across connections; receipt/recording never replace it', () => {
+test('source identity stays distinct across connections; receipt never replaces it', () => {
   const input = mutable(); const another = mutable(); another.sourceConnection.connectionId = 'runtime-b'; another.provenance.evidence.connectionId = 'runtime-b';
-  another.receivedAt = '2026-09-17T00:00:00.000Z'; another.recordedAt = known('2026-09-17T00:00:01.000Z');
+  another.receivedAt = '2026-09-17T00:00:00.000Z';
   const a = validateRuntimeObservation(input); const b = validateRuntimeObservation(another);
   assert.equal(a.sourceEventKey, b.sourceEventKey); assert.notEqual(a.sourceConnection.connectionId, b.sourceConnection.connectionId);
 });
@@ -185,6 +185,86 @@ test('no persistence, canonical mutation, resolver, grants or drift API in this 
     assert.throws(() => validateRuntimeObservation({ ...input, ...extra }), { message: 'RUNTIME_OBSERVATION_SHAPE_INVALID' });
   }
 });
+
+test('pre-persistence recordedAt accepts only UNKNOWN(NOT_SUPPLIED)', () => {
+  assert.deepEqual(validateRuntimeObservation(fixture()).recordedAt, missing());
+  for (const recordedAt of [known('2019-01-01T00:00:00.000Z'), known('2027-01-01T00:00:00.000Z'),
+    unknown('UNSUPPORTED'), unknown('INSUFFICIENT_EVIDENCE'), unknown('NOT_APPLICABLE')]) {
+    assert.throws(() => validateRuntimeObservation({ ...fixture(), recordedAt }), { message: 'RUNTIME_TIME_INVALID' });
+  }
+});
+
+test('generic tokens preserve independent supplied facts without imposing provider-specific sums', () => {
+  const input = mutable(); input.tokens = { unit: 'TOKEN', input: known(2), output: known(4), total: known(9) };
+  const result = validateRuntimeObservation(input); assert.equal(result.kind, 'MODEL_CALL');
+  if (result.kind !== 'MODEL_CALL') return;
+  assert.deepEqual(result.tokens, input.tokens);
+  assert.deepEqual(result.cost, { supplied: missing(), derived: missing() });
+  input.tokens.input = missing(); input.tokens.output = missing();
+  const partial = validateRuntimeObservation(input);
+  if (partial.kind === 'MODEL_CALL') assert.deepEqual(partial.tokens, input.tokens);
+});
+
+test('independent cost bases may use different currencies and are never summed or normalized', () => {
+  const input = mutable(modelWithCost()); input.cost.supplied.value.currency = 'EUR';
+  const result = validateRuntimeObservation(input); assert.equal(result.kind, 'MODEL_CALL');
+  if (result.kind !== 'MODEL_CALL') return;
+  assert.deepEqual(result.cost, input.cost);
+  assert.deepEqual(Object.keys(result.cost).sort(), ['derived', 'supplied']);
+  assert.deepEqual(result.tokens.total, missing());
+});
+
+for (const [name, inputTokens, outputTokens, inputRate, outputRate, amount, incorrect] of [
+  ['exact decimal rates', 2, 4, '0.10', '0.20', '0.000001000', '0.000001001'],
+  ['below midpoint', 1, 0, '0.000499999', '0', '0', '0.000000001'],
+  ['midpoint to even zero', 1, 0, '0.0005', '0', '0', '0.000000001'],
+  ['midpoint to even nonzero', 1, 0, '0.0025', '0', '0.000000002', '0.000000003'],
+  ['midpoint away from odd', 1, 0, '0.0015', '0', '0.000000002', '0.000000001'],
+  ['above midpoint', 1, 0, '0.000500001', '0', '0.000000001', '0'],
+  ['zero tokens with maximum rates', 0, 0, '999999999999999999.999999999', '999999999999999999.999999999', '0', '0.000000001'],
+  ['round only final sum', 1, 1, '0.0005', '0.0005', '0.000000001', '0'],
+  ['maximum safe token count', Number.MAX_SAFE_INTEGER, 0, '1', '0', '9007199254.740991', '9007199254.740992'],
+  ['large products beyond number precision', Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, '1000000', '1000000', '18014398509481982', '18014398509481981'],
+] as const) test(`declared derived amount validates exactly: ${name}`, () => {
+  const input = mutable(modelWithCost());
+  input.tokens.input = known(inputTokens); input.tokens.output = known(outputTokens);
+  const cost = input.cost.derived.value;
+  cost.usageInputs.input = inputTokens; cost.usageInputs.output = outputTokens;
+  cost.pricing.inputRate = inputRate; cost.pricing.outputRate = outputRate; cost.amount = amount;
+  assert.deepEqual(validateRuntimeObservation(input), input);
+  cost.amount = incorrect;
+  assert.throws(() => validateRuntimeObservation(input), { message: 'RUNTIME_COST_INVALID' });
+});
+
+test('ERROR and FAILURE cannot exchange their OTel or HTTP basis', () => {
+  assert.throws(() => validateRuntimeObservation({ ...fixture(), sourceStatus: 'ERROR', outcome: { state: 'FAILURE', basis: 'OTEL_STATUS' } }),
+    { message: 'RUNTIME_OUTCOME_INVALID' });
+  assert.throws(() => validateRuntimeObservation({ ...fixture('API_CALL'), httpStatusCode: known(503), outcome: { state: 'ERROR', basis: 'HTTP_STATUS' } }),
+    { message: 'RUNTIME_OUTCOME_INVALID' });
+});
+
+function withContext(): AttackInput {
+  const input = mutable();
+  const support = { evidence: evidence(), method: { code: 'DIRECT_RUNTIME_MEASUREMENT', version: '1' } };
+  input.context = {
+    principal: known({ value: { kind: 'WORKLOAD_IDENTITY', providerCode: 'provider', authorityReference: 'realm', principalReference: 'workload' }, support }),
+    environment: known({ value: 'TEST', support }),
+    network: known({ networkReference: 'network-1', vpcReference: missing(), support }),
+  };
+  return structuredClone(input);
+}
+test('direct context facts preserve evidence scoped to this tenant, source and observation', () => {
+  const input = withContext(); assert.deepEqual(validateRuntimeObservation(input), input);
+});
+for (const context of ['principal', 'environment', 'network']) {
+  for (const [field, foreign] of [['organisationId', 'foreign-tenant'], ['connectionId', 'foreign-source'],
+    ['observationId', '22222222-2222-4222-8222-222222222222']]) {
+    test(`${context} support rejects foreign ${field}`, () => {
+      const input = withContext(); input.context[context].value.support.evidence[field] = foreign;
+      assert.throws(() => validateRuntimeObservation(input), { message: 'RUNTIME_REFERENCE_INVALID' });
+    });
+  }
+}
 
 // Compile-time regressions: these declarations are checked by the package typecheck.
 function typeBoundaries(): void {

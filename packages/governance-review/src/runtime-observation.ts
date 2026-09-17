@@ -1,4 +1,4 @@
-import { createRuntimeObservation, type RuntimeEvidenceReference, type RuntimeObservation } from '@council/canonical-contracts';
+import { createRuntimeObservation, type RuntimeDerivedCost, type RuntimeEvidenceReference, type RuntimeObservation } from '@council/canonical-contracts';
 
 function reject(code: 'RUNTIME_SOURCE_MISMATCH' | 'RUNTIME_EVENT_IDENTITY_INVALID' | 'RUNTIME_REFERENCE_INVALID'
   | 'RUNTIME_BINDING_INVALID' | 'RUNTIME_TARGET_INVALID' | 'RUNTIME_TIME_INVALID' | 'RUNTIME_OUTCOME_INVALID'
@@ -6,8 +6,28 @@ function reject(code: 'RUNTIME_SOURCE_MISMATCH' | 'RUNTIME_EVENT_IDENTITY_INVALI
   throw new TypeError(code);
 }
 
+// Shape validation guarantees nonnegative decimals with at most nine fractional digits.
+function decimalNanos(value: string): bigint {
+  const [whole, fraction = ''] = value.split('.');
+  return BigInt(whole + fraction.padEnd(9, '0'));
+}
+
+function verifyDerivedAmount(cost: RuntimeDerivedCost): void {
+  const perMillion = BigInt(1000000);
+  const numerator = BigInt(cost.usageInputs.input) * decimalNanos(cost.pricing.inputRate) +
+    BigInt(cost.usageInputs.output) * decimalNanos(cost.pricing.outputRate);
+  // Round only the final sum to nine places, with exact HALF_EVEN ties.
+  let rounded = numerator / perMillion;
+  const twiceRemainder = (numerator % perMillion) * BigInt(2);
+  if (twiceRemainder > perMillion || (twiceRemainder === perMillion && rounded % BigInt(2) !== BigInt(0))) {
+    rounded += BigInt(1);
+  }
+  if (decimalNanos(cost.amount) !== rounded) reject('RUNTIME_COST_INVALID');
+}
+
 /**
- * Pure domain validation. Returns an isolated, deeply frozen value. It does not
+ * Pure pre-persistence domain validation: recordedAt must be UNKNOWN(NOT_SUPPLIED),
+ * because recording is server/database-owned. Returns an isolated, deeply frozen value. It does not
  * authenticate a tenant, verify database existence, resolve a binding, establish
  * source support, admit telemetry or grant authority. Those are later-wave gates.
  */
@@ -37,7 +57,7 @@ export function validateRuntimeObservation(value: unknown): RuntimeObservation {
   }
   const start = BigInt(observation.startedAtUnixNano);
   if (observation.endedAtUnixNano.state === 'KNOWN' && BigInt(observation.endedAtUnixNano.value) < start) reject('RUNTIME_TIME_INVALID');
-  if (observation.recordedAt.state === 'UNKNOWN' && observation.recordedAt.reason !== 'NOT_SUPPLIED') reject('RUNTIME_TIME_INVALID');
+  if (observation.recordedAt.state !== 'UNKNOWN' || observation.recordedAt.reason !== 'NOT_SUPPLIED') reject('RUNTIME_TIME_INVALID');
   if (observation.duration.state === 'KNOWN' && observation.duration.value.basis === 'START_END_DIFFERENCE') {
     if (observation.endedAtUnixNano.state !== 'KNOWN' ||
       BigInt(observation.duration.value.value) !== BigInt(observation.endedAtUnixNano.value) - start) reject('RUNTIME_TIME_INVALID');
@@ -84,8 +104,9 @@ export function validateRuntimeObservation(value: unknown): RuntimeObservation {
         const until = BigInt(Date.parse(cost.pricing.effectiveUntil.value)) * BigInt(1000000);
         if (until <= from || start >= until) reject('RUNTIME_COST_INVALID');
       }
+      verifyDerivedAmount(cost);
     }
-    // No token inference, pricing calculation or supplied/derived spend aggregation.
+    // No token inference, missing-cost generation, FX or supplied/derived spend aggregation.
   }
   return observation;
 }
