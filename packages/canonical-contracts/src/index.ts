@@ -9,3 +9,4 @@ export * from "./identifiers.ts";
 export * from "./semantic-representation.ts";
 export * from "./technical-facts.ts";
 export * from "./execution-context.ts";
+export * from "./runtime-observation.ts";

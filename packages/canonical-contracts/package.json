@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --test --test-isolation=none test/contracts.test.mjs test/semantic-representation.test.mjs test/execution-context.test.mjs",
+    "test": "node --test --test-isolation=none test/contracts.test.mjs test/semantic-representation.test.mjs test/execution-context.test.mjs test/runtime-observation.test.mjs",
     "typecheck": "tsc --noEmit"
   }
 }
