@@ -32,6 +32,16 @@ function verifyDerivedAmount(cost: RuntimeDerivedCost): void {
  * source support, admit telemetry or grant authority. Those are later-wave gates.
  */
 export function validateRuntimeObservation(value: unknown): RuntimeObservation {
+  return validateObservation(value, false);
+}
+
+/** Pure readback validation. A valid timestamp is required; database origin is
+ * established by the persistence boundary, not authenticated by this function. */
+export function validatePersistedRuntimeObservation(value: unknown): RuntimeObservation {
+  return validateObservation(value, true);
+}
+
+function validateObservation(value: unknown, persisted: boolean): RuntimeObservation {
   const observation = createRuntimeObservation(value);
   const { organisationId, sourceConnection, binding } = observation;
   const checkEvidence = (reference: RuntimeEvidenceReference): void => {
@@ -57,7 +67,8 @@ export function validateRuntimeObservation(value: unknown): RuntimeObservation {
   }
   const start = BigInt(observation.startedAtUnixNano);
   if (observation.endedAtUnixNano.state === 'KNOWN' && BigInt(observation.endedAtUnixNano.value) < start) reject('RUNTIME_TIME_INVALID');
-  if (observation.recordedAt.state !== 'UNKNOWN' || observation.recordedAt.reason !== 'NOT_SUPPLIED') reject('RUNTIME_TIME_INVALID');
+  if (persisted ? observation.recordedAt.state !== 'KNOWN'
+    : observation.recordedAt.state !== 'UNKNOWN' || observation.recordedAt.reason !== 'NOT_SUPPLIED') reject('RUNTIME_TIME_INVALID');
   if (observation.duration.state === 'KNOWN' && observation.duration.value.basis === 'START_END_DIFFERENCE') {
     if (observation.endedAtUnixNano.state !== 'KNOWN' ||
       BigInt(observation.duration.value.value) !== BigInt(observation.endedAtUnixNano.value) - start) reject('RUNTIME_TIME_INVALID');
