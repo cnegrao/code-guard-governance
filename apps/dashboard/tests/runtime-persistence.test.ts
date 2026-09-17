@@ -3,7 +3,7 @@ import { before, beforeEach, mock, test } from 'node:test';
 import { asOrganisationId } from '@council/canonical-contracts';
 import { runtimeFromRow, runtimeToRow } from '../lib/governance/runtime-row';
 import { validatePersistedRuntimeObservation } from '@council/governance-review';
-import { fixture, modelWithCost } from './helpers/runtime-fixtures';
+import { fixture, modelWithCost, precisionBoundary } from './helpers/runtime-fixtures';
 
 let calls: { name: string; args: any }[] = [];
 let error: string | undefined;
@@ -40,7 +40,7 @@ test('invalid or foreign readback is rejected',async()=>{
   }
 });
 test('closed row codec covers all five kinds, UNKNOWN states and complete cost support',()=>{
-  for(const input of [fixture('EXECUTION'),fixture('MODEL_CALL'),fixture('TOOL_CALL'),fixture('MCP_CALL'),fixture('API_CALL'),modelWithCost()]){
+  for(const input of [fixture('EXECUTION'),fixture('MODEL_CALL'),fixture('TOOL_CALL'),fixture('MCP_CALL'),fixture('API_CALL'),modelWithCost(),precisionBoundary()]){
     const result=validatePersistedRuntimeObservation(runtimeFromRow({...runtimeToRow(input),recorded_at:'2026-09-17T00:00:00.000Z'}));
     assert.deepEqual({...result,recordedAt:input.recordedAt},input);
   }

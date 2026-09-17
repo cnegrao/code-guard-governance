@@ -606,3 +606,178 @@ Remote writes: **ov-ia-g2-test = YES, AUTHORIZED; gov-ia-dev = NO**.
 No database operation of any kind was sent to gov-ia-dev; only project identity
 metadata was inspected. No secrets exposed. ADR/roadmap/producer unchanged;
 OTel not installed; M14.3 and M15 not started.
+
+## Independent adversarial review remediation (2026-09-17)
+
+An independent Claude adversarial review of PR #38 against this baseline returned
+**FIXES_REQUIRED_M14_2**. Correction to the statement above: the original
+acceptance run's "Nanosecond/count/decimal precision" row passed only for the
+paths it actually exercised — `started_nano`, `duration_value` (never set to
+`KNOWN` in any fixture), token/usage/dropped counts and cost amounts/rates. It
+did **not** exercise a `KNOWN` `endedAtUnixNano` or `sourceObservedAtUnixNano`
+value anywhere, hosted or local, so it did not prove complete `RuntimeUnixNano`
+readback coverage. That gap, and a second tenant-isolation defect, are corrected
+below. `20260917021203_runtime_observability_v1.sql` itself is **not edited** —
+migration history remains truthful — and both defects are fixed by an additive
+migration, `20260917192615_runtime_observability_v1_review_fixes.sql`.
+
+### F01 — CRITICAL — lossless `ended_nano_value`/`source_observed_nano_value` readback
+
+**Root cause:** `gov_repo.runtime_readback` cast `started_nano`, `duration_value`
+and the cost amounts/rates to `text` before JSON serialization, but omitted
+`ended_nano_value` and `source_observed_nano_value` — both full-range `bigint`
+(unix nanoseconds, unbounded up to `9223372036854775807`, unlike token/usage/
+dropped-count columns which are deliberately bounded to
+`Number.MAX_SAFE_INTEGER`). `to_jsonb` therefore emitted them as bare JSON
+numbers, silently losing precision above `Number.MAX_SAFE_INTEGER` once the
+value crossed the JSON boundary, and the TypeScript row codec accepted whatever
+type arrived instead of requiring a string.
+
+**Fix:** `CREATE OR REPLACE FUNCTION gov_repo.runtime_readback` in the new
+additive migration adds `'ended_nano_value', o.ended_nano_value::text` and
+`'source_observed_nano_value', o.source_observed_nano_value::text` to the
+existing `jsonb_build_object` overlay, matching the existing `started_nano`
+treatment exactly. `CREATE OR REPLACE` preserves the function's OID, owner and
+ACL; confirmed on `ov-ia-g2-test` after the migration that
+`gov_repo.runtime_readback` still carries no EXECUTE grant beyond the owner
+(`postgres=X/postgres`), identical to before. Companion TypeScript fix in
+`apps/dashboard/lib/governance/runtime-row.ts`: `ended_nano_value` and
+`source_observed_nano_value` moved from the `'native'` to the `'decimal'`
+column encoding, so `runtimeFromRow` now requires both to arrive as strings
+and rejects a numeric readback instead of silently accepting one.
+
+**New exact values tested (authoritative, `ov-ia-g2-test`):** a fresh
+observation with `startedAtUnixNano = "1000000000000000000"`,
+`endedAtUnixNano = KNOWN("9223372036854775807")` (the signed BIGINT upper
+bound, ~1024x past `Number.MAX_SAFE_INTEGER`), `sourceObservedAtUnixNano =
+KNOWN("9223372036854775807")` (independently, same bound), and
+`duration = KNOWN(basis: START_END_DIFFERENCE, value: "8223372036854775807")`
+exactly equal to `ended - started`. Test: `apps/dashboard/tests/runtime-
+database.test.ts`, `'F01 regression: ended/source-observed unix-nano and
+duration survive the real JSON boundary at BIGINT scale'`.
+
+**Authoritative Supabase result:** PASS. All three values round-tripped
+through the real `admit_runtime_observation` → PostgreSQL → `runtime_readback`
+→ Supabase CLI JSON boundary → `runtimeFromRow` → `validatePersistedRuntimeObservation`
+path as exact strings (`typeof === 'string'` asserted, `BigInt(...) >
+BigInt(Number.MAX_SAFE_INTEGER)` asserted), with byte-for-byte string equality
+to the input. A same-row replay afterward returned `replay: true` with a
+`deepEqual` match against the original durable JSON, confirming the fix does
+not disturb replay identity/equality. Canonical/M13 ordered-state hash was
+asserted unchanged before/after (`authorityState()`).
+
+### Numeric transport audit (section 5 of the review)
+
+Every `bigint`/`numeric` column reachable through `runtime_readback` was
+inspected against its CHECK-constraint range and the M14.1 contract's declared
+type:
+
+| Field | SQL type | Contract range | JSON representation | JS representation | Status |
+| --- | --- | --- | --- | --- | --- |
+| `started_nano` | `bigint`, unbounded | `RuntimeUnixNano` string, up to `9223372036854775807` | text (cast) | exact string | OK (already correct) |
+| `ended_nano_value` | `bigint`, unbounded | `RuntimeUnixNano` string | **was bare number** → text (cast) | **was lossy number** → exact string | **FIXED (F01)** |
+| `source_observed_nano_value` | `bigint`, unbounded | `RuntimeUnixNano` string | **was bare number** → text (cast) | **was lossy number** → exact string | **FIXED (F01)** |
+| `duration_value` | `bigint`, unbounded | `RuntimeDurationNano` string | text (cast) | exact string | OK (already correct, now exercised at BIGINT scale for the first time) |
+| `tokens_input_value` / `tokens_output_value` / `tokens_total_value` | `bigint`, CHECK-bounded `0..9007199254740991` | plain `number` (`Number.isSafeInteger`) | bare number | exact number | OK by design — bounded to the safe-integer domain |
+| `usage_input` / `usage_output` | `bigint`, CHECK-bounded `0..9007199254740991` | plain `number` | bare number | exact number | OK by design |
+| `dropped_attributes_value` / `dropped_events_value` / `dropped_links_value` | `bigint`, CHECK-bounded `0..9007199254740991` | plain `number` | bare number | exact number | OK by design |
+| `supplied_amount` / `derived_amount` | `numeric(27,9)` | `RuntimeDecimal` string | text (cast) | exact string | OK (already correct) |
+| `input_rate` / `output_rate` | `numeric(27,9)` | `RuntimeDecimal` string | text (cast) | exact string | OK (already correct) |
+
+No further deterministic lossless-readback defect was found. No field required
+a semantic-type change; no `STOP_REQUIRES_IMPLEMENTATION_DECISION` condition
+was reached.
+
+### F02 — HIGH — tenant-scoped connection identity
+
+**Root cause:** `gov_repo.runtime_source_heads.connection_id` carried a bare,
+table-wide `unique` constraint (`runtime_source_heads_connection_id_key`) in
+addition to the compound `PRIMARY KEY(organisation_id, connection_id)`. This
+forced every tenant's runtime connection label into one global namespace,
+contradicting the "organisation + connection" tenant-scoped identity the ADR
+and the rest of this schema use elsewhere. Because `runtime_source_heads` rows
+can never be deleted (`runtime_source_no_delete` trigger), the collision was
+also permanent and irreversible once any tenant claimed a given label.
+
+**Verification before dropping:** read-only inspection of `ov-ia-g2-test`
+(`pg_constraint`) confirmed `runtime_source_heads_connection_id_key` was the
+only constraint referencing `connection_id` alone, and that both dependent
+foreign keys (`runtime_deployment_bindings`, `runtime_source_configurations`)
+already reference the compound `(organisation_id, connection_id)`, which the
+retained primary key continues to satisfy. No FK depended on the bare unique
+constraint.
+
+**Fix:** the additive migration drops
+`runtime_source_heads_connection_id_key` via `ALTER TABLE ... DROP CONSTRAINT`.
+`PRIMARY KEY(organisation_id, connection_id)` is retained unchanged; no
+compound FK was touched.
+
+**Same connection label across two tenants (authoritative, `ov-ia-g2-test`):**
+a new, previously unused connection label (`m142-20260917-shared-connection`)
+was registered independently under both the existing fixture organisations
+(`14200000-...-001` and `...-002`). Both registrations succeeded (previously
+the second would have failed on the dropped constraint). Both tenants'
+`runtime_source_heads`/`runtime_source_configurations` rows were confirmed
+distinct and correctly org-scoped; admitting the identical `traceId`/`spanId`
+under each tenant on the shared label produced two independent, non-replayed
+rows (`replay: false` for both, two distinct `organisation_id` values on the
+same `connection_id, span_id`); a same-tenant replay of the first row still
+returned `replay: true` with an exact match; and admitting the first tenant's
+row under the second tenant's id was rejected
+(`RUNTIME_OBSERVATION_INVALID`) — the shared label creates no cross-tenant
+bypass. Test: `apps/dashboard/tests/runtime-database.test.ts`, `'F02
+regression: identical connection_id label across two tenants stays isolated,
+not merged'`. Canonical/M13 ordered-state hash was asserted unchanged
+before/after.
+
+### F03 — coverage expansion
+
+`apps/dashboard/tests/helpers/runtime-fixtures.ts` gains `precisionBoundary()`,
+an `EXECUTION` fixture with `KNOWN` `endedAtUnixNano`, `sourceObservedAtUnixNano`
+and a `KNOWN` `duration` (`START_END_DIFFERENCE` basis, exactly `ended -
+started`) at BIGINT scale. It is exercised both in the mocked/unit-level
+`'closed row codec'` test in `runtime-persistence.test.ts` (no database) and,
+authoritatively, in the F01 database test above. `duration.state = 'KNOWN'`
+had no prior coverage anywhere in the suite; it now does.
+
+### No regression in existing replay/quota/tenancy/canonical paths
+
+The one-time authoritative fixtures created during the original acceptance run
+(organisations, connections, the 18 pre-existing observations, the 4 sources,
+8 configurations and 1 binding) are immutable and were **not** re-created or
+re-consumed; the main suite's own preflight guard correctly refuses to repeat
+completed writes, by design, and was not bypassed. Instead, no-regression was
+established by:
+
+- Read-only, byte-for-byte comparison (`pg_get_functiondef`, whitespace-normalized)
+  confirming `gov_repo.admit_runtime_observation` (all replay/conflict/quota/
+  binding/canonical-target logic) and `gov_repo.runtime_same_observation`
+  (replay equality) on `ov-ia-g2-test` are **identical** to the original,
+  unedited `20260917021203_runtime_observability_v1.sql` source — the
+  additive migration touches neither function.
+- The new F01 and F02 tests above each independently re-exercise a fresh
+  insert-then-replay cycle end-to-end against the live database and both
+  passed, including exact-match replay comparison.
+- `authorityState()` (canonical objects/relationships, M13 snapshots/states/
+  decisions/heads, AgentVersion technical profiles/proposals) was asserted
+  unchanged before/after both new tests.
+- Full local regression: `@council/canonical-contracts` 220 passed,
+  `@council/governance-review` 318 passed, dashboard runtime/migration/M13
+  tests 201 passed with 2 DB-gated tests intentionally skipped — identical
+  counts to the original acceptance run. All five required typechecks and
+  `git diff --check` passed.
+
+### Remote writes and scope
+
+Remote writes: **ov-ia-g2-test = YES, AUTHORIZED** (one additive migration
+applied; migration history before: `...20260917021203`; after:
+`...20260917021203, 20260917192615`). **gov-ia-dev = NO** — not queried, not
+written, not linked. No secrets appear in the diff, this document or test
+output. ADR/roadmap unchanged; OTel not installed; producer not modified;
+M14.3 and M15 not started; no architecture decision was required for either
+fix.
+
+**Verdict: M14_2_REVIEW_FIXES_READY.** Both accepted findings (F01 CRITICAL,
+F02 HIGH) are fixed and authoritatively re-validated; F03 coverage gaps are
+closed; L01/L02 were left unchanged per the review's own non-blocking
+classification. Commit/push are authorized; merge is not.

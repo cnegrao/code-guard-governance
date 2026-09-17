@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { validatePersistedRuntimeObservation } from '@council/governance-review';
 import { runtimeFromRow, runtimeToRow } from '../lib/governance/runtime-row';
-import { modelWithCost } from './helpers/runtime-fixtures';
+import { modelWithCost, precisionBoundary } from './helpers/runtime-fixtures';
 import { seedGovernedSupport, binding, registerBinding, authorityState } from './helpers/runtime-governed-fixtures';
 import { databaseEnabled, databaseMode, databaseTarget, verifyHostedTarget, hostedProject, protectedProjectRef, verifyDatabaseEnvironment, sql, literal, composite, org, foreign, admission, observationRow, registerSource, config, migrationSql } from './helpers/runtime-database';
 
@@ -207,5 +207,61 @@ test('existing hosted fixture preserves all four UNKNOWN reasons', {
     const observation=validatePersistedRuntimeObservation(runtimeFromRow(result.observation));
     assert.deepEqual(observation.outcome,{state:'UNKNOWN',reason});
   }
+  assert.equal(await authorityState(),before);
+});
+
+test('F01 regression: ended/source-observed unix-nano and duration survive the real JSON boundary at BIGINT scale', {
+  skip: !databaseEnabled || databaseMode !== 'supabase-hosted', timeout: 120000,
+}, async()=>{
+  await verifyDatabaseEnvironment();
+  assert.equal(await sql(`select count(*) from gov_repo.runtime_observations where connection_id='m142-20260917-runtime-a' and span_id='9898989898989898';`),'0','Supplemental fixture ID must be unused; do not repeat completed writes');
+  const before=await authorityState();
+  const row=runtimeToRow(precisionBoundary());row.span_id='9898989898989898';row.source_event_key=row.trace_id+':'+row.span_id;
+  const precisionObservationId='98989898-9898-4898-8898-989898989898';
+  for(const key of Object.keys(row))if((key==='observation_id'||key.endsWith('_observation'))&&row[key]!==null)row[key]=precisionObservationId;
+  const result=JSON.parse(await sql(admission(row)));
+  assert.equal(typeof result.observation.ended_nano_value,'string');
+  assert.equal(typeof result.observation.source_observed_nano_value,'string');
+  assert.equal(result.observation.started_nano,'1000000000000000000');
+  assert.equal(result.observation.ended_nano_value,'9223372036854775807','must exceed Number.MAX_SAFE_INTEGER and survive byte-for-byte');
+  assert.equal(result.observation.source_observed_nano_value,'9223372036854775807','independent BIGINT field at the signed int64 upper bound');
+  assert.equal(result.observation.duration_value,'8223372036854775807');
+  assert.ok(BigInt(result.observation.ended_nano_value)>BigInt(Number.MAX_SAFE_INTEGER));
+  const read=validatePersistedRuntimeObservation(runtimeFromRow(result.observation));
+  if(read.kind!=='EXECUTION')throw new Error('TEST_FIXTURE_INVALID');
+  assert.deepEqual(read.endedAtUnixNano,{state:'KNOWN',value:'9223372036854775807'});
+  assert.deepEqual(read.sourceObservedAtUnixNano,{state:'KNOWN',value:'9223372036854775807'});
+  assert.equal(read.duration.state,'KNOWN');
+  if(read.duration.state==='KNOWN'){assert.equal(read.duration.value.value,'8223372036854775807');assert.equal(read.duration.value.basis,'START_END_DIFFERENCE');}
+  const replay=JSON.parse(await sql(admission(row)));
+  assert.equal(replay.replay,true);assert.deepEqual(replay.observation,result.observation);
+  assert.equal(await authorityState(),before);
+});
+
+test('F02 regression: identical connection_id label across two tenants stays isolated, not merged', {
+  skip: !databaseEnabled || databaseMode !== 'supabase-hosted', timeout: 120000,
+}, async()=>{
+  await verifyDatabaseEnvironment();
+  const shared='m142-20260917-shared-connection';
+  assert.equal(await sql(`select count(*) from gov_repo.runtime_source_heads where connection_id='${shared}';`),'0','Supplemental connection label must be unused; do not repeat completed writes');
+  const before=await authorityState();
+  await registerSource(shared,org); await registerSource(shared,foreign);
+  assert.equal(await sql(`select count(*) from gov_repo.runtime_source_heads where connection_id='${shared}';`),'2','both tenants may register the identical connection label');
+  assert.equal(await sql(`select count(distinct organisation_id) from gov_repo.runtime_source_heads where connection_id='${shared}';`),'2');
+  assert.equal(await sql(`select count(*) from gov_repo.runtime_source_configurations where connection_id='${shared}' and organisation_id='${org}';`),'1');
+  assert.equal(await sql(`select count(*) from gov_repo.runtime_source_configurations where connection_id='${shared}' and organisation_id='${foreign}';`),'1');
+  const sharedSpan='5656565656565656';
+  const orgRow=observationRow(sharedSpan);orgRow.connection_id=shared;orgRow.provenance_connection=shared;
+  const orgResult=JSON.parse(await sql(admission(orgRow,org,shared)));assert.equal(orgResult.replay,false);
+  const foreignRow=observationRow(sharedSpan);foreignRow.connection_id=shared;foreignRow.provenance_connection=shared;
+  foreignRow.organisation_id=foreign;foreignRow.provenance_org=foreign;
+  foreignRow.observation_id='66666666-6666-4666-8666-666666666666';foreignRow.provenance_observation=foreignRow.observation_id;
+  const foreignResult=JSON.parse(await sql(admission(foreignRow,foreign,shared)));
+  assert.equal(foreignResult.replay,false,'identical trace/span under a different tenant on the same connection label is an independent event, not a replay or a merge');
+  assert.equal(await sql(`select count(*) from gov_repo.runtime_observations where connection_id='${shared}' and span_id='${sharedSpan}';`),'2');
+  assert.equal(await sql(`select count(distinct organisation_id) from gov_repo.runtime_observations where connection_id='${shared}' and span_id='${sharedSpan}';`),'2');
+  const orgReplay=JSON.parse(await sql(admission(orgRow,org,shared)));
+  assert.equal(orgReplay.replay,true);assert.deepEqual(orgReplay.observation,orgResult.observation);
+  await assert.rejects(sql(admission(orgRow,foreign,shared)),/RUNTIME_OBSERVATION_INVALID/,'a tenant cannot admit under a foreign organisation id merely because the connection label is shared');
   assert.equal(await authorityState(),before);
 });

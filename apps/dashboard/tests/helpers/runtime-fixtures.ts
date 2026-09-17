@@ -49,6 +49,25 @@ export function derived(): RuntimeDerivedCost {
       rateUnit: 'PER_MILLION_TOKENS', inputCoverage: 'ALL_INPUT_TOKENS', outputCoverage: 'ALL_OUTPUT_TOKENS', adjustments: 'NONE_APPLICABLE' },
     usageInputs: { unit: 'TOKEN', input: 2, output: 4 }, calculation: { method: 'FLAT_TWO_BUCKET_TOKEN_TARIFF', version: '1.0.0', rounding: 'HALF_EVEN', decimalPlaces: 9, roundingStage: 'FINAL_SUM' } };
 }
+/**
+ * F01 regression fixture: exercises KNOWN endedAtUnixNano and sourceObservedAtUnixNano
+ * at/near the signed BIGINT boundary (9223372036854775807), both far beyond
+ * Number.MAX_SAFE_INTEGER, plus a KNOWN duration whose START_END_DIFFERENCE basis
+ * is exactly ended - started at the same scale.
+ */
+export function precisionBoundary(): RuntimeObservation {
+  const base = fixture('EXECUTION');
+  return {
+    ...base,
+    startedAtUnixNano: asRuntimeUnixNano('1000000000000000000'),
+    endedAtUnixNano: known(asRuntimeUnixNano('9223372036854775807')),
+    sourceObservedAtUnixNano: known(asRuntimeUnixNano('9223372036854775807')),
+    duration: known({
+      value: asRuntimeDurationNano('8223372036854775807'), unit: 'NANOSECOND', basis: 'START_END_DIFFERENCE',
+      method: { code: 'START_END_DIFFERENCE_V1', version: '1.0.0' },
+    }),
+  };
+}
 export function modelWithCost(): RuntimeObservation {
   const base = fixture(); assert.equal(base.kind, 'MODEL_CALL'); if (base.kind !== 'MODEL_CALL') throw new Error('TEST_FIXTURE_INVALID');
   return { ...base, reportedModel: known('reported-model'), tokens: { unit: 'TOKEN', input: known(2), output: known(4), total: missing() },
