@@ -7,7 +7,7 @@ import {
   runtimeKnown as known, runtimeUnknown as unknown, type RuntimeObservation, type RuntimeObservationEnvelope,
   type RuntimeObservationKind, type RuntimeSubjectBinding, type RuntimeDerivedCost,
 } from '@council/canonical-contracts';
-import { validateRuntimeObservation } from '../src/index.ts';
+import { validateRuntimeObservation, validatePersistedRuntimeObservation } from '../src/index.ts';
 import * as runtimeDomain from '../src/runtime-observation.ts';
 
 const org = asOrganisationId('tenant-a');
@@ -177,7 +177,7 @@ test('domain boundary rejects getters without invoking them or echoing content',
   assert.throws(() => validateRuntimeObservation(input), { message: 'RUNTIME_OBSERVATION_SHAPE_INVALID' }); assert.equal(invoked, false);
 });
 test('no persistence, canonical mutation, resolver, grants or drift API in this module', () => {
-  assert.deepEqual(Object.keys(runtimeDomain), ['validateRuntimeObservation']);
+  assert.deepEqual(Object.keys(runtimeDomain).sort(), ['validatePersistedRuntimeObservation', 'validateRuntimeObservation']);
   const source = readFileSync(new URL('../src/runtime-observation.ts', import.meta.url), 'utf8');
   assert.deepEqual([...source.matchAll(/from ['"]([^'"]+)['"]/g)].map(m => m[1]), ['@council/canonical-contracts']);
   const input = mutable(); const before = structuredClone(input); validateRuntimeObservation(input); assert.deepEqual(input, before);
@@ -191,6 +191,37 @@ test('pre-persistence recordedAt accepts only UNKNOWN(NOT_SUPPLIED)', () => {
   for (const recordedAt of [known('2019-01-01T00:00:00.000Z'), known('2027-01-01T00:00:00.000Z'),
     unknown('UNSUPPORTED'), unknown('INSUFFICIENT_EVIDENCE'), unknown('NOT_APPLICABLE')]) {
     assert.throws(() => validateRuntimeObservation({ ...fixture(), recordedAt }), { message: 'RUNTIME_TIME_INVALID' });
+  }
+});
+
+test('persisted validation requires a valid KNOWN recording timestamp for all five kinds', () => {
+  for (const kind of ['EXECUTION', 'MODEL_CALL', 'TOOL_CALL', 'MCP_CALL', 'API_CALL'] as const) {
+    const input = { ...fixture(kind), recordedAt: known(asIsoTimestamp('2026-09-16T01:00:00.000Z')) };
+    assert.deepEqual(validatePersistedRuntimeObservation(input), input);
+    assert.throws(() => validateRuntimeObservation(input), /RUNTIME_TIME_INVALID/);
+    for (const recordedAt of [missing(), unknown('NOT_APPLICABLE'), known('invalid'), known('2026-02-30T00:00:00.000Z')]) {
+      assert.throws(() => validatePersistedRuntimeObservation({ ...input, recordedAt }));
+    }
+  }
+});
+
+test('persisted validation retains reference, time, binding, cost and outcome invariants', () => {
+  const changes = [
+    (o: AttackInput) => { o.provenance.evidence.connectionId = 'foreign'; },
+    (o: AttackInput) => { o.sourceEventKey = 'c'.repeat(32) + ':' + o.spanId; },
+    (o: AttackInput) => { o.endedAtUnixNano = known('1'); },
+    (o: AttackInput) => { o.binding = structuredClone(exact()); o.binding.proof.organisationId = 'foreign'; },
+    (o: AttackInput) => { o.outcome = { state: 'SUCCESS', basis: 'OTEL_STATUS' }; },
+    (o: AttackInput) => { o.cost.derived.value.amount = '999'; },
+    (o: AttackInput) => { o.coverage.sampling.value.rate = 0.5; },
+  ];
+  for (const change of changes) {
+    const input = mutable(modelWithCost()); change(input);
+    let expected: unknown;
+    try { validateRuntimeObservation(input); } catch (error) { expected = (error as Error).message; }
+    assert.equal(typeof expected, 'string');
+    input.recordedAt = known('2026-09-16T01:00:00.000Z');
+    assert.throws(() => validatePersistedRuntimeObservation(input), { message: expected });
   }
 });
 
