@@ -1231,3 +1231,204 @@ PASSPORT MODIFIED: NO. M15 STARTED: NO. CANONICAL WRITE PATH CREATED: NO.
 Delivery is a commit, push and NEW PR against main from the M14.3B branch.
 **DO NOT MERGE.** No implementation or architecture stop condition was found.
 Verdict: **M14_3B_READY_FOR_REVIEW**.
+
+## M14.4 — Real controlled OpenAI runtime producer (2026-09-18)
+
+### Baseline adjudication, inputs and scope
+
+Architecture owner explicitly accepted current main/origin/main
+`316351e874d664ccf559920c0aba57eb82347f51`: PR #41, docs-only Commercial V0
+roadmap amendment. Its first parent `de802ba98d6ce3fec5ba920f031642bcc8e9893d`
+is the frozen M14.3B PR #40 merge; second parent is
+`34110c8ac4fdbcc79f3894513b381ea346182f3f`. The earlier baseline identity
+description was stale and was adjudicated without reset or revert.
+Branch: `feat/m14-real-openai-runtime-producer-v1`, created from accepted main.
+Tracked working tree was clean before edits; pre-existing `.worktrees/` and
+`codex-recovery-6101-6240.txt` were preserved outside delivery. Recovery-file
+SHA-256 remains `FD0999D5EE1CD1C8CE01FE1EDD3F4677B0E8614767076AD127AC1FF605FFB154`.
+
+Read before implementation: full CIA baseline, Runtime Observation ADR, this
+evidence history, runtime README/contract/adapter/ingestion, runtime persistence
+and row codec, llm.ts, talk.ts, dashboard/root manifests, supabase/config.toml,
+and both accepted M14.2 migrations. Inspected privileged DB/server-only patterns,
+workspace conventions and existing tests. `git grep` identified one generateAnswer
+caller (Talk), four getLLMProvider callers (Talk and three coding-memory embedding
+paths). No existing llm/Talk-specific test file was found; focused tests were added.
+
+Architecture A–O: frozen CIA compatibility (A); L12 producer and L0 provenance
+only (B); no Passport change, future families 13/14 (C); no canonical objects or
+relationships (D); parentage remains observation evidence (E); immutable source,
+SDK/method versions and exact times (F); OBSERVED has no governance authority (G);
+no Vector/Graph authority changes (H–I); LLM output remains noncanonical (J);
+tenant-bound trusted deployment configuration and metadata minimization (K);
+no migration/schema/privilege changes (L); consumes frozen M14.1–M14.3B, M15 not
+started (M); no fabricated binding/model identity/usage/cost (N); local gates pass,
+real external/provider-to-DB acceptance remains explicitly blocked (O).
+
+### IMPLEMENTED PRODUCER
+
+Existing OpenAI Chat Completions fetch path, `gpt-4o-mini`, instrumented only
+around one governance-answer invocation. Exactly two private SDK spans:
+EXECUTION/GOVERNANCE_ANSWER root and MODEL_CALL/CHAT_COMPLETION child, same trace.
+Each call owns its BasicTracerProvider and two-entry processor; explicit ROOT_CONTEXT
+and manual parent context isolate concurrent calls. Static safe names, no global
+registration/context manager/resource discovery, no events/links or raw errors.
+Public ReadableSpan fields suffice; no private SDK internals are used.
+
+All four required exact direct dependencies are used: @opentelemetry/api 1.9.0,
+sdk-trace-base 2.0.1, resources 2.0.1, semantic-conventions 1.29.0. Lock diff contains
+only those and transitive core 2.0.1. Next remains 15.5.19. Frozen trace revision
+1.41.0, HTTP revision 1.29.0, adapter/mapping/schema/method versions 1.0.0 unchanged.
+
+The strict server-only configuration requires explicit enablement and an
+8192-byte-bounded deployment-owned source snapshot, with exact tenant agreement,
+approved gpt-4o-mini, two kinds and nine supported facts. No credential, default
+connection, registration, activation or admin RPC enters the request path.
+M14.2 remains authoritative for actual source admission. Targets/deployments/tools
+are explicitly empty; no verifiedBinding is invented. Binding is UNRESOLVED;
+canonical model target and costs remain UNKNOWN. Configuration details and exact
+failure dispositions are documented in `apps/dashboard/lib/runtime/README.md`.
+
+The reported model is the exact model reference actually sent by the controlled
+client, not the response's resolved revision or a canonical MODEL. Only direct
+valid usage counts cross the metadata callback. Zero survives; absent/invalid
+counts stay absent. Contradictory complete counts are omitted, never repaired.
+HTTP, transport and malformed-response failures use HTTP_ERROR, CONNECTION_FAILED
+and INVALID_RESPONSE respectively. OTel UNSET, OK and ERROR remain distinct.
+
+No prompt/system/context/query/messages/completion/body/key/header/arbitrary
+response field/raw error/stack enters SDK writes, SupportedOtelSpan, persistence
+or diagnostics. The explicit bridge never enumerates/copies generic SDK objects.
+SDK HrTime converts via BigInt to exact nano strings. Separate server UUIDs are
+assigned outside spans; receivedAt is assigned at ingestion, recordedAt by DB.
+
+Business request parameters, return formatting, provider selection and fallback
+are preserved. The optional internal OpenAI metadata callback adds no requirement
+to other providers. Embeddings, DeepSeek/Ollama/noop, coding-memory, intent-router,
+ledger and the overall Talk workflow remain uninstrumented. TOOL_CALL/MCP_CALL/
+API_CALL still have only domain/fixture coverage.
+
+Observation failures preserve the answer and produce only a closed FAILED report
+and value-free code diagnostic. RECORDED requires both typed readbacks. Ingestion
+wait is bounded to five seconds; a timeout/readback failure may leave admitted
+rows and does not certify absence. No retry or subsequent admission begins after
+timeout. Two separate admissions do not claim atomic pair semantics. M14.2 replay
+identity/equality are unchanged; no replay implementation was added.
+
+### DETERMINISTIC TEST COVERAGE
+
+New local coverage: **36 passing tests** (28 producer, 5 bridge, 3 Talk), included
+in the final regression total below. Initial focused run passed 26 producer tests;
+expanded focused run passed 34 with one gated real acceptance test skipped. Later
+request-preservation and SDK-write assertions are included in the final 36 total.
+
+Tests prove topology, source/tenant concurrency isolation, approved model, direct
+usage including missing/zero/partial/invalid/inconsistent counts, no cost/canonical
+identity, excluded content, exact answer/request parameters, bounded provider and
+telemetry errors, invalid/unconfigured/foreign-tenant source, disabled behavior,
+uninstrumented other providers/embeddings, no global tracing registration,
+five-second timeout, status distinctions and exact BIGINT-scale nanoseconds.
+Public SDK method spies forward to the real implementation and assert that writes
+contain no raw content and no event/exception capture. Bridge fixtures use hostile
+getters on excluded fields to prove those fields are not read. Talk tests verify
+answer formatting/citations, intent-router early return and transport fallback.
+
+### STRUCTURAL INTEGRATION COVERAGE
+
+The producer suite runs actual OpenAI client code -> actual private OTel SDK ->
+explicit bridge -> unchanged M14.3B ingestion -> unchanged M14.3A adapter ->
+unchanged M14.2 persistence/row codec/readback validation. Only OpenAI fetch and
+privileged DB RPC are mocked. Two typed observations retain trace/parent topology,
+safe metadata and independent observation IDs. There is no duplicated runtime-row
+logic or adapter/ingestion mock in this structural path. Mock recordedAt/replay
+results are deterministic fixtures, not authoritative PostgreSQL acceptance.
+
+### REAL OPENAI COVERAGE
+
+**NOT EXECUTED — REAL_OPENAI_ACCEPTANCE_BLOCKED_NO_CREDENTIAL.**
+Presence-only inspection found no OPENAI_API_KEY in the process environment or
+the dashboard's existing .env.local. No key or file content was printed. No
+external provider request or fake-provider acceptance was performed. No live
+trace/span/observation IDs, usage counts, response, billing or inference claim.
+
+The opt-in `openai-runtime-acceptance.test.ts` is prepared and skipped by default.
+It gates the key, exact lab URL, trusted organisation/source, service credential,
+CLI lab identity, PostgreSQL 17, both M14.2 migrations, source support/activation,
+window and capacity before one harmless real invocation. It then uses the real
+privileged RPC/readback and independently checks durable presence, emitting only
+selected metadata. Prompts and answer never enter evidence. Not executed here.
+
+### CONTROLLED DATABASE ACCEPTANCE
+
+**NOT EXECUTED. DATABASE READS/WRITES: NONE. REMOTE SUPABASE WRITES: NONE.**
+Repository config read first: PostgreSQL major **17**. CLI availability/version
+checked: **2.107.0**. Docker executable/engine pipe unavailable; no standalone
+PostgreSQL used. Lab version 17.6 belongs to earlier M14.2 evidence and was not
+reverified in this wave. Existing local CLI link file identifies the lab ref;
+reading that file is not a live database verification.
+
+No trusted runtime source snapshot was available in process/local dashboard env.
+The dashboard's existing DB configuration points to protected gov-ia-dev and was
+neither loaded for execution nor used. No lab service credential/source approval
+was inferred from dev configuration. No remote source/config/binding rows queried,
+created or activated; no migration, db push, privilege grant or protected DB access.
+
+Whether a compatible lab source already exists remains unverified. If provisioning
+is needed, owner authorization is required for the minimal existing admin RPCs:
+register_runtime_source for an absent tenant-local head, configure_runtime_source
+for a compatible immutable version, activate_runtime_source for its pointer/state.
+The compatible source must approve the exact instrumentation/model/kinds/facts
+documented above, a finite admission window and capacity for two rows. No binding,
+canonical object/relationship or organisation creation is part of this acceptance.
+No administrative operation is automatically authorized or executed by this PR.
+
+### Final validation and tooling recovery
+
+| Gate | Result |
+| --- | --- |
+| Final affected dashboard/M14 regression | **282 passed, 0 failed, 5 explicitly gated tests skipped** |
+| New M14.4 deterministic/structural/Talk subset | **36 passed** (included above) |
+| canonical-contracts full tests | **220 passed** |
+| governance-review full tests | **318 passed** |
+| canonical-contracts typecheck | PASS |
+| governance-review typecheck | PASS |
+| dashboard typecheck, incremental=false | PASS |
+| scanner typecheck | PASS |
+| graphos package typecheck | PASS |
+| git diff --check | PASS |
+
+Final dashboard command from `apps/dashboard`:
+
+```powershell
+$env:RUN_M14_REAL_OPENAI_ACCEPTANCE='0'
+$env:M14_LOCAL_DB_TEST='0'
+$env:M14_HOSTED_DB_TEST='0'
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/*migration.test.ts tests/runtime-database.test.ts tests/runtime-persistence.test.ts tests/execution-context-service.test.ts tests/execution-context-route.test.ts tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts tests/runtime-ingestion.test.ts tests/openai-runtime-producer.test.ts tests/otel-runtime-bridge.test.ts tests/talk-runtime-producer.test.ts tests/openai-runtime-acceptance.test.ts
+```
+
+All existing M14.3A/M14.3B/OTel-persistence/domain/persistence/migration checks were
+included. Four existing DB-gated tests and the new real OpenAI acceptance test
+were skipped. No DB result is inferred from those skips. Full package test and
+five typecheck commands match prior M14 evidence; dashboard was rechecked after
+the final new test. No functional failures or unexplained regressions remain.
+
+The user-reported `access_programs` capability error was not reproduced in any
+repository command; it was treated as platform/tooling interruption, with no
+unsupported capability request and no reverted work. Separately, sandbox Git/CLI
+writes and Node spawn EPERM were resolved by authorized execution. Npm's restricted
+cache/network and TLS-chain failure were resolved using Windows system CAs
+(`NODE_USE_SYSTEM_CA=1`); TLS verification stayed enabled. No unrelated packages
+upgraded. Existing Node module-mock/deprecation warnings are tooling notices.
+
+### Scope and delivery verdict
+
+M14.1/M14.2/M14.3A/M14.3B semantics changed: **NO**. Their files, canonical
+contracts, governance validators and migrations have zero diff. Architecture/
+roadmap/Passport/Graph/Vector changed: **NO**. Public runtime/OTLP routes, Collector,
+generic logs/metrics, canonical writes or source administration added: **NO**.
+M15/GitHubSourceAdapter/later work started: **NO**. M14 remains in progress;
+M14.5 remains the final closure gate. No merge is authorized or performed.
+
+Implementation/local validation supports commit, push and a new review PR, with
+real provider and database acceptance explicitly outstanding. Verdict:
+**M14_4_IMPLEMENTED_BUT_ACCEPTANCE_BLOCKED**.

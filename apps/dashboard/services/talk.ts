@@ -1,6 +1,7 @@
 import * as talkRepo from "@/repositories/talk";
 import { db } from "@/lib/db";
 import { getLLMProvider, GOVERNANCE_SYSTEM_PROMPT } from "@/lib/llm";
+import { generateGovernanceAnswer } from "@/lib/runtime/openai-governance-answer-producer";
 import { semanticSearch } from "@/services/coding-memory";
 import type { GovernanceAnswer } from "@/repositories/talk";
 
@@ -79,7 +80,7 @@ if (llm.available) {
     } catch {}
 
     try {
-      const llmAnswer = await llm.generateAnswer(GOVERNANCE_SYSTEM_PROMPT, enhancedContext, query);
+      const llmAnswer = await generateGovernanceAnswer(llm, orgId, GOVERNANCE_SYSTEM_PROMPT, enhancedContext, query);
 
       if (llmAnswer.trim()) {
         const citations = evidence.slice(0, 5).map((e) => ({

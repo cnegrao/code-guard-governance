@@ -1,6 +1,8 @@
+import { directOpenAIUsage, OPENAI_GOVERNANCE_MODEL, type OpenAIAnswerMetadata, type OpenAIAnswerObserver } from './runtime/openai-answer-metadata';
+
 export interface LLMProvider {
   name: string;
-  generateAnswer(systemPrompt: string, context: string, query: string): Promise<string>;
+  generateAnswer(systemPrompt: string, context: string, query: string, observeOpenAI?: OpenAIAnswerObserver): Promise<string>;
   generateEmbedding(text: string): Promise<number[]>;
   available: boolean;
 }
@@ -23,22 +25,34 @@ function getOpenAIProvider(): LLMProvider {
       const json = await res.json();
       return json.data?.[0]?.embedding ?? [];
     },
-    generateAnswer: async (systemPrompt: string, context: string, query: string) => {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Context:\n${context}\n\nQuestion: ${query}\n\nAnswer concisely. Cite specific records.` },
-          ],
-          max_tokens: 500,
-          temperature: 0.1,
-        }),
-      });
-      const json = await res.json();
-      return json.choices?.[0]?.message?.content ?? "";
+    generateAnswer: async (systemPrompt: string, context: string, query: string, observeOpenAI?: OpenAIAnswerObserver) => {
+      let metadata: OpenAIAnswerMetadata = { state: 'ERROR', code: 'CONNECTION_FAILED' };
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: OPENAI_GOVERNANCE_MODEL,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: `Context:\n${context}\n\nQuestion: ${query}\n\nAnswer concisely. Cite specific records.` },
+            ],
+            max_tokens: 500,
+            temperature: 0.1,
+          }),
+        });
+        metadata = { state: 'ERROR', code: res.ok ? 'INVALID_RESPONSE' : 'HTTP_ERROR' };
+        const json = await res.json();
+        if (observeOpenAI && res.ok && typeof json?.choices?.[0]?.message?.content === 'string') {
+          metadata = directOpenAIUsage(json.usage);
+        }
+        return json.choices?.[0]?.message?.content ?? "";
+      } finally {
+        // This port receives only closed status/count metadata, never the response.
+        // A broken internal observer cannot change the existing business result.
+        try { observeOpenAI?.(metadata); }
+        catch { console.warn('RUNTIME_PRODUCER_CALLBACK_FAILED'); }
+      }
     },
   };
 }
