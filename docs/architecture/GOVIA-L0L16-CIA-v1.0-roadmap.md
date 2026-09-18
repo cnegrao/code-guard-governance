@@ -12,6 +12,43 @@ recorded via ADR.
 Every milestone below must satisfy the **Future milestone Definition of
 Done** (baseline §9) before implementation begins.
 
+## Execution-scope amendment — COMMERCIAL V0 (2026-09-18)
+
+This explicitly owner-approved amendment records the Commercial V0 execution
+scope. The architecture baseline remains frozen: architectural invariants,
+L0–L16 layer definitions, and milestone numbering 0–22 are unchanged. This
+amendment changes execution scope only; it does not revise the baseline or
+waive the milestone Definition of Done.
+
+M14 remains **RUNTIME & OBSERVABILITY V1**. After M14 closure and before
+material M15 execution, Commercial V0 requires the following structural gate:
+
+```text
+GitHub
+→ GitHubSourceAdapter
+→ SourceAdapter
+→ evidence-backed snapshot/provenance
+→ Discovery
+→ PROPOSED
+→ Governance Review
+→ Canonical Truth
+```
+
+GitHub is a **CORE L0 Source & Acquisition capability** and is **NOT part of
+M19**. This GitHub canonical source foundation is an execution gate between
+M14 and M15, not an additional numbered milestone. Canonical promotion must
+pass through Governance Review, preserving evidence, provenance, tenant
+isolation, and source authority.
+
+The existing authority and evidence invariants remain mandatory:
+
+- `DISCOVERY != GOVERNANCE AUTHORITY`
+- `SCANNER MACHINE AUTHORITY CEILING = PROPOSED`
+- `SOURCE ASSERTION != CANONICAL FACT`
+- `MISSING EVIDENCE MUST NEVER BE FABRICATED`
+
+## Milestones (0–22)
+
 0. **GOV IA REQUIREMENTS BASELINE & ROADMAP FREEZE V1** — this milestone.
 
 1. **GOLDEN REPOSITORIES & DISCOVERY BASELINE V2**
@@ -80,8 +117,28 @@ Done** (baseline §9) before implementation begins.
     L15; signal → hypothesis → governed risk → residual risk.
 
 18. **BUSINESS WORKSPACE V1**
+    Commercial V0 focus:
 
-19. **ENTERPRISE CONNECTORS EXPANSION**
+    - Executive / Board
+    - CISO / Security
+    - Compliance / Auditor
+    - AI / Data Owner
+
+19. **ENTERPRISE CONNECTORS EXPANSION — COMMERCIAL V0**
+    Initial V0 scope ONLY:
+
+    - Informatica IDMC
+    - Microsoft Purview
+    - Databricks
+    - AWS
+    - Google Cloud
+    - dbt
+
+    dbt scope includes dbt Core/project artifacts relevant to discovery and
+    lineage, and governed dbt Cloud metadata integration where applicable.
+    Evidence, provenance, tenant isolation, and source authority must be
+    preserved; dbt provides no alternative canonical truth path. GitHub is
+    the CORE L0 gate described above and is not included in M19.
 
 20. **OUTBOX / EVENT CONSUMERS**
     Only with real consumers.
@@ -92,18 +149,42 @@ Done** (baseline §9) before implementation begins.
 
 ---
 
-## Next development milestone
+## Post-V0 scope
 
-Per the current implementation coverage
-([`GOVIA-L0L16-CIA-v1.0-coverage.md`](./GOVIA-L0L16-CIA-v1.0-coverage.md)),
-the canonical/governance/reconciliation foundation (milestones that predate
-this roadmap freeze) is strong, but AGENT remains FINDING_ONLY and no
-AgentVersion evidence pipeline exists yet. The next milestone in dependency
-order is:
+The following are deferred until post-V0 unless required by an actual
+customer:
 
-**1. GOLDEN REPOSITORIES & DISCOVERY BASELINE V2**
+- GitLab canonical promotion
+- Azure DevOps canonical promotion
+- Bitbucket canonical promotion
+- Gitea
+- Forgejo
+- Confluence
+- Notion
+- SharePoint
+- Entra ID
+- Okta
+- Keycloak
 
-followed by **2. AGENT IDENTITY & VERSION DISCOVERY V1**, since milestones 3
-onward (technical profile, semantic foundation, behavior relationships) all
-depend on a trustworthy, evidence-backed AGENT_VERSION identity existing
-first.
+## Practical Commercial V0 sequence
+
+```text
+M14 close
+→ GitHub canonical source foundation
+→ M15
+→ M16
+→ M17
+→ focused M18
+→ M19: IDMC/Purview/Databricks/AWS/Google Cloud/dbt
+→ M20 only real consumers
+→ M21
+→ M22
+```
+
+## Current execution position (2026-09-18)
+
+- Current work is **M14 — RUNTIME & OBSERVABILITY V1**.
+- The next structural V0 gate after M14 closure is **GitHubSourceAdapter**,
+  establishing the GitHub canonical source foundation through the governed
+  path above before material M15 execution.
+- Then **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1**.
