@@ -781,3 +781,293 @@ fix.
 F02 HIGH) are fixed and authoritatively re-validated; F03 coverage gaps are
 closed; L01/L02 were left unchanged per the review's own non-blocking
 classification. Commit/push are authorized; merge is not.
+
+## M14.3A — OTel Adapter Mapping and Sanitization
+
+This section is additive M14.3A evidence. All preceding M14.2 history is retained
+unchanged. M14.2 is COMPLETE / ACCEPTED / MERGED / FROZEN (PR #38).
+The prior hosted-write authorization recorded above does **not** apply to this
+substage: database writes and remote Supabase operations here are NONE.
+
+### Base, scope and architecture inputs
+
+`git fetch origin`, `git checkout main`, `git pull --ff-only origin main` completed;
+both `HEAD` and `origin/main` were verified as
+`3f36621beecd0a4979333c20720e2cde71219289` before implementation.
+Fresh branch: `feat/m14-otel-adapter-v1`. The pre-existing untracked
+`codex-recovery-6101-6240.txt` is preserved and excluded from delivery.
+
+Read in full before implementation:
+
+- `docs/architecture/GOVIA-L0L16-CIA-v1.0.md`.
+- `docs/architecture/ADR-GOVIA-RUNTIME-OBSERVATION-AND-OTEL-INGESTION-v1.md`.
+- This existing M14.2 evidence record.
+- `packages/canonical-contracts/src/runtime-observation.ts`.
+- `packages/governance-review/src/runtime-observation.ts`.
+- `apps/dashboard/lib/governance/runtime-persistence.ts` and `runtime-row.ts`.
+- `supabase/migrations/20260917021203_runtime_observability_v1.sql`.
+- `supabase/migrations/20260917192615_runtime_observability_v1_review_fixes.sql`.
+
+`supabase/config.toml` was inspected read-only: configured PostgreSQL major 17.
+No database connection, migration, CLI database invocation or project mutation.
+
+Architecture A–O: unchanged frozen CIA (A); L12 mapping and L0 provenance (B);
+no Passport implementation, future families 13/14 only (C); no canonical identity
+or relationship creation (D); parentage remains scoped telemetry evidence (E);
+immutable method/source/configuration/versions and exact times (F); OBSERVED has
+zero governance authority (G); no Vector/Graph/LLM changes (H–J); trusted tenant
+and source with safe metadata extraction (K); no migrations (L); existing M14.2
+persistence compatibility and future M15 evidence boundary (M); UNKNOWN and
+non-fabrication retained (N); focused fixture/adversarial/compatibility tests plus
+the requested regressions, without claiming producer/database acceptance (O).
+
+### Placement and files
+
+| File under apps/dashboard | Responsibility |
+| --- | --- |
+| `lib/runtime/otel-contract.ts` | Narrow internal input, trusted context, closed result/error codes, version constants and per-kind attribute allowlists |
+| `lib/runtime/otel-span-adapter.ts` | Pure source-specific extraction, sanitization, mapping and existing domain validation |
+| `lib/runtime/README.md` | Exhaustive input/attribute/value mappings, trust boundaries and limitations |
+| `tests/helpers/otel-fixtures.ts` | Explicit synthetic fixtures, no producer execution |
+| `tests/otel-span-adapter.test.ts` | Domain, sanitization, identity, precision and hostile-input coverage |
+| `tests/otel-persistence-contract.test.ts` | All five outputs through unchanged persistRuntimeObservation with mock RPC/readback |
+
+This evidence appendix is the only modification to an existing tracked file.
+The application already owns runtime integration; a separate pure `lib/runtime`
+directory is the narrowest placement without adding a workspace or dependency.
+It depends on canonical-contracts and governance-review, never the reverse, and
+does not import persistence. Canonical contracts retain no SDK types.
+
+### Dependencies and revisions
+
+Inspected root, domain and dashboard manifests, package-lock, repository manifest
+OTel references and existing Next optional peer. Before and after: **no installed
+OTel packages, no package.json or package-lock changes, no unrelated upgrades**.
+Next is locked to **15.5.19**, optional `@opentelemetry/api` peer **^1.1.0**.
+Node used for checks: **24.19.0**.
+
+The planned exact API **1.9.0**, sdk-trace-base **2.0.1**, resources **2.0.1**,
+semantic-conventions **1.29.0** remain deferred, not installed. Versioned upstream
+[sdk-trace-base manifest](https://github.com/open-telemetry/opentelemetry-js/blob/v2.0.1/packages/opentelemetry-sdk-trace-base/package.json)
+and [resources manifest](https://github.com/open-telemetry/opentelemetry-js/blob/v2.0.1/packages/opentelemetry-resources/package.json)
+specify API peer `>=1.3.0 <1.10.0`, semconv dependency `^1.29.0`, and Node
+`^18.19.0 || >=20.6.0`. These ranges permit the selected versions and current
+Next/Node; no compatibility conflict was found. No installation/resolution or live
+SDK compatibility is claimed. The adapter needs only the narrow internal DTO.
+
+Core trace target **1.41.0**; HTTP attribute revision **1.29.0**;
+adapter **govia-otel-span/1.0.0**; mapping **govia.runtime/1.0.0**;
+schema **runtime-observation/1.0.0**. Frozen domain version fields remain `1.0.0`.
+Method is `GOVIA_OTEL_SPAN/1.0.0`. GenAI and MCP conventions remain
+UNKNOWN/UNSUPPORTED. Exact inputs, attributes and corresponding domain fields are
+documented in [the adapter mapping](../../../apps/dashboard/lib/runtime/README.md).
+
+### Supported inputs, sanitization and domain semantics
+
+All five kinds supported: **EXECUTION, MODEL_CALL, TOOL_CALL, MCP_CALL, API_CALL**.
+`govia.observation.kind` plus kind-compatible `govia.operation` are mandatory;
+unknown/generic/HANDOFF semantics reject, with no EXECUTION fallback or name mapping.
+
+Common span keys: `govia.observation.kind`, `govia.operation`, `govia.error.code`.
+Call keys: `govia.target.provider`, `govia.target.reference`. MODEL_CALL additionally
+supports `govia.model.reported`, `govia.usage.input_tokens`,
+`govia.usage.output_tokens`, `govia.usage.total_tokens`. MCP_CALL additionally
+supports `govia.mcp.transport`, `govia.mcp.tool`, `govia.mcp.result`.
+API_CALL additionally supports `govia.api.protocol`, `http.request.method`,
+`http.response.status_code`. No other span attributes are read.
+
+Resource keys: `govia.producer.id`, `telemetry.sdk.name`, `telemetry.sdk.version`,
+optional paired `govia.deployment.reference` and `govia.artifact.sha256`.
+Scope name/version and source producer/SDK identity must match trusted metadata.
+Parent, optional end/source time, trace sampled flag and three dropped counts are
+explicit bounded DTO fields. All mapping/version/enum/allowlist details are in README.
+
+Extraction reads fixed own data descriptors, ignores excluded subtrees without
+traversing/copying them, and rejects relevant accessors. Bounded safe reference
+syntax is supplemented by exact trusted target/model/tool/release approvals.
+No credential-bearing or generic URL is accepted as a target. Required unsafe
+identity rejects; raw status/exception text never becomes an error classification.
+No raw telemetry is hashed, logged, serialized, snapshotted or returned in diagnostics.
+Only safe metadata reaches the unchanged domain validator. Return errors contain
+one closed stable code and no payload value/message/cause/path.
+
+Tenant/connection/configuration/producer authorization is supplied by trusted
+orchestration only. Semantic event identity is tenant + connection + trace + span;
+the assigned UUID is not a replacement. Parent omission stays UNKNOWN; explicit
+source no-parent (`null`) alone establishes ROOT. No parent lookup or global merge.
+Exact timestamps use strings and BigInt, preserving all three source time fields
+up to **9223372036854775807**; no Number conversion or clock substitution.
+Received time is trusted; recorded time remains database-owned.
+
+UNSET is preserved and does not imply success. Supported OK/ERROR map by OTel
+status; explicit supported HTTP/MCP results provide distinct bases. Contradictory
+results reject. Independent token fields retain missing versus explicit zero and
+do not require total=input+output. Cost SUPPLIED and DERIVED both remain
+UNKNOWN/UNSUPPORTED: this mapping has no safe supplied-cost or complete pricing
+contract. Principal/environment/network and sampling rate remain UNKNOWN.
+
+EXACT requires an independently verified trusted binding matching tenant, runtime
+connection and the observed approved release coordinates. Foreign/mismatched/unproven
+method fails; payload IDs never become proof. Canonical targets require independently
+verified trusted exact mappings of the correct tenant/kind/provider/reference;
+duplicate approved target matches reject. No canonical relationships are created.
+
+### Validation results
+
+| Command / scope | Result |
+| --- | --- |
+| `npm test --workspace @council/canonical-contracts` | 220 passed, 0 failed |
+| `npm test --workspace @council/governance-review` | 318 passed, 0 failed |
+| Dashboard command below (including new adapter/compatibility tests) | 231 passed, 0 failed, 4 database tests intentionally skipped |
+| New tests within that dashboard total | 30 passed (29 adapter tests + 1 five-kind mock persistence test) |
+| `npm run typecheck --workspace @council/canonical-contracts` | PASS |
+| `npm run typecheck --workspace @council/governance-review` | PASS |
+| `npm run typecheck:dashboard -- --incremental false` | PASS |
+| `npm run typecheck:scanner` | PASS |
+| `npm run typecheck:graphos-pkg` | PASS |
+| `git diff --check` | PASS |
+
+Dashboard command from `apps/dashboard`; database opt-ins explicitly disabled
+in the command process, so even pre-existing shell settings cannot enable writes:
+
+```powershell
+$env:M14_LOCAL_DB_TEST='0'
+$env:M14_HOSTED_DB_TEST='0'
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/*migration.test.ts tests/runtime-database.test.ts tests/runtime-persistence.test.ts tests/execution-context-service.test.ts tests/execution-context-route.test.ts tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts
+```
+
+The initial focused runner hit sandbox `spawn EPERM`; rerunning with execution
+approval passed. No functional test failure. Existing experimental module-mock
+warnings are tooling notices, not live SDK or database behavior. The four skipped
+cases are the existing gated database acceptance/supplemental checks; structural
+migration tests execute read-only and do not count as database acceptance.
+
+Hostile synthetic fixtures cover Authorization/Bearer, key/JWT/password/private-key
+shapes, credential URLs, prompts/completions, bodies, tool arguments/results,
+headers/cookies, exceptions/stacks, baggage, names, resource spoofing, getters,
+prototypes, cyclic excluded trees and reflection errors. They verify unchanged
+safe serialization and sanitized-only hashes, zero log calls, value-free rejection,
+no raw-content persistence arguments and no canonical authority. Assertion failures
+on hostile content use booleans to avoid echoing raw fixtures into test output.
+No snapshots or real secrets are introduced.
+
+### Limitations and final scope guards
+
+Real producer coverage: **NONE — NOT YET INSTRUMENTED**. SDK export, live model
+inference, billing, OTLP, PostgREST and database admission are not exercised here.
+Trusted context is a caller responsibility, not a new authentication/source loader.
+Future transport must bound incoming bytes/batches and supply authorized immutable
+configuration. Existing M14.2 still verifies actual durable references and admission.
+No provider-specific OpenAI usage rule or general pricing service is implemented.
+Pure fixture validation cannot certify full M14 acceptance.
+
+DATABASE WRITES: NONE. REMOTE SUPABASE WRITES: NONE. M14.2 CHANGED: NO.
+ADR CHANGED: NO. ROADMAP CHANGED: NO. M14.2 MIGRATIONS CHANGED: NO.
+PRODUCER MODIFIED: NO. OPENAI/TALK MODIFIED: NO. HTTP/OTLP ROUTE CREATED: NO.
+PASSPORT MODIFIED: NO. M15 STARTED: NO. CANONICAL WRITE PATH CREATED: NO.
+
+M14.3A delivery gate: implementation and tests pass; commit/push/new PR are
+authorized, **DO NOT MERGE**. M14.2 history and the protected recovery file are
+preserved. Verdict: **M14_3A_READY_FOR_REVIEW**.
+
+## M14.3A PR #39 — narrow F1 + F3 review follow-up (2026-09-18)
+
+Continued on `feat/m14-otel-adapter-v1` from reviewed HEAD
+`64dde2c12c52585946321d63dcfaec12396f26b9`, with base
+`3f36621beecd0a4979333c20720e2cde71219289`. The independent review verdict
+supplied for this follow-up was **PASS_M14_3A_REVIEW**, with no CRITICAL or HIGH
+findings. Scope is only accepted F1 (MEDIUM) and F3 (LOW); this is not M14.3B.
+
+### F1 — version linkage
+
+`otel-contract.ts` now owns separate `OTEL_ADAPTER_SEMVER`,
+`OTEL_MAPPING_SEMVER` and `OTEL_RUNTIME_SCHEMA_SEMVER`, each currently `1.0.0`.
+The three public qualified identifiers are derived from those constants, and
+the adapter uses the same semantic constants for the corresponding provenance
+fields. Qualified names identify named artifacts/contracts; the frozen domain
+continues to carry only its closed semantic value, never a qualified string.
+
+The frozen contract models `provenance.method` separately as code/version, and
+the existing README identifies the method as `GOVIA_OTEL_SPAN/1.0.0`.
+Its independent version is now explicit as `OTEL_METHOD_VERSION = '1.0.0'`.
+It is not aliased to adapter, mapping or schema version. The separate duration
+calculation method and all binding-proof versions remain unchanged.
+
+The new explicit regression compares each public qualified identifier to the
+matching semantic provenance field after `runtimeToRow` -> `runtimeFromRow` ->
+`validatePersistedRuntimeObservation`, with a synthetic recorded timestamp. It
+also compares each semantic field to its constant and method code/version to
+`GOVIA_OTEL_SPAN`/`OTEL_METHOD_VERSION`. No snapshots. Result: **PASS**.
+
+### F3A — END_TIME without DURATION
+
+The new test supplies a source configuration supporting only `END_TIME` and an
+exact end value `9223372036854775807`. The adapter accepts it, preserves
+`endedAtUnixNano = KNOWN(exact value)` and returns
+`duration = UNKNOWN(UNSUPPORTED)`. It neither discards the end time nor derives
+an unsupported duration nor substitutes NOT_SUPPLIED. Result: **PASS**.
+
+### F3B — EXACT binding codec round-trip
+
+The new test creates an EXACT adapter observation using trusted `verifiedBinding`
+and observed approved deployment/artifact coordinates. It passes the observation
+through the existing `runtimeToRow`, `runtimeFromRow` and
+`validatePersistedRuntimeObservation`, supplying synthetic database-owned
+`recorded_at = 2026-09-18T00:00:00.000Z`. Explicit assertions preserve EXACT state,
+agentVersion, coordinates, full proof, deploymentBindingId, organisationId,
+connectionId, method and version; the complete observation also round-trips
+apart from the expected recordedAt assignment. Result: **PASS**.
+No database was called; `runtime-row.ts` and all M14.2 code remain unchanged.
+
+### F2 disposition
+
+**F2 LOW / NON-BLOCKING / ACCEPTED FOR M14.3A — UNCHANGED.** The fixed
+`coverage.limitations` set expresses conservative adapter/collection-level
+uncertainty, not per-field factual state. Any future per-observation refinement
+belongs to a separate architecture/adapter revision if needed.
+
+### Follow-up validation and scope
+
+Focused tests ran first:
+
+```powershell
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts
+```
+
+Affected dashboard/runtime regression, also from `apps/dashboard`:
+
+```powershell
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/runtime-persistence.test.ts tests/execution-context-service.test.ts tests/execution-context-route.test.ts tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts
+```
+
+| Check | Follow-up result |
+| --- | --- |
+| Focused M14.3A tests | 33 passed, 0 failed, 0 skipped; includes the three new regressions |
+| `npm test --workspace @council/canonical-contracts` | 220 passed |
+| `npm test --workspace @council/governance-review` | 318 passed |
+| Affected dashboard/runtime command above | 52 passed, 0 failed, 0 skipped; includes focused tests |
+| `npm run typecheck --workspace @council/canonical-contracts` | PASS |
+| `npm run typecheck --workspace @council/governance-review` | PASS |
+| `npm run typecheck:dashboard -- --incremental false` | PASS |
+| `npm run typecheck:scanner` | PASS |
+| `npm run typecheck:graphos-pkg` | PASS |
+| `git diff --check` | PASS |
+
+Governance-review's initial sandbox invocation was blocked by esbuild subprocess
+`spawn EPERM`; the approved rerun passed all 318 tests. No functional test failure.
+Database tests were not run or required. Existing module-mock tooling warnings
+do not change the results above.
+
+Files changed: `apps/dashboard/lib/runtime/otel-contract.ts`,
+`apps/dashboard/lib/runtime/otel-span-adapter.ts`,
+`apps/dashboard/lib/runtime/README.md`,
+`apps/dashboard/tests/otel-span-adapter.test.ts`, and this evidence appendix.
+Prior evidence remains intact. The pre-existing user recovery file is preserved.
+
+DEPENDENCY CHANGES: NO. DATABASE WRITES: NO. REMOTE SUPABASE WRITES: NO.
+MIGRATION CHANGES: NO. M14.2 CHANGES: NO. PRODUCER MODIFIED: NO.
+OPENAI/TALK MODIFIED: NO. INGESTION ROUTE CREATED: NO. PASSPORT MODIFIED: NO.
+M15 STARTED: NO. ADR CHANGED: NO. ROADMAP CHANGED: NO.
+
+Delivery: commit/push on the same branch updates PR #39; no new PR and no merge.
+Verdict: **M14_3A_REVIEW_FOLLOWUP_READY**.
