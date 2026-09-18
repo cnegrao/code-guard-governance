@@ -1308,19 +1308,26 @@ to other providers. Embeddings, DeepSeek/Ollama/noop, coding-memory, intent-rout
 ledger and the overall Talk workflow remain uninstrumented. TOOL_CALL/MCP_CALL/
 API_CALL still have only domain/fixture coverage.
 
-Observation failures preserve the answer and produce only a closed FAILED report
-and value-free code diagnostic. RECORDED requires both typed readbacks. Ingestion
-wait is bounded to five seconds; a timeout/readback failure may leave admitted
-rows and does not certify absence. No retry or subsequent admission begins after
-timeout. Two separate admissions do not claim atomic pair semantics. M14.2 replay
-identity/equality are unchanged; no replay implementation was added.
+Observation failures preserve the answer and produce only a closed `FAILED` report
+and value-free code diagnostic. `generateGovernanceAnswer` awaits the producer's
+bounded two-admission attempt before returning the existing business answer; an
+observation failure can therefore add up to five seconds of request-path latency.
+Timeout is not cancellation: an RPC already in flight may finish afterward, no
+retry or subsequent admission begins, and a partial pair may remain. `FAILED` never
+certifies absence or complete coverage. The environment snapshot is subordinate to
+durable M14.2 source authority: a configuration mismatch/drift such as
+`RUNTIME_CONFIGURATION_MISMATCH` rejects observation and never bypasses, upgrades or
+silently substitutes authority. A successful provider invocation returning an empty
+string may still be recorded as `OK`/`SUCCESS` for that observed invocation; that is
+not proof of answer usefulness, Talk selection or governance success, and Talk's
+existing fallback remains authoritative for the user-facing result.
 
 ### DETERMINISTIC TEST COVERAGE
 
-New local coverage: **36 passing tests** (28 producer, 5 bridge, 3 Talk), included
+New local coverage: **46 passing tests** (36 producer, 5 bridge, 5 Talk), included
 in the final regression total below. Initial focused run passed 26 producer tests;
 expanded focused run passed 34 with one gated real acceptance test skipped. Later
-request-preservation and SDK-write assertions are included in the final 36 total.
+request-preservation and SDK-write assertions are included in the final 46 total.
 
 Tests prove topology, source/tenant concurrency isolation, approved model, direct
 usage including missing/zero/partial/invalid/inconsistent counts, no cost/canonical
@@ -1386,8 +1393,8 @@ No administrative operation is automatically authorized or executed by this PR.
 
 | Gate | Result |
 | --- | --- |
-| Final affected dashboard/M14 regression | **282 passed, 0 failed, 5 explicitly gated tests skipped** |
-| New M14.4 deterministic/structural/Talk subset | **36 passed** (included above) |
+| Final affected dashboard/M14 regression | **292 passed, 0 failed, 5 explicitly gated tests skipped** |
+| New M14.4 deterministic/structural/Talk subset | **46 passed** (included above) |
 | canonical-contracts full tests | **220 passed** |
 | governance-review full tests | **318 passed** |
 | canonical-contracts typecheck | PASS |
@@ -1395,6 +1402,7 @@ No administrative operation is automatically authorized or executed by this PR.
 | dashboard typecheck, incremental=false | PASS |
 | scanner typecheck | PASS |
 | graphos package typecheck | PASS |
+| dashboard lint | BLOCKED: `next lint` requires interactive ESLint setup; no ESLint config/package is installed |
 | git diff --check | PASS |
 
 Final dashboard command from `apps/dashboard`:

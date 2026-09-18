@@ -283,6 +283,14 @@ OTLP transport, exporter service, queue or retry exists. Static names are
 `govia.governance_answer` and `govia.openai.chat_completion`; names are not exported
 to the supported DTO. Attribute limit is eight, value length 128, events/links zero.
 
+The caller waits synchronously for the producer's bounded two-admission attempt:
+`generateGovernanceAnswer` awaits `finish` before returning the existing business
+answer. The wait is capped at five seconds, so an observation failure can add up to
+five seconds of latency without changing the answer. Timeout is not cancellation:
+an RPC already in flight may complete afterward, and the timeout never starts a
+retry or certifies that no row was written. M14.5 must revisit production delivery
+and any decision to move this wait off the request path.
+
 Exact packages: API **1.9.0**, sdk-trace-base **2.0.1**, resources **2.0.1**,
 semantic-conventions **1.29.0**; transitive core **2.0.1**. All four direct packages
 are used: tracing/context types, private SDK, explicit resource construction and
@@ -313,10 +321,14 @@ Required fields:
 The snapshot is frozen per invocation. Other organisations fail closed for
 observation; their business answer still works. Narrow kind/fact/model approvals
 must be authorized by the durable source configuration, which may support a
-superset. M14.2 still verifies activation, immutable identity/version, allowlists,
-admission window, payload bounds, quotas and replay at actual admission. No source
-table SELECT, admin RPC, privilege expansion or source mutation is added to the
-request path. No migration is required.
+superset. The deployment snapshot is subordinate to, and never replaces or
+upgrades, that durable M14.2 authority. At every admission M14.2 rechecks the exact
+tenant/source coordinates, immutable identity/version, activation, approvals,
+window, quotas and replay. A durable mismatch or configuration drift (including
+`RUNTIME_CONFIGURATION_MISMATCH`) rejects the observation and returns `FAILED`; it
+never bypasses authority, silently substitutes the projection, or turns the
+business invocation into a success. No source table SELECT, admin RPC, privilege
+expansion or source mutation is added to the request path. No migration is required.
 
 No deployment association is asserted by this producer: binding remains
 UNRESOLVED/MISSING_REVISION_EVIDENCE. No verified binding or canonical target is
@@ -339,7 +351,12 @@ HTTP failure maps to HTTP_ERROR, fetch failure to CONNECTION_FAILED and malforme
 JSON/missing string answer to INVALID_RESPONSE. No body, exception message, cause
 or stack is passed into OTel. Successful HTTP plus a string answer supplies explicit
 OK; failures supply ERROR. Missing callback evidence remains UNSET, never success.
-Existing business return/throw behavior is preserved, including empty answers.
+An empty string is still a valid provider string result: when the HTTP invocation
+succeeds it may be recorded as `OK`/`SUCCESS` for that observed invocation. That
+record proves only the provider/transport observation, not answer usefulness, Talk
+selection or governance success; Talk's existing trim/fallback remains authoritative
+for the returned user-facing answer. Existing business return/throw behavior is
+preserved, including empty answers.
 
 The public SDK `ReadableSpan` bridge reads explicit fields only. It ignores names,
 events, links, arbitrary attributes/resources, status descriptions and exceptions.

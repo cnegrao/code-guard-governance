@@ -38,19 +38,19 @@ test('bridge never reads excluded SDK fields, arbitrary attributes/resource or s
   const trap = { get() { throw new Error('EXCLUDED_SYNTHETIC_CONTENT'); } };
   const attributes = { ...span.attributes };
   for (const key of ['prompt', 'completion', 'messages', 'Authorization', 'error.message', 'stack', 'response.body', 'arbitrary']) {
-    Object.defineProperty(attributes, key, trap);
+    Object.defineProperty(attributes, key, { ...trap, enumerable: true });
   }
   const resource = resourceFromAttributes({ 'govia.producer.id': 'fixture-producer',
     'telemetry.sdk.name': 'opentelemetry', 'telemetry.sdk.version': '2.0.1' });
-  Object.defineProperty(resource.attributes, 'arbitrary', trap);
-  const status = { code: SpanStatusCode.OK }; Object.defineProperty(status, 'message', trap);
+  Object.defineProperty(resource.attributes, 'arbitrary', { ...trap, enumerable: true });
+  const status = { code: SpanStatusCode.OK }; Object.defineProperty(status, 'message', { ...trap, enumerable: true });
   // Test fixture implements public fields only; no SDK private internals accessed.
   const input = {
     ended: true, attributes, resource, status, spanContext: () => span.spanContext(), parentSpanContext: undefined,
     startTime: span.startTime, endTime: span.endTime, instrumentationScope: span.instrumentationScope,
     droppedAttributesCount: 0, droppedEventsCount: 0, droppedLinksCount: 0,
   } as ReadableSpan;
-  for (const key of ['name', 'events', 'links', 'duration', 'kind', 'toJSON']) Object.defineProperty(input, key, trap);
+  for (const key of ['name', 'events', 'links', 'duration', 'kind', 'toJSON']) Object.defineProperty(input, key, { ...trap, enumerable: true });
   const dto = bridgeEndedOpenAISpan(input);
   assert.ok(!JSON.stringify(dto).includes('EXCLUDED_SYNTHETIC_CONTENT'));
   assert.deepEqual(Object.keys(dto.resource).sort(), ['govia.producer.id', 'telemetry.sdk.name', 'telemetry.sdk.version']);

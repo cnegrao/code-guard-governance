@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, mock, test } from 'node:test';
 import { trace, context } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
-import { getLLMProvider } from '../lib/llm';
+import { getLLMProvider, type LLMProvider } from '../lib/llm';
 import { loadRuntimeProducerConfiguration } from '../lib/runtime/runtime-producer-config';
 import { openaiSourceConfiguration } from './helpers/openai-producer-fixtures';
 import type { RuntimeObservationReport } from '../lib/runtime/openai-governance-answer-producer';
@@ -10,8 +10,23 @@ import type { RuntimePersistenceResult } from '../lib/governance/runtime-persist
 
 type Row = Record<string, unknown>;
 type RpcArgs = { p_organisation_id: string; p_connection_id: string; p_observation: Row };
+type RpcFailure = 'ADMISSION' | 'READBACK' | 'THROW' | 'DRIFT' | 'HANG_FIRST' | 'HANG_SECOND';
 let calls: { name: string; args: RpcArgs }[];
-let rpcFailure: 'ADMISSION' | 'READBACK' | 'THROW' | 'HANG' | undefined;
+let rpcFailure: RpcFailure | undefined;
+let rpcResume: (() => void) | undefined;
+let rpcReturned: Promise<void>;
+let resolveRpcReturned: () => void = () => {};
+let resolveFirstRpcStarted: () => void = () => {};
+let resolveSecondRpcStarted: () => void = () => {};
+let firstRpcStarted: Promise<void>;
+let secondRpcStarted: Promise<void>;
+let persistenceBarrier = false;
+let persistenceGate: Promise<void>;
+let releasePersistenceGate: () => void = () => {};
+let persistenceStarted = 0;
+let persistenceActive = 0;
+let persistenceMaxActive = 0;
+let persistenceOrganisations: Set<string>;
 let run: typeof import('../lib/runtime/openai-governance-answer-producer').generateGovernanceAnswer;
 let notices: unknown[][];
 let report: RuntimeObservationReport | undefined;
@@ -24,9 +39,24 @@ before(async () => {
   mock.module('../lib/governance/persistence', { namedExports: { privilegedDb: {
     async rpc(name: string, args: RpcArgs) {
       calls.push({ name, args });
-      if (rpcFailure === 'HANG') return new Promise(() => {});
+      if (persistenceBarrier && !persistenceOrganisations.has(args.p_organisation_id)) {
+        persistenceOrganisations.add(args.p_organisation_id);
+        persistenceStarted++; persistenceActive++;
+        persistenceMaxActive = Math.max(persistenceMaxActive, persistenceActive);
+        if (persistenceOrganisations.size === 2) releasePersistenceGate();
+        await persistenceGate;
+        persistenceActive--;
+      }
+      const hangFirst = rpcFailure === 'HANG_FIRST' && calls.length === 1;
+      const hangSecond = rpcFailure === 'HANG_SECOND' && calls.length === 2;
+      if (hangFirst || hangSecond) {
+        if (hangFirst) resolveFirstRpcStarted(); else resolveSecondRpcStarted();
+        await new Promise<void>(resolve => { rpcResume = resolve; });
+        resolveRpcReturned();
+      }
       if (rpcFailure === 'THROW') throw new Error(marker);
       if (rpcFailure === 'ADMISSION') return { data: null, error: { message: marker } };
+      if (rpcFailure === 'DRIFT') return { data: null, error: { message: 'RUNTIME_CONFIGURATION_MISMATCH' } };
       return { data: [{ replay: false, observation: { ...args.p_observation,
         recorded_at: rpcFailure === 'READBACK' ? null : '2026-09-18T15:00:00.000Z' } }], error: null };
     },
@@ -34,7 +64,14 @@ before(async () => {
   run = (await import('../lib/runtime/openai-governance-answer-producer')).generateGovernanceAnswer;
 });
 beforeEach(() => {
-  calls = []; notices = []; report = undefined; rpcFailure = undefined;
+  calls = []; notices = []; report = undefined; rpcFailure = undefined; rpcResume = undefined;
+  firstRpcStarted = new Promise<void>(resolve => { resolveFirstRpcStarted = resolve; });
+  secondRpcStarted = new Promise<void>(resolve => { resolveSecondRpcStarted = resolve; });
+  rpcReturned = new Promise<void>(resolve => { resolveRpcReturned = resolve; });
+  persistenceBarrier = false;
+  persistenceGate = new Promise<void>(resolve => { releasePersistenceGate = resolve; });
+  persistenceStarted = 0; persistenceActive = 0; persistenceMaxActive = 0;
+  persistenceOrganisations = new Set();
   process.env.LLM_PROVIDER = 'openai'; process.env.OPENAI_API_KEY = marker;
   process.env.GOVIA_RUNTIME_OPENAI_ENABLED = '1';
   process.env.GOVIA_RUNTIME_OPENAI_SOURCE = JSON.stringify(openaiSourceConfiguration());
@@ -43,6 +80,7 @@ beforeEach(() => {
   }
 });
 afterEach(() => {
+  mock.timers.reset();
   // Boolean-only assertion: never echo raw fixtures or responses in failure output.
   assert.ok(!JSON.stringify({ calls, notices, report }).includes(marker));
   mock.restoreAll();
@@ -169,11 +207,80 @@ for (const failure of ['ADMISSION', 'READBACK', 'THROW'] as const) test(`${failu
   assert.equal(calls.length, 1);
 });
 
-test('hung admission has a bounded five-second wait and no retry or false success', async () => {
-  rpcFailure = 'HANG'; fetchResponse(success());
+test('durable configuration drift rejects observation without bypassing authority', async () => {
+  rpcFailure = 'DRIFT'; fetchResponse(success());
   assert.ok(await invoke() === `  ${marker} answer  `);
-  assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_TIMEOUT' }); assert.equal(calls.length, 1);
+  assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_INGESTION_FAILED' });
+  assert.deepEqual(notices, [['GOVIA_RUNTIME_OBSERVATION_FAILED', 'RUNTIME_PRODUCER_INGESTION_FAILED']]);
+  assert.equal(calls.length, 1);
 });
+
+test('setup failure preserves answer and reports a closed producer code', async () => {
+  const getTracer = mock.method(BasicTracerProvider.prototype, 'getTracer', () => { throw new Error(marker); });
+  fetchResponse(success());
+  assert.ok(await invoke() === `  ${marker} answer  `);
+  assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_SETUP_FAILED' });
+  assert.deepEqual(notices, [['GOVIA_RUNTIME_OBSERVATION_FAILED', 'RUNTIME_PRODUCER_SETUP_FAILED']]);
+  assert.equal(calls.length, 0); assert.equal(getTracer.mock.callCount(), 1);
+});
+
+test('actual OpenAI observer failure is contained without changing the answer', async () => {
+  fetchResponse(success({ prompt_tokens: 4, completion_tokens: 3, total_tokens: 7 }));
+  assert.equal(await getLLMProvider().generateAnswer(`${marker}-system`, `${marker}-context`, `${marker}-query`, () => {
+    throw new Error(marker);
+  }), `  ${marker} answer  `);
+  assert.deepEqual(notices, [['RUNTIME_PRODUCER_CALLBACK_FAILED']]);
+  assert.equal(calls.length, 0); assert.equal(report, undefined);
+});
+
+test('provider that omits metadata records UNSET/UNKNOWN without fabricating success', async () => {
+  const provider: LLMProvider = {
+    name: 'openai', available: true,
+    generateAnswer: async () => `  ${marker} answer  `, generateEmbedding: async () => [],
+  };
+  assert.ok(await run(provider, openaiSourceConfiguration().organisationId,
+    `${marker}-system`, `${marker}-context`, `${marker}-query`, value => { report = value; }) === `  ${marker} answer  `);
+  assert.equal(report?.state, 'RECORDED');
+  for (const result of observations()) {
+    assert.equal(result.observation.sourceStatus, 'UNSET');
+    assert.deepEqual(result.observation.outcome, { state: 'UNKNOWN', reason: 'NOT_SUPPLIED' });
+  }
+});
+
+test('non-OK invalid JSON preserves exception behavior and records closed HTTP error', async () => {
+  mock.method(globalThis, 'fetch', async () => new Response(marker, { status: 429 }));
+  await assert.rejects(invoke(), error => error instanceof SyntaxError);
+  assert.equal(report?.state, 'RECORDED');
+  for (const result of observations()) {
+    assert.equal(result.observation.sourceStatus, 'ERROR');
+    assert.deepEqual(result.observation.error, { state: 'KNOWN', value: { category: 'PROTOCOL', code: 'HTTP_ERROR' } });
+  }
+  assert.ok(!JSON.stringify({ calls, notices, report }).includes(marker));
+});
+
+test('valid empty string answer is recorded as OK/SUCCESS without proving useful Talk output', async () => {
+  fetchResponse({ choices: [{ message: { content: '' } }], usage: { prompt_tokens: 1, completion_tokens: 0, total_tokens: 1 } });
+  assert.equal(await invoke(), ''); assert.equal(report?.state, 'RECORDED');
+  for (const result of observations()) {
+    assert.equal(result.observation.sourceStatus, 'OK');
+    assert.deepEqual(result.observation.outcome, { state: 'SUCCESS', basis: 'OTEL_STATUS' });
+  }
+});
+
+for (const mode of ['after second admission begins', 'before second admission with guard-sensitive release', 'in-flight completion after timeout'] as const) {
+  test(`timeout ${mode} is bounded and cannot retry or become false success`, async () => {
+    rpcFailure = mode === 'after second admission begins' ? 'HANG_SECOND' : 'HANG_FIRST';
+    fetchResponse(success()); mock.timers.enable({ apis: ['setTimeout'] });
+    const invocation = invoke();
+    await (mode === 'after second admission begins' ? secondRpcStarted : firstRpcStarted);
+    mock.timers.tick(5000);
+    assert.ok(await invocation === `  ${marker} answer  `);
+    assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_TIMEOUT' });
+    assert.equal(calls.length, mode === 'after second admission begins' ? 2 : 1);
+    rpcResume?.(); await rpcReturned;
+    assert.equal(calls.length, mode === 'after second admission begins' ? 2 : 1);
+  });
+}
 
 for (const provider of ['deepseek', 'ollama', 'none'] as const) test(`${provider} remains uninstrumented with unchanged selection/answer`, async () => {
   process.env.LLM_PROVIDER = provider; process.env.DEEPSEEK_API_KEY = marker;
@@ -245,7 +352,9 @@ test('concurrent invocations keep traces, parents, source and tenant isolated', 
   const secondConfig = { ...openaiSourceConfiguration(), organisationId: '14400000-0918-4144-8144-000000000002',
     connectionId: 'm144-second-source', producerIdentity: 'm144-second-producer' };
   process.env.GOVIA_RUNTIME_OPENAI_SOURCE = JSON.stringify(secondConfig);
+  persistenceBarrier = true;
   await Promise.all([first, invoke(secondConfig.organisationId)]);
+  assert.equal(persistenceStarted, 2); assert.equal(persistenceMaxActive, 2); assert.equal(persistenceActive, 0);
   assert.equal(calls.length, 4);
   const traces = new Set(calls.map(call => call.args.p_observation.trace_id)); assert.equal(traces.size, 2);
   for (const traceId of traces) {
@@ -255,6 +364,10 @@ test('concurrent invocations keep traces, parents, source and tenant isolated', 
     assert.equal(pair[0].args.p_connection_id, pair[1].args.p_connection_id);
     assert.equal(pair[0].args.p_observation.producer_identity, pair[1].args.p_observation.producer_identity);
     assert.equal(pair[1].args.p_observation.parent_span_id, pair[0].args.p_observation.span_id);
+    for (const call of pair) {
+      assert.equal(call.args.p_organisation_id, call.args.p_observation.organisation_id);
+      assert.equal(call.args.p_connection_id, call.args.p_observation.connection_id);
+    }
   }
 });
 
