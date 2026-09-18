@@ -1071,3 +1071,163 @@ M15 STARTED: NO. ADR CHANGED: NO. ROADMAP CHANGED: NO.
 
 Delivery: commit/push on the same branch updates PR #39; no new PR and no merge.
 Verdict: **M14_3A_REVIEW_FOLLOWUP_READY**.
+
+## M14.3B — Internal Runtime Ingestion Boundary
+
+Execution date: 2026-09-18. M14.3A (PR #39) and M14.2 remain COMPLETE / ACCEPTED /
+MERGED / FROZEN. All preceding evidence is retained unchanged. Historical hosted
+write authorization above does not apply here: **DATABASE WRITES: NONE**.
+
+### Base and architecture inputs
+
+Executed `git fetch origin`, `git checkout main`, `git pull --ff-only origin main`.
+Both main HEAD and origin/main matched the required
+`48f13b8cf8497d48c77e2cc8ade4d3307237fc7d` before creating the fresh branch
+`feat/m14-runtime-ingestion-boundary-v1`. The pre-existing untracked
+`codex-recovery-6101-6240.txt` is preserved and excluded from delivery.
+
+Read in full: frozen `GOVIA-L0L16-CIA-v1.0.md`, frozen runtime/OTel ADR,
+`lib/runtime/README.md`, `otel-contract.ts`, `otel-span-adapter.ts`,
+`lib/governance/runtime-persistence.ts`, `runtime-row.ts`,
+`tests/otel-persistence-contract.test.ts`, and this evidence history.
+`supabase/config.toml` was inspected read-only (PostgreSQL major 17).
+Application source/configuration references and M14.2 administration documentation
+were inspected: no safe application runtime source configuration loader exists;
+restricted database administration RPCs do not constitute such a loader.
+
+Architecture A–O: frozen CIA preserved (A); L12 composition and L0 provenance (B);
+no Passport change, future families 13/14 only (C); no canonical writes/identity
+changes (D); observed ancestry remains evidence (E); immutable provenance/times (F);
+OBSERVED confers no authority (G); no Vector/Graph/LLM change (H–J); trusted tenant
+and connection consistency, sanitized-only persistence (K); no migration (L);
+existing M14.2 admission and future M14.4 producer continuity (M); UNKNOWN and
+non-fabrication preserved (N); focused composition and regression gates below (O).
+
+### Files and API
+
+| File | Change |
+| --- | --- |
+| `apps/dashboard/lib/runtime/runtime-ingestion.ts` | New server-only composition and four-code typed error |
+| `apps/dashboard/lib/runtime/README.md` | Additive M14.3B API, trust, flow, errors and limitations |
+| `apps/dashboard/tests/runtime-ingestion.test.ts` | Ten focused tests using the real adapter and mocked persistence |
+| `apps/dashboard/tests/otel-persistence-contract.test.ts` | Route structural compatibility through ingestion; real adapter/persistence/readback with mock RPC only |
+| This evidence document | Additive M14.3B record |
+
+API: `ingestSupportedRuntimeSpan(persistenceContext, adapterContext, span)` returns
+`Promise<RuntimePersistenceResult>`: typed persisted `observation` and `replay`.
+The module uses `import 'server-only'`; dependency direction is application runtime
+boundary -> adapter/domain and existing server persistence. No persistence imports
+were added to canonical-contracts or the pure adapter. No transport was created.
+
+### Trust, composition and sanitization
+
+The caller must supply both contexts from already-authorized trusted server
+orchestration. M14.3B does not authenticate, register sources, load configuration,
+resolve identity or verify database existence. Adapter context is the immutable
+authorized source projection, including system/provider/configuration version,
+producer/instrumentation identity, supported kinds/facts, approved targets/models/
+tools/deployments and independently verified binding. Telemetry supplies none of
+that authority. The two contexts are checked for exact organisationId and
+connectionId equality before adaptation or persistence. These are the only shared
+coordinates exposed by RuntimePersistenceContext; no new source-coordinate API
+was invented. Adapter and M14.2 checks retain their respective responsibilities.
+
+Flow: context consistency -> `adaptOtelSpan` -> existing allowlist/sanitization and
+`validateRuntimeObservation` -> accepted closed observation -> unchanged
+`persistRuntimeObservation` -> existing validation/admission/typed durable readback.
+REJECTED adapter results cause zero persistence calls. The raw span is passed only
+to the adapter, with no boundary traversal, logging, hashing, serialization, raw
+diagnostics or archive. Exactly one span is handled per call. Existing extraction
+bounds and sanitized admission limits remain; future transport byte/batch limits
+are not claimed. No alternate application composition path was added.
+
+`observationId` remains trusted caller assigned. `receivedAt` remains trusted
+server arrival time supplied through adapter context, never derived from source
+timestamps. No second ID or competing clock is generated. M14.2 owns recordedAt.
+Success returns M14.2's original result without reconstruction. Replay preserves
+the original durable observation ID, binding, provenance, receivedAt and recordedAt
+with `replay: true`. No deduplication, retries, counters or replay reclassification
+are implemented in the boundary.
+
+### Closed error model
+
+`RuntimeIngestionError` exposes only a closed code and the same value-free message:
+
+| Code | Boundary meaning |
+| --- | --- |
+| `RUNTIME_INGESTION_CONTEXT_MISMATCH` | Trusted organisation/connection disagree |
+| `RUNTIME_INGESTION_ADAPTER_REJECTED` | Adapter returned REJECTED |
+| `RUNTIME_INGESTION_ADMISSION_REJECTED` | Persistence validation/admission or unclassified persistence failure |
+| `RUNTIME_INGESTION_READBACK_INVALID` | Existing M14.2 exact safe readback failure |
+
+No raw adapter values or Supabase/Postgres message/details/cause are propagated.
+The existing safe `RUNTIME_READBACK_INVALID` sentinel is classified; other
+persistence failures are deliberately collapsed. Readback failure does not imply
+that no write was admitted. Existing replay/conflict enforcement is unchanged.
+
+### Validation
+
+Focused command from `apps/dashboard`:
+
+```powershell
+$env:M14_LOCAL_DB_TEST='0'
+$env:M14_HOSTED_DB_TEST='0'
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/runtime-ingestion.test.ts tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts
+```
+
+Affected dashboard regression from the same directory:
+
+```powershell
+$env:M14_LOCAL_DB_TEST='0'
+$env:M14_HOSTED_DB_TEST='0'
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/*migration.test.ts tests/runtime-database.test.ts tests/runtime-persistence.test.ts tests/execution-context-service.test.ts tests/execution-context-route.test.ts tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts tests/runtime-ingestion.test.ts
+```
+
+| Check | Result |
+| --- | --- |
+| Focused command | 45 passed, 0 failed, 0 skipped |
+| M14.3B unit subset | 10 passed |
+| Unchanged M14.3A adapter subset | 32 passed |
+| Ingestion -> real persistence/typed readback with mock RPC subset | 3 passed |
+| `npm test --workspace @council/canonical-contracts` | 220 passed |
+| `npm test --workspace @council/governance-review` | 318 passed |
+| Affected dashboard regression | 246 passed, 0 failed, 4 DB tests intentionally skipped |
+| `npm run typecheck --workspace @council/canonical-contracts` | PASS |
+| `npm run typecheck --workspace @council/governance-review` | PASS |
+| `npm run typecheck:dashboard -- --incremental false` | PASS |
+| `npm run typecheck:scanner` | PASS |
+| `npm run typecheck:graphos-pkg` | PASS |
+| `git diff --check` | PASS |
+
+The focused runner initially encountered sandbox `spawn EPERM`; the approved
+rerun passed. Experimental module-mock/deprecation warnings are existing tooling
+notices. There were no functional test or typecheck failures.
+
+Coverage proves accepted EXECUTION/MODEL_CALL, all five kinds through real M14.2
+validation/readback with mock RPC, adapter rejection without persistence, tenant
+and connection mismatch before adapter/persistence, safe admission/readback errors,
+new observation replay=false and unchanged durable replay=true. It checks full-range
+start/end/source-observed nanoseconds and duration, EXACT/UNRESOLVED binding, assigned
+identity and distinct receipt/recorded times. Hostile excluded cyclic content,
+toJSON accessors, credential-shaped fixtures and authority spoofing remain absent
+from persistence arguments/results; logs remain unused. Error assertions verify
+closed messages/keys and no original cause. No hostile content is snapshotted.
+
+Unit persistence results and RPC responses are mocks. This is composition evidence,
+**not new database acceptance**. M14.2 authoritative DB acceptance is unchanged;
+its schema and implementation were not modified or revalidated against hosted DB.
+
+### Final scope and delivery
+
+Dependencies: NONE changed; OTel SDK not installed. Real producer coverage: **NONE**.
+M14.4 producer instrumentation and full M14 acceptance remain outstanding.
+DATABASE WRITES: NO. REMOTE SUPABASE WRITES: NO. MIGRATIONS CHANGED: NO.
+Neither gov-ia-dev nor ov-ia-g2-test was queried or written.
+M14.2 CHANGED: NO. M14.3A SEMANTICS CHANGED: NO.
+ADR CHANGED: NO. ROADMAP CHANGED: NO. PRODUCER MODIFIED: NO.
+OPENAI/TALK MODIFIED: NO. HTTP ROUTE CREATED: NO. OTLP ROUTE CREATED: NO.
+PASSPORT MODIFIED: NO. M15 STARTED: NO. CANONICAL WRITE PATH CREATED: NO.
+
+Delivery is a commit, push and NEW PR against main from the M14.3B branch.
+**DO NOT MERGE.** No implementation or architecture stop condition was found.
+Verdict: **M14_3B_READY_FOR_REVIEW**.

@@ -195,3 +195,65 @@ although reflection failures are caught without echoing their messages.
 Future transport must enforce byte/batch limits before parsing and must not log
 raw input. M14.3A intentionally has no transport. Fixtures and mock RPC checks do
 not establish live producer, SDK exporter, PostgREST or database acceptance.
+
+## M14.3B — internal server ingestion boundary
+
+`runtime-ingestion.ts` is the intended application composition entry point:
+
+```ts
+ingestSupportedRuntimeSpan(persistenceContext, adapterContext, span)
+  // Promise<RuntimePersistenceResult>: { observation: RuntimeObservation, replay: boolean }
+```
+
+It imports `server-only` and the existing M14.2 persistence implementation. The
+pure adapter and canonical contracts do not import this boundary or database code.
+One call handles one `SupportedOtelSpan`; there is no route, listener, OTLP endpoint,
+batch consumer, source registration, SDK installation or producer instrumentation.
+
+Both contexts must come from trusted, already-authorized server orchestration.
+The boundary checks `organisationId` and `connectionId` equality **before** adapting
+or persisting. Those are the only coordinates in `RuntimePersistenceContext`;
+there is no second source system/provider/configuration snapshot to compare.
+Adapter validation checks producer/instrumentation and verified binding coordinates;
+M14.2 admission remains responsible for actual durable source/configuration/proof
+checks, activation, quotas and replay. No new source configuration loader or
+authentication has been implemented: the inspected application exposes persistence,
+while source administration is implemented by restricted M14.2 database RPCs.
+
+`OtelAdapterContext` must accurately project the immutable authorized source
+configuration, including supported kinds/facts, approved targets/models/tools/releases
+and independently verified binding. Telemetry cannot supply any of that authority.
+`observationId` and server-owned arrival `receivedAt` remain caller supplied through
+that trusted context. This boundary generates neither another ID nor another clock.
+
+Flow: trusted-context consistency -> `adaptOtelSpan` (allowlisted extraction and
+existing domain validation) -> accepted sanitized `RuntimeObservation` -> unchanged
+`persistRuntimeObservation` (existing validation/admission/typed readback).
+Adapter rejection ends the call before persistence. The raw snapshot is passed only
+to the adapter; the boundary never reads, logs, serializes, hashes or archives it.
+Existing adapter bounds and M14.2 sanitized payload limits remain in force; future
+transport byte/batch limits are not implemented or claimed here.
+
+Success returns the **original M14.2 result** without reconstructing its observation.
+An identical replay therefore retains `replay: true`, original observation ID,
+binding, provenance, receivedAt and database-owned recordedAt. The boundary adds
+no deduplication, retries, counters or historical rebinding.
+
+Failures throw `RuntimeIngestionError` with one closed `code` and the same value-free
+`message`; no raw value, database detail, original error or cause is attached:
+
+| Code | Meaning |
+| --- | --- |
+| `RUNTIME_INGESTION_CONTEXT_MISMATCH` | Trusted organisation or connection differs |
+| `RUNTIME_INGESTION_ADAPTER_REJECTED` | Adapter rejected the snapshot/context |
+| `RUNTIME_INGESTION_ADMISSION_REJECTED` | Persistence validation/admission or unclassified persistence failure |
+| `RUNTIME_INGESTION_READBACK_INVALID` | M14.2 returned its exact safe `RUNTIME_READBACK_INVALID` failure |
+
+The error mapping intentionally collapses individual adapter/admission codes;
+callers do not receive raw database/RPC details. A readback failure does not certify
+that admission performed no write. Replay/conflict semantics remain M14.2-owned.
+
+Boundary unit tests mock persistence. The structural compatibility test now invokes
+this boundary with the real adapter and M14.2 persistence/readback, mocking only RPC.
+Neither test mode establishes new database acceptance. Real producer coverage is
+**NONE**; controlled producer orchestration and instrumentation remain M14.4.
