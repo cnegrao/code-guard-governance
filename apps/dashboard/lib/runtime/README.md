@@ -17,8 +17,12 @@ hashing, producer, SDK provider, identity resolver or raw-content archive exists
 
 The frozen domain's version fields contain the existing literal `1.0.0`; qualified
 names above identify the contracts, not new domain values. Method provenance is
-`GOVIA_OTEL_SPAN/1.0.0`. HTTP revision is KNOWN only when supported HTTP attributes
-are extracted. GenAI and MCP convention revisions remain UNKNOWN/UNSUPPORTED.
+`GOVIA_OTEL_SPAN/1.0.0`. The qualified identifiers are derived from
+`OTEL_ADAPTER_SEMVER`, `OTEL_MAPPING_SEMVER` and `OTEL_RUNTIME_SCHEMA_SEMVER`,
+which also supply the corresponding semantic provenance fields. The method has
+its own independent `OTEL_METHOD_VERSION`; equality with the other versions does
+not couple their meanings or revisions. HTTP revision is KNOWN only when supported
+HTTP attributes are extracted. GenAI and MCP convention revisions remain UNKNOWN/UNSUPPORTED.
 All `govia.*` attributes below are Gov IA semantics, not claims of standardized
 GenAI/MCP support. `gen_ai.*`, `mcp.*`, legacy HTTP aliases and unknown keys are ignored.
 

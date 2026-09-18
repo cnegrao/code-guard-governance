@@ -4,9 +4,14 @@ import type {
   RuntimeTargetKind, SourceConnectionId, SourceSystemId,
 } from '@council/canonical-contracts';
 
-export const OTEL_ADAPTER_VERSION = 'govia-otel-span/1.0.0';
-export const OTEL_MAPPING_VERSION = 'govia.runtime/1.0.0';
-export const OTEL_RUNTIME_SCHEMA_VERSION = 'runtime-observation/1.0.0';
+export const OTEL_ADAPTER_SEMVER = '1.0.0';
+export const OTEL_MAPPING_SEMVER = '1.0.0';
+export const OTEL_RUNTIME_SCHEMA_SEMVER = '1.0.0';
+export const OTEL_ADAPTER_VERSION = `govia-otel-span/${OTEL_ADAPTER_SEMVER}` as const;
+export const OTEL_MAPPING_VERSION = `govia.runtime/${OTEL_MAPPING_SEMVER}` as const;
+export const OTEL_RUNTIME_SCHEMA_VERSION = `runtime-observation/${OTEL_RUNTIME_SCHEMA_SEMVER}` as const;
+/** GOVIA_OTEL_SPAN method revision, independent of adapter/mapping/schema versions. */
+export const OTEL_METHOD_VERSION = '1.0.0';
 export const OTEL_TRACE_REVISION = '1.41.0';
 export const OTEL_HTTP_REVISION = '1.29.0';
 

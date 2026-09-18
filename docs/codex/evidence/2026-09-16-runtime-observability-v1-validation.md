@@ -969,3 +969,105 @@ PASSPORT MODIFIED: NO. M15 STARTED: NO. CANONICAL WRITE PATH CREATED: NO.
 M14.3A delivery gate: implementation and tests pass; commit/push/new PR are
 authorized, **DO NOT MERGE**. M14.2 history and the protected recovery file are
 preserved. Verdict: **M14_3A_READY_FOR_REVIEW**.
+
+## M14.3A PR #39 — narrow F1 + F3 review follow-up (2026-09-18)
+
+Continued on `feat/m14-otel-adapter-v1` from reviewed HEAD
+`64dde2c12c52585946321d63dcfaec12396f26b9`, with base
+`3f36621beecd0a4979333c20720e2cde71219289`. The independent review verdict
+supplied for this follow-up was **PASS_M14_3A_REVIEW**, with no CRITICAL or HIGH
+findings. Scope is only accepted F1 (MEDIUM) and F3 (LOW); this is not M14.3B.
+
+### F1 — version linkage
+
+`otel-contract.ts` now owns separate `OTEL_ADAPTER_SEMVER`,
+`OTEL_MAPPING_SEMVER` and `OTEL_RUNTIME_SCHEMA_SEMVER`, each currently `1.0.0`.
+The three public qualified identifiers are derived from those constants, and
+the adapter uses the same semantic constants for the corresponding provenance
+fields. Qualified names identify named artifacts/contracts; the frozen domain
+continues to carry only its closed semantic value, never a qualified string.
+
+The frozen contract models `provenance.method` separately as code/version, and
+the existing README identifies the method as `GOVIA_OTEL_SPAN/1.0.0`.
+Its independent version is now explicit as `OTEL_METHOD_VERSION = '1.0.0'`.
+It is not aliased to adapter, mapping or schema version. The separate duration
+calculation method and all binding-proof versions remain unchanged.
+
+The new explicit regression compares each public qualified identifier to the
+matching semantic provenance field after `runtimeToRow` -> `runtimeFromRow` ->
+`validatePersistedRuntimeObservation`, with a synthetic recorded timestamp. It
+also compares each semantic field to its constant and method code/version to
+`GOVIA_OTEL_SPAN`/`OTEL_METHOD_VERSION`. No snapshots. Result: **PASS**.
+
+### F3A — END_TIME without DURATION
+
+The new test supplies a source configuration supporting only `END_TIME` and an
+exact end value `9223372036854775807`. The adapter accepts it, preserves
+`endedAtUnixNano = KNOWN(exact value)` and returns
+`duration = UNKNOWN(UNSUPPORTED)`. It neither discards the end time nor derives
+an unsupported duration nor substitutes NOT_SUPPLIED. Result: **PASS**.
+
+### F3B — EXACT binding codec round-trip
+
+The new test creates an EXACT adapter observation using trusted `verifiedBinding`
+and observed approved deployment/artifact coordinates. It passes the observation
+through the existing `runtimeToRow`, `runtimeFromRow` and
+`validatePersistedRuntimeObservation`, supplying synthetic database-owned
+`recorded_at = 2026-09-18T00:00:00.000Z`. Explicit assertions preserve EXACT state,
+agentVersion, coordinates, full proof, deploymentBindingId, organisationId,
+connectionId, method and version; the complete observation also round-trips
+apart from the expected recordedAt assignment. Result: **PASS**.
+No database was called; `runtime-row.ts` and all M14.2 code remain unchanged.
+
+### F2 disposition
+
+**F2 LOW / NON-BLOCKING / ACCEPTED FOR M14.3A — UNCHANGED.** The fixed
+`coverage.limitations` set expresses conservative adapter/collection-level
+uncertainty, not per-field factual state. Any future per-observation refinement
+belongs to a separate architecture/adapter revision if needed.
+
+### Follow-up validation and scope
+
+Focused tests ran first:
+
+```powershell
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts
+```
+
+Affected dashboard/runtime regression, also from `apps/dashboard`:
+
+```powershell
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/runtime-persistence.test.ts tests/execution-context-service.test.ts tests/execution-context-route.test.ts tests/otel-span-adapter.test.ts tests/otel-persistence-contract.test.ts
+```
+
+| Check | Follow-up result |
+| --- | --- |
+| Focused M14.3A tests | 33 passed, 0 failed, 0 skipped; includes the three new regressions |
+| `npm test --workspace @council/canonical-contracts` | 220 passed |
+| `npm test --workspace @council/governance-review` | 318 passed |
+| Affected dashboard/runtime command above | 52 passed, 0 failed, 0 skipped; includes focused tests |
+| `npm run typecheck --workspace @council/canonical-contracts` | PASS |
+| `npm run typecheck --workspace @council/governance-review` | PASS |
+| `npm run typecheck:dashboard -- --incremental false` | PASS |
+| `npm run typecheck:scanner` | PASS |
+| `npm run typecheck:graphos-pkg` | PASS |
+| `git diff --check` | PASS |
+
+Governance-review's initial sandbox invocation was blocked by esbuild subprocess
+`spawn EPERM`; the approved rerun passed all 318 tests. No functional test failure.
+Database tests were not run or required. Existing module-mock tooling warnings
+do not change the results above.
+
+Files changed: `apps/dashboard/lib/runtime/otel-contract.ts`,
+`apps/dashboard/lib/runtime/otel-span-adapter.ts`,
+`apps/dashboard/lib/runtime/README.md`,
+`apps/dashboard/tests/otel-span-adapter.test.ts`, and this evidence appendix.
+Prior evidence remains intact. The pre-existing user recovery file is preserved.
+
+DEPENDENCY CHANGES: NO. DATABASE WRITES: NO. REMOTE SUPABASE WRITES: NO.
+MIGRATION CHANGES: NO. M14.2 CHANGES: NO. PRODUCER MODIFIED: NO.
+OPENAI/TALK MODIFIED: NO. INGESTION ROUTE CREATED: NO. PASSPORT MODIFIED: NO.
+M15 STARTED: NO. ADR CHANGED: NO. ROADMAP CHANGED: NO.
+
+Delivery: commit/push on the same branch updates PR #39; no new PR and no merge.
+Verdict: **M14_3A_REVIEW_FOLLOWUP_READY**.

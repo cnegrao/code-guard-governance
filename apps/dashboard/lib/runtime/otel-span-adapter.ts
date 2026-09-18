@@ -6,7 +6,8 @@ import {
 } from '@council/canonical-contracts';
 import { validateRuntimeObservation } from '@council/governance-review';
 import {
-  OTEL_HTTP_REVISION, OTEL_KIND_ATTRIBUTES, OTEL_TRACE_REVISION,
+  OTEL_ADAPTER_SEMVER, OTEL_HTTP_REVISION, OTEL_KIND_ATTRIBUTES, OTEL_MAPPING_SEMVER,
+  OTEL_METHOD_VERSION, OTEL_RUNTIME_SCHEMA_SEMVER, OTEL_TRACE_REVISION,
   type OtelAdapterContext, type OtelAdapterError, type OtelAdapterResult,
   type OtelSupportedFact, type SupportedOtelSpan,
 } from './otel-contract';
@@ -164,8 +165,8 @@ export function adaptOtelSpan(context: OtelAdapterContext, input: SupportedOtelS
       traceId, spanId, parent, startedAtUnixNano: start, endedAtUnixNano: end, sourceObservedAtUnixNano: sourceTime,
       receivedAt: context.receivedAt, recordedAt: missing(), binding, sourceStatus, duration, error,
       context: { principal: unsupported(), environment: unsupported(), network: unsupported() },
-      provenance: { trustState: 'OBSERVED', evidence, method: { code: 'GOVIA_OTEL_SPAN', version: '1.0.0' },
-        adapterVersion: '1.0.0', schemaVersion: '1.0.0', mappingVersion: '1.0.0', instrumentation,
+      provenance: { trustState: 'OBSERVED', evidence, method: { code: 'GOVIA_OTEL_SPAN', version: OTEL_METHOD_VERSION },
+        adapterVersion: OTEL_ADAPTER_SEMVER, schemaVersion: OTEL_RUNTIME_SCHEMA_SEMVER, mappingVersion: OTEL_MAPPING_SEMVER, instrumentation,
         conventions: { coreTraceRevision: OTEL_TRACE_REVISION, http: kind === 'API_CALL' ? known(OTEL_HTTP_REVISION) : unsupported(),
           genai: unsupported(), mcp: unsupported() } },
       coverage: { sampling: unsupported(), sampled: traceFlags === undefined ? missing() : known(traceFlags === 1),

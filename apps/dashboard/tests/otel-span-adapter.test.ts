@@ -7,7 +7,10 @@ import {
 } from '@council/canonical-contracts';
 import { validatePersistedRuntimeObservation, validateRuntimeObservation } from '@council/governance-review';
 import { adaptOtelSpan } from '../lib/runtime/otel-span-adapter';
-import type { SupportedOtelSpan } from '../lib/runtime/otel-contract';
+import {
+  OTEL_ADAPTER_SEMVER, OTEL_ADAPTER_VERSION, OTEL_MAPPING_SEMVER, OTEL_MAPPING_VERSION,
+  OTEL_METHOD_VERSION, OTEL_RUNTIME_SCHEMA_SEMVER, OTEL_RUNTIME_SCHEMA_VERSION, type SupportedOtelSpan,
+} from '../lib/runtime/otel-contract';
 import { runtimeFromRow, runtimeToRow } from '../lib/governance/runtime-row';
 import { otelContext, otelSpan } from './helpers/otel-fixtures';
 
@@ -35,6 +38,20 @@ for (const kind of otelContext().supportedKinds) test(`OTel maps ${kind} to the 
   assert.deepEqual({ ...persisted, recordedAt: observation.recordedAt }, observation);
   assert.equal(observation.binding.state, 'UNRESOLVED');
   if (observation.kind !== 'EXECUTION') assert.equal(observation.target.canonical.state, 'UNKNOWN');
+});
+
+test('qualified version identifiers stay linked to persisted semantic provenance and the independent method version', () => {
+  const observation = accepted();
+  const { provenance } = validatePersistedRuntimeObservation(runtimeFromRow({
+    ...runtimeToRow(observation), recorded_at: otelContext().receivedAt,
+  }));
+  assert.equal(provenance.adapterVersion, OTEL_ADAPTER_SEMVER);
+  assert.equal(provenance.mappingVersion, OTEL_MAPPING_SEMVER);
+  assert.equal(provenance.schemaVersion, OTEL_RUNTIME_SCHEMA_SEMVER);
+  assert.equal(OTEL_ADAPTER_VERSION, `govia-otel-span/${provenance.adapterVersion}`);
+  assert.equal(OTEL_MAPPING_VERSION, `govia.runtime/${provenance.mappingVersion}`);
+  assert.equal(OTEL_RUNTIME_SCHEMA_VERSION, `runtime-observation/${provenance.schemaVersion}`);
+  assert.deepEqual(provenance.method, { code: 'GOVIA_OTEL_SPAN', version: OTEL_METHOD_VERSION });
 });
 
 test('unsupported semantics, generic spans and handoffs have no EXECUTION fallback', () => {
@@ -71,6 +88,15 @@ test('partial spans do not invent completion, source-observed time, duration or 
   }
   assert.equal(o.receivedAt, otelContext().receivedAt);
   assert.equal(o.startedAtUnixNano, otelSpan().startTimeUnixNano);
+});
+
+test('supported END_TIME remains KNOWN when DURATION is unsupported', () => {
+  const endTimeUnixNano = '9223372036854775807';
+  const observation = accepted({ ...otelSpan(), endTimeUnixNano }, {
+    ...otelContext(), supportedFacts: ['END_TIME'],
+  });
+  assert.deepEqual(observation.endedAtUnixNano, known(endTimeUnixNano));
+  assert.deepEqual(observation.duration, { state: 'UNKNOWN', reason: 'UNSUPPORTED' });
 });
 
 test('all timestamp paths preserve full signed-bigint nanos through JSON and the frozen row codec', () => {
@@ -189,6 +215,31 @@ test('only trusted verified binding matching the observed approved release can b
     const binding = structuredClone(exactBinding()); mutate(binding);
     rejected(input, undefined, { ...otelContext(), verifiedBinding: binding });
   }
+});
+
+test('trusted EXACT adapter binding survives the frozen row codec and persisted validation exactly', () => {
+  const verifiedBinding = exactBinding();
+  const span = otelSpan();
+  const observation = accepted({ ...span, resource: { ...span.resource,
+    'govia.deployment.reference': 'release-v1', 'govia.artifact.sha256': 'c'.repeat(64),
+  } }, { ...otelContext(), verifiedBinding });
+  assert.deepEqual(observation.binding, verifiedBinding);
+  const recordedAt = '2026-09-18T00:00:00.000Z'; // Synthetic database-owned timestamp; no database call.
+  const persisted = validatePersistedRuntimeObservation(runtimeFromRow({
+    ...runtimeToRow(observation), recorded_at: recordedAt,
+  }));
+  assert.equal(persisted.binding.state, 'EXACT');
+  if (persisted.binding.state !== 'EXACT') throw new Error('EXACT_BINDING_LOST');
+  assert.deepEqual(persisted.binding.agentVersion, verifiedBinding.agentVersion);
+  assert.deepEqual(persisted.binding.coordinates, verifiedBinding.coordinates);
+  assert.deepEqual(persisted.binding.proof, verifiedBinding.proof);
+  assert.equal(persisted.binding.proof.deploymentBindingId, verifiedBinding.proof.deploymentBindingId);
+  assert.equal(persisted.binding.proof.organisationId, verifiedBinding.proof.organisationId);
+  assert.equal(persisted.binding.proof.connectionId, verifiedBinding.proof.connectionId);
+  assert.equal(persisted.binding.proof.method, verifiedBinding.proof.method);
+  assert.equal(persisted.binding.proof.version, verifiedBinding.proof.version);
+  assert.deepEqual(persisted.recordedAt, known(recordedAt));
+  assert.deepEqual({ ...persisted, recordedAt: observation.recordedAt }, observation);
 });
 
 test('observed target confers no canonical identity or relationship; trusted mapping remains independently scoped', () => {
