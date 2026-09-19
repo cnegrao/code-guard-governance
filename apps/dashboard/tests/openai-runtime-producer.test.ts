@@ -93,6 +93,9 @@ function success(usage?: unknown) {
 function fetchResponse(body: unknown, status = 200) {
   return mock.method(globalThis, 'fetch', async () => Response.json(body, { status }));
 }
+async function drainEventLoop(): Promise<void> {
+  await new Promise<void>(resolve => setImmediate(resolve));
+}
 async function invoke(organisationId = openaiSourceConfiguration().organisationId) {
   return run(getLLMProvider(), organisationId, `${marker}-system`, `${marker}-context`, `${marker}-query`, value => { report = value; });
 }
@@ -267,20 +270,31 @@ test('valid empty string answer is recorded as OK/SUCCESS without proving useful
   }
 });
 
-for (const mode of ['after second admission begins', 'before second admission with guard-sensitive release', 'in-flight completion after timeout'] as const) {
-  test(`timeout ${mode} is bounded and cannot retry or become false success`, async () => {
-    rpcFailure = mode === 'after second admission begins' ? 'HANG_SECOND' : 'HANG_FIRST';
-    fetchResponse(success()); mock.timers.enable({ apis: ['setTimeout'] });
-    const invocation = invoke();
-    await (mode === 'after second admission begins' ? secondRpcStarted : firstRpcStarted);
-    mock.timers.tick(5000);
-    assert.ok(await invocation === `  ${marker} answer  `);
-    assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_TIMEOUT' });
-    assert.equal(calls.length, mode === 'after second admission begins' ? 2 : 1);
-    rpcResume?.(); await rpcReturned;
-    assert.equal(calls.length, mode === 'after second admission begins' ? 2 : 1);
-  });
-}
+test('timeout after second admission starts is bounded and late completion cannot retry', async () => {
+  rpcFailure = 'HANG_SECOND'; fetchResponse(success()); mock.timers.enable({ apis: ['setTimeout'] });
+  const invocation = invoke();
+  await secondRpcStarted;
+  mock.timers.tick(5000);
+  assert.ok(await invocation === `  ${marker} answer  `);
+  assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_TIMEOUT' });
+  assert.equal(calls.length, 2);
+  rpcResume?.(); await rpcReturned; await drainEventLoop();
+  assert.equal(calls.length, 2);
+  assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_TIMEOUT' });
+});
+
+test('timeout during first admission cannot begin a second admission after async unwind', async () => {
+  rpcFailure = 'HANG_FIRST'; fetchResponse(success()); mock.timers.enable({ apis: ['setTimeout'] });
+  const invocation = invoke();
+  await firstRpcStarted;
+  mock.timers.tick(5000);
+  assert.ok(await invocation === `  ${marker} answer  `);
+  assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_TIMEOUT' });
+  assert.equal(calls.length, 1);
+  rpcResume?.(); await rpcReturned; await drainEventLoop();
+  assert.equal(calls.length, 1);
+  assert.deepEqual(report, { state: 'FAILED', code: 'RUNTIME_PRODUCER_TIMEOUT' });
+});
 
 for (const provider of ['deepseek', 'ollama', 'none'] as const) test(`${provider} remains uninstrumented with unchanged selection/answer`, async () => {
   process.env.LLM_PROVIDER = provider; process.env.DEEPSEEK_API_KEY = marker;
@@ -348,26 +362,50 @@ test('concurrent invocations keep traces, parents, source and tenant isolated', 
   const gate = new Promise<void>(resolve => { release = resolve; });
   let fetchCount = 0;
   mock.method(globalThis, 'fetch', async () => { if (++fetchCount === 1) await gate; else release(); return Response.json(success()); });
-  const first = invoke();
-  const secondConfig = { ...openaiSourceConfiguration(), organisationId: '14400000-0918-4144-8144-000000000002',
+  const firstConfig = openaiSourceConfiguration();
+  const secondConfig = { ...firstConfig, organisationId: '14400000-0918-4144-8144-000000000002',
     connectionId: 'm144-second-source', producerIdentity: 'm144-second-producer' };
+  assert.notEqual(firstConfig.organisationId, secondConfig.organisationId);
+  const expectedByOrganisation = new Map([
+    [firstConfig.organisationId, firstConfig], [secondConfig.organisationId, secondConfig],
+  ]);
+  const first = invoke(firstConfig.organisationId);
   process.env.GOVIA_RUNTIME_OPENAI_SOURCE = JSON.stringify(secondConfig);
   persistenceBarrier = true;
   await Promise.all([first, invoke(secondConfig.organisationId)]);
   assert.equal(persistenceStarted, 2); assert.equal(persistenceMaxActive, 2); assert.equal(persistenceActive, 0);
   assert.equal(calls.length, 4);
-  const traces = new Set(calls.map(call => call.args.p_observation.trace_id)); assert.equal(traces.size, 2);
-  for (const traceId of traces) {
-    const pair = calls.filter(call => call.args.p_observation.trace_id === traceId);
-    assert.equal(pair.length, 2);
-    assert.equal(pair[0].args.p_organisation_id, pair[1].args.p_organisation_id);
-    assert.equal(pair[0].args.p_connection_id, pair[1].args.p_connection_id);
-    assert.equal(pair[0].args.p_observation.producer_identity, pair[1].args.p_observation.producer_identity);
-    assert.equal(pair[1].args.p_observation.parent_span_id, pair[0].args.p_observation.span_id);
-    for (const call of pair) {
-      assert.equal(call.args.p_organisation_id, call.args.p_observation.organisation_id);
-      assert.equal(call.args.p_connection_id, call.args.p_observation.connection_id);
+  const traceGroups = new Map<string, typeof calls>();
+  for (const call of calls) {
+    const traceId = call.args.p_observation.trace_id as string;
+    const group = traceGroups.get(traceId) ?? []; group.push(call); traceGroups.set(traceId, group);
+  }
+  assert.equal(traceGroups.size, 2);
+  for (const organisationId of expectedByOrganisation.keys()) {
+    assert.equal([...traceGroups.values()].filter(group =>
+      group[0].args.p_observation.organisation_id === organisationId).length, 1, organisationId);
+  }
+  const groupedOrganisations = new Set([...traceGroups.values()].map(group =>
+    group[0].args.p_observation.organisation_id as string));
+  assert.deepEqual(groupedOrganisations, new Set(expectedByOrganisation.keys()));
+  for (const [traceId, group] of traceGroups) {
+    assert.equal(group.length, 2, traceId);
+    const organisationId = group[0].args.p_observation.organisation_id as string;
+    assert.equal(new Set(group.map(call => call.args.p_observation.organisation_id)).size, 1, traceId);
+    assert.equal(new Set(group.map(call => call.args.p_organisation_id)).size, 1, traceId);
+    assert.equal(new Set(group.map(call => call.args.p_connection_id)).size, 1, traceId);
+    const expected = expectedByOrganisation.get(organisationId); assert.ok(expected, organisationId);
+    for (const call of group) {
+      assert.equal(call.args.p_organisation_id, organisationId, traceId);
+      assert.equal(call.args.p_connection_id, expected.connectionId, traceId);
+      assert.equal(call.args.p_observation.organisation_id, organisationId, traceId);
+      assert.equal(call.args.p_observation.connection_id, expected.connectionId, traceId);
+      assert.equal(call.args.p_observation.producer_identity, expected.producerIdentity, traceId);
     }
+    const execution = group.find(call => call.args.p_observation.operation === 'GOVERNANCE_ANSWER');
+    const model = group.find(call => call.args.p_observation.operation === 'CHAT_COMPLETION');
+    assert.ok(execution && model, traceId);
+    assert.equal(model.args.p_observation.parent_span_id, execution.args.p_observation.span_id, traceId);
   }
 });
 

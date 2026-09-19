@@ -5,6 +5,7 @@ import { openaiSourceConfiguration } from './helpers/openai-producer-fixtures';
 let ask: typeof import('../services/talk').ask;
 let confidence = 10;
 let rows: Record<string, unknown>[];
+let rpcEnvelopes: { p_organisation_id: string; p_connection_id: string; p_observation: Record<string, unknown> }[];
 let calls: string[];
 let persistenceBarrier = false;
 let persistenceGate: Promise<void>;
@@ -24,8 +25,8 @@ before(async () => {
   mock.module('@/services/coding-memory', { namedExports: { semanticSearch: async () => '' } });
   mock.module('@/lib/db', { namedExports: { db: { write: { rpc: async () => ({}) } } } });
   mock.module('@/lib/governance/persistence', { namedExports: { privilegedDb: {
-    async rpc(name: string, args: { p_organisation_id: string; p_observation: Record<string, unknown> }) {
-      assert.equal(name, 'admit_runtime_observation'); rows.push(args.p_observation);
+    async rpc(name: string, args: { p_organisation_id: string; p_connection_id: string; p_observation: Record<string, unknown> }) {
+      assert.equal(name, 'admit_runtime_observation'); rpcEnvelopes.push(args); rows.push(args.p_observation);
       if (persistenceBarrier && !persistenceOrganisations.has(args.p_organisation_id)) {
         persistenceOrganisations.add(args.p_organisation_id);
         persistenceStarted++; persistenceActive++;
@@ -40,7 +41,7 @@ before(async () => {
   ask = (await import('../services/talk')).ask;
 });
 beforeEach(() => {
-  rows = []; calls = []; confidence = 10;
+  rows = []; rpcEnvelopes = []; calls = []; confidence = 10;
   persistenceBarrier = false;
   persistenceGate = new Promise<void>(resolve => { releasePersistenceGate = resolve; });
   persistenceOrganisations = new Set();
@@ -102,25 +103,56 @@ test('concurrent Talk invocations keep tenant, source, producer and trace mappin
     return Response.json(endpoint.endsWith('/embeddings') ? { data: [{ embedding: [0.1] }] } :
       { choices: [{ message: { content: '  TEST-001 answer  ' } }] });
   });
-  const first = ask(openaiSourceConfiguration().organisationId, 'fixture-user-1', 'SYNTHETIC_QUERY_1');
-  await firstChatStarted;
-  const secondConfig = { ...openaiSourceConfiguration(), organisationId: '14400000-0918-4144-8144-000000000002',
+  const firstConfig = openaiSourceConfiguration();
+  const secondConfig = { ...firstConfig, organisationId: '14400000-0918-4144-8144-000000000002',
     connectionId: 'm144-second-source', producerIdentity: 'm144-second-producer' };
+  assert.notEqual(firstConfig.organisationId, secondConfig.organisationId);
+  const expectedByOrganisation = new Map([
+    [firstConfig.organisationId, firstConfig], [secondConfig.organisationId, secondConfig],
+  ]);
+  const first = ask(firstConfig.organisationId, 'fixture-user-1', 'SYNTHETIC_QUERY_1');
+  await firstChatStarted;
   process.env.GOVIA_RUNTIME_OPENAI_SOURCE = JSON.stringify(secondConfig);
   persistenceBarrier = true;
   const [firstAnswer, secondAnswer] = await Promise.all([first,
     ask(secondConfig.organisationId, 'fixture-user-2', 'SYNTHETIC_QUERY_2')]);
   assert.equal(firstAnswer.answer, 'TEST-001 answer'); assert.equal(secondAnswer.answer, 'TEST-001 answer');
-  assert.equal(persistenceStarted, 2, JSON.stringify({ rows, organisations: [...persistenceOrganisations], active: persistenceActive })); assert.equal(persistenceMaxActive, 2); assert.equal(persistenceActive, 0);
-  assert.equal(rows.length, 4);
-  const traces = new Set(rows.map(row => row.trace_id)); assert.equal(traces.size, 2);
-  for (const traceId of traces) {
-    const pair = rows.filter(row => row.trace_id === traceId);
-    assert.equal(pair.length, 2);
-    assert.equal(pair[0].organisation_id, pair[1].organisation_id);
-    assert.equal(pair[0].connection_id, pair[1].connection_id);
-    assert.equal(pair[0].producer_identity, pair[1].producer_identity);
-    assert.equal(pair[1].parent_span_id, pair[0].span_id);
+  assert.equal(persistenceStarted, 2, JSON.stringify({ rows, organisations: [...new Set(rpcEnvelopes.map(args => args.p_organisation_id))], active: persistenceActive })); assert.equal(persistenceMaxActive, 2); assert.equal(persistenceActive, 0);
+  assert.equal(rpcEnvelopes.length, 4); assert.equal(rows.length, 4);
+  const traceGroups = new Map<string, typeof rpcEnvelopes>();
+  for (const args of rpcEnvelopes) {
+    const traceId = args.p_observation.trace_id as string;
+    const group = traceGroups.get(traceId) ?? []; group.push(args); traceGroups.set(traceId, group);
   }
-  assert.ok(!JSON.stringify({ rows, firstAnswer, secondAnswer }).includes('SYNTHETIC_'));
+  assert.equal(traceGroups.size, 2);
+  for (const organisationId of expectedByOrganisation.keys()) {
+    assert.equal([...traceGroups.values()].filter(group =>
+      group[0].p_observation.organisation_id === organisationId).length, 1, organisationId);
+  }
+  const groupedOrganisations = new Set([...traceGroups.values()].map(group =>
+    group[0].p_observation.organisation_id as string));
+  assert.deepEqual(groupedOrganisations, new Set(expectedByOrganisation.keys()));
+  assert.equal(new Set(expectedByOrganisation.keys()).size, 2);
+  for (const [traceId, group] of traceGroups) {
+    assert.equal(group.length, 2, traceId);
+    const organisationId = group[0].p_observation.organisation_id as string;
+    assert.equal(new Set(group.map(args => args.p_observation.organisation_id)).size, 1, traceId);
+    assert.equal(new Set(group.map(args => args.p_organisation_id)).size, 1, traceId);
+    assert.equal(new Set(group.map(args => args.p_connection_id)).size, 1, traceId);
+    const expected = expectedByOrganisation.get(organisationId); assert.ok(expected, organisationId);
+    for (const args of group) {
+      assert.equal(args.p_organisation_id, organisationId, traceId);
+      assert.equal(args.p_connection_id, expected.connectionId, traceId);
+      assert.equal(args.p_observation.organisation_id, organisationId, traceId);
+      assert.equal(args.p_observation.connection_id, expected.connectionId, traceId);
+      assert.equal(args.p_observation.producer_identity, expected.producerIdentity, traceId);
+    }
+    const pair = rows.filter(row => row.trace_id === traceId);
+    assert.equal(pair.length, 2, traceId);
+    const execution = pair.find(row => row.operation === 'GOVERNANCE_ANSWER');
+    const model = pair.find(row => row.operation === 'CHAT_COMPLETION');
+    assert.ok(execution && model, traceId);
+    assert.equal(model.parent_span_id, execution.span_id, traceId);
+  }
+  assert.ok(!JSON.stringify({ rows, rpcEnvelopes, firstAnswer, secondAnswer }).includes('SYNTHETIC_'));
 });

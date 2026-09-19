@@ -1324,10 +1324,13 @@ existing fallback remains authoritative for the user-facing result.
 
 ### DETERMINISTIC TEST COVERAGE
 
-New local coverage: **46 passing tests** (36 producer, 5 bridge, 5 Talk), included
+New local coverage: **45 passing tests** (35 producer, 5 bridge, 5 Talk), included
 in the final regression total below. Initial focused run passed 26 producer tests;
 expanded focused run passed 34 with one gated real acceptance test skipped. Later
-request-preservation and SDK-write assertions are included in the final 46 total.
+request-preservation and SDK-write assertions are included in the final 45 total.
+The second focused re-review wave replaced the duplicate timeout case with two
+semantically distinct timeout proofs and strengthened both concurrency tests with
+explicit A->A / B->B source mapping assertions.
 
 Tests prove topology, source/tenant concurrency isolation, approved model, direct
 usage including missing/zero/partial/invalid/inconsistent counts, no cost/canonical
@@ -1393,8 +1396,8 @@ No administrative operation is automatically authorized or executed by this PR.
 
 | Gate | Result |
 | --- | --- |
-| Final affected dashboard/M14 regression | **292 passed, 0 failed, 5 explicitly gated tests skipped** |
-| New M14.4 deterministic/structural/Talk subset | **46 passed** (included above) |
+| Final affected dashboard/M14 regression | **291 passed, 0 failed, 5 explicitly gated tests skipped** |
+| New M14.4 deterministic/structural/Talk subset | **45 passed** (included above) |
 | canonical-contracts full tests | **220 passed** |
 | governance-review full tests | **318 passed** |
 | canonical-contracts typecheck | PASS |
@@ -1418,7 +1421,7 @@ All existing M14.3A/M14.3B/OTel-persistence/domain/persistence/migration checks 
 included. Four existing DB-gated tests and the new real OpenAI acceptance test
 were skipped. No DB result is inferred from those skips. Full package test and
 five typecheck commands match prior M14 evidence; dashboard was rechecked after
-the final new test. No functional failures or unexplained regressions remain.
+the second focused rereview wave. No functional failures or unexplained regressions remain.
 
 The user-reported `access_programs` capability error was not reproduced in any
 repository command; it was treated as platform/tooling interruption, with no
