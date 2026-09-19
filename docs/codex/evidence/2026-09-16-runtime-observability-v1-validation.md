@@ -1440,6 +1440,21 @@ generic logs/metrics, canonical writes or source administration added: **NO**.
 M15/GitHubSourceAdapter/later work started: **NO**. M14 remains in progress;
 M14.5 remains the final closure gate. No merge is authorized or performed.
 
-Implementation/local validation supports commit, push and a new review PR, with
-real provider and database acceptance explicitly outstanding. Verdict:
-**M14_4_IMPLEMENTED_BUT_ACCEPTANCE_BLOCKED**.
+### Final independent rereview closure (PR #42)
+
+- Final independent rereview verdict: **PASS_M14_4_FINAL_REREVIEW**.
+- **R1 CLOSED:** timeout guard-sensitive proof confirmed by mutation testing.
+- **R2 CLOSED:** A→A / B→B tenant/source/producer mapping confirmed by mutation testing.
+- The second rereview-fix wave changed tests/evidence only; **NO production implementation changed**.
+- Focused M14.4: **45 passed**.
+- Dashboard/M14: **291 passed, 0 failed, 5 gated/skipped**.
+- canonical-contracts: **220 passed**.
+- governance-review: **318 passed**.
+- Five required typechecks: **PASS**.
+- Lint: **BLOCKED** due to the pre-existing missing ESLint setup; **not PASS**.
+- **REAL OPENAI ACCEPTANCE COMPLETE: NO**.
+- **REAL DATABASE ACCEPTANCE COMPLETE: NO**.
+- **M14 COMPLETE: NO**.
+- **M14.5 OUTSTANDING: YES**.
+- Current M14.4 status: **M14_4_FINAL_REREVIEW_PASSED_PENDING_OWNER_MERGE_GATE**.
+- This final rereview pass does not claim M14 overall completion. M14.5 remains the closure gate; no real OpenAI or remote database acceptance is claimed. No merge is authorized or performed.
