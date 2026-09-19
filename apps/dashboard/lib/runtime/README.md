@@ -257,3 +257,168 @@ Boundary unit tests mock persistence. The structural compatibility test now invo
 this boundary with the real adapter and M14.2 persistence/readback, mocking only RPC.
 Neither test mode establishes new database acceptance. Real producer coverage is
 **NONE**; controlled producer orchestration and instrumentation remain M14.4.
+
+## M14.4 — controlled OpenAI governance-answer producer
+
+Implemented producer scope is **one OpenAI governance-answer invocation**, using
+the existing `gpt-4o-mini` Chat Completions fetch path. It creates EXECUTION /
+GOVERNANCE_ANSWER and its child MODEL_CALL / CHAT_COMPLETION on the same trace.
+TOOL_CALL, MCP_CALL and API_CALL remain domain/fixture coverage only. Embeddings,
+DeepSeek, Ollama, noop, intent routing, coding-memory and ledger are uninstrumented.
+The producer does not make M14 complete; M14.5 remains the closure gate.
+
+`Talk.ask` calls `generateGovernanceAnswer` only at its existing answer-generation
+site. The optional fourth `LLMProvider.generateAnswer` parameter is an internal
+OpenAI-only metadata callback. Existing three-argument callers and other providers
+retain their behavior. Repository search found one answer caller (Talk) and four
+provider-selection callers (Talk plus three embedding paths in coding-memory).
+Prompts, model selection, max_tokens=500, temperature=0.1, answer formatting and
+Talk fallback remain unchanged.
+
+Each invocation owns a private `BasicTracerProvider`, `AlwaysOnSampler`, explicit
+minimal resource and bounded processor retaining at most two ended DTOs. Root uses
+ROOT_CONTEXT; child uses `trace.setSpan(ROOT_CONTEXT, execution)` explicitly.
+No global registration, context manager, current-span variable, resource detector,
+OTLP transport, exporter service, queue or retry exists. Static names are
+`govia.governance_answer` and `govia.openai.chat_completion`; names are not exported
+to the supported DTO. Attribute limit is eight, value length 128, events/links zero.
+
+The caller waits synchronously for the producer's bounded two-admission attempt:
+`generateGovernanceAnswer` awaits `finish` before returning the existing business
+answer. The wait is capped at five seconds, so an observation failure can add up to
+five seconds of latency without changing the answer. Timeout is not cancellation:
+an RPC already in flight may complete afterward, and the timeout never starts a
+retry or certifies that no row was written. M14.5 must revisit production delivery
+and any decision to move this wait off the request path.
+
+Exact packages: API **1.9.0**, sdk-trace-base **2.0.1**, resources **2.0.1**,
+semantic-conventions **1.29.0**; transitive core **2.0.1**. All four direct packages
+are used: tracing/context types, private SDK, explicit resource construction and
+SDK resource attribute names respectively. Frozen adapter/schema/mapping/method
+versions and trace/HTTP convention revisions are unchanged.
+
+### Explicit deployment configuration and tenant boundary
+
+Observation is enabled only with `GOVIA_RUNTIME_OPENAI_ENABLED=1` and a valid
+`GOVIA_RUNTIME_OPENAI_SOURCE` JSON object (maximum 8192 UTF-8 bytes). This is a
+credential-free deployment-admin projection of an **already authorized** immutable
+M14.2 source configuration, not source registration or authority by itself.
+Never populate it from a request, provider response, headers or telemetry.
+
+Required fields:
+
+| Field | Trusted origin / required value |
+| --- | --- |
+| organisationId | Deployment's tenant must exactly match the trusted Talk organisation argument |
+| connectionId, sourceSystemId, providerCode | Existing authorized runtime source coordinates; no defaults |
+| sourceConfigurationVersion, producerIdentity | Existing immutable configuration/head coordinates |
+| instrumentation | `{name:"govia.openai.governance-answer",version:"1.0.0",sdkName:"opentelemetry",sdkVersion:"2.0.1"}` |
+| supportedKinds | `["EXECUTION","MODEL_CALL"]` |
+| supportedFacts | Exactly END_TIME, PARENT, TARGET, OUTCOME, DURATION, ERROR, TOKENS, SAMPLING, DROPPED_COUNTS; no duplicates |
+| approvedModels | `["gpt-4o-mini"]` |
+| approvedTargets, approvedTools, approvedDeployments | Each explicitly `[]` in this narrow producer |
+
+The snapshot is frozen per invocation. Other organisations fail closed for
+observation; their business answer still works. Narrow kind/fact/model approvals
+must be authorized by the durable source configuration, which may support a
+superset. The deployment snapshot is subordinate to, and never replaces or
+upgrades, that durable M14.2 authority. At every admission M14.2 rechecks the exact
+tenant/source coordinates, immutable identity/version, activation, approvals,
+window, quotas and replay. A durable mismatch or configuration drift (including
+`RUNTIME_CONFIGURATION_MISMATCH`) rejects the observation and returns `FAILED`; it
+never bypasses authority, silently substitutes the projection, or turns the
+business invocation into a success. No source table SELECT, admin RPC, privilege
+expansion or source mutation is added to the request path. No migration is required.
+
+No deployment association is asserted by this producer: binding remains
+UNRESOLVED/MISSING_REVISION_EVIDENCE. No verified binding or canonical target is
+loaded or fabricated. A future independently verified binding is not silently
+inferred from model, repository or latest AgentVersion.
+
+### Metadata and failure disposition
+
+The existing HTTP client emits only a closed success/error discriminator and
+direct validated prompt/completion/total usage counts. Zero is retained; absent,
+negative, fractional, nonnumeric and unsafe counts stay absent. Independently
+valid partial counts are retained; contradictory complete counts are discarded
+without repair or estimation. No token values come from max_tokens or text.
+`govia.model.reported=gpt-4o-mini` identifies the actual model reference sent by
+this controlled client, approved by the trusted configuration; it is not an
+assertion of the response's resolved model revision or canonical identity.
+Arbitrary response model strings are not copied. Cost remains UNKNOWN.
+
+HTTP failure maps to HTTP_ERROR, fetch failure to CONNECTION_FAILED and malformed
+JSON/missing string answer to INVALID_RESPONSE. No body, exception message, cause
+or stack is passed into OTel. Successful HTTP plus a string answer supplies explicit
+OK; failures supply ERROR. Missing callback evidence remains UNSET, never success.
+An empty string is still a valid provider string result: when the HTTP invocation
+succeeds it may be recorded as `OK`/`SUCCESS` for that observed invocation. That
+record proves only the provider/transport observation, not answer usefulness, Talk
+selection or governance success; Talk's existing trim/fallback remains authoritative
+for the returned user-facing answer. Existing business return/throw behavior is
+preserved, including empty answers.
+
+The public SDK `ReadableSpan` bridge reads explicit fields only. It ignores names,
+events, links, arbitrary attributes/resources, status descriptions and exceptions.
+SDK HrTime components convert separately to BigInt before combining into decimal
+Unix-nanosecond strings. UUID observation IDs are server-generated outside spans;
+receivedAt is assigned at ingestion; recordedAt is solely database-owned.
+
+Flow: private ended spans -> explicit SupportedOtelSpan bridge -> unchanged
+M14.3B ingestion -> unchanged M14.3A adapter -> unchanged M14.2 validation,
+`admit_runtime_observation` and typed durable readback. Execution is admitted first,
+then model; the two admissions are not a new atomic pair transaction.
+
+Observability failure is **fail-open for the business answer and fail-closed for
+the evidence claim**. The internal result is RECORDED only after both readbacks;
+otherwise FAILED with a closed producer code. Server diagnostics contain only
+`GOVIA_RUNTIME_OBSERVATION_FAILED` plus that code. No telemetry payload or raw error
+is logged. Disabled observation reports NOT_OBSERVED internally, not "no execution".
+Setup/configuration failure also preserves the existing business invocation.
+
+The post-answer ingestion wait is bounded to five seconds for the pair. Timeout
+does not establish that no row was written: an in-flight RPC may finish afterward.
+No retry or next admission is started after timeout. Admission/readback failure
+can also leave a partial pair; FAILED never certifies absence or complete coverage.
+Existing M14.2 tenant+connection+trace+span replay semantics remain authoritative.
+
+### Controlled real acceptance (explicit opt-in only)
+
+`tests/openai-runtime-acceptance.test.ts` invokes the same producer/client once with
+harmless synthetic inputs; it never logs the inputs or answer. No mocked fetch,
+mock RPC, fake provider, source provisioning or migration exists in this harness.
+Required environment, supplied securely outside source control:
+
+- `RUN_M14_REAL_OPENAI_ACCEPTANCE=1`, `LLM_PROVIDER=openai`, real `OPENAI_API_KEY`.
+- Valid producer configuration above and `M14_REAL_OPENAI_ORGANISATION_ID` matching it.
+- `SUPABASE_URL=https://zkqfvqwqdypgpzauzinw.supabase.co` and its existing service key.
+- `M14_HOSTED_DB_TEST=1`, `M14_DATABASE_MODE=supabase-hosted`,
+  `M14_HOSTED_PROJECT_REF=zkqfvqwqdypgpzauzinw`.
+- Existing authenticated Supabase CLI and repository link metadata for
+  **ov-ia-g2-test**; PostgreSQL major 17 and applied M14.2 migrations.
+
+From `apps/dashboard`, run only this gated test:
+
+```powershell
+node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/openai-runtime-acceptance.test.ts
+```
+
+Preflight performs only tenant/source-scoped administrator reads through the
+existing lab-guarded CLI helper: platform/version, configuration compatibility,
+activation, window and capacity for two observations. Runtime admission uses the
+actual existing privileged client/service_role, not administrator admission.
+A separate read verifies durable presence after typed readback. Only explicitly
+selected metadata is printed as acceptance evidence. No credentials are loaded
+automatically from `.env.local`; protected gov-ia-dev is rejected.
+
+Missing key reports REAL_OPENAI_ACCEPTANCE_BLOCKED_NO_CREDENTIAL before DB access.
+Missing/incompatible source reports STOP_REMOTE_DB_AUTHORIZATION_REQUIRED before
+the OpenAI call. An owner must authorize any required administrative state first:
+register_runtime_source only if the tenant-local head is absent;
+configure_runtime_source for a new compatible immutable version when necessary;
+activate_runtime_source to select/enable that version. No binding/canonical row is
+needed. These operations are **not executed by the harness or application**.
+
+Deterministic producer tests, structural integration with mock RPC and actual
+external-provider/database acceptance are separate evidence categories. A skipped
+or blocked harness supplies no claim of real OpenAI execution or database acceptance.
