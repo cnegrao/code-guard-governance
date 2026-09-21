@@ -16,6 +16,24 @@ export function verifyHostedTarget(linkedRef: string, metadata: { ref?: string; 
   if (linkedRef === protectedProjectRef || requestedRef !== hostedProject.ref || linkedRef !== hostedProject.ref ||
     metadata.ref !== hostedProject.ref || metadata.name !== hostedProject.name) throw new Error('STOP_WRONG_SUPABASE_TARGET');
 }
+// Supabase CLI `db query --output json` has been observed to return either a bare array of
+// row objects, or an envelope object of shape {rows:[...]}. Accept exactly those two legitimate
+// shapes; reject everything else (malformed JSON, non-array rows, non-object row entries).
+export function parseHostedRows(out: string): Record<string, unknown>[] {
+  let parsed: unknown;
+  try { parsed = JSON.parse(out); } catch { throw new Error('M14_HOSTED_QUERY_RESPONSE_INVALID'); }
+  const rows = Array.isArray(parsed) ? parsed
+    : parsed !== null && typeof parsed === 'object' && Array.isArray((parsed as { rows?: unknown }).rows)
+      ? (parsed as { rows: unknown[] }).rows
+      : undefined;
+  if (rows === undefined) throw new Error('M14_HOSTED_QUERY_RESPONSE_INVALID');
+  for (const row of rows) if (row === null || typeof row !== 'object' || Array.isArray(row)) throw new Error('M14_HOSTED_QUERY_RESPONSE_INVALID');
+  return rows as Record<string, unknown>[];
+}
+export function formatHostedRows(rows: Record<string, unknown>[]): string {
+  return rows.map(row => Object.values(row).map(value=>typeof value==='boolean'?(value?'t':'f'):
+    value===null?'':typeof value==='object'?JSON.stringify(value):String(value)).join('|')).join('\n').trim();
+}
 function hostedSql(query: string): Promise<string> {
   if (process.env.M14_HOSTED_DB_TEST !== '1') throw new Error('M14_HOSTED_DATABASE_NOT_ENABLED');
   // Recheck every command, including reads. Never infer project identity from tenant data.
@@ -33,9 +51,7 @@ function hostedSql(query: string): Promise<string> {
     child.on('close',code=>{
       if(code!==0) { reject(new Error(err.match(/RUNTIME_[A-Z_]+|permission denied|out of range|violates [a-z ]+constraint/)?.[0] ?? 'M14_HOSTED_QUERY_FAILED')); return; }
       try {
-        const rows = JSON.parse(out).rows as Record<string,unknown>[];
-        resolve(rows.map(row=>Object.values(row).map(value=>typeof value==='boolean'?(value?'t':'f'):
-          value===null?'':typeof value==='object'?JSON.stringify(value):String(value)).join('|')).join('\n').trim());
+        resolve(formatHostedRows(parseHostedRows(out)));
       } catch { reject(new Error('M14_HOSTED_QUERY_RESPONSE_INVALID')); }
     });
   }).finally(()=>{unlinkSync(file);rmdirSync(directory);});

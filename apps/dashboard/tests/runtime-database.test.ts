@@ -4,7 +4,45 @@ import { validatePersistedRuntimeObservation } from '@council/governance-review'
 import { runtimeFromRow, runtimeToRow } from '../lib/governance/runtime-row';
 import { modelWithCost, precisionBoundary } from './helpers/runtime-fixtures';
 import { seedGovernedSupport, binding, registerBinding, authorityState } from './helpers/runtime-governed-fixtures';
-import { databaseEnabled, databaseMode, databaseTarget, verifyHostedTarget, hostedProject, protectedProjectRef, verifyDatabaseEnvironment, sql, literal, composite, org, foreign, admission, observationRow, registerSource, config, migrationSql } from './helpers/runtime-database';
+import { databaseEnabled, databaseMode, databaseTarget, verifyHostedTarget, hostedProject, protectedProjectRef, verifyDatabaseEnvironment, sql, literal, composite, org, foreign, admission, observationRow, registerSource, config, migrationSql, parseHostedRows, formatHostedRows } from './helpers/runtime-database';
+
+test('hosted CLI output parser accepts bare-array and {rows:[...]} envelope shapes identically', () => {
+  const rows = [{ a: 1, b: 'x' }, { a: 2, b: 'y' }];
+  const bareArray = JSON.stringify(rows);
+  const envelope = JSON.stringify({ rows });
+  assert.deepEqual(parseHostedRows(bareArray), rows);
+  assert.deepEqual(parseHostedRows(envelope), rows);
+  assert.equal(formatHostedRows(parseHostedRows(bareArray)), formatHostedRows(parseHostedRows(envelope)));
+  assert.equal(formatHostedRows(parseHostedRows(bareArray)), '1|x\n2|y');
+});
+
+test('hosted CLI output parser preserves scalar/row formatting for booleans, null and nested objects', () => {
+  const row = { flag_true: true, flag_false: false, missing: null, nested: { k: 'v' }, text: 'plain', num: 42 };
+  const expected = [true, false, null, { k: 'v' }, 'plain', 42].map(v =>
+    typeof v === 'boolean' ? (v ? 't' : 'f') : v === null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)).join('|');
+  assert.equal(formatHostedRows(parseHostedRows(JSON.stringify([row]))), expected);
+  assert.equal(formatHostedRows(parseHostedRows(JSON.stringify({ rows: [row] }))), expected);
+});
+
+test('hosted CLI output parser accepts empty bare array and empty {rows:[]}', () => {
+  assert.equal(formatHostedRows(parseHostedRows('[]')), '');
+  assert.equal(formatHostedRows(parseHostedRows(JSON.stringify({ rows: [] }))), '');
+});
+
+test('hosted CLI output parser rejects malformed JSON, non-rows objects and primitive values', () => {
+  for (const invalid of ['not json', '{"rows":', '', '{no_rows_key:1}']) assert.throws(() => parseHostedRows(invalid), /M14_HOSTED_QUERY_RESPONSE_INVALID/);
+  for (const invalid of [JSON.stringify({ other: 'value' }), JSON.stringify({ rows: 'not-an-array' }), JSON.stringify({ rows: null })])
+    assert.throws(() => parseHostedRows(invalid), /M14_HOSTED_QUERY_RESPONSE_INVALID/);
+  for (const invalid of [JSON.stringify('a string'), JSON.stringify(42), JSON.stringify(true), JSON.stringify(null)])
+    assert.throws(() => parseHostedRows(invalid), /M14_HOSTED_QUERY_RESPONSE_INVALID/);
+});
+
+test('hosted CLI output parser rejects rows containing null, arrays, or primitive entries', () => {
+  for (const invalid of [JSON.stringify([null]), JSON.stringify([[1, 2]]), JSON.stringify(['a-string']), JSON.stringify([42]), JSON.stringify([true])])
+    assert.throws(() => parseHostedRows(invalid), /M14_HOSTED_QUERY_RESPONSE_INVALID/);
+  for (const invalid of [JSON.stringify({ rows: [null] }), JSON.stringify({ rows: [[1, 2]] }), JSON.stringify({ rows: ['a-string'] })])
+    assert.throws(() => parseHostedRows(invalid), /M14_HOSTED_QUERY_RESPONSE_INVALID/);
+});
 
 test('runtime migration has exactly four typed tenant tables and restricted fixed-path RPCs (structural only)', () => {
   const text = migrationSql.replace(/--[^\n]*/g,'');
