@@ -1458,3 +1458,113 @@ M14.5 remains the final closure gate. No merge is authorized or performed.
 - **M14.5 OUTSTANDING: YES**.
 - Current M14.4 status: **M14_4_FINAL_REREVIEW_PASSED_PENDING_OWNER_MERGE_GATE**.
 - This final rereview pass does not claim M14 overall completion. M14.5 remains the closure gate; no real OpenAI or remote database acceptance is claimed. No merge is authorized or performed.
+
+## M14.5 — Real controlled OpenAI runtime producer acceptance and M14 architectural closure
+
+Recorded 2026-09-22 under `feat/m14-final-acceptance-closure-v1`, as a documentation-only
+patch to this evidence file. No ADR, migration, test, or production implementation file is
+changed by this section. M14.1–M14.4 above are unaffected and remain COMPLETE / ACCEPTED /
+MERGED / FROZEN where so marked.
+
+### Architecture-owner ruling on DoD #4 and #5
+
+The architecture owner explicitly ruled that frozen ADR §16 DoD #4 ("At least one REAL
+controlled runtime producer with documented source support") and DoD #5 ("Real producer ->
+ingestion -> sanitization -> persistence -> typed readback demonstrated") do **not** require
+`sourceStatus = OK` or successful upstream provider business completion. A real upstream
+**ERROR** is valid runtime evidence when the real producer successfully traverses the complete
+chain: producer -> ingestion -> sanitization -> persistence -> typed readback. This reading is
+consistent with frozen ADR §9, which requires source status and outcome to be preserved
+faithfully across `UNSET`/`OK`/`ERROR` and defines outcome as "UNKNOWN, evidenced SUCCESS or
+evidenced ERROR/FAILURE" — success is never a precondition for an observation to count as real,
+evidenced runtime fact.
+
+The existing `assert.ok(... sourceStatus === 'OK' ...)` condition in
+`apps/dashboard/tests/openai-runtime-acceptance.test.ts` is, by this ruling, an **OPENAI
+PROVIDER SUCCESS SMOKE** condition: a stronger, optional operational check that the upstream
+provider business call itself completed, layered on top of the architectural M14 acceptance
+path. It is **not** a frozen M14 architectural acceptance requirement. Per explicit owner
+instruction this test is unmodified and unweakened; it remains available as a future
+operational provider-success smoke check, distinct from the architectural DoD it does not gate.
+
+### Real execution record
+
+- **Environment:** `ov-ia-g2-test`.
+- **Producer:** OpenAI governance-answer runtime producer (M14.4, `openai-governance-answer-producer.ts` / `otel-runtime-producer.ts`).
+- **Trace:** `d11852cdc0bc90be3666c44f990f20df`, shared by both observations below.
+
+| Observation | Kind | Operation | Source status | Error | Span ID | Parent |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | EXECUTION | GOVERNANCE_ANSWER | ERROR | KNOWN / `HTTP_ERROR` | `f9723c104e9c30c2` | none (ROOT) |
+| 2 | MODEL_CALL | CHAT_COMPLETION | ERROR | KNOWN / `HTTP_ERROR` | `bd0156247aa0d0bd` | `f9723c104e9c30c2` |
+
+Observation 2 additionally reports `reportedModel: gpt-4o-mini`, the exact model reference sent
+by the controlled client, per the frozen contract's "reported, not resolved" rule.
+
+Acceptance result:
+
+- Real producer executed; runtime observations generated for both spans.
+- Ingestion executed; sanitization executed; persistence succeeded.
+- Exactly **2** durable runtime observations recorded — no more, no fewer.
+- Typed application readback succeeded for both observations.
+- Parent/child trace relationship preserved: observation 2's parent span ID equals
+  observation 1's span ID, both under the same trace ID, matching the frozen
+  `EXECUTION` root / `MODEL_CALL` child topology.
+- No raw prompt content persisted. No completion content persisted. No credential persisted.
+- No unrelated canonical objects created.
+- `gov-ia-dev` was not accessed; the run is scoped entirely to `ov-ia-g2-test`.
+
+### Separate provider diagnostic (external cause, not persisted runtime content)
+
+A separate minimal diagnostic request established the external cause of the observed `ERROR`
+outcome:
+
+- HTTP status: **429**.
+- Error type: `insufficient_quota`.
+- Error code: `credit_balance_exhausted`.
+- Request count: 1. Retry count: 0.
+
+This diagnostic explains why the real upstream call failed; it is recorded here as external
+provider-account context, not as content persisted inside either runtime observation. Neither
+observation's persisted metadata includes the diagnostic's raw text — both carry only the
+closed `HTTP_ERROR` category, consistent with frozen ADR §9's bounded typed error-category rule.
+
+### Explicit distinction
+
+- **ARCHITECTURAL M14 ACCEPTANCE: PASS.** A real controlled producer traversed
+  producer -> ingestion -> sanitization -> persistence -> typed readback, with the
+  trace/parent relationship, exact durable count, and content-exclusion guarantees all
+  independently confirmed above. Frozen ADR DoD #4 and #5 are satisfied by this evidence
+  under the architecture-owner's ruling.
+- **OPENAI PROVIDER SUCCESS SMOKE: NOT PASS / NOT EXECUTED SUCCESSFULLY.** The upstream
+  OpenAI business call did not complete successfully; the account had insufficient quota
+  (`429` / `insufficient_quota` / `credit_balance_exhausted`). This is an operational
+  provider-account condition, not a defect in the runtime observation path.
+
+The provider failure does not invalidate the runtime observation path — it is the runtime fact
+that path was built to observe. A future successful invocation remains useful as an additional,
+optional operational smoke signal (via the unmodified `sourceStatus === 'OK'` acceptance test)
+but is not required to certify the architectural DoD recorded here.
+
+### DoD status update
+
+- **DoD #4 (real controlled runtime producer with documented source support): SATISFIED.**
+  Evidenced by the real execution record above, layered on the documented source support
+  already recorded in M14.4 (`runtime-producer-config.ts`, `lib/runtime/README.md`).
+- **DoD #5 (real producer -> ingestion -> sanitization -> persistence -> typed readback
+  demonstrated): SATISFIED.** Evidenced by the same real execution record: 2 durable
+  observations, typed readback, preserved trace/parent topology, and confirmed content
+  exclusion.
+- DoD items 1–3 and 6–21 retain their status from M14.1–M14.4 above; this section changes
+  only the status of items 4 and 5.
+
+### Scope and delivery
+
+ADR CHANGED: **NO**. ROADMAP CHANGED: **NO**. TEST FILES CHANGED: **NO**
+(`openai-runtime-acceptance.test.ts` is unmodified and unweakened). PRODUCTION IMPLEMENTATION
+CHANGED: **NO**. MIGRATIONS CHANGED: **NO**. New OpenAI call made while recording this section:
+**NO**. New remote database access made while recording this section: **NO**. Only this evidence
+file is modified.
+
+**M14 status: DoD #1–21 now SATISFIED.** Commit/push/merge are not performed by this patch and
+remain subject to the owner's separate authorization.
