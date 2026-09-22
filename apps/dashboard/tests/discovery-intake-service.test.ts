@@ -1868,3 +1868,405 @@ describe("Technical Profile Persistence V1: pre-canonical AgentVersion proposal"
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// GOV IA — GitHub Source Foundation — Phase 3: wiring the already-merged
+// GitHubSourceAdapter (Phase 1) and immutable sourceVersion propagation
+// (Phase 2, packages/scanner) into this exact governed Discovery Intake
+// boundary. GitHubRepositorySourceConfiguration deliberately carries no
+// fetchImpl (see discovery-intake.ts) — GitHubSourceAdapter falls back to
+// globalThis.fetch, so every test below mocks that global directly instead
+// of injecting a fetch function through the production source configuration.
+// ---------------------------------------------------------------------------
+
+describe("GitHub Source Governed Intake V1: GitHubSourceAdapter wired through the existing governed boundary", () => {
+  const GITHUB_OWNER = "acme";
+  const GITHUB_REPO = "agents";
+  const GITHUB_REF = "main";
+  // A bare `kind = "agent"` declaration carries no derivable identity
+  // (AgentCandidateNormalizationStrategy fails it closed to
+  // AGENT_IDENTITY_NOT_DERIVABLE — see object-candidate-normalization.ts) and
+  // so never reaches a durable NormalizedCandidate. The enclosing class name
+  // is what AgentKindDeclarationSpecification promotes as displayValue, so
+  // this fixture is what these tests need to observe an actual durable AGENT
+  // NormalizedCandidate end-to-end.
+  const AGENT_FIXTURE = 'class SupportAgent:\n    kind = "agent"\n';
+
+  interface GitHubFetchCall {
+    readonly url: string;
+    readonly headers: Record<string, string>;
+  }
+
+  interface GitHubFetchMock {
+    readonly fetchImpl: typeof globalThis.fetch;
+    readonly callLog: GitHubFetchCall[];
+    resolutionCallCount(): number;
+    treeCallCount(): number;
+  }
+
+  function countMatching(callLog: readonly GitHubFetchCall[], substring: string): number {
+    return callLog.filter((entry) => entry.url.includes(substring)).length;
+  }
+
+  /** Queues exactly the responses one full governed GitHub scan makes: commit
+   * resolution, then the recursive tree, then one contents fetch per file
+   * (sorted locator order) — mirrors packages/scanner's own GitHub fetch
+   * mock, extended here to record every request's URL/headers for the
+   * single-enumeration and token-non-disclosure assertions below. */
+  function mockGitHubFetch(sha: string, files: Record<string, string>): GitHubFetchMock {
+    const locators = Object.keys(files).sort();
+    const queue: unknown[] = [
+      { sha },
+      {
+        truncated: false,
+        tree: locators.map((locator) => ({
+          path: locator,
+          type: "blob",
+          size: Buffer.byteLength(files[locator], "utf8"),
+        })),
+      },
+      ...locators.map((locator) => ({
+        type: "file",
+        encoding: "base64",
+        content: Buffer.from(files[locator], "utf8").toString("base64"),
+        path: locator,
+      })),
+    ];
+    const callLog: GitHubFetchCall[] = [];
+    const fetchImpl = (async (url: unknown, init?: RequestInit) => {
+      const rawHeaders = (init?.headers ?? {}) as Record<string, string>;
+      callLog.push({ url: String(url), headers: { ...rawHeaders } });
+      const next = queue.shift();
+      if (next === undefined) {
+        throw new Error(`Unexpected GitHub network request: ${String(url)}`);
+      }
+      return { ok: true, json: async () => next };
+    }) as unknown as typeof globalThis.fetch;
+    return {
+      fetchImpl,
+      callLog,
+      resolutionCallCount: () => countMatching(callLog, "/commits/"),
+      treeCallCount: () => countMatching(callLog, "/git/trees/"),
+    };
+  }
+
+  /** Commit resolution itself fails (e.g. HTTP failure/unknown ref) — the very first request. */
+  function mockGitHubFetchResolutionFailure(): GitHubFetchMock {
+    const callLog: GitHubFetchCall[] = [];
+    const fetchImpl = (async (url: unknown, init?: RequestInit) => {
+      const rawHeaders = (init?.headers ?? {}) as Record<string, string>;
+      callLog.push({ url: String(url), headers: { ...rawHeaders } });
+      return { ok: false, json: async () => ({ message: "not found" }) };
+    }) as unknown as typeof globalThis.fetch;
+    return {
+      fetchImpl,
+      callLog,
+      resolutionCallCount: () => countMatching(callLog, "/commits/"),
+      treeCallCount: () => countMatching(callLog, "/git/trees/"),
+    };
+  }
+
+  /**
+   * Commit resolution SUCCEEDS (sourceVersion becomes known), but the
+   * subsequent tree/listArtifacts() request fails — the exact edge case
+   * where the pipeline's terminal FAILED AcquisitionRun must still retain
+   * the already-resolved sourceVersion (see DiscoveryPipelineFailure in
+   * packages/scanner/src/discovery/pipeline.ts).
+   */
+  function mockGitHubFetchTreeFailureAfterResolution(sha: string): GitHubFetchMock {
+    const callLog: GitHubFetchCall[] = [];
+    const fetchImpl = (async (url: unknown, init?: RequestInit) => {
+      const rawHeaders = (init?.headers ?? {}) as Record<string, string>;
+      const u = String(url);
+      callLog.push({ url: u, headers: { ...rawHeaders } });
+      if (u.includes("/commits/")) {
+        return { ok: true, json: async () => ({ sha }) };
+      }
+      if (u.includes("/git/trees/")) {
+        return { ok: false, json: async () => ({ message: "tree enumeration failed" }) };
+      }
+      throw new Error(`Unexpected GitHub network request: ${u}`);
+    }) as unknown as typeof globalThis.fetch;
+    return {
+      fetchImpl,
+      callLog,
+      resolutionCallCount: () => countMatching(callLog, "/commits/"),
+      treeCallCount: () => countMatching(callLog, "/git/trees/"),
+    };
+  }
+
+  async function withMockedGlobalFetch<T>(impl: typeof globalThis.fetch, run: () => Promise<T>): Promise<T> {
+    const original = globalThis.fetch;
+    globalThis.fetch = impl;
+    try {
+      return await run();
+    } finally {
+      globalThis.fetch = original;
+    }
+  }
+
+  const scanGitHub = (
+    sha: string,
+    files: Record<string, string>,
+    ports: ReturnType<typeof makePorts>,
+    options: { organisationId?: OrganisationId; token?: string } = {},
+  ) => {
+    const mock = mockGitHubFetch(sha, files);
+    return withMockedGlobalFetch(mock.fetchImpl, async () => ({
+      result: await runGovernanceDiscoveryScan(
+        {
+          executionContext: { organisationId: options.organisationId ?? ORG_A },
+          sourceConfiguration: {
+            kind: "GITHUB_REPOSITORY",
+            owner: GITHUB_OWNER,
+            repo: GITHUB_REPO,
+            ref: GITHUB_REF,
+            token: options.token,
+          },
+        },
+        ports,
+      ),
+      mock,
+    }));
+  };
+
+  const objectCandidates = (ports: ReturnType<typeof makePorts>) =>
+    [...ports.intake.candidatesByFinding.values()].filter((c) => c.candidateKind === "AGENT");
+
+  test("GITHUB DISCOVERY: a governed GitHub scan succeeds via mocked fetch and never exceeds the existing DETECTED -> PROPOSED ceiling", async () => {
+    const sha = "a".repeat(40);
+    const ports = makePorts();
+    const { result } = await scanGitHub(sha, { "agent.py": AGENT_FIXTURE }, ports);
+
+    assert.equal(result.status, "SUCCEEDED");
+    assert.deepEqual(result.failures, []);
+    assert.equal(result.artifactsScanned, 1);
+    assert.equal(result.objectCandidates, 1);
+    assert.equal(result.relationshipCandidates, 0);
+    assert.equal(result.reviewSubjectsCreated, 1);
+    assert.equal(result.proposalsCreated, 1);
+
+    const [candidate] = objectCandidates(ports);
+    const subject = [...ports.review.subjects.values()].find((s) => s.findingId === candidate.findingId)!;
+    assert.equal(subject.state, "PROPOSED");
+    // FakeReviewPersistence/FakeMaterializationPersistence throw on every
+    // confirm/certify/authorization/reconciliation/materialization call — a
+    // clean result with no failures proves this scan never reached one.
+  });
+
+  test("SOURCE_VERSION_DURABILITY: the immutable commit SHA reaches the AcquisitionRun passed into intake persistence", async () => {
+    const sha = "b".repeat(40);
+    const ports = makePorts();
+    const { result } = await scanGitHub(sha, { "agent.py": AGENT_FIXTURE }, ports);
+
+    const runRow = ports.intake.runs.get(result.scanRunId)!;
+    assert.equal(runRow.run.sourceVersion, `commit:${sha}`);
+  });
+
+  test("EVIDENCE_PROVENANCE: snapshot.sourceVersion and EvidenceLocation.commit survive intake as the exact versioned values", async () => {
+    const sha = "c".repeat(40);
+    const ports = makePorts();
+    await scanGitHub(sha, { "agent.py": AGENT_FIXTURE }, ports);
+
+    const [candidate] = objectCandidates(ports);
+    const finding = (await ports.intake.getDiscoveryFinding(ORG_A, candidate.findingId))!;
+    const assertion = ports.intake.assertions.get(tenantKey(ORG_A, finding.assertionIds[0]))!;
+    const evidence = ports.intake.evidence.get(tenantKey(ORG_A, finding.evidenceIds[0]))!;
+
+    assert.equal(assertion.snapshot?.sourceVersion, `commit:${sha}`);
+    assert.equal(evidence.locations[0].commit, sha);
+    assert.equal(/^[0-9a-f]{40}$/.test(evidence.locations[0].commit ?? ""), true, "commit is the raw lowercase 40-hex SHA, never \"commit:<sha>\"");
+  });
+
+  test("SAME_COMMIT_REPLAY: rescanning the same resolved SHA replays deterministic identities without duplicate ReviewSubjects or proposals", async () => {
+    const sha = "d".repeat(40);
+    const files = { "agent.py": AGENT_FIXTURE };
+    const ports = makePorts();
+
+    const first = await scanGitHub(sha, files, ports);
+    assert.equal(first.result.reviewSubjectsCreated, 1);
+    assert.equal(first.result.proposalsCreated, 1);
+    const subjectIdsAfterFirst = [...ports.review.subjects.keys()].sort();
+
+    const second = await scanGitHub(sha, files, ports);
+    assert.deepEqual(second.result.failures, []);
+    assert.equal(second.result.reviewSubjectsCreated, 0, "identical commit replay must not create a duplicate ReviewSubject");
+    assert.equal(second.result.proposalsCreated, 0, "identical commit replay must not create a duplicate proposal");
+    assert.deepEqual([...ports.review.subjects.keys()].sort(), subjectIdsAfterFirst);
+  });
+
+  test("CROSS_COMMIT_ISOLATION: two commits of the same repository/path/content keep distinct provenance and discovery identities", async () => {
+    const files = { "agent.py": AGENT_FIXTURE };
+    const shaA = "1".repeat(40);
+    const shaB = "2".repeat(40);
+    const ports = makePorts();
+
+    await scanGitHub(shaA, files, ports);
+    const candidateA = objectCandidates(ports)[0];
+    const findingA = (await ports.intake.getDiscoveryFinding(ORG_A, candidateA.findingId))!;
+    const assertionA = ports.intake.assertions.get(tenantKey(ORG_A, findingA.assertionIds[0]))!;
+    const evidenceA = ports.intake.evidence.get(tenantKey(ORG_A, findingA.evidenceIds[0]))!;
+    const subjectA = [...ports.review.subjects.values()].find((s) => s.findingId === candidateA.findingId)!;
+
+    await scanGitHub(shaB, files, ports);
+    const candidateB = objectCandidates(ports).find((c) => c.candidateId !== candidateA.candidateId)!;
+    const findingB = (await ports.intake.getDiscoveryFinding(ORG_A, candidateB.findingId))!;
+    const assertionB = ports.intake.assertions.get(tenantKey(ORG_A, findingB.assertionIds[0]))!;
+    const evidenceB = ports.intake.evidence.get(tenantKey(ORG_A, findingB.evidenceIds[0]))!;
+    const subjectB = [...ports.review.subjects.values()].find((s) => s.findingId === candidateB.findingId)!;
+
+    assert.notEqual(findingA.findingId, findingB.findingId);
+    assert.notEqual(assertionA.assertionId, assertionB.assertionId);
+    assert.notEqual(evidenceA.evidenceId, evidenceB.evidenceId);
+    assert.notEqual(subjectA.reviewSubjectId, subjectB.reviewSubjectId);
+    assert.notEqual(evidenceA.locations[0].commit, evidenceB.locations[0].commit);
+    assert.equal(evidenceA.locations[0].commit, shaA);
+    assert.equal(evidenceB.locations[0].commit, shaB);
+
+    // Support from commit A is never borrowed by commit B's review subject.
+    assert.deepEqual([...subjectA.evidenceIds].sort(), [evidenceA.evidenceId]);
+    assert.deepEqual([...subjectB.evidenceIds].sort(), [evidenceB.evidenceId]);
+
+    // Canonical proposedIdentity stays semantically unchanged across commits.
+    assert.deepEqual(candidateA.proposedIdentity, candidateB.proposedIdentity, "canonical proposedIdentity never carries sourceVersion/commit");
+    assert.notEqual(candidateA.candidateId, candidateB.candidateId, "discovery-layer candidateId still stays version-scoped");
+  });
+
+  test("CANONICAL_IDENTITY_STABILITY: no automatic canonical materialization occurs for any GitHub-sourced candidate", async () => {
+    const sha = "e".repeat(40);
+    const ports = makePorts();
+    const { result } = await scanGitHub(sha, { "agent.py": AGENT_FIXTURE }, ports);
+
+    assert.deepEqual(result.failures, [], "FakeMaterializationPersistence throws on any materialize* call — a clean result proves none was invoked");
+    assert.equal(result.alreadyGoverned, 0);
+  });
+
+  test("TOKEN_NON_DISCLOSURE: a configured token appears only in the Authorization request header, never in any durable or returned record", async () => {
+    const sha = "f".repeat(40);
+    const token = "ghp_super-secret-governed-intake-token";
+    const ports = makePorts();
+    const { result, mock } = await scanGitHub(sha, { "agent.py": AGENT_FIXTURE }, ports, { token });
+
+    assert.ok(mock.callLog.length > 0);
+    for (const call of mock.callLog) {
+      assert.equal(call.headers.Authorization, `Bearer ${token}`, `every GitHub request must carry the token, url=${call.url}`);
+      assert.equal(call.url.includes(token), false, "the token must never appear in a request URL");
+    }
+
+    assert.equal(JSON.stringify(result).includes(token), false, "GovernanceDiscoveryScanResult must never echo the token");
+    for (const run of ports.intake.runs.values()) {
+      assert.equal(JSON.stringify(run.run).includes(token), false, "AcquisitionRun must never persist the token");
+    }
+    for (const evidence of ports.intake.evidence.values()) {
+      assert.equal(JSON.stringify(evidence).includes(token), false, "Evidence must never persist the token");
+    }
+    for (const assertion of ports.intake.assertions.values()) {
+      assert.equal(JSON.stringify(assertion).includes(token), false, "SourceAssertion must never persist the token");
+    }
+    for (const subject of ports.review.subjects.values()) {
+      assert.equal(JSON.stringify(subject).includes(token), false, "ReviewSubject must never persist the token");
+    }
+  });
+
+  test("FAILED_RESOLUTION: a source-version resolution failure produces a FAILED scan, zero review output, exactly one resolution request, and never leaks the configured token", async () => {
+    const token = "ghp_should-never-leak-on-failure";
+    const ports = makePorts();
+    const mock = mockGitHubFetchResolutionFailure();
+    const result = await withMockedGlobalFetch(mock.fetchImpl, () =>
+      runGovernanceDiscoveryScan(
+        {
+          executionContext: { organisationId: ORG_A },
+          sourceConfiguration: { kind: "GITHUB_REPOSITORY", owner: GITHUB_OWNER, repo: GITHUB_REPO, ref: GITHUB_REF, token },
+        },
+        ports,
+      ),
+    );
+
+    assert.equal(result.status, "FAILED");
+    assert.equal(result.artifactsScanned, 0);
+    assert.equal(result.findingsDetected, 0);
+    assert.equal(result.reviewSubjectsCreated, 0);
+    assert.equal(result.proposalsCreated, 0);
+    assert.equal(ports.review.subjects.size, 0);
+    assert.equal(ports.intake.evidence.size, 0);
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.failures[0].reason.includes(token), false, "a failure reason must never echo the configured token");
+    const runRow = ports.intake.runs.get(result.scanRunId)!;
+    assert.equal(runRow.run.status, "FAILED");
+    assert.equal(runRow.run.sourceVersion, undefined, "resolution itself failed: no sourceVersion was ever known, so none is fabricated");
+    assert.equal(mock.resolutionCallCount(), 1, "exactly one commit-resolution request — no retry attempting to recover provenance");
+    assert.equal(mock.treeCallCount(), 0, "listArtifacts() must never be reached once resolution has already failed");
+  });
+
+  test("FAILED_AFTER_RESOLUTION: a tree-enumeration failure AFTER successful commit resolution still persists the already-resolved sourceVersion on the durable FAILED run", async () => {
+    const sha = "5".repeat(40);
+    const token = "ghp_should-never-leak-on-tree-failure";
+    const ports = makePorts();
+    const mock = mockGitHubFetchTreeFailureAfterResolution(sha);
+    const result = await withMockedGlobalFetch(mock.fetchImpl, () =>
+      runGovernanceDiscoveryScan(
+        {
+          executionContext: { organisationId: ORG_A },
+          sourceConfiguration: { kind: "GITHUB_REPOSITORY", owner: GITHUB_OWNER, repo: GITHUB_REPO, ref: GITHUB_REF, token },
+        },
+        ports,
+      ),
+    );
+
+    assert.equal(result.status, "FAILED");
+    assert.equal(result.artifactsScanned, 0);
+    assert.equal(result.findingsDetected, 0);
+    assert.equal(result.reviewSubjectsCreated, 0);
+    assert.equal(result.proposalsCreated, 0);
+    assert.equal(ports.review.subjects.size, 0, "zero ReviewSubjects on a failed scan");
+    assert.equal(ports.intake.evidence.size, 0, "zero candidates/evidence on a failed scan");
+    assert.equal(ports.materialization.mappings.size, 0);
+
+    const runRow = ports.intake.runs.get(result.scanRunId)!;
+    assert.equal(runRow.run.status, "FAILED");
+    // The durable AcquisitionRun retains the sourceVersion the pipeline had
+    // already resolved before the tree request failed — never reconstructed
+    // without it.
+    assert.equal(runRow.run.sourceVersion, `commit:${sha}`);
+
+    assert.equal(mock.resolutionCallCount(), 1, "exactly one commit-resolution request");
+    assert.equal(mock.treeCallCount(), 1, "exactly one tree request — no retry to recover provenance, no second resolution call");
+
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.failures[0].reason.includes(token), false, "a failure reason must never echo the configured token");
+    assert.equal(JSON.stringify(result).includes(token), false, "GovernanceDiscoveryScanResult must never echo the token");
+    assert.equal(JSON.stringify(runRow.run).includes(token), false, "the durable failed AcquisitionRun must never persist the token");
+    for (const call of mock.callLog) {
+      assert.equal(call.url.includes(token), false, "the token must never appear in a request URL");
+    }
+  });
+
+  test("SINGLE_ENUMERATION: exactly one GitHub tree fetch occurs per governed scan (no redundant post-run listArtifacts() call)", async () => {
+    const sha = "9".repeat(40);
+    const ports = makePorts();
+    const { mock } = await scanGitHub(sha, { "agent.py": AGENT_FIXTURE, "model.py": 'modelReference = "gpt-x"\n' }, ports);
+
+    assert.equal(mock.treeCallCount(), 1, "the tree must be enumerated exactly once, from DiscoveryPipeline's own single pass");
+  });
+
+  test("LOCAL_REGRESSION: LOCAL_REPOSITORY discovery is unaffected by the GitHub source configuration addition", async () => {
+    await withFixtureRepository(async (root) => {
+      const ports = makePorts();
+      const result = await runGovernanceDiscoveryScan(
+        { executionContext: { organisationId: ORG_A }, sourceConfiguration: { kind: "LOCAL_REPOSITORY", rootPath: root } },
+        ports,
+      );
+
+      assert.equal(result.status, "SUCCEEDED");
+      assert.equal(result.artifactsScanned, 1);
+      assert.equal(result.objectCandidates, 3, "expected AGENT + MODEL + TOOL, exactly as before GitHub source support was added");
+      const runRow = ports.intake.runs.get(result.scanRunId)!;
+      assert.equal(runRow.run.sourceVersion, undefined, "LocalRepositoryAdapter must never fabricate a sourceVersion");
+      for (const candidate of objectCandidates(ports)) {
+        const finding = (await ports.intake.getDiscoveryFinding(ORG_A, candidate.findingId))!;
+        const evidence = ports.intake.evidence.get(tenantKey(ORG_A, finding.evidenceIds[0]))!;
+        assert.equal("commit" in evidence.locations[0], false, "an unversioned local scan must never fabricate EvidenceLocation.commit");
+      }
+    });
+  });
+});
