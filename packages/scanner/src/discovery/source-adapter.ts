@@ -48,6 +48,8 @@ export interface SourceAdapter {
   /** Deterministically ordered; excludes anything the adapter's own policy forbids. */
   listArtifacts(): Promise<readonly SourceArtifactRef[]>;
 
+  resolveSourceVersion?(): Promise<string | undefined>;
+
   /** Never throws for missing/unreadable content; reports failure via the outcome. */
   readArtifact(locator: string): Promise<ReadArtifactOutcome>;
 }
