@@ -75,11 +75,15 @@ function normalizeResolvedSha(value: unknown): string {
 }
 
 function decodeBase64Bytes(value: string): Buffer | undefined {
-  if (!BASE64_PATTERN.test(value)) {
+  // The GitHub REST Contents API line-wraps base64 content with CR/LF. Normalize only
+  // CR and LF before validation/decoding; any other stray character (space, tab, etc.)
+  // must still fail closed rather than be silently stripped.
+  const normalized = value.replace(/[\r\n]/g, '');
+  if (!BASE64_PATTERN.test(normalized)) {
     return undefined;
   }
-  const bytes = Buffer.from(value, 'base64');
-  return bytes.toString('base64') === value ? bytes : undefined;
+  const bytes = Buffer.from(normalized, 'base64');
+  return bytes.toString('base64') === normalized ? bytes : undefined;
 }
 
 function decodeStrictUtf8(bytes: Buffer): string {
@@ -241,7 +245,7 @@ export class GitHubSourceAdapter implements SourceAdapter {
     ) {
       return { ok: false, locator: safeLocator, reason: 'GitHub returned non-file or non-base64 content' };
     }
-    if (typeof response.path === 'string' && response.path !== safeLocator) {
+    if (typeof response.path !== 'string' || response.path !== safeLocator) {
       return { ok: false, locator: safeLocator, reason: 'GitHub returned content for an unexpected path' };
     }
 

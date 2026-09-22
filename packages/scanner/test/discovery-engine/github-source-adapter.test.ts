@@ -53,6 +53,14 @@ function treeEntry(
   return { path, type, size };
 }
 
+function wrapBase64(value: string, width: number): string {
+  const lines: string[] = [];
+  for (let index = 0; index < value.length; index += width) {
+    lines.push(value.slice(index, index + width));
+  }
+  return lines.join('\n');
+}
+
 describe('GitHubSourceAdapter', () => {
   it('resolves a branch/ref to an immutable commit version', async () => {
     const sha = 'ABCDEF0123456789ABCDEF0123456789ABCDEF01';
@@ -220,6 +228,131 @@ describe('GitHubSourceAdapter', () => {
     }
     const readOutcome = await adapter.readArtifact('secret.txt');
     assert.equal(JSON.stringify(readOutcome).includes(token), false);
+  });
+
+  it('accepts and decodes real GitHub REST base64 content wrapped with CR/LF line breaks', async () => {
+    const sha = '1234567890123456789012345678901234567890';
+    const text = 'the quick brown fox jumps over the lazy dog, twice for good measure\n';
+    const bytes = Buffer.from(text, 'utf8');
+    const rawBase64 = bytes.toString('base64');
+    // Simulate GitHub's line-wrapped content field (typically LF every 60 chars) and
+    // additionally substitute one line break with CRLF to prove CR is also normalized.
+    const wrapped = wrapBase64(rawBase64, 20).replace('\n', '\r\n');
+    const mock = mockFetch([
+      { body: { sha } },
+      {
+        body: {
+          type: 'file',
+          encoding: 'base64',
+          content: wrapped,
+          path: 'wrapped.txt',
+        },
+      },
+    ]);
+    const adapter = new GitHubSourceAdapter(options(mock.fetchImpl));
+
+    const outcome = await adapter.readArtifact('wrapped.txt');
+    assert.equal(outcome.ok, true);
+    if (outcome.ok) {
+      assert.equal(outcome.content.text, text);
+      assert.equal(outcome.content.encoding, 'utf8');
+      assert.equal(outcome.content.contentHash, createHash('sha256').update(bytes).digest('hex'));
+    }
+  });
+
+  it('fails closed for malformed base64 even after CR/LF line-wrap normalization', async () => {
+    const sha = '1234567890123456789012345678901234567890';
+    const mock = mockFetch([
+      { body: { sha } },
+      {
+        body: {
+          type: 'file',
+          encoding: 'base64',
+          content: 'not-@@-valid-base64!!\n==\n',
+          path: 'malformed.bin',
+        },
+      },
+    ]);
+    const adapter = new GitHubSourceAdapter(options(mock.fetchImpl));
+
+    const outcome = await adapter.readArtifact('malformed.bin');
+    assert.equal(outcome.ok, false);
+    if (!outcome.ok) {
+      assert.match(outcome.reason, /invalid base64/i);
+    }
+  });
+
+  it('fails closed for base64 content polluted with spaces or tabs instead of GitHub CR/LF wrapping', async () => {
+    const sha = '1234567890123456789012345678901234567890';
+    const rawBase64 = Buffer.from('hello world', 'utf8').toString('base64');
+    const poisonedVariants = [
+      `${rawBase64.slice(0, 4)} ${rawBase64.slice(4)}`,
+      `${rawBase64.slice(0, 4)}\t${rawBase64.slice(4)}`,
+    ];
+
+    for (const poisoned of poisonedVariants) {
+      const mock = mockFetch([
+        { body: { sha } },
+        {
+          body: {
+            type: 'file',
+            encoding: 'base64',
+            content: poisoned,
+            path: 'poisoned.txt',
+          },
+        },
+      ]);
+      const adapter = new GitHubSourceAdapter(options(mock.fetchImpl));
+
+      const outcome = await adapter.readArtifact('poisoned.txt');
+      assert.equal(outcome.ok, false);
+      if (!outcome.ok) {
+        assert.match(outcome.reason, /invalid base64/i);
+      }
+    }
+  });
+
+  it('fails closed when GitHub omits the content path', async () => {
+    const sha = '1234567890123456789012345678901234567890';
+    const mock = mockFetch([
+      { body: { sha } },
+      {
+        body: {
+          type: 'file',
+          encoding: 'base64',
+          content: Buffer.from('data', 'utf8').toString('base64'),
+        },
+      },
+    ]);
+    const adapter = new GitHubSourceAdapter(options(mock.fetchImpl));
+
+    const outcome = await adapter.readArtifact('missing-path.txt');
+    assert.equal(outcome.ok, false);
+    if (!outcome.ok) {
+      assert.match(outcome.reason, /unexpected path/i);
+    }
+  });
+
+  it('fails closed when GitHub returns content for a different path than requested', async () => {
+    const sha = '1234567890123456789012345678901234567890';
+    const mock = mockFetch([
+      { body: { sha } },
+      {
+        body: {
+          type: 'file',
+          encoding: 'base64',
+          content: Buffer.from('data', 'utf8').toString('base64'),
+          path: 'other-file.txt',
+        },
+      },
+    ]);
+    const adapter = new GitHubSourceAdapter(options(mock.fetchImpl));
+
+    const outcome = await adapter.readArtifact('expected-file.txt');
+    assert.equal(outcome.ok, false);
+    if (!outcome.ok) {
+      assert.match(outcome.reason, /unexpected path/i);
+    }
   });
 
   it('reuses the resolved immutable SHA across repeated operations', async () => {
