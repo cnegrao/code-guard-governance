@@ -737,7 +737,6 @@ claims of current behavior.
 | C. Only governed relationship expired before the runtime event (`validTo` strictly before the runtime event time; no other state of that type is effective at that time) | `INSUFFICIENT_EVIDENCE` / `DESIGN_TIME_BASELINE_NOT_EFFECTIVE` — an expired state is not an active baseline (§12.A) |
 | D. Caller requests `RUNTIME_VS_RUNTIME` comparison in V1 | Pre-comparison rejection: `CROSS_SIGNAL_PAIRING_UNSUPPORTED` (§7.2, §7.3); no comparison result persisted, not even `INSUFFICIENT_EVIDENCE` |
 | Governance decision recorded after a runtime event, but underlying design-time effective time is unknown (`PRINCIPAL_IDENTITY`, `DESIGN_TIME_VS_RUNTIME`: `ExecutionFieldDecision.decidedAt` is later than the peer `RuntimeObservation.startedAtUnixNano`, values disagree) | **MUST NOT** infer `DRIFT_CANDIDATE` from `decidedAt` ordering (§12.C); `CONFLICT_CANDIDATE` if otherwise comparable and evidenced, else `INSUFFICIENT_EVIDENCE` |
-| Conflicting non-temporal signals (two `RuntimeObservation`s with identical `startedAtUnixNano`, different principal) | `CONFLICT_CANDIDATE` |
 | Baseline missing (no `ACCEPT_PROPOSED` `execution_field_states` row exists yet for `PRINCIPAL`) | `INSUFFICIENT_EVIDENCE` / `DESIGN_TIME_BASELINE_MISSING` |
 | Runtime binding unresolved (`RuntimeObservation.binding.state === 'UNRESOLVED'`) | `INSUFFICIENT_EVIDENCE` / `RUNTIME_BINDING_UNRESOLVED`; never a guessed subject |
 | Ambiguous canonical subject (more than one exact mapping could apply) | Comparison not attempted; closed rejection, never a best-guess subject |
@@ -762,8 +761,8 @@ claims of current behavior.
 Architecture freeze is not implementation completion. A future
 implementation-readiness pass must separately establish:
 
-1. This ADR accepted through the architecture freeze gate with explicit
-   owner approval (not claimed by this document).
+1. This ADR is accepted through the architecture freeze gate with explicit
+   owner approval recorded in §21.
 2. Closed `CrossSignalComparisonResult` typed contract and the **two**
    closed §7.2 method codes implemented in `@council/canonical-contracts`
    (`CROSS_SIGNAL_PRINCIPAL_DESIGN_RUNTIME_V1`,
