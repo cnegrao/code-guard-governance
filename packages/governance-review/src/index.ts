@@ -27,3 +27,4 @@ export * from "./semantic-representation-port.ts";
 export * from "./canonical-endpoint-resolution";
 export * from './execution-context';
 export * from './runtime-observation.ts';
+export * from './cross-signal-comparison.ts';
