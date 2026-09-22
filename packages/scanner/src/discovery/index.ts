@@ -9,6 +9,8 @@ export type {
 } from './source-adapter';
 
 export { LocalRepositoryAdapter } from './adapters/local-repository-adapter';
+export { GitHubSourceAdapter } from './adapters/github-source-adapter';
+export type { GitHubSourceAdapterInput, GitHubSourceAdapterOptions } from './adapters/github-source-adapter';
 
 export type { DetectionMatch, DetectionSpecification } from './detection-specification';
 export { AgentKindDeclarationSpecification } from './strategies/agent-kind-declaration';

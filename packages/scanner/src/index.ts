@@ -78,6 +78,8 @@ export type {
   SourceDescriptor,
 } from './discovery/source-adapter';
 export { LocalRepositoryAdapter } from './discovery/adapters/local-repository-adapter';
+export { GitHubSourceAdapter } from './discovery/adapters/github-source-adapter';
+export type { GitHubSourceAdapterInput, GitHubSourceAdapterOptions } from './discovery/adapters/github-source-adapter';
 export { SqlCreateTableSpecification, SqlInsertSelectSpecification } from './discovery/strategies/sql-create-table';
 export type { DetectionMatch, DetectionSpecification } from './discovery/detection-specification';
 export { AgentKindDeclarationSpecification } from './discovery/strategies/agent-kind-declaration';
