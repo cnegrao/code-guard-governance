@@ -36,6 +36,15 @@ export interface AgentVersionTechnicalProfileFieldEvidence {
 }
 
 export interface AgentVersionCorrelationResult {
+  /**
+   * Provenance-only: the immutable source version (e.g. `commit:<sha>`) the
+   * correlated AGENT candidate's own evidence was observed under, exposed so
+   * relationship-correlation.ts can scope its own same-file lookups to
+   * exactly this version without re-deriving it. Never part of
+   * `candidate.proposedIdentity` and never a canonical AgentVersion identity
+   * field — see this module's SOURCE VERSION IS PROVENANCE framing.
+   */
+  readonly sourceVersion?: string;
   readonly executionFacts?: readonly import('./execution-declaration').ExecutionDeclarationFact[];
   readonly behaviorFingerprintSchemaVersion?: '1.0' | '1.1';
   readonly finding: ObjectDiscoveryFinding<'AGENT_VERSION'>;
@@ -129,8 +138,23 @@ function extractPromptTechnicalRevisionValues(prompts: readonly DiscoveryCandida
   return values;
 }
 
-function fileGroupKey(identity: SourceObjectIdentity): string {
-  return JSON.stringify([identity.connectionId, identity.externalType, identity.externalId]);
+/**
+ * Version-scoped file grouping key: identical file identity under two
+ * different immutable source versions (e.g. two GitHub commits) must never
+ * bucket together, or evidence from commit A could correlate with evidence
+ * from commit B for what only looks like "the same file" by path. Exported
+ * so relationship-correlation.ts's own same-file scoping (behavior
+ * relationships derived from an AGENT_VERSION correlated here) uses the
+ * identical boundary rather than a parallel, potentially looser one.
+ * Unversioned adapters (LocalRepositoryAdapter) pass `undefined` uniformly,
+ * so their own grouping is completely unaffected by this scoping. This is a
+ * transient in-memory Map key, never a persisted/deterministic discovery ID
+ * (those are `buildSourceScope`/idSeed-derived — see their own backward-
+ * compatibility rule), so an explicit `''` absent marker here is safe: it
+ * cannot desynchronize an unversioned run's pre-Phase-2 output identities.
+ */
+export function versionScopedFileGroupKey(identity: SourceObjectIdentity, sourceVersion: string | undefined): string {
+  return JSON.stringify([identity.connectionId, identity.externalType, identity.externalId, sourceVersion ?? '']);
 }
 
 const TECHNICAL_PROFILE_SIGNAL_LABEL: Record<TechnicalProfileSignal['signalKind'], string> = {
@@ -218,8 +242,27 @@ function buildTechnicalRevisionProjection(params: {
  * into one AGENT_VERSION identity, without borrowing that protection from
  * technical-revision content.
  */
-function buildSourceScope(sourceObject: SourceObjectIdentity): string {
-  return stableSuffix([sourceObject.connectionId, sourceObject.externalType, sourceObject.externalId]);
+function buildSourceScope(sourceObject: SourceObjectIdentity, sourceVersion: string | undefined): string {
+  // sourceVersion is provenance-scoping input here, exactly like connectionId/
+  // externalType/externalId already were — never a technical-revision input
+  // (see buildTechnicalRevisionProjection's own doc comment) and never folded
+  // into proposedIdentity. Its inclusion is what keeps two different
+  // immutable commits of the exact same file, with byte-identical technical
+  // evidence, from ever colliding into one AGENT_VERSION identity. Backward
+  // compatible by construction: an unversioned source (sourceVersion
+  // undefined) hashes exactly the old 3-element input, with no extra element
+  // — not even an empty string — appended, so every pre-Phase-2 AGENT_VERSION
+  // findingId/candidateId for an unversioned adapter stays unchanged. Only an
+  // actually-present sourceVersion extends the input.
+  return stableSuffix(
+    sourceVersion === undefined
+      ? [sourceObject.connectionId, sourceObject.externalType, sourceObject.externalId]
+      : [sourceObject.connectionId, sourceObject.externalType, sourceObject.externalId, sourceVersion],
+  );
+}
+
+function candidateSourceVersion(candidate: DiscoveryCandidate): string | undefined {
+  return candidate.assertion.snapshot?.sourceVersion;
 }
 
 /**
@@ -289,7 +332,7 @@ export function correlateAgentVersions(
 ): readonly AgentVersionCorrelationResult[] {
   const byFile = new Map<string, DiscoveryCandidate[]>();
   for (const candidate of candidates) {
-    const key = fileGroupKey(candidate.finding.sourceObject);
+    const key = versionScopedFileGroupKey(candidate.finding.sourceObject, candidateSourceVersion(candidate));
     const bucket = byFile.get(key);
     if (bucket) {
       bucket.push(candidate);
@@ -300,7 +343,7 @@ export function correlateAgentVersions(
 
   const signalsByFile = new Map<string, TechnicalProfileSignal[]>();
   for (const signal of technicalProfileSignals) {
-    const key = fileGroupKey(signal.sourceObject);
+    const key = versionScopedFileGroupKey(signal.sourceObject, signal.assertion.snapshot?.sourceVersion);
     const bucket = signalsByFile.get(key);
     if (bucket) {
       bucket.push(signal);
@@ -324,7 +367,7 @@ export function correlateAgentVersions(
     const declaration = agent.executionDeclaration;
     if (declaration && (declaration.declarationKey !== agentCode || declaration.facts.some(f =>
       f.assertion.trustState !== 'DECLARED' || f.assertion.method.code !== 'DIRECT_AGENT_EXECUTION_V1' ||
-      fileGroupKey(f.assertion.sourceObject) !== key ||
+      versionScopedFileGroupKey(f.assertion.sourceObject, f.assertion.snapshot?.sourceVersion) !== key ||
       f.assertion.snapshot?.snapshotId !== agent.assertion.snapshot?.snapshotId ||
       !f.assertion.evidenceIds.includes(f.evidence.evidenceId)))) continue;
     const executionBehavior = declaredExecutionSemanticValues((declaration?.facts ?? [])
@@ -410,7 +453,8 @@ export function correlateAgentVersions(
     // 1.0 identity. Tools already contribute above; principal/evidence never contribute.
     const technicalRevisionFingerprint = stableSuffix([...projection,
       ...executionBehavior.map(value => `execution-v1:${value}`)]);
-    const sourceScope = buildSourceScope(agent.finding.sourceObject);
+    const agentSourceVersion = candidateSourceVersion(agent);
+    const sourceScope = buildSourceScope(agent.finding.sourceObject, agentSourceVersion);
     // sourceScopedAgentVersionCandidateId = HASH(sourceScope + technicalRevisionFingerprint):
     // provenance/source-scope and technical revision are combined only here,
     // at the very last step, never earlier — see buildTechnicalRevisionProjection
@@ -483,6 +527,7 @@ export function correlateAgentVersions(
         : undefined;
 
     results.push({
+      ...(agentSourceVersion === undefined ? {} : { sourceVersion: agentSourceVersion }),
       ...(declaration ? { executionFacts: declaration.facts } : {}),
       ...(executionBehavior.length ? { behaviorFingerprintSchemaVersion: '1.1' as const } : {}),
       finding,

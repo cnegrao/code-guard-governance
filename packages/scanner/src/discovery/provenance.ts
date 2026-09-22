@@ -81,3 +81,22 @@ export function completeAcquisitionRun(
     completedAt: asIsoTimestamp(clock.now()),
   };
 }
+
+/**
+ * SOURCE VERSION IS PROVENANCE, NOT CANONICAL OBJECT IDENTITY. The one frozen
+ * GitHub shape (`commit:<lowercase 40-hex SHA>` — see GitHubSourceAdapter's
+ * own `resolveSourceVersion`) is the only sourceVersion shape this contract
+ * ever unwraps into a raw {@link EvidenceLocation.commit} value. Any other
+ * shape (absent, a future provider's own format, or a malformed value) fails
+ * closed to `undefined` rather than guessing at a commit SHA — see this
+ * module's own doc comment on why fabricated GitHub commit provenance is
+ * strictly worse than an absent `commit` field.
+ */
+const GITHUB_COMMIT_SOURCE_VERSION_PATTERN = /^commit:[0-9a-f]{40}$/;
+
+export function extractGitHubCommitSha(sourceVersion: string | undefined): string | undefined {
+  if (sourceVersion === undefined || !GITHUB_COMMIT_SOURCE_VERSION_PATTERN.test(sourceVersion)) {
+    return undefined;
+  }
+  return sourceVersion.slice('commit:'.length);
+}

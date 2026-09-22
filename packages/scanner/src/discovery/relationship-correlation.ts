@@ -13,7 +13,7 @@ import {
   type SourceConnectionId,
   type SourceObjectIdentity,
 } from '@council/canonical-contracts';
-import { correlateAgentVersions, type AgentVersionCorrelationResult } from './agent-version-correlation';
+import { correlateAgentVersions, versionScopedFileGroupKey, type AgentVersionCorrelationResult } from './agent-version-correlation';
 import type { DiscoveryCandidate } from './evidence-assembly';
 import { normalizeObjectCandidate } from './object-candidate-normalization';
 import type { TechnicalProfileSignal } from './technical-profile-signal';
@@ -174,7 +174,13 @@ function correlateBehaviorRelationships(
     // provenance. Require the actual source envelope to retain all support.
     if (expected.candidate.assertionIds.some((id) => !version.candidate.assertionIds.includes(id) || !version.finding.assertionIds.includes(id)) ||
         expected.candidate.evidenceIds.some((id) => !version.candidate.evidenceIds.includes(id) || !version.finding.evidenceIds.includes(id))) continue;
-    const inFile = candidates.filter((item) => sourceKey(item.finding.sourceObject) === sourceKey(expected.candidate.sourceObject));
+    // Version-scoped: never let a same-path candidate from a different
+    // immutable source version (a different commit) into the same-file
+    // bucket a behavior binding is resolved from — otherwise evidence from
+    // commit A could bind against an AGENT_VERSION correlated from commit B.
+    const inFile = candidates.filter((item) =>
+      versionScopedFileGroupKey(item.finding.sourceObject, item.assertion.snapshot?.sourceVersion) ===
+      versionScopedFileGroupKey(expected.candidate.sourceObject, expected.sourceVersion));
     const agents = inFile.filter((item) => item.finding.candidateKind === 'AGENT');
     if (agents.length !== 1 || !hasEvidence(agents[0]) || agents[0].assertion.method.code !== 'agent-kind-declaration') continue;
     const agent = agents[0];
