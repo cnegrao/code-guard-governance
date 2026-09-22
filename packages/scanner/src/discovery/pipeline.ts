@@ -25,9 +25,42 @@ export interface DiscoveryRunWarning {
   readonly reason: string;
 }
 
+/**
+ * Thrown instead of a bare error whenever `run()` fails closed after
+ * `startAcquisitionRun` has already produced a run identity (and, for a
+ * versioned adapter, after `resolveSourceVersion` has already resolved and
+ * merged its immutable sourceVersion into that run — see `run()` below).
+ * Carries the exact terminal, FAILED `AcquisitionRun` the pipeline itself
+ * computed, so a caller (e.g. Discovery Intake) can persist that real
+ * provenance directly instead of reconstructing a fresh run from adapter
+ * identity alone and silently losing an already-known immutable source
+ * version. The wrapped `cause` is the original failure (a network error, an
+ * invalid/truncated tree, ...); `message` mirrors it so existing callers
+ * that only inspect `error.message` are unaffected.
+ */
+export class DiscoveryPipelineFailure extends Error {
+  readonly run: AcquisitionRun;
+
+  constructor(run: AcquisitionRun, cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
+    this.name = 'DiscoveryPipelineFailure';
+    this.run = run;
+  }
+}
+
 export interface DiscoveryRunResult {
   readonly run: AcquisitionRun;
   readonly candidates: readonly DiscoveryCandidate[];
+  /**
+   * The count of artifacts returned by this run's own, single
+   * `adapter.listArtifacts()` enumeration (see `run()` below) — never a
+   * second, later re-enumeration. A caller that wants an accurate artifact
+   * count (e.g. Discovery Intake's executive summary) must read it from here
+   * rather than calling `listArtifacts()` again, which for a remote adapter
+   * (e.g. GitHubSourceAdapter) would otherwise issue a second, redundant
+   * network request purely to recompute a number this run already knows.
+   */
+  readonly artifactsScanned: number;
   /**
    * AgentVersion technical-profile signals (Framework/Memory/Orchestration
    * — see technical-profile-signal.ts) collected in the same single pass
@@ -94,8 +127,10 @@ export class DiscoveryPipeline {
       try {
         sourceVersion = await this.adapter.resolveSourceVersion();
       } catch (error) {
-        completeAcquisitionRun(run, 'FAILED', clock);
-        throw error;
+        // Resolution itself failed: no sourceVersion is known at all, so the
+        // terminal run correctly carries none — never fabricated, never
+        // retried here merely to try to recover one.
+        throw new DiscoveryPipelineFailure(completeAcquisitionRun(run, 'FAILED', clock), error);
       }
       run = { ...run, ...(sourceVersion === undefined ? {} : { sourceVersion }) };
     }
@@ -110,9 +145,13 @@ export class DiscoveryPipeline {
       artifacts = await this.adapter.listArtifacts();
     } catch (error) {
       // Fail closed: an unenumerable source produces no candidates at all,
-      // never a partial/best-effort result presented as complete.
-      completeAcquisitionRun(run, 'FAILED', clock);
-      throw error;
+      // never a partial/best-effort result presented as complete. `run` at
+      // this point already carries any sourceVersion resolved above (a
+      // GitHub-style adapter resolves it once and caches it internally, so
+      // this listArtifacts() failure never needs — and must never trigger —
+      // a second resolution call); DiscoveryPipelineFailure preserves that
+      // exact value for the caller rather than losing it.
+      throw new DiscoveryPipelineFailure(completeAcquisitionRun(run, 'FAILED', clock), error);
     }
 
     for (const artifactRef of artifacts) {
@@ -195,6 +234,7 @@ export class DiscoveryPipeline {
     return {
       run,
       candidates: Object.freeze(candidates),
+      artifactsScanned: artifacts.length,
       technicalProfileSignals: Object.freeze(technicalProfileSignals),
       warnings: Object.freeze(warnings),
     };

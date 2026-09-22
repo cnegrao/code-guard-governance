@@ -138,7 +138,7 @@ export type {
   DiscoveryRunResult,
   DiscoveryRunWarning,
 } from './discovery/pipeline';
-export { DiscoveryPipeline } from './discovery/pipeline';
+export { DiscoveryPipeline, DiscoveryPipelineFailure } from './discovery/pipeline';
 export type { ProvenanceClock } from './discovery/provenance';
 export {
   completeAcquisitionRun,

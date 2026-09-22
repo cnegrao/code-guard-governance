@@ -4,6 +4,8 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   AgentVersionCorrelationStrategy,
   DiscoveryPipeline,
+  DiscoveryPipelineFailure,
+  GitHubSourceAdapter,
   LocalRepositoryAdapter,
   RelationshipCorrelationStrategy,
   AgentKindDeclarationSpecification,
@@ -26,6 +28,7 @@ import {
   type DiscoveryRunResult,
   type ObjectNormalizationContext,
   type RelationshipCorrelationResult,
+  type SourceAdapter,
   type TechnicalProfileSignal,
 } from "@council/scanner";
 import {
@@ -107,8 +110,49 @@ export interface LocalRepositorySourceConfiguration {
   readonly rootPath: string;
 }
 
-/** V1 supports exactly one adapter kind. Do not expand connector scope here. */
-export type DiscoverySourceConfiguration = LocalRepositorySourceConfiguration;
+export interface GitHubRepositorySourceConfiguration {
+  readonly kind: "GITHUB_REPOSITORY";
+  readonly owner: string;
+  readonly repo: string;
+  readonly ref: string;
+  /**
+   * Trusted server-side credential only. Never persisted, logged, or echoed
+   * back in any GovernanceDiscoveryScanResult/DiscoveryIntakeItemFailure —
+   * GitHubSourceAdapter places it exclusively in the Authorization request
+   * header of its own outbound GitHub API calls.
+   */
+  readonly token?: string;
+}
+
+/** V1 supports exactly these two adapter kinds. Do not expand connector scope here. */
+export type DiscoverySourceConfiguration =
+  | LocalRepositorySourceConfiguration
+  | GitHubRepositorySourceConfiguration;
+
+/**
+ * Constructs the trusted adapter for a governed source configuration.
+ * Repository metadata (owner/repo/ref) is source identity, never tenant
+ * identity — organisationId always comes from GovernanceExecutionContext,
+ * never from this configuration.
+ */
+function createSourceAdapter(configuration: DiscoverySourceConfiguration): SourceAdapter {
+  switch (configuration.kind) {
+    case "LOCAL_REPOSITORY":
+      return new LocalRepositoryAdapter(configuration.rootPath);
+    case "GITHUB_REPOSITORY":
+      return new GitHubSourceAdapter({
+        owner: configuration.owner,
+        repo: configuration.repo,
+        ref: configuration.ref,
+        token: configuration.token,
+      });
+    default: {
+      const exhaustive: never = configuration;
+      void exhaustive;
+      throw new Error("Unsupported discovery source configuration");
+}
+  }
+}
 
 export interface RunGovernanceDiscoveryScanInput {
   readonly executionContext: GovernanceExecutionContext;
@@ -514,7 +558,7 @@ export async function runGovernanceDiscoveryScan(
   ports: DiscoveryIntakePorts = defaultPorts,
 ): Promise<GovernanceDiscoveryScanResult> {
   const { executionContext: ctx, sourceConfiguration } = input;
-  const adapter = new LocalRepositoryAdapter(sourceConfiguration.rootPath);
+  const adapter = createSourceAdapter(sourceConfiguration);
   const pipeline = new DiscoveryPipeline(
     adapter,
     [
@@ -546,32 +590,41 @@ export async function runGovernanceDiscoveryScan(
     runResult = await pipeline.run();
   } catch (error) {
     // Fail closed, matching DiscoveryPipeline's own posture: an unenumerable
-    // source produces no candidates, no ReviewSubjects, and no PROPOSED
-    // transitions. pipeline.run() does not expose its own internal (already
-    // FAILED) AcquisitionRun value on this path, so a durable run record is
-    // reconstructed here from adapter identity alone using the same
-    // deterministic connection/system derivation the pipeline itself uses.
+    // source (or one whose source version could not be resolved) produces no
+    // candidates, no ReviewSubjects, and no PROPOSED transitions.
+    //
+    // DiscoveryPipelineFailure carries the pipeline's own exact terminal,
+    // FAILED AcquisitionRun — including any immutable sourceVersion it had
+    // already resolved before this failure (e.g. a GitHub commit SHA
+    // resolved successfully before a later tree-enumeration failure) — so
+    // that known provenance is persisted rather than silently lost. It is
+    // used as-is, never re-derived and never re-resolved: no second
+    // resolveSourceVersion/listArtifacts call is ever made here to "recover"
+    // provenance. Only if some other, unexpected error reaches this catch
+    // (not a DiscoveryPipelineFailure) is a run record reconstructed from
+    // adapter identity alone, exactly as before — and in that case no
+    // sourceVersion was ever known, so none is fabricated.
     const now = asIsoTimestamp(new Date().toISOString());
-    const descriptor = adapter.describeSource();
-    const system = createSourceSystem(descriptor);
-    const connection = createSourceConnection(system, descriptor);
-    const failedRun: AcquisitionRun = {
-      runId: asAcquisitionRunId(`acquisition-run:${randomUUID()}`),
-      connection,
-      mode: "FULL",
-      status: "FAILED",
-      adapterName: adapter.adapterName,
-      adapterVersion: adapter.adapterVersion,
-      startedAt: now,
-      completedAt: now,
-    };
+    const failedRun: AcquisitionRun =
+      error instanceof DiscoveryPipelineFailure
+        ? error.run
+        : {
+            runId: asAcquisitionRunId(`acquisition-run:${randomUUID()}`),
+            connection: createSourceConnection(createSourceSystem(adapter.describeSource()), adapter.describeSource()),
+            mode: "FULL",
+            status: "FAILED",
+            adapterName: adapter.adapterName,
+            adapterVersion: adapter.adapterVersion,
+            startedAt: now,
+            completedAt: now,
+          };
     await ports.intake.startAcquisitionRun(ctx.organisationId, failedRun);
     await ports.intake.completeAcquisitionRun(ctx.organisationId, failedRun, zeroCounts());
 
     return {
       scanRunId: failedRun.runId,
-      sourceConnectionId: connection.connectionId,
-      sourceType: descriptor.family,
+      sourceConnectionId: failedRun.connection.connectionId,
+      sourceType: adapter.describeSource().family,
       status: "FAILED",
       artifactsScanned: 0,
       findingsDetected: 0,
@@ -582,19 +635,13 @@ export async function runGovernanceDiscoveryScan(
       proposalsCreated: 0,
       alreadyGoverned: 0,
       failures: [{ reason: `Source enumeration failed: ${error instanceof Error ? error.message : String(error)}` }],
-      startedAt: now,
-      completedAt: now,
+      startedAt: failedRun.startedAt,
+      completedAt: failedRun.completedAt ?? now,
     };
   }
 
-  const { run, candidates, technicalProfileSignals } = runResult;
+  const { run, candidates, technicalProfileSignals, artifactsScanned } = runResult;
   await ports.intake.startAcquisitionRun(ctx.organisationId, run);
-
-  // LocalRepositoryAdapter.listArtifacts() is a deterministic, side-effect-
-  // free directory walk; calling it once more for an accurate executive
-  // count does not duplicate any governance-relevant work and does not
-  // require changing DiscoveryPipeline's own result shape.
-  const artifactsScanned = (await adapter.listArtifacts()).length;
 
   // AGENT_VERSION, like RELATIONSHIP, is a correlation product rather than a
   // single detector's own match (see agent-version-correlation.ts); it is
