@@ -23,6 +23,7 @@ import {
 } from '@council/canonical-contracts';
 
 import type { DetectionMatch, DetectionSpecification } from './detection-specification';
+import { extractGitHubCommitSha } from './provenance';
 import type { SourceArtifactContent } from './source-adapter';
 import type { SqlDataDeclaration, SqlColumnTransformation } from './strategies/sql-create-table';
 import { findBehaviorDeclarationBinding, type BehaviorDeclarationBinding } from './behavior-declaration-binding';
@@ -72,15 +73,41 @@ export function assembleDiscoveryCandidate(params: {
     externalId: asExternalId(artifact.locator),
   };
 
-  const idSeed = [
-    connection.connectionId,
-    artifact.locator,
-    specification.code,
-    specification.version,
-    String(match.lineStart),
-    String(match.lineEnd),
-    match.displayValue,
-  ];
+  // SOURCE VERSION IS PROVENANCE, NOT CANONICAL OBJECT IDENTITY: it never
+  // enters proposedIdentity (see object-candidate-normalization.ts), but it
+  // does scope every discovery-layer record identity below (evidenceId,
+  // assertionId, snapshotId, findingId) so two immutable commits with
+  // byte-identical content at the same path/lines still produce distinct
+  // provenance/discovery identities. Backward compatibility is deliberate
+  // and exact, not approximate: for an unversioned adapter (e.g.
+  // LocalRepositoryAdapter) run.sourceVersion is `undefined` and the seed
+  // array below is built with NO extra element at all — not even an empty
+  // string — so it byte-for-byte reproduces the pre-Phase-2 seed and every
+  // pre-Phase-2 deterministic ID stays exactly the same. `hash([old inputs])
+  // !== hash([old inputs, ""])`, so a fixed empty-string placeholder would
+  // silently break every existing unversioned identity; only an *actually
+  // present* sourceVersion may extend the seed.
+  const idSeed =
+    run.sourceVersion === undefined
+      ? [
+          connection.connectionId,
+          artifact.locator,
+          specification.code,
+          specification.version,
+          String(match.lineStart),
+          String(match.lineEnd),
+          match.displayValue,
+        ]
+      : [
+          connection.connectionId,
+          run.sourceVersion,
+          artifact.locator,
+          specification.code,
+          specification.version,
+          String(match.lineStart),
+          String(match.lineEnd),
+          match.displayValue,
+        ];
   // Data declarations retain snapshot-specific evidence/candidate rows when
   // datatype/default/containment changes at the same location. Semantic object
   // identity remains sourceReference / parent + elementPath, never this seed.
@@ -92,6 +119,11 @@ export function assembleDiscoveryCandidate(params: {
 
   const sanitizedLocator = sanitizeEvidenceLocator(artifact.locator);
   const observed = asIsoTimestamp(observedAt);
+  // Only the one frozen GitHub shape (commit:<lowercase 40-hex SHA>) ever
+  // unwraps into a raw EvidenceLocation.commit; any other sourceVersion shape
+  // (absent, malformed, or a future provider's own format) fails closed to
+  // absent rather than fabricating/guessing GitHub commit provenance.
+  const evidenceCommitSha = extractGitHubCommitSha(run.sourceVersion);
 
   const evidence = createEvidence({
     evidenceId: asEvidenceId(`evidence:${stableSuffix(idSeed)}`),
@@ -101,6 +133,7 @@ export function assembleDiscoveryCandidate(params: {
         kind: EVIDENCE_LOCATION_KIND.REPOSITORY,
         locator: sanitizedLocator,
         path: artifact.locator,
+        ...(evidenceCommitSha === undefined ? {} : { commit: evidenceCommitSha }),
         lineStart: match.lineStart,
         lineEnd: match.lineEnd,
       },
@@ -117,10 +150,18 @@ export function assembleDiscoveryCandidate(params: {
     runId: run.runId,
     snapshot: {
       snapshotId: asSourceSnapshotId(
-        `source-snapshot:${stableSuffix([connection.connectionId, artifact.locator, artifact.contentHash])}`,
+        `source-snapshot:${stableSuffix(
+          run.sourceVersion === undefined
+            ? [connection.connectionId, artifact.locator, artifact.contentHash]
+            : [connection.connectionId, run.sourceVersion, artifact.locator, artifact.contentHash],
+        )}`,
       ),
       sourceObject,
       observedAt: observed,
+      // Every SourceSnapshotReference from a versioned source carries the
+      // exact run.sourceVersion (whatever its shape) — never re-derived,
+      // never truncated. Unversioned adapters leave this absent.
+      ...(run.sourceVersion === undefined ? {} : { sourceVersion: run.sourceVersion }),
       contentHash: { algorithm: 'sha256', value: artifact.contentHash },
       locator: sanitizedLocator,
     },

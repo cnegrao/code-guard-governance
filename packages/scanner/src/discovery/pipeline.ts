@@ -80,6 +80,26 @@ export class DiscoveryPipeline {
     const connection = createSourceConnection(system, descriptor);
     let run = startAcquisitionRun(this.adapter, connection, clock);
 
+    // Resolve exactly once, logically, for the run: GitHubSourceAdapter caches
+    // its own immutable SHA internally, so this call and every later
+    // listArtifacts()/readArtifact() call it makes all observe the same
+    // commit. A resolution failure fails the whole run closed, before any
+    // discovery output is produced, rather than presenting output captured
+    // against an unresolved/undefined source version as a successful
+    // acquisition. Adapters without resolveSourceVersion() (e.g.
+    // LocalRepositoryAdapter) are unaffected: run.sourceVersion stays absent,
+    // never fabricated.
+    if (this.adapter.resolveSourceVersion) {
+      let sourceVersion: string | undefined;
+      try {
+        sourceVersion = await this.adapter.resolveSourceVersion();
+      } catch (error) {
+        completeAcquisitionRun(run, 'FAILED', clock);
+        throw error;
+      }
+      run = { ...run, ...(sourceVersion === undefined ? {} : { sourceVersion }) };
+    }
+
     const warnings: DiscoveryRunWarning[] = [];
     const candidates: DiscoveryCandidate[] = [];
     const technicalProfileSignals: TechnicalProfileSignal[] = [];

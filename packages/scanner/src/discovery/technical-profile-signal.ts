@@ -18,6 +18,7 @@ import {
   type TrustState,
 } from '@council/canonical-contracts';
 
+import { extractGitHubCommitSha } from './provenance';
 import type { SourceArtifactContent } from './source-adapter';
 
 /**
@@ -125,18 +126,37 @@ export function assembleTechnicalProfileSignal(params: {
     externalId: asExternalId(artifact.locator),
   };
 
-  const idSeed = [
-    connection.connectionId,
-    artifact.locator,
-    specification.code,
-    specification.version,
-    String(match.lineStart),
-    String(match.lineEnd),
-    match.value,
-  ];
+  // Mirrors evidence-assembly.ts's own idSeed treatment exactly, including its
+  // backward-compatibility rule: an unversioned run's seed array gets NO
+  // extra element at all (not even an empty string), so every pre-Phase-2
+  // deterministic ID for an unversioned adapter stays byte-for-byte the same.
+  // Only an actually-present sourceVersion extends the seed. No parallel
+  // unversioned provenance path for technical-profile signals.
+  const idSeed =
+    run.sourceVersion === undefined
+      ? [
+          connection.connectionId,
+          artifact.locator,
+          specification.code,
+          specification.version,
+          String(match.lineStart),
+          String(match.lineEnd),
+          match.value,
+        ]
+      : [
+          connection.connectionId,
+          run.sourceVersion,
+          artifact.locator,
+          specification.code,
+          specification.version,
+          String(match.lineStart),
+          String(match.lineEnd),
+          match.value,
+        ];
 
   const sanitizedLocator = sanitizeEvidenceLocator(artifact.locator);
   const observed = asIsoTimestamp(observedAt);
+  const evidenceCommitSha = extractGitHubCommitSha(run.sourceVersion);
 
   const evidence = createEvidence({
     evidenceId: asEvidenceId(`evidence:${stableSuffix(idSeed)}`),
@@ -146,6 +166,7 @@ export function assembleTechnicalProfileSignal(params: {
         kind: EVIDENCE_LOCATION_KIND.REPOSITORY,
         locator: sanitizedLocator,
         path: artifact.locator,
+        ...(evidenceCommitSha === undefined ? {} : { commit: evidenceCommitSha }),
         lineStart: match.lineStart,
         lineEnd: match.lineEnd,
       },
@@ -161,10 +182,15 @@ export function assembleTechnicalProfileSignal(params: {
     runId: run.runId,
     snapshot: {
       snapshotId: asSourceSnapshotId(
-        `source-snapshot:${stableSuffix([connection.connectionId, artifact.locator, artifact.contentHash])}`,
+        `source-snapshot:${stableSuffix(
+          run.sourceVersion === undefined
+            ? [connection.connectionId, artifact.locator, artifact.contentHash]
+            : [connection.connectionId, run.sourceVersion, artifact.locator, artifact.contentHash],
+        )}`,
       ),
       sourceObject,
       observedAt: observed,
+      ...(run.sourceVersion === undefined ? {} : { sourceVersion: run.sourceVersion }),
       contentHash: { algorithm: 'sha256', value: artifact.contentHash },
       locator: sanitizedLocator,
     },
