@@ -138,6 +138,15 @@ const DIMENSION_METHOD_CODE: Readonly<Record<CrossSignalDimension, CrossSignalMe
   DEPENDENCY_TARGET_IDENTITY: 'CROSS_SIGNAL_DEPENDENCY_TARGET_DESIGN_RUNTIME_V1',
 };
 
+/**
+ * The closed set of method codes that exist today (ADR §7.1a): both current
+ * V1 methods. DRIFT_CANDIDATE has no fact-valid-time source under either, so
+ * construction is refused whenever the method code is one of these - this is
+ * an allowlist keyed off method identity, not a blanket ban on the outcome,
+ * so a future non-V1 method the ADR adds later is unaffected by this gate.
+ */
+const CROSS_SIGNAL_V1_METHOD_CODES: ReadonlySet<string> = new Set(Object.values(CROSS_SIGNAL_METHOD_CODE));
+
 function invalid(): never { throw new TypeError('CROSS_SIGNAL_COMPARISON_RESULT_INVALID'); }
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
@@ -225,6 +234,7 @@ export function createCrossSignalComparisonResult(value: unknown): CrossSignalCo
   const outcome = r.outcome as CrossSignalOutcome;
   const method = closed(r.method, ['code', 'version']);
   if (method.code !== DIMENSION_METHOD_CODE[dimension]) invalid();
+  if (outcome === 'DRIFT_CANDIDATE' && CROSS_SIGNAL_V1_METHOD_CODES.has(method.code as string)) invalid();
   const reasonRequired = outcome === 'INSUFFICIENT_EVIDENCE';
   if (reasonRequired !== Object.hasOwn(r, 'reason')) invalid();
   if (reasonRequired && !Object.hasOwn(CROSS_SIGNAL_INSUFFICIENT_EVIDENCE_REASON, r.reason as string)) invalid();

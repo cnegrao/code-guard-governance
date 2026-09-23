@@ -51,10 +51,12 @@ function organisationId(value: unknown): OrganisationId {
   if (typeof value !== 'string' || !value.trim()) reject('CROSS_SIGNAL_REQUEST_INVALID');
   return value as OrganisationId;
 }
-function evaluatedAt(value: unknown): IsoTimestamp {
+function nonEmptyString(value: unknown): string { if (typeof value !== 'string' || !value.trim()) reject('CROSS_SIGNAL_REQUEST_INVALID'); return value; }
+function isoTimestamp(value: unknown): IsoTimestamp {
   if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) reject('CROSS_SIGNAL_REQUEST_INVALID');
   return value as IsoTimestamp;
 }
+function evaluatedAt(value: unknown): IsoTimestamp { return isoTimestamp(value); }
 function nanosToIsoTimestamp(nanos: bigint): IsoTimestamp {
   return new Date(Number(nanos / 1_000_000n)).toISOString() as IsoTimestamp;
 }
@@ -70,8 +72,16 @@ function checkRuntimeSubjectBinding(runtime: RuntimeObservation, organisationId:
   return 'BOUND';
 }
 
-/** PRINCIPAL_IDENTITY design-time side (ADR §7.1, §11): the exact materialized state and its value. */
+/**
+ * PRINCIPAL_IDENTITY design-time side (ADR §7.1, §11): the exact materialized
+ * state and its value. `canonicalObject`/`field` mirror ExecutionFieldDecision's
+ * own subject/field pair (execution-context.ts) so the design-time side proves
+ * its own AGENT_VERSION identity explicitly - never inferred from
+ * decisionId/snapshotId, which are opaque references, not identity proof.
+ */
 export interface CrossSignalPrincipalDesignTimeBaseline {
+  readonly canonicalObject: CanonicalObjectIdentity<'AGENT_VERSION'>;
+  readonly field: 'PRINCIPAL';
   readonly executionFieldStateId: string;
   readonly decisionId: string;
   readonly snapshotId: string;
@@ -100,7 +110,13 @@ export function comparePrincipalIdentityDesignTimeVsRuntime(request: CrossSignal
   const runtime = validatePersistedRuntimeObservation(r.runtime);
   if (runtime.organisationId !== org) reject('CROSS_SIGNAL_SUBJECT_CROSS_TENANT');
 
-  const designTimeInput = r.designTime === undefined ? undefined : closed(r.designTime, ['executionFieldStateId', 'decisionId', 'snapshotId', 'principal']);
+  const designTimeInput = r.designTime === undefined ? undefined
+    : closed(r.designTime, ['canonicalObject', 'field', 'executionFieldStateId', 'decisionId', 'snapshotId', 'principal']);
+  if (designTimeInput) {
+    if (designTimeInput.field !== 'PRINCIPAL') reject('CROSS_SIGNAL_REQUEST_INVALID');
+    const designSubject = subject(designTimeInput.canonicalObject, org);
+    if (designSubject.objectId !== sub.objectId) reject('CROSS_SIGNAL_SUBJECT_MISMATCH');
+  }
 
   const right = runtimeEvidence(runtime);
   const rightTemporalBasis: CrossSignalTemporalBasis = { basis: 'RUNTIME_EVENT_TIME', value: nanosToIsoTimestamp(BigInt(runtime.startedAtUnixNano)) };
@@ -137,12 +153,51 @@ const RUNTIME_KIND_TO_DEPENDENCY_RELATIONSHIP_TYPE: Readonly<Partial<Record<Runt
 const DEPENDENCY_RELATIONSHIP_TYPE_TO_TARGET_KIND: Readonly<Record<CrossSignalDependencyRelationshipType, RuntimeTargetKind>> = {
   USES_MODEL: 'MODEL', USES_TOOL: 'TOOL', USES_MCP: 'MCP_SERVER', INVOKES: 'API',
 };
+const CROSS_SIGNAL_DEPENDENCY_TARGET_KINDS: ReadonlySet<string> = new Set(Object.values(DEPENDENCY_RELATIONSHIP_TYPE_TO_TARGET_KIND));
 
-/** One governed relationship state supplied for DEPENDENCY_TARGET_IDENTITY (ADR §7.1). Never relationshipCandidateId. */
+/**
+ * Reject-before-attempt structural validation of one supplied governed
+ * relationship state (ADR §7.1, §11): shape, relationship type, target
+ * identity, temporal bounds and - critically - the relationship's own source
+ * AGENT_VERSION identity are all checked here, before any Date.parse or
+ * effective-set membership logic runs. A relationship sourced from another
+ * AGENT_VERSION is rejected even when its target/type happen to match; a
+ * malformed validFrom/validTo never reaches isEffectiveAt.
+ */
+function validateGovernedState(value: unknown, organisationId: OrganisationId,
+  expectedSubject: CanonicalObjectIdentity<'AGENT_VERSION'>): CrossSignalDependencyGovernedState {
+  const s = closed(value, ['relationshipId', 'relationshipStateId', 'source', 'relationshipType', 'target', 'validFrom'], ['decisionId', 'validTo']);
+  const relationshipId = nonEmptyString(s.relationshipId) as RelationshipId;
+  const relationshipStateId = nonEmptyString(s.relationshipStateId) as RelationshipStateId;
+  const decisionId = s.decisionId === undefined ? undefined : nonEmptyString(s.decisionId);
+  if (!Object.hasOwn(DEPENDENCY_RELATIONSHIP_TYPE_TO_TARGET_KIND, s.relationshipType as string)) reject('CROSS_SIGNAL_RELATIONSHIP_TYPE_MISMATCH');
+  const relationshipType = s.relationshipType as CrossSignalDependencyRelationshipType;
+  const target = closed(s.target, ['organisationId', 'objectId', 'kind']);
+  if (typeof target.organisationId !== 'string' || !target.organisationId || typeof target.objectId !== 'string' || !target.objectId ||
+    !CROSS_SIGNAL_DEPENDENCY_TARGET_KINDS.has(target.kind as string)) reject('CROSS_SIGNAL_REQUEST_INVALID');
+  if (target.kind !== DEPENDENCY_RELATIONSHIP_TYPE_TO_TARGET_KIND[relationshipType]) reject('CROSS_SIGNAL_RELATIONSHIP_TYPE_MISMATCH');
+  const validFrom = isoTimestamp(s.validFrom);
+  const validTo = s.validTo === undefined ? undefined : isoTimestamp(s.validTo);
+  if (validTo !== undefined && Date.parse(validTo) <= Date.parse(validFrom)) reject('CROSS_SIGNAL_REQUEST_INVALID');
+  const source = subject(s.source, organisationId);
+  if (source.objectId !== expectedSubject.objectId) reject('CROSS_SIGNAL_SUBJECT_MISMATCH');
+  return Object.freeze({ relationshipId, relationshipStateId, ...(decisionId === undefined ? {} : { decisionId }), source,
+    relationshipType, target: Object.freeze({ ...target }) as unknown as CanonicalObjectIdentity,
+    validFrom, ...(validTo === undefined ? {} : { validTo }) });
+}
+
+/**
+ * One governed relationship state supplied for DEPENDENCY_TARGET_IDENTITY
+ * (ADR §7.1). Never relationshipCandidateId. `source` is the relationship's
+ * own AGENT_VERSION identity - required so a relationship belonging to
+ * another AGENT_VERSION can never be accepted merely because its target/type
+ * happen to match the requested subject.
+ */
 export interface CrossSignalDependencyGovernedState {
   readonly relationshipId: RelationshipId;
   readonly relationshipStateId: RelationshipStateId;
   readonly decisionId?: string;
+  readonly source: CanonicalObjectIdentity<'AGENT_VERSION'>;
   readonly relationshipType: CrossSignalDependencyRelationshipType;
   readonly target: CanonicalObjectIdentity;
   readonly validFrom: IsoTimestamp;
@@ -185,7 +240,7 @@ export function compareDependencyTargetIdentityDesignTimeVsRuntime(request: Cros
   const runtime = validatePersistedRuntimeObservation(r.runtime);
   if (runtime.organisationId !== org) reject('CROSS_SIGNAL_SUBJECT_CROSS_TENANT');
   if (!Array.isArray(r.governedStates)) reject('CROSS_SIGNAL_REQUEST_INVALID');
-  const governedStates = r.governedStates as readonly CrossSignalDependencyGovernedState[];
+  const governedStates = (r.governedStates as readonly unknown[]).map(state => validateGovernedState(state, org, sub));
 
   const relationshipType = RUNTIME_KIND_TO_DEPENDENCY_RELATIONSHIP_TYPE[runtime.kind];
   if (!relationshipType) reject('CROSS_SIGNAL_RUNTIME_KIND_UNSUPPORTED');

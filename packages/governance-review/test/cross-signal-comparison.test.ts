@@ -85,8 +85,8 @@ function fixture(kind: RuntimeObservationKind, opts: FixtureOpts = {}): RuntimeO
       protocol: unknown('NOT_SUPPLIED'), httpMethod: unknown('NOT_SUPPLIED'), httpStatusCode: unknown('NOT_SUPPLIED') };
   }
 }
-function principalBaseline(overrides: Partial<ExecutionPrincipalReference> = {}) {
-  return { executionFieldStateId: 'field-state-1', decisionId: 'decision-1', snapshotId: 'snapshot-1', principal: principal(overrides) };
+function principalBaseline(overrides: Partial<ExecutionPrincipalReference> = {}, canonicalObject: CanonicalObjectIdentity<'AGENT_VERSION'> = subject) {
+  return { canonicalObject, field: 'PRINCIPAL' as const, executionFieldStateId: 'field-state-1', decisionId: 'decision-1', snapshotId: 'snapshot-1', principal: principal(overrides) };
 }
 function principalRequest(overrides: Partial<CrossSignalPrincipalComparisonRequest> = {}): CrossSignalPrincipalComparisonRequest {
   return { organisationId: org, subject, designTime: principalBaseline(), runtime: fixture('MODEL_CALL'), evaluatedAt, ...overrides };
@@ -94,7 +94,7 @@ function principalRequest(overrides: Partial<CrossSignalPrincipalComparisonReque
 function governedState(overrides: Partial<CrossSignalDependencyGovernedState> = {}): CrossSignalDependencyGovernedState {
   return {
     relationshipId: asRelationshipId('rel-1'), relationshipStateId: asRelationshipStateId('rel-state-1'), decisionId: 'decision-1',
-    relationshipType: 'USES_MODEL', target: { organisationId: org, objectId: asCanonicalObjectId('target-1'), kind: 'MODEL' },
+    source: subject, relationshipType: 'USES_MODEL', target: { organisationId: org, objectId: asCanonicalObjectId('target-1'), kind: 'MODEL' },
     validFrom: asIsoTimestamp('2026-09-01T00:00:00.000Z'), ...overrides,
   };
 }
@@ -165,6 +165,18 @@ test('missing design-time baseline resolves INSUFFICIENT_EVIDENCE / DESIGN_TIME_
 test('wrong AGENT_VERSION binding (same tenant) fails closed', () => {
   assert.throws(() => comparePrincipalIdentityDesignTimeVsRuntime(principalRequest({ runtime: fixture('MODEL_CALL', { binding: exactBinding('other-agent-version') }) })),
     { message: 'CROSS_SIGNAL_SUBJECT_MISMATCH' });
+});
+
+test('principal design-time baseline from another AGENT_VERSION, same tenant, fails closed before any comparison', () => {
+  const foreignSubject: CanonicalObjectIdentity<'AGENT_VERSION'> = { organisationId: org, objectId: asCanonicalObjectId('other-agent-version'), kind: 'AGENT_VERSION' };
+  assert.throws(() => comparePrincipalIdentityDesignTimeVsRuntime(principalRequest({ designTime: principalBaseline({}, foreignSubject) })),
+    { message: 'CROSS_SIGNAL_SUBJECT_MISMATCH' });
+});
+
+test('principal design-time baseline from another tenant fails closed before any comparison', () => {
+  const foreignSubject: CanonicalObjectIdentity<'AGENT_VERSION'> = { organisationId: foreignOrg, objectId: asCanonicalObjectId('agent-version-1'), kind: 'AGENT_VERSION' };
+  assert.throws(() => comparePrincipalIdentityDesignTimeVsRuntime(principalRequest({ designTime: principalBaseline({}, foreignSubject) })),
+    { message: 'CROSS_SIGNAL_SUBJECT_CROSS_TENANT' });
 });
 
 // ---------------------------------------------------------------------------
@@ -302,6 +314,40 @@ test('cross-tenant dependency subject fails closed', () => {
 test('wrong AGENT_VERSION binding (same tenant) fails closed for dependency comparison too', () => {
   assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({ runtime: fixture('MODEL_CALL', { binding: exactBinding('other-agent-version') }) })),
     { message: 'CROSS_SIGNAL_SUBJECT_MISMATCH' });
+});
+
+test('dependency governed-state source from another AGENT_VERSION, same tenant, fails closed before effective-set filtering', () => {
+  const foreignSource: CanonicalObjectIdentity<'AGENT_VERSION'> = { organisationId: org, objectId: asCanonicalObjectId('other-agent-version'), kind: 'AGENT_VERSION' };
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({ governedStates: [governedState({ source: foreignSource })] })),
+    { message: 'CROSS_SIGNAL_SUBJECT_MISMATCH' });
+});
+
+test('dependency governed-state source from another tenant fails closed before effective-set filtering', () => {
+  const foreignSource: CanonicalObjectIdentity<'AGENT_VERSION'> = { organisationId: foreignOrg, objectId: asCanonicalObjectId('agent-version-1'), kind: 'AGENT_VERSION' };
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({ governedStates: [governedState({ source: foreignSource })] })),
+    { message: 'CROSS_SIGNAL_SUBJECT_CROSS_TENANT' });
+});
+
+test('a relationship matching target/type but sourced from another AGENT_VERSION is never accepted as this subject\'s evidence', () => {
+  const foreignSource: CanonicalObjectIdentity<'AGENT_VERSION'> = { organisationId: org, objectId: asCanonicalObjectId('other-agent-version'), kind: 'AGENT_VERSION' };
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ source: foreignSource, target: { organisationId: org, objectId: asCanonicalObjectId('target-1'), kind: 'MODEL' } })],
+  })), { message: 'CROSS_SIGNAL_SUBJECT_MISMATCH' });
+});
+
+test('malformed validFrom fails closed before Date.parse/effective-set logic can influence a result', () => {
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: 'not-a-timestamp' as unknown as ReturnType<typeof asIsoTimestamp> })],
+  })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
+});
+
+test('validTo <= validFrom fails closed before effective-set logic', () => {
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.000Z'), validTo: asIsoTimestamp('2026-09-01T00:00:00.000Z') })],
+  })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.000Z'), validTo: asIsoTimestamp('2026-08-01T00:00:00.000Z') })],
+  })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
 });
 
 // ---------------------------------------------------------------------------
