@@ -434,6 +434,9 @@ begin
     -- supplied) an exact decisionId match - never accepted merely because a
     -- relationshipId/relationshipStateId/source id happens to exist. This is
     -- a narrow evidence-reference check: it never recomputes an outcome.
+    -- The canonical_relationships alias is `cr`, never `r`: `r` is this
+    -- function's own declared row variable, and reusing it as a table alias
+    -- makes `r.organisation_id` ambiguous (42702).
     -- In the same pass, frames each verified member (relationshipId,
     -- relationshipStateId, an explicit decisionId-presence flag,
     -- decisionId-or-'') for identity purposes - the frames are then sorted
@@ -450,14 +453,14 @@ begin
         value->>'decisionId' as decision_id
       from jsonb_array_elements(v_states) value
     ), verified as (
-      select i.*, r.relationship_id as db_relationship_id, r.relationship_state_id as db_state_id,
-        r.source_canonical_object_id as db_source, r.source_kind as db_source_kind,
-        r.relationship_type as db_relationship_type, r.created_by_decision_id as db_decision,
+      select i.*, cr.relationship_id as db_relationship_id, cr.relationship_state_id as db_state_id,
+        cr.source_canonical_object_id as db_source, cr.source_kind as db_source_kind,
+        cr.relationship_type as db_relationship_type, cr.created_by_decision_id as db_decision,
         gov_repo.frame_identity(array[i.relationship_id, i.relationship_state_id,
           case when i.decision_present then '1' else '0' end, coalesce(i.decision_id,'')]) as member_frame
       from input_states i
-      left join gov_repo.canonical_relationships r
-        on r.organisation_id = p_organisation_id and r.relationship_id = i.relationship_id
+      left join gov_repo.canonical_relationships cr
+        on cr.organisation_id = p_organisation_id and cr.relationship_id = i.relationship_id
     )
     select
       bool_or(db_relationship_id is null or db_state_id is distinct from relationship_state_id
@@ -505,14 +508,18 @@ begin
 
   perform pg_advisory_xact_lock(hashtextextended(p_organisation_id::text||':cross-signal-comparison:'||v_expected_comparison_id,0));
 
-  select * into existing from gov_repo.cross_signal_comparison_results
-    where organisation_id = p_organisation_id and comparison_id = v_expected_comparison_id;
+  -- RETURNS TABLE(replay, comparison_id, evaluated_at) puts those three names
+  -- in PL/pgSQL variable scope, so every table-column reference to them below
+  -- is qualified through an explicit table alias (csr / cs) - an unqualified
+  -- `comparison_id` here raises 42702 "column reference is ambiguous".
+  select csr.* into existing from gov_repo.cross_signal_comparison_results csr
+    where csr.organisation_id = p_organisation_id and csr.comparison_id = v_expected_comparison_id;
 
   if found then
-    select coalesce(jsonb_agg(jsonb_build_object('relationshipId',relationship_id,'relationshipStateId',relationship_state_id,'decisionId',decision_id) order by relationship_state_id),'[]'::jsonb)
+    select coalesce(jsonb_agg(jsonb_build_object('relationshipId',cs.relationship_id,'relationshipStateId',cs.relationship_state_id,'decisionId',cs.decision_id) order by cs.relationship_state_id),'[]'::jsonb)
       into v_existing_states
-      from gov_repo.cross_signal_comparison_left_relationship_states
-      where organisation_id = p_organisation_id and comparison_id = v_expected_comparison_id;
+      from gov_repo.cross_signal_comparison_left_relationship_states cs
+      where cs.organisation_id = p_organisation_id and cs.comparison_id = v_expected_comparison_id;
     select coalesce(jsonb_agg(jsonb_build_object('relationshipId',value->>'relationshipId','relationshipStateId',value->>'relationshipStateId','decisionId',value->>'decisionId') order by value->>'relationshipStateId'),'[]'::jsonb)
       into v_new_states
       from jsonb_array_elements(v_states) value;

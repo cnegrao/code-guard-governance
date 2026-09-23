@@ -145,7 +145,7 @@ test('dependency relationship type is cross-checked against the paired RuntimeOb
 });
 
 test('replay/conflict semantics: existing row wins on identical content, exception on any mismatch, never an update', () => {
-  assert.match(writeRpc, /select \* into existing from gov_repo\.cross_signal_comparison_results/);
+  assert.match(writeRpc, /select csr\.\* into existing from gov_repo\.cross_signal_comparison_results csr/);
   assert.match(writeRpc, /CROSS_SIGNAL_COMPARISON_REPLAY_CONFLICT/);
   assert.match(writeRpc, /return query select true, existing\.comparison_id, existing\.evaluated_at/);
   assert.match(writeRpc, /return query select false, r\.comparison_id, r\.evaluated_at/);
@@ -225,7 +225,7 @@ test('identity material is built exclusively from validated rows (v_efs / v_ro /
   // every evidence-verification exception marker, and strictly before the
   // existing-row lookup / advisory lock that uses it.
   const identityComputedAt = writeRpc.indexOf('v_expected_comparison_id := ');
-  const existingLookupAt = writeRpc.indexOf('select * into existing from gov_repo.cross_signal_comparison_results');
+  const existingLookupAt = writeRpc.indexOf('select csr.* into existing from gov_repo.cross_signal_comparison_results csr');
   assert.ok(identityComputedAt > -1 && identityComputedAt < existingLookupAt);
   for (const marker of ['CROSS_SIGNAL_RUNTIME_EVIDENCE_NOT_FOUND', 'CROSS_SIGNAL_PRINCIPAL_EVIDENCE_MISMATCH', 'CROSS_SIGNAL_RELATIONSHIP_EVIDENCE_MISMATCH']) {
     assert.ok(writeRpc.indexOf(marker) < identityComputedAt, `${marker} must be checked before identity is computed`);
@@ -257,7 +257,7 @@ test('a caller-supplied comparison_id is never authoritative: it is at most a co
   assert.match(writeRpc, /if p_comparison_id is not null and p_comparison_id is distinct from v_expected_comparison_id then/);
   assert.match(writeRpc, /raise exception 'CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH';/);
   const mismatchCheckAt = writeRpc.indexOf('CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH');
-  const existingLookupAt = writeRpc.indexOf('select * into existing from gov_repo.cross_signal_comparison_results');
+  const existingLookupAt = writeRpc.indexOf('select csr.* into existing from gov_repo.cross_signal_comparison_results csr');
   const firstInsertAt = writeRpc.indexOf('insert into gov_repo.cross_signal_comparison_results (');
   assert.ok(mismatchCheckAt > -1 && mismatchCheckAt < existingLookupAt && mismatchCheckAt < firstInsertAt);
   // The persisted/returned/looked-up key is always the DB-computed identity,
@@ -274,4 +274,65 @@ test('every new function uses an explicit, safe search_path and fully-qualifies 
   for (const fn of [readBoundary, writeRpc]) {
     assert.match(fn, /set search_path=pg_catalog/);
   }
+});
+
+// -----------------------------------------------------------------------------
+// RETURNS TABLE(replay, comparison_id, evaluated_at) puts those three names in
+// PL/pgSQL variable scope. Any bare (unqualified) reference to one of them
+// inside a SQL statement over the two new tables raises 42702 "column
+// reference is ambiguous" at execution time - CREATE FUNCTION never notices.
+// Found in the M15.4A hosted read-only preflight; reproduced on a disposable
+// local PostgreSQL. The fix is explicit table aliases, never
+// #variable_conflict / plpgsql.variable_conflict.
+// -----------------------------------------------------------------------------
+
+test('replay lookup uses an explicit table alias and qualifies every column, including comparison_id', () => {
+  const lookup = writeRpcCode.match(/select csr\.\* into existing\s+from gov_repo\.cross_signal_comparison_results csr\s+where ([^;]+);/);
+  assert.ok(lookup, 'parent replay lookup must alias cross_signal_comparison_results as csr');
+  assert.match(lookup[1], /\bcsr\.organisation_id = p_organisation_id\b/);
+  assert.match(lookup[1], /\bcsr\.comparison_id = v_expected_comparison_id\b/);
+  assert.doesNotMatch(lookup[1].replace(/\bcsr\.\w+/g, ''), /\b(?:organisation_id|comparison_id)\b/, 'no bare column left in the parent lookup');
+});
+
+test('child-state replay query uses an explicit table alias and qualifies selected, filtered and ordered columns', () => {
+  const child = writeRpcCode.match(/into v_existing_states\s+from gov_repo\.cross_signal_comparison_left_relationship_states cs\s+where ([^;]+);/);
+  assert.ok(child, 'child replay query must alias cross_signal_comparison_left_relationship_states as cs');
+  assert.match(child[1], /\bcs\.organisation_id = p_organisation_id\b/);
+  assert.match(child[1], /\bcs\.comparison_id = v_expected_comparison_id\b/);
+  assert.doesNotMatch(child[1].replace(/\bcs\.\w+/g, ''), /\b(?:organisation_id|comparison_id)\b/, 'no bare column left in the child filter');
+  const select = writeRpcCode.match(/select coalesce\(jsonb_agg\(([^;]+?)\),'\[\]'::jsonb\)\s+into v_existing_states/);
+  assert.ok(select, 'child replay select-list must be present');
+  assert.match(select[1], /'relationshipId',cs\.relationship_id/);
+  assert.match(select[1], /'relationshipStateId',cs\.relationship_state_id/);
+  assert.match(select[1], /'decisionId',cs\.decision_id/);
+  assert.match(select[1], /order by cs\.relationship_state_id/);
+});
+
+test('no bare reference to a RETURNS TABLE output name (replay/comparison_id/evaluated_at) exists anywhere in the write RPC body', () => {
+  // Remove the two places a bare name is legal: the RETURNS TABLE header
+  // itself, and INSERT target-column lists (not expressions - never
+  // substituted by PL/pgSQL).
+  const scrubbed = writeRpcCode
+    .replace(/returns table\([^)]*\)/i, '')
+    .replace(/insert into gov_repo\.\w+\s*\([^)]*\)/gi, 'insert into T ()');
+  // `\w` includes `_`, so p_comparison_id / v_expected_comparison_id are not matched.
+  const bare = [...scrubbed.matchAll(/(?<![.\w])(replay|comparison_id|evaluated_at)(?!\w)/g)].map((m) => m[1]);
+  assert.deepEqual(bare, [], `unqualified output-name references would raise 42702: ${bare.join(',')}`);
+  // Qualified reads of the same names stay allowed and are the ones used.
+  assert.match(writeRpcCode, /existing\.comparison_id/);
+  assert.match(writeRpcCode, /r\.evaluated_at/);
+});
+
+test('the ambiguity is fixed with explicit qualification, never a variable_conflict directive or setting', () => {
+  assert.doesNotMatch(sqlCode, /variable_conflict/i);
+});
+
+test('no table alias in the write RPC reuses a declared PL/pgSQL variable name (e.g. `r`), which makes `r.<column>` ambiguous (42702)', () => {
+  const declareBlock = writeRpcCode.slice(writeRpcCode.indexOf('declare') + 'declare'.length, writeRpcCode.indexOf('\nbegin'));
+  const variables = [...declareBlock.matchAll(/^\s*(\w+)\s+\S/gm)].map((m) => m[1]);
+  assert.ok(variables.includes('r') && variables.includes('existing'), 'declare block parsed');
+  const aliases = [...writeRpcCode.matchAll(/\b(?:from|join)\s+gov_repo\.\w+\s+(?!on\b|where\b|left\b|inner\b|join\b)(\w+)/gi)].map((m) => m[1]);
+  assert.ok(aliases.includes('cr') && aliases.includes('csr') && aliases.includes('cs') && aliases.includes('o'), `aliases parsed: ${aliases.join(',')}`);
+  assert.deepEqual(aliases.filter((alias) => variables.includes(alias)), [], 'a table alias collides with a declared variable');
+  assert.match(writeRpcCode, /left join gov_repo\.canonical_relationships cr\s+on cr\.organisation_id = p_organisation_id and cr\.relationship_id = i\.relationship_id/);
 });
