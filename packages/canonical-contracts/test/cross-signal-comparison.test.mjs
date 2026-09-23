@@ -90,3 +90,23 @@ test('a reversed same-millisecond microsecond validFrom/validTo pair is refused,
       validFrom: '2026-09-01T00:00:00.123789Z', validTo: '2026-09-01T00:00:00.123456Z' }] },
   })), { message: 'CROSS_SIGNAL_COMPARISON_RESULT_INVALID' });
 });
+
+test('a standalone validFrom the M15 grammar rejects (no Z/offset) is refused even with no validTo present', () => {
+  // Date.parse('2026-09-01T00:00:00') is finite (local time), so only the
+  // stricter M15 grammar's own required Z/explicit-offset suffix catches
+  // this - and it must do so unconditionally, not only when paired with a
+  // validTo that happens to trigger the pairwise validTo>validFrom check.
+  assert.throws(() => createCrossSignalComparisonResult(dependencyBase({
+    left: { kind: 'RELATIONSHIP_STATE_SET', states: [{ relationshipId: 'rel-1', relationshipStateId: 'rel-state-1',
+      validFrom: '2026-09-01T00:00:00' }] },
+  })), { message: 'CROSS_SIGNAL_COMPARISON_RESULT_INVALID' });
+});
+
+test('a valid standalone validFrom with microsecond precision and no validTo constructs successfully', () => {
+  const result = createCrossSignalComparisonResult(dependencyBase({
+    left: { kind: 'RELATIONSHIP_STATE_SET', states: [{ relationshipId: 'rel-1', relationshipStateId: 'rel-state-1',
+      validFrom: '2026-09-01T00:00:00.123456Z' }] },
+  }));
+  assert.equal(result.left.states[0].validFrom, '2026-09-01T00:00:00.123456Z');
+  assert.equal('validTo' in result.left.states[0], false);
+});

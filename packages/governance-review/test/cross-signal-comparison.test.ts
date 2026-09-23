@@ -349,6 +349,32 @@ test('malformed validFrom fails closed before Date.parse/effective-set logic can
   })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
 });
 
+test('a validFrom the M15 grammar rejects (no Z/offset) fails closed even with no validTo present, never reaching isEffectiveAt', () => {
+  // Date.parse('2026-09-01T00:00:00') is finite (interpreted as local time), so this
+  // passes the loose isoTimestamp() gate; only the stricter M15 grammar's own
+  // required Z/explicit-offset suffix catches it - and must do so unconditionally,
+  // not only when a validTo happens to be present to trigger the pairwise check.
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00') })],
+  })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
+});
+
+test('a validFrom with a Date.parse-accepted but M15-unsupported over-precision fraction fails closed with no validTo present', () => {
+  // Date.parse silently accepts and truncates a 10-digit fraction; the M15 grammar
+  // caps at 9 fractional digits and refuses to guess which are significant.
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.1234567890Z') })],
+  })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
+});
+
+test('a valid standalone validFrom with microsecond precision and no validTo still resolves correctly end to end', () => {
+  const result = compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.123456Z') })],
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf('2026-09-01T00:00:00.123456000Z')) }),
+  }));
+  assert.equal(result.outcome, 'CONSISTENT');
+});
+
 test('validTo <= validFrom fails closed before effective-set logic', () => {
   assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
     governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.000Z'), validTo: asIsoTimestamp('2026-09-01T00:00:00.000Z') })],

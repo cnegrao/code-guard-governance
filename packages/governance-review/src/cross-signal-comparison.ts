@@ -192,10 +192,11 @@ function validateGovernedState(value: unknown, organisationId: OrganisationId,
   if (target.kind !== DEPENDENCY_RELATIONSHIP_TYPE_TO_TARGET_KIND[relationshipType]) reject('CROSS_SIGNAL_RELATIONSHIP_TYPE_MISMATCH');
   const validFrom = isoTimestamp(s.validFrom);
   const validTo = s.validTo === undefined ? undefined : isoTimestamp(s.validTo);
+  const fromNanos = crossSignalTimestampEpochNanos(validFrom);
+  if (fromNanos === undefined) reject('CROSS_SIGNAL_REQUEST_INVALID');
   if (validTo !== undefined) {
-    const fromNanos = crossSignalTimestampEpochNanos(validFrom);
     const toNanos = crossSignalTimestampEpochNanos(validTo);
-    if (fromNanos === undefined || toNanos === undefined || toNanos <= fromNanos) reject('CROSS_SIGNAL_REQUEST_INVALID');
+    if (toNanos === undefined || toNanos <= fromNanos) reject('CROSS_SIGNAL_REQUEST_INVALID');
   }
   const source = subject(s.source, organisationId);
   if (source.objectId !== expectedSubject.objectId) reject('CROSS_SIGNAL_SUBJECT_MISMATCH');

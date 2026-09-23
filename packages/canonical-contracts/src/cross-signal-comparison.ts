@@ -208,10 +208,11 @@ function relationshipStateSetMember(value: unknown): CrossSignalRelationshipStat
   const m = closed(value, ['relationshipId', 'relationshipStateId', 'validFrom'], ['decisionId', 'validTo']);
   const validFrom = isoTimestamp(m.validFrom);
   const validTo = m.validTo === undefined ? undefined : isoTimestamp(m.validTo);
+  const fromNanos = crossSignalTimestampEpochNanos(validFrom);
+  if (fromNanos === undefined) invalid();
   if (validTo !== undefined) {
-    const fromNanos = crossSignalTimestampEpochNanos(validFrom);
     const toNanos = crossSignalTimestampEpochNanos(validTo);
-    if (fromNanos === undefined || toNanos === undefined || toNanos <= fromNanos) invalid();
+    if (toNanos === undefined || toNanos <= fromNanos) invalid();
   }
   return Object.freeze({ relationshipId: nonEmptyString(m.relationshipId) as RelationshipId,
     relationshipStateId: nonEmptyString(m.relationshipStateId) as RelationshipStateId,
