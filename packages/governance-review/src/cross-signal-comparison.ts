@@ -58,7 +58,7 @@ function isoTimestamp(value: unknown): IsoTimestamp {
 }
 function evaluatedAt(value: unknown): IsoTimestamp { return isoTimestamp(value); }
 function nanosToIsoTimestamp(nanos: bigint): IsoTimestamp {
-  return new Date(Number(nanos / 1_000_000n)).toISOString() as IsoTimestamp;
+  return new Date(Number(nanos / BigInt(1000000))).toISOString() as IsoTimestamp;
 }
 function runtimeEvidence(runtime: RuntimeObservation): CrossSignalEvidenceReference {
   return { kind: 'RUNTIME_OBSERVATION', observationId: runtime.observationId, connectionId: runtime.sourceConnection.connectionId };
@@ -213,10 +213,10 @@ export interface CrossSignalDependencyComparisonRequest {
 }
 
 function isEffectiveAt(state: { readonly validFrom: IsoTimestamp; readonly validTo?: IsoTimestamp }, eventNanos: bigint): boolean {
-  const fromNanos = BigInt(Date.parse(state.validFrom)) * 1_000_000n;
+  const fromNanos = BigInt(Date.parse(state.validFrom)) * BigInt(1000000);
   if (eventNanos < fromNanos) return false;
   if (state.validTo === undefined) return true;
-  const toNanos = BigInt(Date.parse(state.validTo)) * 1_000_000n;
+  const toNanos = BigInt(Date.parse(state.validTo)) * BigInt(1000000);
   return eventNanos < toNanos;
 }
 function toSetMember(state: CrossSignalDependencyGovernedState): CrossSignalRelationshipStateSetMember {
