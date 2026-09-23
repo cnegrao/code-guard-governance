@@ -45,6 +45,23 @@ export async function resolveTrustedAgentVersionSubject(
   return Object.freeze({ organisationId, objectId: asCanonicalObjectId(objectId), kind: 'AGENT_VERSION' as const });
 }
 
+/**
+ * Fail-closed boundary check for a caller-supplied AGENT_VERSION subject,
+ * shared by every adapter below that accepts one as a parameter. Checked
+ * independently of TypeScript's compile-time CanonicalObjectIdentity<'AGENT_VERSION'>
+ * narrowing - a runtime value can still carry a forged organisationId or a
+ * kind other than AGENT_VERSION - and evaluated before any database read.
+ * Never substitutes the trusted organisationId for a mismatched one and
+ * never reconstructs a new subject from objectId alone; a mismatch fails
+ * closed with no fuzzy/candidate/source-name fallback.
+ */
+function assertTrustedAgentVersionSubject(organisationId: OrganisationId, subject: CanonicalObjectIdentity<'AGENT_VERSION'>): void {
+  const s = subject as unknown as { readonly organisationId?: unknown; readonly objectId?: unknown; readonly kind?: unknown };
+  if (s.organisationId !== organisationId) throw new Error('CROSS_SIGNAL_SUBJECT_CROSS_TENANT');
+  if (s.kind !== 'AGENT_VERSION') throw new Error('CROSS_SIGNAL_SUBJECT_KIND_INVALID');
+  if (typeof s.objectId !== 'string' || !s.objectId) throw new Error('CROSS_SIGNAL_SUBJECT_INVALID');
+}
+
 // -----------------------------------------------------------------------------
 // B. PRINCIPAL_IDENTITY DESIGN-TIME ADAPTER
 // -----------------------------------------------------------------------------
@@ -61,6 +78,7 @@ export async function resolvePrincipalDesignTimeBaseline(
   organisationId: OrganisationId,
   subject: CanonicalObjectIdentity<'AGENT_VERSION'>,
 ): Promise<CrossSignalPrincipalDesignTimeBaseline | undefined> {
+  assertTrustedAgentVersionSubject(organisationId, subject);
   const states = await executionRows(organisationId, 'execution_field_states', { canonical_object_id: subject.objectId, field_key: 'PRINCIPAL' });
   if (states.some(row => row.canonical_object_id !== subject.objectId)) throw new Error('CROSS_SIGNAL_PRINCIPAL_SUBJECT_MISMATCH');
   const current = currentFieldState(states as Array<ExecutionRow & { state_id: string; previous_state_id: string | null }>);
@@ -104,6 +122,7 @@ export async function resolveDependencyGovernedStates(
   subject: CanonicalObjectIdentity<'AGENT_VERSION'>,
   relationshipType: CrossSignalDependencyRelationshipType,
 ): Promise<readonly CrossSignalDependencyGovernedState[]> {
+  assertTrustedAgentVersionSubject(organisationId, subject);
   const { data, error } = await privilegedDb.from('canonical_relationships')
     .select(`organisation_id,${RELATIONSHIP_COLUMNS}`)
     .eq('organisation_id', organisationId)

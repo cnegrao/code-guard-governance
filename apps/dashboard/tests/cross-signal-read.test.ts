@@ -68,6 +68,43 @@ test('3. cross-tenant canonical_objects row is never treated as this tenant\'s s
 });
 
 // -----------------------------------------------------------------------------
+// A2. Fail-closed boundary on a caller-SUPPLIED subject (not a database row).
+// The cross-tenant test above proves a foreign DB row is never selected; these
+// prove a foreign-tenant INPUT subject is rejected before any read happens,
+// even when matching rows would otherwise exist for that objectId.
+// -----------------------------------------------------------------------------
+
+test('A2.1. foreign-tenant subject passed to resolvePrincipalDesignTimeBaseline fails closed before returning a baseline', async () => {
+  tables.execution_field_states = [principalState()];
+  tables.execution_source_facts = [principalFact('snapshot:1')];
+  const foreignSubject = { organisationId: foreign, objectId: asCanonicalObjectId(subjectId), kind: 'AGENT_VERSION' as const };
+  await assert.rejects(mod.resolvePrincipalDesignTimeBaseline(org, foreignSubject), /CROSS_SIGNAL_SUBJECT_CROSS_TENANT/);
+});
+
+test('A2.2. foreign-tenant subject passed to resolveDependencyGovernedStates fails closed before returning relationships', async () => {
+  tables.canonical_relationships = [relationshipRow()];
+  const foreignSubject = { organisationId: foreign, objectId: asCanonicalObjectId(subjectId), kind: 'AGENT_VERSION' as const };
+  await assert.rejects(mod.resolveDependencyGovernedStates(org, foreignSubject, 'USES_TOOL'), /CROSS_SIGNAL_SUBJECT_CROSS_TENANT/);
+});
+
+test('A2.3. same-tenant exact subject still resolves normally with the boundary check in place', async () => {
+  tables.execution_field_states = [principalState()];
+  tables.execution_source_facts = [principalFact('snapshot:1')];
+  tables.canonical_relationships = [relationshipRow()];
+  const baseline = await mod.resolvePrincipalDesignTimeBaseline(org, subject);
+  assert.ok(baseline);
+  assert.equal(baseline!.executionFieldStateId, 'state:1');
+  const states = await mod.resolveDependencyGovernedStates(org, subject, 'USES_TOOL');
+  assert.equal(states.length, 1);
+});
+
+test('A2.4. a runtime value whose kind is not AGENT_VERSION fails closed, even though TypeScript already constrains the compile-time type', async () => {
+  const forgedKindSubject = { organisationId: org, objectId: asCanonicalObjectId(subjectId), kind: 'AGENT' } as unknown as typeof subject;
+  await assert.rejects(mod.resolvePrincipalDesignTimeBaseline(org, forgedKindSubject), /CROSS_SIGNAL_SUBJECT_KIND_INVALID/);
+  await assert.rejects(mod.resolveDependencyGovernedStates(org, forgedKindSubject, 'USES_TOOL'), /CROSS_SIGNAL_SUBJECT_KIND_INVALID/);
+});
+
+// -----------------------------------------------------------------------------
 // B. PRINCIPAL_IDENTITY design-time adapter
 // -----------------------------------------------------------------------------
 
