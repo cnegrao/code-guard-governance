@@ -1,16 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { createHash } from 'node:crypto';
+import { frameIdentity } from '../src/canonical-endpoint-resolution.ts';
 import {
   asOrganisationId, asCanonicalObjectId, asSourceConnectionId, asSourceSystemId, asIsoTimestamp, asObjectSourceMappingId, asExternalId,
   asRuntimeObservationId, asRuntimeTraceId, asRuntimeSpanId, asRuntimeUnixNano, asRuntimeDeploymentBindingId,
-  asRelationshipId, asRelationshipStateId, crossSignalTimestampEpochNanos,
+  asRelationshipId, asRelationshipStateId, crossSignalTimestampEpochNanos, createCrossSignalComparisonResult,
   runtimeKnown as known, runtimeUnknown as unknown,
-  type RuntimeObservation, type RuntimeObservationEnvelope, type RuntimeObservationKind, type RuntimeSubjectBinding,
-  type RuntimeAvailability, type CanonicalObjectIdentity, type ExecutionPrincipalReference,
+  type CrossSignalComparisonResult, type RuntimeObservation, type RuntimeObservationEnvelope, type RuntimeObservationKind,
+  type RuntimeSubjectBinding, type RuntimeAvailability, type CanonicalObjectIdentity, type ExecutionPrincipalReference,
 } from '@council/canonical-contracts';
 import {
   comparePrincipalIdentityDesignTimeVsRuntime, compareDependencyTargetIdentityDesignTimeVsRuntime, compareCrossSignal,
-  crossSignalComparisonIdentity,
+  crossSignalComparisonIdentity, crossSignalComparisonIdentityMaterial,
   type CrossSignalPrincipalComparisonRequest, type CrossSignalDependencyComparisonRequest, type CrossSignalDependencyGovernedState,
 } from '../src/cross-signal-comparison.ts';
 
@@ -497,6 +499,183 @@ test('comparison identity is deterministic from inputs and unaffected by evaluat
   // the observed value alone (same evidence references) never does - see idempotent replay (ADR §13).
   const differentBaseline = comparePrincipalIdentityDesignTimeVsRuntime(principalRequest({ designTime: { ...principalBaseline(), executionFieldStateId: 'field-state-2' } }));
   assert.notEqual(crossSignalComparisonIdentity(a), crossSignalComparisonIdentity(differentBaseline));
+});
+
+// -----------------------------------------------------------------------------
+// Cross-language deterministic identity (ADR SS13). The database persistence
+// boundary (record_cross_signal_comparison_result,
+// 20260923060000_cross_signal_persistence_v1.sql) independently re-derives the
+// SAME ordered part list from its own validated evidence lookups and hashes it
+// with gov_repo.frame_identity + extensions.digest(...,'sha256') - the identical
+// algorithm crossSignalComparisonIdentity uses here via frameIdentity + sha256.
+// A caller-supplied comparison_id is therefore never authoritative on either
+// side. These tests build CrossSignalComparisonResult values directly via
+// createCrossSignalComparisonResult, independent of the pure comparison
+// functions above, so every identity-relevant field (including method.version,
+// which the pure functions hard-code to '1.0.0') can be varied in isolation.
+// -----------------------------------------------------------------------------
+
+// Independently computed offline (plain length-prefix concatenation + sha256,
+// no code under test involved) for the exact material asserted in the
+// known-vector test below - see that test for the full part list.
+const KNOWN_PRINCIPAL_IDENTITY_VECTOR = 'cross-signal-comparison:60df32277733917a5ab7e5b055ade3e48ae9875bd4f3c8f858c92ddca1732680';
+const efsLeft = { kind: 'EXECUTION_FIELD_STATE' as const, executionFieldStateId: 'efs-1', decisionId: 'decision-1', snapshotId: 'snapshot-1' };
+const runtimeRight = { kind: 'RUNTIME_OBSERVATION' as const, observationId, connectionId };
+function principalIdentityResult(overrides: {
+  left?: typeof efsLeft; right?: typeof runtimeRight; methodVersion?: string; evaluatedAt?: string;
+  outcome?: 'CONSISTENT' | 'CONFLICT_CANDIDATE' | 'INSUFFICIENT_EVIDENCE'; reason?: string;
+} = {}): CrossSignalComparisonResult {
+  return createCrossSignalComparisonResult({
+    organisationId: org, subject, dimension: 'PRINCIPAL_IDENTITY', pairingMode: 'DESIGN_TIME_VS_RUNTIME',
+    left: overrides.left ?? efsLeft, right: overrides.right ?? runtimeRight,
+    method: { code: 'CROSS_SIGNAL_PRINCIPAL_DESIGN_RUNTIME_V1', version: overrides.methodVersion ?? '1.0.0' },
+    leftTemporalBasis: { basis: 'NOT_AVAILABLE' }, rightTemporalBasis: { basis: 'RUNTIME_EVENT_TIME', value: asIsoTimestamp('2026-09-20T00:00:00.000Z') },
+    evaluatedAt: asIsoTimestamp(overrides.evaluatedAt ?? '2026-09-20T00:05:00.000Z'),
+    outcome: overrides.outcome ?? 'CONSISTENT', ...(overrides.reason ? { reason: overrides.reason } : {}),
+  });
+}
+function dependencyIdentityResult(states: readonly { relationshipId: string; relationshipStateId: string; decisionId?: string }[], opts: { evaluatedAt?: string; outcome?: 'CONSISTENT' | 'CONFLICT_CANDIDATE' | 'INSUFFICIENT_EVIDENCE'; reason?: string } = {}): CrossSignalComparisonResult {
+  return createCrossSignalComparisonResult({
+    organisationId: org, subject, dimension: 'DEPENDENCY_TARGET_IDENTITY', pairingMode: 'DESIGN_TIME_VS_RUNTIME',
+    left: { kind: 'RELATIONSHIP_STATE_SET', states: states.map(s => ({
+      relationshipId: asRelationshipId(s.relationshipId), relationshipStateId: asRelationshipStateId(s.relationshipStateId),
+      ...(s.decisionId ? { decisionId: s.decisionId } : {}), validFrom: asIsoTimestamp('2026-09-01T00:00:00.000Z'),
+    })) },
+    right: runtimeRight, method: { code: 'CROSS_SIGNAL_DEPENDENCY_TARGET_DESIGN_RUNTIME_V1', version: '1.0.0' },
+    leftTemporalBasis: { basis: 'RELATIONSHIP_VALID_FROM_TO_SET' }, rightTemporalBasis: { basis: 'RUNTIME_EVENT_TIME', value: asIsoTimestamp('2026-09-20T00:00:00.000Z') },
+    evaluatedAt: asIsoTimestamp(opts.evaluatedAt ?? '2026-09-20T00:05:00.000Z'),
+    outcome: opts.outcome ?? 'CONSISTENT', ...(opts.reason ? { reason: opts.reason } : {}),
+  });
+}
+
+test('identity 1. TypeScript identity is deterministic - identical input always yields the identical id', () => {
+  assert.equal(crossSignalComparisonIdentity(principalIdentityResult()), crossSignalComparisonIdentity(principalIdentityResult()));
+  assert.deepEqual(crossSignalComparisonIdentityMaterial(principalIdentityResult()), crossSignalComparisonIdentityMaterial(principalIdentityResult()));
+});
+
+test('identity 2. relationship members in reverse order produce the same id', () => {
+  const forward = dependencyIdentityResult([{ relationshipId: 'rel-a', relationshipStateId: 'rel-a:initial', decisionId: 'decision-a' }, { relationshipId: 'rel-b', relationshipStateId: 'rel-b:initial' }]);
+  const reversed = dependencyIdentityResult([{ relationshipId: 'rel-b', relationshipStateId: 'rel-b:initial' }, { relationshipId: 'rel-a', relationshipStateId: 'rel-a:initial', decisionId: 'decision-a' }]);
+  assert.equal(crossSignalComparisonIdentity(forward), crossSignalComparisonIdentity(reversed));
+});
+
+test('identity 2b. Unicode adversarial case: canonical member order follows explicit UTF-8 byte order, not JavaScript UTF-16 code-unit order', () => {
+  // 'rel-x-ＡA' contains a BMP non-ASCII character (U+FF21, FULLWIDTH LATIN
+  // CAPITAL LETTER A), padded with one ASCII byte so its UTF-8 byte length
+  // (10 bytes) exactly matches the other member's framed length below.
+  // 'rel-x-\u{1F600}' contains a supplementary-plane character (U+1F600,
+  // GRINNING FACE - a UTF-16 SURROGATE PAIR in JavaScript).
+  //
+  // JavaScript's default Array.prototype.sort (UTF-16 code-unit order) would
+  // place the supplementary-plane member FIRST: its high surrogate code unit
+  // (0xD83D) is numerically less than U+FF21 (0xFF21), even though U+1F600's
+  // true Unicode code point (0x1F600 = 128512) is far LARGER than U+FF21's
+  // (0xFF21 = 65313). UTF-8 byte order preserves true code-point order (a
+  // 4-byte UTF-8 sequence for a supplementary-plane code point always starts
+  // with a byte >= 0xF0, strictly greater than any 3-byte BMP sequence's
+  // leading byte, which is <= 0xEF) and therefore places the BMP member
+  // first. This is exactly the divergence class the M15 identity algorithm
+  // must never depend on JS default sort or PostgreSQL default/session
+  // collation to avoid (ADR SS13; both languages instead compare explicit
+  // UTF-8 bytes: Buffer.compare(...,'utf8') here, convert_to(...,'UTF8') in
+  // gov_repo.record_cross_signal_comparison_result).
+  const bmpMember = { relationshipId: 'rel-x', relationshipStateId: 'rel-x-ＡA' };
+  const supplementaryMember = { relationshipId: 'rel-x', relationshipStateId: 'rel-x-\u{1F600}' };
+
+  const bmpFrame = frameIdentity([bmpMember.relationshipId, bmpMember.relationshipStateId, '0', '']);
+  const supplementaryFrame = frameIdentity([supplementaryMember.relationshipId, supplementaryMember.relationshipStateId, '0', '']);
+  assert.equal(Buffer.byteLength(bmpFrame, 'utf8'), Buffer.byteLength(supplementaryFrame, 'utf8'), 'test fixture must keep both frames the same byte length so the divergence is driven by content, not by frameIdentity\'s own length prefix');
+  // Confirms the adversarial premise itself: plain JS default sort disagrees
+  // with UTF-8 byte order for these two exact frames.
+  assert.deepEqual([bmpFrame, supplementaryFrame].slice().sort(), [supplementaryFrame, bmpFrame]);
+  assert.deepEqual([bmpFrame, supplementaryFrame].slice().sort((a, b) => Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'))), [bmpFrame, supplementaryFrame]);
+
+  const forward = dependencyIdentityResult([bmpMember, supplementaryMember]);
+  const reversed = dependencyIdentityResult([supplementaryMember, bmpMember]);
+
+  // Reversing caller input still produces the same comparison identity.
+  assert.equal(crossSignalComparisonIdentity(forward), crossSignalComparisonIdentity(reversed));
+
+  // The canonical member order in the identity material follows the
+  // explicitly defined UTF-8-byte rule: the BMP member's frame appears
+  // before the supplementary-plane member's frame - never the reverse,
+  // which is what relying on JS's default sort would have produced.
+  const material = crossSignalComparisonIdentityMaterial(forward);
+  const bmpIndex = material.indexOf(bmpFrame);
+  const supplementaryIndex = material.indexOf(supplementaryFrame);
+  assert.ok(bmpIndex > -1 && supplementaryIndex > -1, 'both member frames must appear verbatim in the identity material');
+  assert.ok(bmpIndex < supplementaryIndex, 'UTF-8 byte order must place the BMP member frame before the supplementary-plane member frame');
+});
+
+test('identity 3. evaluatedAt change alone does not change the id', () => {
+  const a = principalIdentityResult({ evaluatedAt: '2020-01-01T00:00:00.000Z' });
+  const b = principalIdentityResult({ evaluatedAt: '2030-01-01T00:00:00.000Z' });
+  assert.equal(crossSignalComparisonIdentity(a), crossSignalComparisonIdentity(b));
+});
+
+test('identity 4. outcome (and reason) change alone does not change the id', () => {
+  const consistent = principalIdentityResult({ outcome: 'CONSISTENT' });
+  const conflict = principalIdentityResult({ outcome: 'CONFLICT_CANDIDATE' });
+  assert.equal(crossSignalComparisonIdentity(consistent), crossSignalComparisonIdentity(conflict));
+});
+
+test('identity 5. a different runtime observation reference changes the id', () => {
+  const a = principalIdentityResult();
+  const otherObservation = asRuntimeObservationId('22222222-2222-4222-8222-222222222222');
+  const b = principalIdentityResult({ right: { kind: 'RUNTIME_OBSERVATION', observationId: otherObservation, connectionId } });
+  assert.notEqual(crossSignalComparisonIdentity(a), crossSignalComparisonIdentity(b));
+  const c = principalIdentityResult({ right: { kind: 'RUNTIME_OBSERVATION', observationId, connectionId: asSourceConnectionId('runtime-b') } });
+  assert.notEqual(crossSignalComparisonIdentity(a), crossSignalComparisonIdentity(c));
+});
+
+test('identity 6. a different relationship-state-set membership changes the id (add/remove/substitute a member)', () => {
+  const base = dependencyIdentityResult([{ relationshipId: 'rel-a', relationshipStateId: 'rel-a:initial' }]);
+  const added = dependencyIdentityResult([{ relationshipId: 'rel-a', relationshipStateId: 'rel-a:initial' }, { relationshipId: 'rel-b', relationshipStateId: 'rel-b:initial' }]);
+  const substituted = dependencyIdentityResult([{ relationshipId: 'rel-c', relationshipStateId: 'rel-c:initial' }]);
+  const empty = dependencyIdentityResult([], { outcome: 'INSUFFICIENT_EVIDENCE', reason: 'DESIGN_TIME_BASELINE_NOT_EFFECTIVE' });
+  const ids = [base, added, substituted, empty].map(crossSignalComparisonIdentity);
+  assert.equal(new Set(ids).size, ids.length, 'every distinct membership must produce a distinct id');
+});
+
+test('identity 7. a different principal executionFieldStateId changes the id (already covered above; re-asserted here for the full adversarial set)', () => {
+  const a = principalIdentityResult();
+  const b = principalIdentityResult({ left: { ...efsLeft, executionFieldStateId: 'efs-2' } });
+  assert.notEqual(crossSignalComparisonIdentity(a), crossSignalComparisonIdentity(b));
+});
+
+test('identity 8. a different method version changes the id', () => {
+  const a = principalIdentityResult({ methodVersion: '1.0.0' });
+  const b = principalIdentityResult({ methodVersion: '1.1.0' });
+  assert.notEqual(crossSignalComparisonIdentity(a), crossSignalComparisonIdentity(b));
+});
+
+test('identity: an absent left reference is distinct from a present RELATIONSHIP_STATE_SET with zero members', () => {
+  const absentLeft = createCrossSignalComparisonResult({
+    organisationId: org, subject, dimension: 'PRINCIPAL_IDENTITY', pairingMode: 'DESIGN_TIME_VS_RUNTIME',
+    right: runtimeRight, method: { code: 'CROSS_SIGNAL_PRINCIPAL_DESIGN_RUNTIME_V1', version: '1.0.0' },
+    leftTemporalBasis: { basis: 'NOT_AVAILABLE' }, rightTemporalBasis: { basis: 'RUNTIME_EVENT_TIME', value: asIsoTimestamp('2026-09-20T00:00:00.000Z') },
+    evaluatedAt: asIsoTimestamp('2026-09-20T00:05:00.000Z'), outcome: 'INSUFFICIENT_EVIDENCE', reason: 'DESIGN_TIME_BASELINE_MISSING',
+  });
+  const emptySet = dependencyIdentityResult([], { outcome: 'INSUFFICIENT_EVIDENCE', reason: 'DESIGN_TIME_BASELINE_NOT_EFFECTIVE' });
+  assert.notEqual(crossSignalComparisonIdentity(absentLeft), crossSignalComparisonIdentity(emptySet));
+});
+
+test('identity material: known-vector regression lock for the frame + sha256 algorithm', () => {
+  const result = principalIdentityResult();
+  assert.deepEqual(crossSignalComparisonIdentityMaterial(result), [
+    'CROSS_SIGNAL_COMPARISON_V1', 'tenant-a', 'tenant-a', 'agent-version-1', 'AGENT_VERSION',
+    'PRINCIPAL_IDENTITY', 'DESIGN_TIME_VS_RUNTIME', 'CROSS_SIGNAL_PRINCIPAL_DESIGN_RUNTIME_V1', '1.0.0',
+    'LEFT_EXECUTION_FIELD_STATE', 'efs-1', 'decision-1', 'snapshot-1',
+    'RIGHT_RUNTIME_OBSERVATION', observationId, connectionId,
+  ]);
+  // Independently re-derives the same value using directly-imported primitives
+  // (frameIdentity + createHash), not by calling crossSignalComparisonIdentity's
+  // own internals a second time - proves the export matches its documented formula.
+  assert.equal(crossSignalComparisonIdentity(result),
+    'cross-signal-comparison:' + createHash('sha256').update(frameIdentity(crossSignalComparisonIdentityMaterial(result))).digest('hex'));
+  // Fixed known-vector regression lock: this exact hex digest must never change
+  // for this exact input unless the framing/hashing algorithm itself changes.
+  assert.equal(crossSignalComparisonIdentity(result), KNOWN_PRINCIPAL_IDENTITY_VECTOR);
 });
 
 test('no code in this slice assigns VALIDATED', async () => {

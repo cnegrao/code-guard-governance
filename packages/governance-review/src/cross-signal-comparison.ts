@@ -6,7 +6,7 @@ import {
   type ExecutionPrincipalReference, type IsoTimestamp, type OrganisationId, type RelationshipId, type RelationshipStateId,
   type RuntimeObservation, type RuntimeTargetKind,
 } from '@council/canonical-contracts';
-import { stableCandidateContent } from './canonical-endpoint-resolution';
+import { frameIdentity } from './canonical-endpoint-resolution';
 import { validatePersistedRuntimeObservation } from './runtime-observation.ts';
 
 /**
@@ -66,7 +66,7 @@ function evaluatedAt(value: unknown): IsoTimestamp { return isoTimestamp(value);
  * appends the exact sub-second nanosecond remainder as a zero-padded digit
  * string - never through float division.
  */
-function nanosToIsoTimestamp(nanos: bigint): IsoTimestamp {
+export function nanosToIsoTimestamp(nanos: bigint): IsoTimestamp {
   const nanosPerSecond = BigInt(1000000000);
   let wholeSeconds = nanos / nanosPerSecond;
   let remainderNanos = nanos % nanosPerSecond;
@@ -328,14 +328,111 @@ export function compareCrossSignal(request: unknown): CrossSignalComparisonResul
 }
 
 /**
+ * Cross-language deterministic identity material for one CrossSignalComparisonResult
+ * (ADR SS13). The database persistence boundary (record_cross_signal_comparison_result,
+ * 20260923060000_cross_signal_persistence_v1.sql) independently re-derives this SAME
+ * ordered part list from its own validated evidence lookups (the resolved
+ * execution_field_states / canonical_relationships / runtime_observations rows), then
+ * frames and hashes it with gov_repo.frame_identity + extensions.digest(...,'sha256') -
+ * the identical pg_catalog-free algorithm this function uses. A caller-supplied
+ * comparison_id is therefore never the authority on either side; it is at most a
+ * consistency assertion the database independently verifies and rejects on mismatch
+ * (CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH).
+ *
+ * Exactly (organisationId, subject, dimension, pairingMode, left, right, method) -
+ * never evaluatedAt, outcome, an INSUFFICIENT_EVIDENCE reason, a database row id,
+ * insertion order, or receipt order. Every part is emitted through frameIdentity's
+ * length-prefixing, so no field boundary is ever ambiguous regardless of what
+ * characters an opaque identifier happens to contain.
+ *
+ * A literal format-version tag ('CROSS_SIGNAL_COMPARISON_V1') is the first part, so
+ * a future identity-material shape change is itself content-addressed distinctly
+ * rather than silently colliding with this version's hashes.
+ */
+const CROSS_SIGNAL_IDENTITY_FORMAT_VERSION = 'CROSS_SIGNAL_COMPARISON_V1';
+
+/**
+ * One RELATIONSHIP_STATE_SET member's own identity fragment: relationshipId,
+ * relationshipStateId, an explicit decisionId presence flag, and the decisionId
+ * value (or an empty string when absent) - fixed arity regardless of presence, so
+ * "no decisionId" can never be confused with "empty-string decisionId" or shift a
+ * later field into the wrong position.
+ */
+function relationshipStateMemberIdentityFrame(member: CrossSignalRelationshipStateSetMember): string {
+  return frameIdentity([
+    member.relationshipId, member.relationshipStateId,
+    member.decisionId !== undefined ? '1' : '0', member.decisionId ?? '',
+  ]);
+}
+
+/**
+ * Explicit canonical ordering for M15 identity purposes: lexicographic order
+ * of each already-framed member string's UTF-8 BYTES - never JavaScript's
+ * default Array.prototype.sort (UTF-16 code-unit order), never
+ * Intl/localeCompare. UTF-16 code-unit order and UTF-8 byte order provably
+ * diverge for characters outside plain ASCII (e.g. a supplementary-plane
+ * character is one code point encoded as a UTF-16 surrogate PAIR, comparing
+ * by its high-surrogate code unit, versus a 4-byte UTF-8 sequence compared
+ * byte-by-byte from its leading byte - these are not guaranteed to agree),
+ * so this repository never relies on that being an accidental equivalence.
+ * PostgreSQL mirrors this exactly via `order by convert_to(member_frame,
+ * 'UTF8')` (see record_cross_signal_comparison_result), so both languages
+ * compare the identical byte sequence regardless of either side's default
+ * collation/locale/ICU configuration. This ordering exists solely to make
+ * identity order-independent of caller input order (ADR SS13) - it never
+ * mutates, and is never reused for, the frozen sortCrossSignalRelationshipStateSet
+ * contract-level ordering the pure comparison functions already return to callers.
+ */
+function compareUtf8Bytes(a: string, b: string): number {
+  return Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+}
+function sortedRelationshipStateIdentityFrames(states: readonly CrossSignalRelationshipStateSetMember[]): readonly string[] {
+  return states.map(relationshipStateMemberIdentityFrame).sort(compareUtf8Bytes);
+}
+
+function crossSignalIdentityLeftParts(left: CrossSignalEvidenceReference | undefined): readonly string[] {
+  if (left === undefined) return ['LEFT_ABSENT'];
+  if (left.kind === 'EXECUTION_FIELD_STATE') {
+    return ['LEFT_EXECUTION_FIELD_STATE', left.executionFieldStateId, left.decisionId, left.snapshotId];
+  }
+  if (left.kind === 'RELATIONSHIP_STATE_SET') {
+    const frames = sortedRelationshipStateIdentityFrames(left.states);
+    // A present RELATIONSHIP_STATE_SET with zero members must never collide with
+    // LEFT_ABSENT: the explicit kind tag plus the explicit "0" count guarantee that.
+    return ['LEFT_RELATIONSHIP_STATE_SET', String(frames.length), ...frames];
+  }
+  throw new TypeError('CROSS_SIGNAL_IDENTITY_LEFT_KIND_INVALID');
+}
+
+function crossSignalIdentityRightParts(right: CrossSignalEvidenceReference | undefined): readonly string[] {
+  if (right === undefined) return ['RIGHT_ABSENT'];
+  if (right.kind === 'RUNTIME_OBSERVATION') return ['RIGHT_RUNTIME_OBSERVATION', right.observationId, right.connectionId];
+  throw new TypeError('CROSS_SIGNAL_IDENTITY_RIGHT_KIND_INVALID');
+}
+
+/**
+ * The full ordered, flat identity part list - exported so both the dashboard
+ * persistence adapter and this package's own tests can assert against the exact
+ * material the hash is computed from, independent of the hashing step itself.
+ */
+export function crossSignalComparisonIdentityMaterial(result: CrossSignalComparisonResult): readonly string[] {
+  return [
+    CROSS_SIGNAL_IDENTITY_FORMAT_VERSION,
+    result.organisationId, result.subject.organisationId, result.subject.objectId, result.subject.kind,
+    result.dimension, result.pairingMode, result.method.code, result.method.version,
+    ...crossSignalIdentityLeftParts(result.left), ...crossSignalIdentityRightParts(result.right),
+  ];
+}
+
+/**
  * Deterministic comparison identity (ADR §13): a pure function of
  * (organisationId, subject, dimension, pairingMode, left, right, method) -
- * never of evaluatedAt, a database row id, or receipt order. Follows the
- * same sha256(stableCandidateContent(...)) convention as executionDigest
- * and canonicalRelationshipId elsewhere in this package.
+ * never of evaluatedAt, a database row id, or receipt order. Uses the same
+ * frameIdentity + sha256 convention as canonicalRelationshipId elsewhere in
+ * this package, so the identical algorithm is trivially reproducible in SQL
+ * via gov_repo.frame_identity + extensions.digest(...,'sha256') - see
+ * record_cross_signal_comparison_result's own v_expected_comparison_id.
  */
 export function crossSignalComparisonIdentity(result: CrossSignalComparisonResult): string {
-  const content = { organisationId: result.organisationId, subject: result.subject, dimension: result.dimension,
-    pairingMode: result.pairingMode, left: result.left, right: result.right, method: result.method };
-  return `cross-signal-comparison:${createHash('sha256').update(stableCandidateContent(content)).digest('hex')}`;
+  return `cross-signal-comparison:${createHash('sha256').update(frameIdentity(crossSignalComparisonIdentityMaterial(result))).digest('hex')}`;
 }

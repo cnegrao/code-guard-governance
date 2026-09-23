@@ -30,6 +30,17 @@ const db = {
     };
     return query;
   },
+  // Mocks gov_repo.read_runtime_observation_exact (20260923060000_cross_signal_persistence_v1.sql):
+  // an exact (organisationId, observationId, connectionId) equality lookup returning zero or one
+  // row - never trace/span/time-proximity matching. Mirrors the real RPC's `returns table(observation jsonb)`.
+  rpc(name: string, params: Record<string, unknown>) {
+    if (name !== 'read_runtime_observation_exact') return Promise.resolve({ data: null, error: { message: 'UNKNOWN_RPC' } });
+    const match = (tables.runtime_observations ?? []).filter(row =>
+      row.organisation_id === params.p_organisation_id &&
+      row.observation_id === params.p_observation_id &&
+      row.connection_id === params.p_connection_id);
+    return Promise.resolve({ data: match.map(row => ({ observation: row })), error: null });
+  },
 };
 
 let mod: typeof import('../lib/governance/cross-signal-read');
@@ -218,6 +229,14 @@ test('14. runtime observation cross-tenant mismatch fails closed', async () => {
   await assert.rejects(mod.readPersistedRuntimeObservation(foreign, reference), /CROSS_SIGNAL_RUNTIME_OBSERVATION_NOT_FOUND/);
 });
 
+test('14b. runtime observation read never matches by trace/span alone - only exact (org, observationId, connectionId)', async () => {
+  tables.runtime_observations = [runtimeRow()];
+  const wrongObservation = { ...reference, observationId: '99999999-9999-4999-8999-999999999999' as typeof reference.observationId };
+  await assert.rejects(mod.readPersistedRuntimeObservation(runtimeOrg, wrongObservation), /CROSS_SIGNAL_RUNTIME_OBSERVATION_NOT_FOUND/);
+  const wrongConnection = { ...reference, connectionId: 'some-other-connection' as typeof reference.connectionId };
+  await assert.rejects(mod.readPersistedRuntimeObservation(runtimeOrg, wrongConnection), /CROSS_SIGNAL_RUNTIME_OBSERVATION_NOT_FOUND/);
+});
+
 test('15. EXACT runtime binding whose canonical AGENT_VERSION does not exist fails closed before comparison', async () => {
   const runtime = { ...fixture('MODEL_CALL'), binding: exact(), recordedAt: { state: 'KNOWN' as const, value: '2026-09-17T00:00:00.000Z' } } as RuntimeObservation;
   await assert.rejects(mod.assertRuntimeSubjectProven(runtimeOrg, runtime), /CROSS_SIGNAL_RUNTIME_SUBJECT_NOT_FOUND/);
@@ -243,12 +262,23 @@ test('16. UNRESOLVED runtime binding remains unresolved evidence and is never gu
 
 const source = readFileSync(new URL('../lib/governance/cross-signal-read.ts', import.meta.url), 'utf8');
 
-test('17. no SELECT * or arbitrary JSON/EAV read path is introduced', () => {
+test('17. no SELECT * or arbitrary JSON/EAV table read path is introduced', () => {
   assert.doesNotMatch(source, /select\(\s*['"]\*['"]\s*\)/);
-  assert.doesNotMatch(source, /\bjsonb?\b/i);
+  // M15.3A's runtime read boundary legitimately transports its closed, typed
+  // column set through one RPC's jsonb return value (mirroring
+  // gov_repo.runtime_readback's own existing transport encoding) - never an
+  // arbitrary JSON/EAV escape hatch. What must never appear is a raw
+  // .select(...) of a jsonb/json *column* straight off a table.
+  assert.doesNotMatch(source, /\.select\([^)]*\bjsonb?\b[^)]*\)/i);
 });
 
-test('18. no canonical/runtime/execution write path exists in this slice', () => {
+test('18. no canonical/runtime/execution write (mutation) path exists in this slice', () => {
   assert.doesNotMatch(source, /\.(insert|update|upsert|delete)\(/);
-  assert.doesNotMatch(source, /privilegedDb\.rpc\(/);
+  // M15.3A introduces exactly one legitimate READ-ONLY RPC
+  // (gov_repo.read_runtime_observation_exact) as the M14 runtime_observations
+  // read boundary. This still proves no mutation/write RPC exists anywhere
+  // in the M15 read adapter: any other RPC name, or more than one distinct
+  // RPC call, fails this test.
+  const rpcCalls = [...source.matchAll(/privilegedDb\.rpc\(\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
+  assert.deepEqual(new Set(rpcCalls), new Set(['read_runtime_observation_exact']));
 });

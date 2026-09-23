@@ -11,7 +11,7 @@ import {
 import { privilegedDb } from './persistence';
 import { executionRows, executionFactFromRow, type ExecutionRow } from './execution-context-read';
 import { currentFieldState } from './agent-passport';
-import { runtimeColumns, runtimeFromRow } from './runtime-row';
+import { runtimeFromRow } from './runtime-row';
 
 /**
  * GOV IA M15.2 - dashboard-layer exact read/resolution adapters for the M15 V1
@@ -150,36 +150,38 @@ export async function resolveDependencyGovernedStates(
 // D. RUNTIME OBSERVATION ADAPTER
 // -----------------------------------------------------------------------------
 
-const RUNTIME_READ_COLUMNS = [...new Set(['organisation_id', 'observation_id', 'connection_id', 'recorded_at', ...runtimeColumns.map(([column]) => column)])].join(',');
-
 /**
  * Exact read of one persisted RuntimeObservation by (organisationId,
- * observationId, connectionId), reusing runtime-row.ts's explicit typed
- * column allowlist and M14's own validatePersistedRuntimeObservation
- * reject-before-attempt boundary - never SELECT *, never a raw payload.
+ * observationId, connectionId), through the M15.3A narrow read-only RPC
+ * (gov_repo.read_runtime_observation_exact, 20260923060000_cross_signal_persistence_v1.sql).
  *
- * NOTE: gov_repo.runtime_observations (20260917021203_runtime_observability_v1.sql)
- * currently does `revoke all on gov_repo.runtime_observations from
- * public,anon,authenticated,service_role` - only the admit_runtime_observation
- * SECURITY DEFINER RPC's own inline readback can reach this table today. This
- * adapter is written to the read model the ADR anticipates ("resolved back to
- * ... the runtime table at read time", ADR SS15), but a real deployment needs a
- * follow-up migration (out of scope for this read-only M15.2 slice) granting a
- * scoped read path before this query can succeed against Postgres.
+ * gov_repo.runtime_observations (20260917021203_runtime_observability_v1.sql)
+ * keeps its M14 posture untouched: `revoke all ... from
+ * public,anon,authenticated,service_role` on the table itself is never
+ * loosened. This adapter never selects from that table directly - it calls a
+ * tenant-scoped, exact-match, SECURITY DEFINER RPC that returns zero or one
+ * row and performs no writes, then reuses runtime-row.ts's explicit typed
+ * column allowlist (via runtimeFromRow) and M14's own
+ * validatePersistedRuntimeObservation reject-before-attempt boundary on the
+ * jsonb payload it returns - never SELECT *, never an arbitrary JSON/EAV
+ * payload (the RPC's jsonb shape is exactly the closed runtime_observations
+ * column set, transport-encoded only).
  */
 export async function readPersistedRuntimeObservation(
   organisationId: OrganisationId,
   reference: { readonly observationId: RuntimeObservationId; readonly connectionId: SourceConnectionId },
 ): Promise<RuntimeObservation> {
-  const { data, error } = await privilegedDb.from('runtime_observations')
-    .select(RUNTIME_READ_COLUMNS)
-    .eq('organisation_id', organisationId)
-    .eq('observation_id', reference.observationId)
-    .eq('connection_id', reference.connectionId)
-    .maybeSingle();
+  const { data, error } = await privilegedDb.rpc('read_runtime_observation_exact', {
+    p_organisation_id: organisationId,
+    p_connection_id: reference.connectionId,
+    p_observation_id: reference.observationId,
+  });
   if (error) throw new Error('CROSS_SIGNAL_RUNTIME_READ_FAILED');
-  if (!data) throw new Error('CROSS_SIGNAL_RUNTIME_OBSERVATION_NOT_FOUND');
-  const row = data as Record<string, any>;
+  if (!Array.isArray(data) || data.length === 0) throw new Error('CROSS_SIGNAL_RUNTIME_OBSERVATION_NOT_FOUND');
+  if (data.length > 1) throw new Error('CROSS_SIGNAL_RUNTIME_OBSERVATION_AMBIGUOUS');
+  const entry = data[0] as { observation?: unknown };
+  if (!entry || typeof entry.observation !== 'object' || entry.observation === null) throw new Error('CROSS_SIGNAL_RUNTIME_READ_FAILED');
+  const row = entry.observation as Record<string, any>;
   if (row.organisation_id !== organisationId || row.observation_id !== reference.observationId || row.connection_id !== reference.connectionId) {
     throw new Error('CROSS_SIGNAL_RUNTIME_TENANT_MISMATCH');
   }
