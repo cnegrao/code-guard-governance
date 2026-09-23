@@ -36,18 +36,37 @@ function sortedChildContent(states: readonly { relationshipId: string; relations
  * (grants, CHECK constraints, insert targets) is verified separately in
  * cross-signal-persistence-migration.test.ts.
  */
-function recordComparisonResult(params: { p_organisation_id: string; p_comparison_id: string | null; p_result: any; p_relationship_states: any[] }) {
-  const { p_organisation_id: organisationId, p_comparison_id: assertedComparisonId, p_result: result, p_relationship_states: states } = params;
+const M15_DEPENDENCY_RELATIONSHIP_TYPES = ['USES_MODEL', 'USES_TOOL', 'USES_MCP', 'INVOKES'];
+const RUNTIME_KIND_TO_DEPENDENCY_TYPE: Record<string, string> = { MODEL_CALL: 'USES_MODEL', TOOL_CALL: 'USES_TOOL', MCP_CALL: 'USES_MCP', API_CALL: 'INVOKES' };
+
+function recordComparisonResult(params: { p_organisation_id: string; p_comparison_id: string | null; p_result: any }) {
+  const { p_organisation_id: organisationId, p_comparison_id: assertedComparisonId, p_result: result } = params;
   if (result.organisationId !== organisationId) return { data: null, error: { message: 'CROSS_SIGNAL_RESULT_TENANT_MISMATCH' } };
   if (result.subject?.organisationId !== organisationId || result.subject?.kind !== 'AGENT_VERSION') {
     return { data: null, error: { message: 'CROSS_SIGNAL_RESULT_SUBJECT_INVALID' } };
   }
+  // Independently prove the persisted canonical object's ACTUAL kind is
+  // AGENT_VERSION - never trust the caller's subject.kind string alone.
+  const canonicalObject = (tables.canonical_objects ?? []).find(row =>
+    row.organisation_id === organisationId && row.canonical_object_id === result.subject.objectId);
+  if (!canonicalObject || canonicalObject.kind !== 'AGENT_VERSION') {
+    return { data: null, error: { message: 'CROSS_SIGNAL_RESULT_SUBJECT_INVALID' } };
+  }
   if (result.outcome === 'DRIFT_CANDIDATE') return { data: null, error: { message: 'CROSS_SIGNAL_RESULT_OUTCOME_INVALID' } };
+
+  // ONE authoritative transport representation for RELATIONSHIP_STATE_SET
+  // evidence: result.left.states only - there is no second parameter.
+  const states = result.left?.kind === 'RELATIONSHIP_STATE_SET'
+    ? result.left.states.map((s: any) => ({ relationshipId: s.relationshipId, relationshipStateId: s.relationshipStateId, decisionId: s.decisionId ?? null }))
+    : [];
+
+  let expectedRelationshipType: string | undefined;
   try {
     if (result.right) {
-      const match = (tables.runtime_observations ?? []).some(row =>
+      const runtimeRowMatch = (tables.runtime_observations ?? []).find(row =>
         row.organisation_id === organisationId && row.observation_id === result.right.observationId && row.connection_id === result.right.connectionId);
-      if (!match) throw new Error('CROSS_SIGNAL_RUNTIME_EVIDENCE_NOT_FOUND');
+      if (!runtimeRowMatch) throw new Error('CROSS_SIGNAL_RUNTIME_EVIDENCE_NOT_FOUND');
+      expectedRelationshipType = RUNTIME_KIND_TO_DEPENDENCY_TYPE[runtimeRowMatch.kind];
     }
     if (result.left?.kind === 'EXECUTION_FIELD_STATE') {
       const efs = (tables.execution_field_states ?? []).find(row => row.organisation_id === organisationId && row.state_id === result.left.executionFieldStateId);
@@ -59,6 +78,9 @@ function recordComparisonResult(params: { p_organisation_id: string; p_compariso
       for (const member of states) {
         const rel = (tables.canonical_relationships ?? []).find(row => row.organisation_id === organisationId && row.relationship_id === member.relationshipId);
         if (!rel || rel.relationship_state_id !== member.relationshipStateId || rel.source_canonical_object_id !== result.subject.objectId ||
+          rel.source_kind !== 'AGENT_VERSION' ||
+          !M15_DEPENDENCY_RELATIONSHIP_TYPES.includes(rel.relationship_type) ||
+          (expectedRelationshipType !== undefined && rel.relationship_type !== expectedRelationshipType) ||
           (member.decisionId && rel.created_by_decision_id !== member.decisionId)) {
           throw new Error('CROSS_SIGNAL_RELATIONSHIP_EVIDENCE_MISMATCH');
         }
@@ -178,7 +200,11 @@ function principalEfs(overrides: Row = {}) {
     decision_id: 'decision-1', snapshot_id: 'snapshot-1', previous_state_id: null, recorded_at: '2026-09-15T00:00:00.000Z', ...overrides };
 }
 function relationshipRow(overrides: Row = {}) {
+  // relationship_type defaults to USES_MODEL to match rightRef's MODEL_CALL
+  // runtime fixture, satisfying the new runtime-kind -> relationship_type
+  // cross-check the write RPC performs when a paired RuntimeObservation is available.
   return { organisation_id: org, relationship_id: 'rel-1', relationship_state_id: 'rel-1:initial', source_canonical_object_id: subjectId,
+    source_kind: 'AGENT_VERSION', relationship_type: 'USES_MODEL',
     valid_from: '2026-09-01T00:00:00.123456+00:00', valid_to: null, created_by_decision_id: 'decision-rel-1', ...overrides };
 }
 
@@ -350,6 +376,42 @@ test('11. cross-tenant relationship evidence rejection', async () => {
 });
 
 // -----------------------------------------------------------------------------
+// 11b-11d. Hardening: independent subject-kind proof, and dependency
+// relationship evidence proof beyond "the id happens to exist".
+// -----------------------------------------------------------------------------
+
+test('11b. subject claiming AGENT_VERSION over a real canonical object of another kind is rejected', async () => {
+  tables.canonical_objects = [{ organisation_id: org, canonical_object_id: subjectId, kind: 'TOOL' }];
+  tables.execution_field_states = [principalEfs()];
+  await assert.rejects(mod.persistCrossSignalComparisonResult(principalResult()), /CROSS_SIGNAL_RESULT_SUBJECT_INVALID/);
+  assert.equal(tables.cross_signal_comparison_results.length, 0);
+});
+
+test('11c. a dependency relationship row with the wrong source_kind is rejected, even though relationshipId/relationshipStateId/source id all match', async () => {
+  tables.canonical_relationships = [relationshipRow({ source_kind: 'TOOL' })];
+  const result = dependencyResult([{ relationshipId: 'rel-1', relationshipStateId: 'rel-1:initial', decisionId: 'decision-rel-1', validFrom: '2026-09-01T00:00:00.123456+00:00' }]);
+  await assert.rejects(mod.persistCrossSignalComparisonResult(result), /CROSS_SIGNAL_RELATIONSHIP_EVIDENCE_MISMATCH/);
+  assert.equal(tables.cross_signal_comparison_results.length, 0);
+});
+
+test('11d. a dependency relationship row with an unsupported (non-M15-V1) relationship_type is rejected', async () => {
+  tables.canonical_relationships = [relationshipRow({ relationship_type: 'EXPOSES' })];
+  const result = dependencyResult([{ relationshipId: 'rel-1', relationshipStateId: 'rel-1:initial', decisionId: 'decision-rel-1', validFrom: '2026-09-01T00:00:00.123456+00:00' }]);
+  await assert.rejects(mod.persistCrossSignalComparisonResult(result), /CROSS_SIGNAL_RELATIONSHIP_EVIDENCE_MISMATCH/);
+  assert.equal(tables.cross_signal_comparison_results.length, 0);
+});
+
+test('11e. a dependency relationship row whose type disagrees with the paired runtime observation kind is rejected', async () => {
+  // rightRef comes from a MODEL_CALL fixture (expects USES_MODEL); this row
+  // claims USES_TOOL instead - a closed, valid M15 V1 type, but the wrong one
+  // for this runtime observation's own kind.
+  tables.canonical_relationships = [relationshipRow({ relationship_type: 'USES_TOOL' })];
+  const result = dependencyResult([{ relationshipId: 'rel-1', relationshipStateId: 'rel-1:initial', decisionId: 'decision-rel-1', validFrom: '2026-09-01T00:00:00.123456+00:00' }]);
+  await assert.rejects(mod.persistCrossSignalComparisonResult(result), /CROSS_SIGNAL_RELATIONSHIP_EVIDENCE_MISMATCH/);
+  assert.equal(tables.cross_signal_comparison_results.length, 0);
+});
+
+// -----------------------------------------------------------------------------
 // 12. Atomicity: a rejected write leaves no partial parent/child rows
 // -----------------------------------------------------------------------------
 
@@ -382,6 +444,33 @@ test('13b. readback of an unknown comparison id returns undefined, never fabrica
   assert.equal(result, undefined);
 });
 
+test('13c. readback rejects a persisted row that rehydrates structurally but hashes to a different id than its own stored key (corrupted/manually-edited durable state)', async () => {
+  tables.execution_field_states = [principalEfs()];
+  const persisted = await mod.persistCrossSignalComparisonResult(principalResult());
+  const trueId = crossSignalComparisonIdentity(persisted.result);
+  assert.equal(tables.cross_signal_comparison_results[0].comparison_id, trueId);
+  const forgedKey = 'cross-signal-comparison:' + 'f'.repeat(64);
+  // Simulates corrupted/manually-edited durable state: the row's own content
+  // (evidence references, method, dimension, ...) still rehydrates without a
+  // structural error, but no longer corresponds to the key it is filed
+  // under. Readback must independently recompute the identity and reject.
+  tables.cross_signal_comparison_results[0].comparison_id = forgedKey;
+  await assert.rejects(mod.readCrossSignalComparisonResult(org, forgedKey), /CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH/);
+});
+
+test('13d. evaluated_at microsecond precision is preserved on readback, never collapsed to JavaScript millisecond precision', async () => {
+  tables.execution_field_states = [principalEfs()];
+  await mod.persistCrossSignalComparisonResult(principalResult());
+  const comparisonId = tables.cross_signal_comparison_results[0].comparison_id;
+  const microsecondValue = '2026-09-23T10:15:30.123456+00:00';
+  // Simulates the raw trusted PostgREST timestamptz string a real Postgres
+  // column would return - readback must surface this exact string, never
+  // `new Date(...).toISOString()`'s fixed 3-digit millisecond precision.
+  tables.cross_signal_comparison_results[0].evaluated_at = microsecondValue;
+  const reread = await mod.readCrossSignalComparisonResult(org, comparisonId);
+  assert.equal(reread?.evaluatedAt, microsecondValue);
+});
+
 // -----------------------------------------------------------------------------
 // 14. No update/delete overwrite path; no canonical/relationship/trust/runtime write
 // -----------------------------------------------------------------------------
@@ -400,6 +489,16 @@ test('15. no SELECT * and no arbitrary JSON/EAV table read path', () => {
   assert.doesNotMatch(source, /\.select\([^)]*\bjsonb?\b[^)]*\)/i);
 });
 
+test('15b. relationship-state evidence has exactly ONE transport source (p_result only) - a second/duplicate parameter is impossible because it no longer exists', () => {
+  assert.doesNotMatch(source, /p_relationship_states/);
+  const rpcCallSites = [...source.matchAll(/privilegedDb\.rpc\(\s*'record_cross_signal_comparison_result',\s*\{([^}]*)\}/g)];
+  assert.ok(rpcCallSites.length > 0);
+  for (const [, argsText] of rpcCallSites) {
+    const paramNames = [...argsText.matchAll(/(p_\w+)\s*:/g)].map(m => m[1]);
+    assert.deepEqual(new Set(paramNames), new Set(['p_organisation_id', 'p_comparison_id', 'p_result']));
+  }
+});
+
 // -----------------------------------------------------------------------------
 // 16-17. DATABASE-AUTHORITATIVE IDENTITY (ADR §13/§15): a caller-supplied
 // comparison_id is never the authority on either side of this boundary.
@@ -411,7 +510,7 @@ test('16. a forged caller comparison_id that disagrees with the verified evidenc
   const forgedId = 'cross-signal-comparison:' + '0'.repeat(64);
   assert.notEqual(forgedId, crossSignalComparisonIdentity(result));
   const response = await (db as any).rpc('record_cross_signal_comparison_result', {
-    p_organisation_id: org, p_comparison_id: forgedId, p_result: result, p_relationship_states: [],
+    p_organisation_id: org, p_comparison_id: forgedId, p_result: result,
   });
   assert.equal(response.data, null);
   assert.equal(response.error?.message, 'CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH');
@@ -424,7 +523,7 @@ test('16. a forged caller comparison_id that disagrees with the verified evidenc
   tables.execution_field_states.push(principalEfs({ state_id: 'efs-2', decision_id: 'decision-2', snapshot_id: 'snapshot-2' }));
   const differentResult = principalResult({ executionFieldStateId: 'efs-2', decisionId: 'decision-2', snapshotId: 'snapshot-2' });
   const forgedAttempt = await (db as any).rpc('record_cross_signal_comparison_result', {
-    p_organisation_id: org, p_comparison_id: forgedId, p_result: differentResult, p_relationship_states: [],
+    p_organisation_id: org, p_comparison_id: forgedId, p_result: differentResult,
   });
   assert.equal(forgedAttempt.data, null);
   assert.equal(forgedAttempt.error?.message, 'CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH');

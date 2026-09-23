@@ -70,16 +70,16 @@ const safeErrors = new Set([
  */
 export async function persistCrossSignalComparisonResult(result: CrossSignalComparisonResult): Promise<CrossSignalComparisonPersistenceResult> {
   const comparisonId = crossSignalComparisonIdentity(result);
-  const relationshipStates = result.left?.kind === 'RELATIONSHIP_STATE_SET'
-    ? result.left.states.map(s => ({ relationshipId: s.relationshipId, relationshipStateId: s.relationshipStateId, decisionId: s.decisionId ?? null }))
-    : [];
+  // ONE authoritative transport representation for RELATIONSHIP_STATE_SET
+  // evidence: result (as p_result) alone. There is no second parameter that
+  // could ever disagree with p_result.left.states - the RPC derives its own
+  // relationship-state input exclusively from p_result#>'{left,states}'.
   let response;
   try {
     response = await privilegedDb.rpc('record_cross_signal_comparison_result', {
       p_organisation_id: result.organisationId,
       p_comparison_id: comparisonId,
       p_result: result,
-      p_relationship_states: relationshipStates,
     });
   } catch { throw new Error('CROSS_SIGNAL_COMPARISON_PERSISTENCE_FAILED'); }
   const { data, error } = response;
@@ -170,7 +170,8 @@ export async function readCrossSignalComparisonResult(
     }
   }
 
-  return createCrossSignalComparisonResult({
+  if (typeof row.evaluated_at !== 'string') throw new Error('CROSS_SIGNAL_COMPARISON_READ_FAILED');
+  const result = createCrossSignalComparisonResult({
     organisationId,
     subject: { organisationId, objectId: row.subject_object_id, kind: 'AGENT_VERSION' },
     dimension: row.dimension,
@@ -180,8 +181,28 @@ export async function readCrossSignalComparisonResult(
     method: { code: row.method_code, version: row.method_version },
     leftTemporalBasis: { basis: row.left_temporal_basis },
     rightTemporalBasis,
-    evaluatedAt: asIsoTimestamp(new Date(row.evaluated_at).toISOString()),
+    // The raw trusted PostgREST timestamptz string, never round-tripped
+    // through `new Date(...).toISOString()` - that collapses PostgreSQL's
+    // fractional-second precision to JavaScript's fixed 3-digit millisecond
+    // precision. evaluatedAt is comparison clock E (never a temporal-basis
+    // or identity input, ADR §12.E), but there is no reason to destroy
+    // durable precision on the one field this adapter does still surface.
+    evaluatedAt: asIsoTimestamp(row.evaluated_at),
     outcome: row.outcome,
     ...(row.reason ? { reason: row.reason } : {}),
   });
+
+  // Readback must verify its own deterministic identity (ADR §13): a
+  // persisted row is never trusted merely because it rehydrated
+  // structurally without error. Recompute the identity from the rehydrated,
+  // fully-revalidated semantic result and require exact equality with both
+  // the row's own stored key and the caller's requested comparisonId -
+  // protecting against corrupted/manually-edited durable state where the
+  // stored evidence references or child set no longer correspond to the key
+  // they are filed under.
+  const rehydratedIdentity = crossSignalComparisonIdentity(result);
+  if (rehydratedIdentity !== row.comparison_id || rehydratedIdentity !== comparisonId) {
+    throw new Error('CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH');
+  }
+  return result;
 }

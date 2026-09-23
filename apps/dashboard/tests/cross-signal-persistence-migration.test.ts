@@ -114,6 +114,36 @@ test('write RPC re-verifies every referenced evidence id against its own source-
   }
 });
 
+test('subject kind is independently proven against canonical_objects, never trusted from the caller\'s subject.kind string alone', () => {
+  assert.match(writeRpc, /perform 1 from gov_repo\.canonical_objects\s*\n\s*where organisation_id = p_organisation_id\s*\n\s*and canonical_object_id = p_result#>>'\{subject,objectId\}'\s*\n\s*and kind = 'AGENT_VERSION';/);
+  const performAt = writeRpc.indexOf('perform 1 from gov_repo.canonical_objects');
+  assert.ok(performAt > -1);
+  const notFoundAt = writeRpc.indexOf('CROSS_SIGNAL_RESULT_SUBJECT_INVALID', performAt);
+  assert.ok(notFoundAt > performAt, 'the not-found raise must appear after the canonical_objects proof');
+  // This check happens before any evidence lookup or identity construction.
+  const firstEvidenceLookup = writeRpc.indexOf('select * into v_ro from gov_repo.runtime_observations');
+  assert.ok(performAt < firstEvidenceLookup);
+});
+
+test('dependency relationship evidence is proven on tenant + relationship_id + relationship_state_id + source_canonical_object_id + source_kind + a closed M15 V1 relationship_type - never accepted merely because an id happens to exist', () => {
+  assert.match(writeRpc, /r\.source_kind as db_source_kind/);
+  assert.match(writeRpc, /r\.relationship_type as db_relationship_type/);
+  assert.match(writeRpc, /db_source_kind is distinct from 'AGENT_VERSION'/);
+  assert.match(writeRpc, /db_relationship_type not in \('USES_MODEL','USES_TOOL','USES_MCP','INVOKES'\)/);
+});
+
+test('dependency relationship type is cross-checked against the paired RuntimeObservation kind when available, using the same closed mapping the pure comparison functions use - never recomputing an outcome', () => {
+  assert.match(writeRpc, /v_expected_relationship_type := case v_ro\.kind/);
+  assert.match(writeRpc, /when 'MODEL_CALL' then 'USES_MODEL' when 'TOOL_CALL' then 'USES_TOOL'/);
+  assert.match(writeRpc, /when 'MCP_CALL' then 'USES_MCP' when 'API_CALL' then 'INVOKES' else null end;/);
+  assert.match(writeRpc, /v_expected_relationship_type is not null and db_relationship_type is distinct from v_expected_relationship_type/);
+  // Narrow evidence-reference check only: this function never assigns or
+  // returns a CONSISTENT/CONFLICT_CANDIDATE/INSUFFICIENT_EVIDENCE outcome of
+  // its own - the only outcome value it ever handles is the caller-supplied
+  // p_result->>'outcome', stored and compared verbatim, never computed.
+  assert.doesNotMatch(writeRpcCode, /:= 'CONSISTENT'|:= 'CONFLICT_CANDIDATE'|:= 'INSUFFICIENT_EVIDENCE'/);
+});
+
 test('replay/conflict semantics: existing row wins on identical content, exception on any mismatch, never an update', () => {
   assert.match(writeRpc, /select \* into existing from gov_repo\.cross_signal_comparison_results/);
   assert.match(writeRpc, /CROSS_SIGNAL_COMPARISON_REPLAY_CONFLICT/);
@@ -128,14 +158,55 @@ test('advisory lock scopes concurrent writers by (organisation_id, DB-computed c
 });
 
 test('parent and child rows are inserted from the same function body - one atomic transaction, no separate application-level insert calls', () => {
-  const parentInsertIndex = writeRpc.indexOf('insert into gov_repo.cross_signal_comparison_results select r.*;');
+  const parentInsertIndex = writeRpc.indexOf('insert into gov_repo.cross_signal_comparison_results (');
   const childInsertIndex = writeRpc.indexOf('insert into gov_repo.cross_signal_comparison_left_relationship_states');
   assert.ok(parentInsertIndex > -1 && childInsertIndex > parentInsertIndex);
 });
 
+test('parent INSERT uses an explicit column list, never `insert ... select r.*`, and never explicitly inserts recorded_at (the DB default assigns it)', () => {
+  assert.doesNotMatch(writeRpcCode, /insert into gov_repo\.cross_signal_comparison_results\s+select\s+r\.\*/i);
+  const parentInsertStart = writeRpc.indexOf('insert into gov_repo.cross_signal_comparison_results (');
+  assert.ok(parentInsertStart > -1, 'parent insert must use an explicit column-list form');
+  const parentInsertEnd = writeRpc.indexOf(');', parentInsertStart) + 2;
+  const parentInsertStatement = writeRpc.slice(parentInsertStart, parentInsertEnd);
+  // The explicit column list (and the parallel VALUES list) must name every
+  // persisted column except recorded_at - never r.recorded_at, which stays
+  // uninitialized (NULL) on the composite variable and would otherwise be
+  // inserted directly into a NOT NULL column with no DEFAULT applied.
+  assert.doesNotMatch(parentInsertStatement, /\brecorded_at\b/);
+  assert.doesNotMatch(parentInsertStatement, /r\.recorded_at/);
+  for (const column of [
+    'organisation_id', 'comparison_id', 'subject_object_id', 'dimension', 'pairing_mode', 'method_code', 'method_version',
+    'left_kind', 'left_execution_field_state_id', 'left_execution_field_state_decision_id', 'left_execution_field_state_snapshot_id',
+    'right_observation_id', 'right_connection_id', 'left_temporal_basis', 'right_temporal_basis', 'outcome', 'reason', 'evaluated_at',
+  ]) {
+    assert.ok(parentInsertStatement.includes(column), `explicit column list must include ${column}`);
+    assert.ok(parentInsertStatement.includes(`r.${column}`), `explicit VALUES list must include r.${column}`);
+  }
+});
+
 test('write RPC grants: execute to service_role only; revoked from public/anon/authenticated first', () => {
-  assert.match(sql, /revoke all on function gov_repo\.record_cross_signal_comparison_result\(uuid,text,jsonb,jsonb\) from public,anon,authenticated,service_role;/);
-  assert.match(sql, /grant execute on function gov_repo\.record_cross_signal_comparison_result\(uuid,text,jsonb,jsonb\) to service_role;/);
+  assert.match(sql, /revoke all on function gov_repo\.record_cross_signal_comparison_result\(uuid,text,jsonb\) from public,anon,authenticated,service_role;/);
+  assert.match(sql, /grant execute on function gov_repo\.record_cross_signal_comparison_result\(uuid,text,jsonb\) to service_role;/);
+});
+
+// -----------------------------------------------------------------------------
+// ONE authoritative transport representation for RELATIONSHIP_STATE_SET
+// evidence (no p_relationship_states parameter).
+// -----------------------------------------------------------------------------
+
+test('the write RPC has exactly three parameters - no second relationship-states parameter exists to disagree with p_result.left.states', () => {
+  const signature = sql.slice(sql.indexOf('create function gov_repo.record_cross_signal_comparison_result('), sql.indexOf('returns table(replay boolean'));
+  assert.doesNotMatch(signature, /p_relationship_states/);
+  assert.match(signature, /p_organisation_id uuid/);
+  assert.match(signature, /p_comparison_id text/);
+  assert.match(signature, /p_result jsonb/);
+});
+
+test('relationship-state evidence is derived exclusively from p_result#>\'{left,states}\'; required+array for RELATIONSHIP_STATE_SET, forbidden otherwise', () => {
+  assert.match(writeRpc, /v_states_raw jsonb := p_result#>'\{left,states\}';/);
+  assert.match(writeRpc, /if v_states_raw is null or jsonb_typeof\(v_states_raw\) <> 'array' then/);
+  assert.match(writeRpc, /elsif v_states_raw is not null then\s*\n\s*raise exception 'CROSS_SIGNAL_RESULT_INVALID';/);
 });
 
 // -----------------------------------------------------------------------------
@@ -187,7 +258,7 @@ test('a caller-supplied comparison_id is never authoritative: it is at most a co
   assert.match(writeRpc, /raise exception 'CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH';/);
   const mismatchCheckAt = writeRpc.indexOf('CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH');
   const existingLookupAt = writeRpc.indexOf('select * into existing from gov_repo.cross_signal_comparison_results');
-  const firstInsertAt = writeRpc.indexOf('insert into gov_repo.cross_signal_comparison_results select r.*;');
+  const firstInsertAt = writeRpc.indexOf('insert into gov_repo.cross_signal_comparison_results (');
   assert.ok(mismatchCheckAt > -1 && mismatchCheckAt < existingLookupAt && mismatchCheckAt < firstInsertAt);
   // The persisted/returned/looked-up key is always the DB-computed identity,
   // never the raw caller parameter, anywhere after it is computed.

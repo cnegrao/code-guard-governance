@@ -244,7 +244,35 @@ create index idx_cross_signal_left_state_relationship on gov_repo.cross_signal_c
 --    only — the durable schema itself stays typed columns + a normalized
 --    child table, never a JSON/EAV escape hatch (mirrors this repository's
 --    existing record_technical_fact/record_technical_field_decision
---    convention of jsonb-in, typed-columns-out).
+--    convention of jsonb-in, typed-columns-out). There is exactly ONE
+--    transport representation for RELATIONSHIP_STATE_SET evidence:
+--    p_result #> '{left,states}'. No second parameter exists that a caller
+--    invoking this SECURITY DEFINER RPC directly could ever supply
+--    inconsistently with p_result.left.states — for DEPENDENCY_TARGET_IDENTITY
+--    it is required to exist and be an array (possibly empty); for every
+--    other dimension it must be entirely absent.
+--
+--    SUBJECT PROOF: the parent FK below only proves subject_object_id exists
+--    for this tenant, never that its canonical kind is actually AGENT_VERSION
+--    — a caller's subject.kind string alone is never trusted. This function
+--    independently requires exactly one gov_repo.canonical_objects row with
+--    (organisation_id, canonical_object_id, kind = 'AGENT_VERSION') before
+--    any identity construction or persistence, failing closed with
+--    CROSS_SIGNAL_RESULT_SUBJECT_INVALID otherwise.
+--
+--    DEPENDENCY EVIDENCE PROOF: each claimed RELATIONSHIP_STATE_SET member is
+--    independently re-verified against canonical_relationships on exact
+--    tenant + relationship_id + relationship_state_id + source_canonical_object_id
+--    (= the comparison subject) + source_kind = 'AGENT_VERSION' + a closed M15
+--    V1 dependency relationship_type (USES_MODEL/USES_TOOL/USES_MCP/INVOKES)
+--    + (when supplied) an exact decisionId match — never accepted merely
+--    because a relationshipId/relationshipStateId/source id happens to exist.
+--    When the paired RuntimeObservation is available, its own kind
+--    (MODEL_CALL/TOOL_CALL/MCP_CALL/API_CALL) is additionally cross-checked
+--    against the same closed relationship_type mapping the pure comparison
+--    functions use — a narrow evidence-reference check only; this function
+--    never recomputes a CONSISTENT/CONFLICT_CANDIDATE/INSUFFICIENT_EVIDENCE
+--    outcome, and never rebuilds the comparison algorithm itself.
 --
 --    IDENTITY AUTHORITY (ADR §13/§15): the database, not the caller, owns the
 --    deterministic comparison identity. p_comparison_id is at most a
@@ -307,8 +335,7 @@ create index idx_cross_signal_left_state_relationship on gov_repo.cross_signal_c
 create function gov_repo.record_cross_signal_comparison_result(
   p_organisation_id uuid,
   p_comparison_id text,
-  p_result jsonb,
-  p_relationship_states jsonb
+  p_result jsonb
 ) returns table(replay boolean, comparison_id text, evaluated_at timestamptz)
 language plpgsql security definer set search_path=pg_catalog as $$
 declare
@@ -318,11 +345,13 @@ declare
   v_left_kind text := p_result#>>'{left,kind}';
   v_right_kind text := p_result#>>'{right,kind}';
   v_method_code text := p_result#>>'{method,code}';
-  v_states jsonb := coalesce(p_relationship_states,'[]'::jsonb);
+  v_states_raw jsonb := p_result#>'{left,states}';
+  v_states jsonb;
   v_existing_states jsonb;
   v_new_states jsonb;
   v_efs gov_repo.execution_field_states%rowtype;
   v_ro gov_repo.runtime_observations%rowtype;
+  v_expected_relationship_type text;
   v_relationship_mismatch boolean;
   v_left_member_frames text[];
   v_left_parts text[];
@@ -330,17 +359,41 @@ declare
   v_identity_parts text[];
   v_expected_comparison_id text;
 begin
-  if p_organisation_id is null or p_result is null or jsonb_typeof(v_states) <> 'array' then
+  if p_organisation_id is null or p_result is null then
     raise exception 'CROSS_SIGNAL_RESULT_INVALID';
   end if;
   if p_result->>'organisationId' is distinct from p_organisation_id::text then raise exception 'CROSS_SIGNAL_RESULT_TENANT_MISMATCH'; end if;
   if p_result#>>'{subject,organisationId}' is distinct from p_organisation_id::text
     or p_result#>>'{subject,kind}' is distinct from 'AGENT_VERSION'
     or p_result#>>'{subject,objectId}' is null then raise exception 'CROSS_SIGNAL_RESULT_SUBJECT_INVALID'; end if;
+  -- Independently prove the persisted canonical object's ACTUAL kind is
+  -- AGENT_VERSION - the parent FK below only proves the object id exists for
+  -- this tenant, never its kind. A caller's subject.kind string is never
+  -- trusted on its own.
+  perform 1 from gov_repo.canonical_objects
+    where organisation_id = p_organisation_id
+      and canonical_object_id = p_result#>>'{subject,objectId}'
+      and kind = 'AGENT_VERSION';
+  if not found then raise exception 'CROSS_SIGNAL_RESULT_SUBJECT_INVALID'; end if;
   if p_result->>'pairingMode' is distinct from 'DESIGN_TIME_VS_RUNTIME' then raise exception 'CROSS_SIGNAL_RESULT_PAIRING_INVALID'; end if;
   if p_result->>'outcome' = 'DRIFT_CANDIDATE' then raise exception 'CROSS_SIGNAL_RESULT_OUTCOME_INVALID'; end if;
   if v_dimension is distinct from 'PRINCIPAL_IDENTITY' and v_dimension is distinct from 'DEPENDENCY_TARGET_IDENTITY' then
     raise exception 'CROSS_SIGNAL_RESULT_DIMENSION_INVALID';
+  end if;
+
+  -- ONE authoritative transport representation for RELATIONSHIP_STATE_SET
+  -- evidence: p_result #> '{left,states}' only. There is no second parameter
+  -- a caller invoking this SECURITY DEFINER RPC directly could ever supply
+  -- inconsistently with p_result.left.states.
+  if v_left_kind = 'RELATIONSHIP_STATE_SET' then
+    if v_states_raw is null or jsonb_typeof(v_states_raw) <> 'array' then
+      raise exception 'CROSS_SIGNAL_RESULT_INVALID';
+    end if;
+    v_states := v_states_raw;
+  elsif v_states_raw is not null then
+    raise exception 'CROSS_SIGNAL_RESULT_INVALID';
+  else
+    v_states := '[]'::jsonb;
   end if;
 
   -- Independently re-prove every referenced evidence id, never trusting the
@@ -355,6 +408,12 @@ begin
         and o.observation_id = (p_result#>>'{right,observationId}')::uuid
         and o.connection_id = p_result#>>'{right,connectionId}';
     if not found then raise exception 'CROSS_SIGNAL_RUNTIME_EVIDENCE_NOT_FOUND'; end if;
+    -- Narrow evidence-reference cross-check only - never a recomputed
+    -- outcome: the same closed runtime-kind -> dependency relationship_type
+    -- mapping the pure comparison functions use (compareDependencyTargetIdentityDesignTimeVsRuntime).
+    v_expected_relationship_type := case v_ro.kind
+      when 'MODEL_CALL' then 'USES_MODEL' when 'TOOL_CALL' then 'USES_TOOL'
+      when 'MCP_CALL' then 'USES_MCP' when 'API_CALL' then 'INVOKES' else null end;
   end if;
 
   if v_left_kind = 'EXECUTION_FIELD_STATE' then
@@ -367,14 +426,22 @@ begin
       or v_efs.snapshot_id is distinct from p_result#>>'{left,snapshotId}'
     then raise exception 'CROSS_SIGNAL_PRINCIPAL_EVIDENCE_MISMATCH'; end if;
   elsif v_left_kind = 'RELATIONSHIP_STATE_SET' then
-    -- Verifies every member against canonical_relationships AND, in the same
-    -- pass, frames each verified member (relationshipId, relationshipStateId,
-    -- an explicit decisionId-presence flag, decisionId-or-'') for identity
-    -- purposes — the frames are then sorted by the lexicographic order of
-    -- their own explicit UTF-8 bytes (convert_to(...,'UTF8'), a bytea
-    -- comparison — never database/session collation, never caller input
-    -- order), matching TypeScript's explicit Buffer.compare(...,'utf8') rule
-    -- byte-for-byte, including for non-ASCII/supplementary-plane identifiers.
+    -- Verifies every member against canonical_relationships on exact tenant +
+    -- relationship_id + relationship_state_id + source_canonical_object_id
+    -- (= the comparison subject) + source_kind = AGENT_VERSION + a closed M15
+    -- V1 dependency relationship_type + (when the paired RuntimeObservation
+    -- is available) that type matching the observation's own kind + (when
+    -- supplied) an exact decisionId match - never accepted merely because a
+    -- relationshipId/relationshipStateId/source id happens to exist. This is
+    -- a narrow evidence-reference check: it never recomputes an outcome.
+    -- In the same pass, frames each verified member (relationshipId,
+    -- relationshipStateId, an explicit decisionId-presence flag,
+    -- decisionId-or-'') for identity purposes - the frames are then sorted
+    -- by the lexicographic order of their own explicit UTF-8 bytes
+    -- (convert_to(...,'UTF8'), a bytea comparison — never database/session
+    -- collation, never caller input order), matching TypeScript's explicit
+    -- Buffer.compare(...,'utf8') rule byte-for-byte, including for
+    -- non-ASCII/supplementary-plane identifiers.
     with input_states as (
       select
         value->>'relationshipId' as relationship_id,
@@ -384,7 +451,8 @@ begin
       from jsonb_array_elements(v_states) value
     ), verified as (
       select i.*, r.relationship_id as db_relationship_id, r.relationship_state_id as db_state_id,
-        r.source_canonical_object_id as db_source, r.created_by_decision_id as db_decision,
+        r.source_canonical_object_id as db_source, r.source_kind as db_source_kind,
+        r.relationship_type as db_relationship_type, r.created_by_decision_id as db_decision,
         gov_repo.frame_identity(array[i.relationship_id, i.relationship_state_id,
           case when i.decision_present then '1' else '0' end, coalesce(i.decision_id,'')]) as member_frame
       from input_states i
@@ -394,6 +462,9 @@ begin
     select
       bool_or(db_relationship_id is null or db_state_id is distinct from relationship_state_id
         or db_source is distinct from (p_result#>>'{subject,objectId}')
+        or db_source_kind is distinct from 'AGENT_VERSION'
+        or db_relationship_type not in ('USES_MODEL','USES_TOOL','USES_MCP','INVOKES')
+        or (v_expected_relationship_type is not null and db_relationship_type is distinct from v_expected_relationship_type)
         or (decision_present and db_decision is distinct from decision_id)),
       array_agg(member_frame order by convert_to(member_frame,'UTF8'))
     into v_relationship_mismatch, v_left_member_frames
@@ -402,9 +473,6 @@ begin
     v_left_member_frames := coalesce(v_left_member_frames, array[]::text[]);
   elsif v_left_kind is not null then
     raise exception 'CROSS_SIGNAL_RESULT_LEFT_KIND_INVALID';
-  end if;
-  if v_left_kind is distinct from 'RELATIONSHIP_STATE_SET' and jsonb_array_length(v_states) <> 0 then
-    raise exception 'CROSS_SIGNAL_RESULT_INVALID';
   end if;
 
   -- Database-authoritative identity (ADR §13/§15) — built exclusively from the
@@ -488,7 +556,23 @@ begin
   r.reason := p_result->>'reason';
   r.evaluated_at := (p_result->>'evaluatedAt')::timestamptz;
 
-  insert into gov_repo.cross_signal_comparison_results select r.*;
+  -- Explicit column list, never `insert ... select r.*`: recorded_at is
+  -- deliberately OMITTED here so the table's own `default clock_timestamp()`
+  -- assigns it. r.recorded_at is never assigned above (it stays NULL on the
+  -- composite variable, since recorded_at is a server-assigned audit
+  -- timestamp, not a caller-supplied field) - selecting r.* positionally
+  -- would have inserted that NULL directly into a NOT NULL column, failing
+  -- every first insert. An explicit list also means a future column added to
+  -- this table can never silently change this RPC's insert contract.
+  insert into gov_repo.cross_signal_comparison_results (
+    organisation_id, comparison_id, subject_object_id, dimension, pairing_mode, method_code, method_version,
+    left_kind, left_execution_field_state_id, left_execution_field_state_decision_id, left_execution_field_state_snapshot_id,
+    right_observation_id, right_connection_id, left_temporal_basis, right_temporal_basis, outcome, reason, evaluated_at
+  ) values (
+    r.organisation_id, r.comparison_id, r.subject_object_id, r.dimension, r.pairing_mode, r.method_code, r.method_version,
+    r.left_kind, r.left_execution_field_state_id, r.left_execution_field_state_decision_id, r.left_execution_field_state_snapshot_id,
+    r.right_observation_id, r.right_connection_id, r.left_temporal_basis, r.right_temporal_basis, r.outcome, r.reason, r.evaluated_at
+  );
 
   if v_left_kind = 'RELATIONSHIP_STATE_SET' then
     insert into gov_repo.cross_signal_comparison_left_relationship_states (organisation_id,comparison_id,relationship_id,relationship_state_id,decision_id)
@@ -500,7 +584,7 @@ begin
 end;
 $$;
 
-comment on function gov_repo.record_cross_signal_comparison_result(uuid,text,jsonb,jsonb) is
+comment on function gov_repo.record_cross_signal_comparison_result(uuid,text,jsonb) is
   'GOV IA M15 V1 write boundary. The DATABASE derives and owns the deterministic comparison identity (ADR §13/§15) from its own validated evidence lookups, using gov_repo.frame_identity + extensions.digest(...,''sha256''); p_comparison_id is at most a caller consistency assertion, verified and rejected on mismatch (CROSS_SIGNAL_COMPARISON_IDENTITY_MISMATCH), never the authority. Persists parent + child rows atomically in one transaction; identical replay returns the original row (original evaluated_at preserved); any semantic mismatch under the same DB-computed identity fails closed with CROSS_SIGNAL_COMPARISON_REPLAY_CONFLICT. No canonical_objects/canonical_relationships/execution_field_states/runtime_observations write ever occurs here — every reference is independently re-verified, never written.';
 
 -- -----------------------------------------------------------------------------
@@ -528,7 +612,7 @@ revoke all on gov_repo.cross_signal_comparison_results, gov_repo.cross_signal_co
 grant select on gov_repo.cross_signal_comparison_results, gov_repo.cross_signal_comparison_left_relationship_states to service_role;
 
 revoke all on function gov_repo.cross_signal_immutable() from public,anon,authenticated,service_role;
-revoke all on function gov_repo.record_cross_signal_comparison_result(uuid,text,jsonb,jsonb) from public,anon,authenticated,service_role;
-grant execute on function gov_repo.record_cross_signal_comparison_result(uuid,text,jsonb,jsonb) to service_role;
+revoke all on function gov_repo.record_cross_signal_comparison_result(uuid,text,jsonb) from public,anon,authenticated,service_role;
+grant execute on function gov_repo.record_cross_signal_comparison_result(uuid,text,jsonb) to service_role;
 
 commit;
