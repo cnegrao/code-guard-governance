@@ -165,6 +165,32 @@ function isoTimestamp(value: unknown): IsoTimestamp {
   if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) invalid();
   return value as IsoTimestamp;
 }
+
+/**
+ * M15-specific exact epoch-nanosecond parse of an RFC3339 PostgreSQL/PostgREST
+ * timestamptz string (`Z` or an explicit `+HH:mm`/`-HH:mm` offset, up to 9
+ * fractional digits). `Date.parse` alone collapses fractional seconds to
+ * milliseconds, which is unsafe for the M15 [validFrom, validTo) boundary
+ * comparisons this ADR requires - the whole-second/timezone base is
+ * delegated to `Date.parse` (safe: no fractional component ever reaches it),
+ * while the fractional-second remainder is parsed as an exact digit string
+ * and combined with BigInt arithmetic, never floating point. Returns
+ * `undefined` - never a truncated or approximated value - for any format
+ * `Date.parse` might otherwise accept but this stricter grammar does not
+ * (no offset, a decimal comma, or more than 9 fractional digits); callers
+ * fail closed on `undefined` rather than silently truncating precision.
+ */
+const CROSS_SIGNAL_TIMESTAMP_PATTERN = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}:\d{2})$/;
+export function crossSignalTimestampEpochNanos(value: string): bigint | undefined {
+  const match = CROSS_SIGNAL_TIMESTAMP_PATTERN.exec(value);
+  if (!match) return undefined;
+  const [, base, fraction, zone] = match;
+  const wholeMillis = Date.parse(`${base}${zone}`);
+  if (!Number.isFinite(wholeMillis)) return undefined;
+  const wholeNanos = BigInt(wholeMillis) * BigInt(1000000);
+  const fractionNanos = fraction ? BigInt(fraction.padEnd(9, '0')) : BigInt(0);
+  return wholeNanos + fractionNanos;
+}
 function canonicalObjectIdentity(value: unknown, kind: 'AGENT_VERSION'): CanonicalObjectIdentity<'AGENT_VERSION'> {
   const c = closed(value, ['organisationId', 'objectId', 'kind']);
   if (c.kind !== kind) invalid();
@@ -182,7 +208,11 @@ function relationshipStateSetMember(value: unknown): CrossSignalRelationshipStat
   const m = closed(value, ['relationshipId', 'relationshipStateId', 'validFrom'], ['decisionId', 'validTo']);
   const validFrom = isoTimestamp(m.validFrom);
   const validTo = m.validTo === undefined ? undefined : isoTimestamp(m.validTo);
-  if (validTo !== undefined && Date.parse(validTo) <= Date.parse(validFrom)) invalid();
+  if (validTo !== undefined) {
+    const fromNanos = crossSignalTimestampEpochNanos(validFrom);
+    const toNanos = crossSignalTimestampEpochNanos(validTo);
+    if (fromNanos === undefined || toNanos === undefined || toNanos <= fromNanos) invalid();
+  }
   return Object.freeze({ relationshipId: nonEmptyString(m.relationshipId) as RelationshipId,
     relationshipStateId: nonEmptyString(m.relationshipStateId) as RelationshipStateId,
     ...(m.decisionId === undefined ? {} : { decisionId: nonEmptyString(m.decisionId) }),

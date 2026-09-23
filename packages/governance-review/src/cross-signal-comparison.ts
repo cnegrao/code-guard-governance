@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
-  createCrossSignalComparisonResult, createExecutionFact, sortCrossSignalRelationshipStateSet,
+  createCrossSignalComparisonResult, createExecutionFact, crossSignalTimestampEpochNanos, sortCrossSignalRelationshipStateSet,
   type CanonicalObjectIdentity, type CrossSignalComparisonResult, type CrossSignalDependencyRelationshipType,
   type CrossSignalEvidenceReference, type CrossSignalRelationshipStateSetMember, type CrossSignalTemporalBasis,
   type ExecutionPrincipalReference, type IsoTimestamp, type OrganisationId, type RelationshipId, type RelationshipStateId,
@@ -57,8 +57,22 @@ function isoTimestamp(value: unknown): IsoTimestamp {
   return value as IsoTimestamp;
 }
 function evaluatedAt(value: unknown): IsoTimestamp { return isoTimestamp(value); }
+/**
+ * Renders a RuntimeObservation nanosecond instant (e.g. startedAtUnixNano) as
+ * an exact RFC3339 timestamp, preserving up to 9 fractional digits. Unlike
+ * `new Date(ms).toISOString()`, which only ever emits 3 fractional digits and
+ * would silently collapse sub-millisecond precision, this reconstructs the
+ * whole-second base via Date (safe: no fractional component reaches it) and
+ * appends the exact sub-second nanosecond remainder as a zero-padded digit
+ * string - never through float division.
+ */
 function nanosToIsoTimestamp(nanos: bigint): IsoTimestamp {
-  return new Date(Number(nanos / BigInt(1000000))).toISOString() as IsoTimestamp;
+  const nanosPerSecond = BigInt(1000000000);
+  let wholeSeconds = nanos / nanosPerSecond;
+  let remainderNanos = nanos % nanosPerSecond;
+  if (remainderNanos < BigInt(0)) { remainderNanos += nanosPerSecond; wholeSeconds -= BigInt(1); }
+  const base = new Date(Number(wholeSeconds) * 1000).toISOString();
+  return `${base.slice(0, -5)}.${remainderNanos.toString().padStart(9, '0')}Z` as IsoTimestamp;
 }
 function runtimeEvidence(runtime: RuntimeObservation): CrossSignalEvidenceReference {
   return { kind: 'RUNTIME_OBSERVATION', observationId: runtime.observationId, connectionId: runtime.sourceConnection.connectionId };
@@ -178,7 +192,11 @@ function validateGovernedState(value: unknown, organisationId: OrganisationId,
   if (target.kind !== DEPENDENCY_RELATIONSHIP_TYPE_TO_TARGET_KIND[relationshipType]) reject('CROSS_SIGNAL_RELATIONSHIP_TYPE_MISMATCH');
   const validFrom = isoTimestamp(s.validFrom);
   const validTo = s.validTo === undefined ? undefined : isoTimestamp(s.validTo);
-  if (validTo !== undefined && Date.parse(validTo) <= Date.parse(validFrom)) reject('CROSS_SIGNAL_REQUEST_INVALID');
+  if (validTo !== undefined) {
+    const fromNanos = crossSignalTimestampEpochNanos(validFrom);
+    const toNanos = crossSignalTimestampEpochNanos(validTo);
+    if (fromNanos === undefined || toNanos === undefined || toNanos <= fromNanos) reject('CROSS_SIGNAL_REQUEST_INVALID');
+  }
   const source = subject(s.source, organisationId);
   if (source.objectId !== expectedSubject.objectId) reject('CROSS_SIGNAL_SUBJECT_MISMATCH');
   return Object.freeze({ relationshipId, relationshipStateId, ...(decisionId === undefined ? {} : { decisionId }), source,
@@ -212,11 +230,20 @@ export interface CrossSignalDependencyComparisonRequest {
   readonly evaluatedAt: IsoTimestamp;
 }
 
+/**
+ * [validFrom, validTo) membership at nanosecond precision. validFrom/validTo
+ * already passed validateGovernedState's own crossSignalTimestampEpochNanos
+ * parse before a state ever reaches here, so `undefined` below should be
+ * unreachable in practice; the reject() calls are defense-in-depth, never a
+ * silent fallback to millisecond-truncated Date.parse arithmetic.
+ */
 function isEffectiveAt(state: { readonly validFrom: IsoTimestamp; readonly validTo?: IsoTimestamp }, eventNanos: bigint): boolean {
-  const fromNanos = BigInt(Date.parse(state.validFrom)) * BigInt(1000000);
+  const fromNanos = crossSignalTimestampEpochNanos(state.validFrom);
+  if (fromNanos === undefined) reject('CROSS_SIGNAL_REQUEST_INVALID');
   if (eventNanos < fromNanos) return false;
   if (state.validTo === undefined) return true;
-  const toNanos = BigInt(Date.parse(state.validTo)) * BigInt(1000000);
+  const toNanos = crossSignalTimestampEpochNanos(state.validTo);
+  if (toNanos === undefined) reject('CROSS_SIGNAL_REQUEST_INVALID');
   return eventNanos < toNanos;
 }
 function toSetMember(state: CrossSignalDependencyGovernedState): CrossSignalRelationshipStateSetMember {

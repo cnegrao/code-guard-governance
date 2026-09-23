@@ -74,3 +74,19 @@ test('sortCrossSignalRelationshipStateSet normalizes order deterministically', (
   const b = { relationshipId: 'rel-b', relationshipStateId: 'a', validFrom: evaluatedAt };
   assert.deepEqual(sortCrossSignalRelationshipStateSet([a, b]), [b, a]);
 });
+
+test('a validFrom/validTo pair within the same JavaScript millisecond constructs successfully (M15.1B)', () => {
+  const result = createCrossSignalComparisonResult(dependencyBase({
+    left: { kind: 'RELATIONSHIP_STATE_SET', states: [{ relationshipId: 'rel-1', relationshipStateId: 'rel-state-1',
+      validFrom: '2026-09-01T00:00:00.123456Z', validTo: '2026-09-01T00:00:00.123789Z' }] },
+  }));
+  assert.equal(result.left.states[0].validFrom, '2026-09-01T00:00:00.123456Z');
+  assert.equal(result.left.states[0].validTo, '2026-09-01T00:00:00.123789Z');
+});
+
+test('a reversed same-millisecond microsecond validFrom/validTo pair is refused, never collapsed by Date.parse (M15.1B)', () => {
+  assert.throws(() => createCrossSignalComparisonResult(dependencyBase({
+    left: { kind: 'RELATIONSHIP_STATE_SET', states: [{ relationshipId: 'rel-1', relationshipStateId: 'rel-state-1',
+      validFrom: '2026-09-01T00:00:00.123789Z', validTo: '2026-09-01T00:00:00.123456Z' }] },
+  })), { message: 'CROSS_SIGNAL_COMPARISON_RESULT_INVALID' });
+});

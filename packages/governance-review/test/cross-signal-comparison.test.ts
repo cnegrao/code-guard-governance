@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import {
   asOrganisationId, asCanonicalObjectId, asSourceConnectionId, asSourceSystemId, asIsoTimestamp, asObjectSourceMappingId, asExternalId,
   asRuntimeObservationId, asRuntimeTraceId, asRuntimeSpanId, asRuntimeUnixNano, asRuntimeDeploymentBindingId,
-  asRelationshipId, asRelationshipStateId,
+  asRelationshipId, asRelationshipStateId, crossSignalTimestampEpochNanos,
   runtimeKnown as known, runtimeUnknown as unknown,
   type RuntimeObservation, type RuntimeObservationEnvelope, type RuntimeObservationKind, type RuntimeSubjectBinding,
   type RuntimeAvailability, type CanonicalObjectIdentity, type ExecutionPrincipalReference,
@@ -102,6 +102,14 @@ function dependencyRequest(overrides: Partial<CrossSignalDependencyComparisonReq
   return { organisationId: org, subject, governedStates: [governedState()], runtime: fixture('MODEL_CALL'), evaluatedAt, ...overrides };
 }
 const nanosOf = (iso: string): bigint => BigInt(Date.parse(iso)) * 1_000_000n;
+// Nanosecond-exact companion to nanosOf above, reusing the same shared M15
+// precision helper the implementation itself uses (single source of truth,
+// not a second subtly different test-local parsing algorithm).
+function preciseNanosOf(iso: string): bigint {
+  const nanos = crossSignalTimestampEpochNanos(iso);
+  if (nanos === undefined) throw new Error(`test fixture timestamp unparseable: ${iso}`);
+  return nanos;
+}
 
 // ---------------------------------------------------------------------------
 // PRINCIPAL_IDENTITY
@@ -348,6 +356,74 @@ test('validTo <= validFrom fails closed before effective-set logic', () => {
   assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
     governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.000Z'), validTo: asIsoTimestamp('2026-08-01T00:00:00.000Z') })],
   })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
+});
+
+// ---------------------------------------------------------------------------
+// M15.1B - nanosecond temporal-boundary precision (never collapsed through
+// Date.parse's millisecond truncation)
+// ---------------------------------------------------------------------------
+
+test('sub-millisecond boundary: event 1ns before validFrom is not yet effective', () => {
+  const result = compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.123456Z'), validTo: asIsoTimestamp('2026-09-01T00:00:01.000000Z') })],
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf('2026-09-01T00:00:00.123455999Z')) }),
+  }));
+  assert.equal(result.outcome, 'INSUFFICIENT_EVIDENCE'); assert.equal(result.reason, 'DESIGN_TIME_BASELINE_NOT_EFFECTIVE');
+});
+
+test('sub-millisecond boundary: event exactly at validFrom to the nanosecond is effective (inclusive lower bound)', () => {
+  const result = compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.123456Z'), validTo: asIsoTimestamp('2026-09-01T00:00:01.000000Z') })],
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf('2026-09-01T00:00:00.123456000Z')) }),
+  }));
+  assert.equal(result.outcome, 'CONSISTENT');
+});
+
+test('sub-millisecond boundary: event 1ns before validTo is still effective (exclusive upper bound not yet reached)', () => {
+  const result = compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.000000Z'), validTo: asIsoTimestamp('2026-09-01T00:00:00.123789Z') })],
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf('2026-09-01T00:00:00.123788999Z')) }),
+  }));
+  assert.equal(result.outcome, 'CONSISTENT');
+});
+
+test('sub-millisecond boundary: event exactly at validTo to the nanosecond is NOT effective (exclusive upper bound)', () => {
+  const result = compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.000000Z'), validTo: asIsoTimestamp('2026-09-01T00:00:00.123789Z') })],
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf('2026-09-01T00:00:00.123789000Z')) }),
+  }));
+  assert.equal(result.outcome, 'INSUFFICIENT_EVIDENCE'); assert.equal(result.reason, 'DESIGN_TIME_BASELINE_NOT_EFFECTIVE');
+});
+
+test('a validFrom/validTo pair within the same JavaScript millisecond is accepted, never collapsed to an equal/invalid interval', () => {
+  const result = compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.123456Z'), validTo: asIsoTimestamp('2026-09-01T00:00:00.123789Z') })],
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf('2026-09-01T00:00:00.123600000Z')) }),
+  }));
+  assert.equal(result.outcome, 'CONSISTENT');
+});
+
+test('a reversed same-millisecond microsecond interval fails closed, never accepted by a millisecond-collapsed comparison', () => {
+  assert.throws(() => compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-09-01T00:00:00.123789Z'), validTo: asIsoTimestamp('2026-09-01T00:00:00.123456Z') })],
+  })), { message: 'CROSS_SIGNAL_REQUEST_INVALID' });
+});
+
+test('RUNTIME_EVENT_TIME temporal basis preserves startedAtUnixNano to full nanosecond precision, never collapsed to .123Z', () => {
+  const instant = '2026-09-01T00:00:00.123456789Z';
+  const result = comparePrincipalIdentityDesignTimeVsRuntime(principalRequest({
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf(instant)) }),
+  }));
+  assert.deepEqual(result.rightTemporalBasis, { basis: 'RUNTIME_EVENT_TIME', value: instant });
+});
+
+test('RUNTIME_EVENT_TIME precision also holds for the DEPENDENCY_TARGET_IDENTITY dimension', () => {
+  const instant = '2026-09-01T00:00:00.987654321Z';
+  const result = compareDependencyTargetIdentityDesignTimeVsRuntime(dependencyRequest({
+    governedStates: [governedState({ validFrom: asIsoTimestamp('2026-01-01T00:00:00.000Z') })],
+    runtime: fixture('MODEL_CALL', { startedAtUnixNano: String(preciseNanosOf(instant)) }),
+  }));
+  assert.deepEqual(result.rightTemporalBasis, { basis: 'RUNTIME_EVENT_TIME', value: instant });
 });
 
 // ---------------------------------------------------------------------------
