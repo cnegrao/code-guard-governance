@@ -161,7 +161,16 @@ export function comparePrincipalIdentityDesignTimeVsRuntime(request: CrossSignal
   return createCrossSignalComparisonResult({ ...base, left, right, outcome: equal ? 'CONSISTENT' : 'CONFLICT_CANDIDATE' });
 }
 
-const RUNTIME_KIND_TO_DEPENDENCY_RELATIONSHIP_TYPE: Readonly<Partial<Record<RuntimeObservation['kind'], CrossSignalDependencyRelationshipType>>> = {
+/**
+ * The single frozen RuntimeObservationKind -> CrossSignalDependencyRelationshipType
+ * mapping (ADR §7.1's dependency-target dimension). EXECUTION has no entry -
+ * deliberately, since DEPENDENCY_TARGET_IDENTITY has no EXECUTION-shaped
+ * governed relationship type to compare against. Exported so the dashboard
+ * orchestration layer (M15.3B) can derive the same relationship type before
+ * calling resolveDependencyGovernedStates, rather than maintaining a second,
+ * divergence-prone copy of this frozen mapping.
+ */
+export const RUNTIME_KIND_TO_DEPENDENCY_RELATIONSHIP_TYPE: Readonly<Partial<Record<RuntimeObservation['kind'], CrossSignalDependencyRelationshipType>>> = {
   MODEL_CALL: 'USES_MODEL', TOOL_CALL: 'USES_TOOL', MCP_CALL: 'USES_MCP', API_CALL: 'INVOKES',
 };
 const DEPENDENCY_RELATIONSHIP_TYPE_TO_TARGET_KIND: Readonly<Record<CrossSignalDependencyRelationshipType, RuntimeTargetKind>> = {
