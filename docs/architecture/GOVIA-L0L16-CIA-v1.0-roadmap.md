@@ -181,10 +181,13 @@ M14 close
 → M22
 ```
 
-## Current execution position (2026-09-18)
+## Current execution position (2026-09-24)
 
-- Current work is **M14 — RUNTIME & OBSERVABILITY V1**.
-- The next structural V0 gate after M14 closure is **GitHubSourceAdapter**,
-  establishing the GitHub canonical source foundation through the governed
-  path above before material M15 execution.
-- Then **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1**.
+- **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1: CLOSED / MERGED**, at
+  canonical base `f431fa6901bfdb58cb1729553ea0193568fcc160`.
+- **M16 — OWNERSHIP / BUSINESS / POLICY / CONTROL ENRICHMENT V1:
+  ARCHITECTURE FREEZE CANDIDATE**. The
+  [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
+  is **PROPOSED / ARCHITECTURE FREEZE CANDIDATE**, with owner approval pending.
+  This is a documentation gate, not a claim that M16 is implemented; frozen
+  architecture and implementation coverage claims remain unchanged.
