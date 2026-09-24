@@ -2,7 +2,7 @@ import { org, foreign, sql, literal, composite } from './runtime-database';
 
 /** Explicit administrator fixtures in the disposable DB, before runtime admission.
  * These are governed/source support fixtures, not a runtime canonical creation path. */
-export async function seedGovernedSupport() {
+export async function seedGovernedSupport(runSql: (query: string) => Promise<string> = sql) {
   for (const [tenant, suffix, kind, external] of [
     [org,'m142-version','AGENT_VERSION','agent.ts'], [foreign,'m142-foreign-version','AGENT_VERSION','foreign.ts'],
     [org,'m142-model','MODEL','requested-model'], [foreign,'m142-foreign-model','MODEL','requested-model'],
@@ -14,7 +14,7 @@ export async function seedGovernedSupport() {
     const envelope={candidateId:candidate,candidateKind:kind,sourceObject:{connectionId:source,externalType:'source',externalId:external},
       findingId:finding,assertionIds:['assertion-'+suffix],evidenceIds:[],confidence:1,requiresReconciliation:true,
       proposedIdentity:kind==='MODEL'?{modelReference:identity}:kind==='AGENT'?{agentCode:identity}:{} };
-    await sql(`insert into gov_repo.acquisition_runs(run_id,organisation_id,source_connection_id,source_system_id,adapter_name,adapter_version,mode,status,started_at)
+    await runSql(`insert into gov_repo.acquisition_runs(run_id,organisation_id,source_connection_id,source_system_id,adapter_name,adapter_version,mode,status,started_at)
       values('${run}','${tenant}','${source}','catalog','fixture','1','FULL','RUNNING',now());
       insert into gov_repo.discovery_findings(organisation_id,finding_id,finding_nature,candidate_kind,source_connection_id,source_external_type,source_external_id,
       confidence,review_status,requires_review,creates_canonical_object,detected_at,acquisition_run_id,contract_version,envelope,envelope_hash)
@@ -35,7 +35,7 @@ export async function seedGovernedSupport() {
       normalized_object_identity,candidate_id,created_by_decision_id,match_method,valid_from)
       values('mapping-${suffix}','${tenant}','${suffix}','${kind}','${source}','source',${literal(external)},'${identity}','${candidate}','${decision}','MANUAL',now());`);
   }
-  await sql(`insert into gov_repo.execution_source_snapshots values('${org}','m13-snapshot','m13-scope','candidate:agent-version:${'a'.repeat(32)}',
+  await runSql(`insert into gov_repo.execution_source_snapshots values('${org}','m13-snapshot','m13-scope','candidate:agent-version:${'a'.repeat(32)}',
    'catalog-m142-version','catalog','provider','source','agent.ts','entrypoint','snapshot-m142-version',repeat('a',32),'1.0','UNKNOWN',now(),'fixture-digest');`);
 }
 export function binding() {

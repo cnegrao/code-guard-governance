@@ -1,0 +1,19 @@
+name: M15 PostgreSQL regression
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  postgres-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Locate runner PostgreSQL binaries
+        run: echo "PG_BIN=$(pg_config --bindir)" >> "$GITHUB_ENV"
+      - name: Execute M15 against a new disposable PostgreSQL cluster
+        run: npm run test:postgres --workspace codeguard-os
