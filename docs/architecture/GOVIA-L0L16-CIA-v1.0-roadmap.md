@@ -186,8 +186,13 @@ M14 close
 - **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1: CLOSED / MERGED**, at
   canonical base `f431fa6901bfdb58cb1729553ea0193568fcc160`.
 - **M16 — OWNERSHIP / BUSINESS / POLICY / CONTROL ENRICHMENT V1:
-  ARCHITECTURE FREEZE CANDIDATE**. The
+  ARCHITECTURE FREEZE ACCEPTED / FROZEN**. The
   [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
-  is **PROPOSED / ARCHITECTURE FREEZE CANDIDATE**, with owner approval pending.
-  This is a documentation gate, not a claim that M16 is implemented; frozen
-  architecture and implementation coverage claims remain unchanged.
+  is **ACCEPTED / FROZEN**, with owner approval granted on **2026-09-24**.
+- M16 implementation has **NOT started**. The Architecture Freeze PR is
+  **pending merge into main**; implementation must not start from this
+  documentation branch before that merge.
+- The first implementation gate after merge is **M16-S0 — Verified Governance
+  Principal**. No M17/M18/M19 work is started by this freeze.
+- This records architecture approval only; frozen CIA baseline semantics,
+  milestone definitions, and implementation coverage claims remain unchanged.

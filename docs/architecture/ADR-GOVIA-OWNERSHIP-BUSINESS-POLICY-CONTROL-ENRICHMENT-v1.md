@@ -1,6 +1,6 @@
 # ADR — M16 Ownership / Business / Policy / Control Enrichment V1
 
-**Status:** PROPOSED / ARCHITECTURE FREEZE CANDIDATE
+**Status:** ACCEPTED / FROZEN
 
 **Architecture:** `GOVIA-L0L16-CIA-v1.0` — FROZEN
 
@@ -10,17 +10,30 @@
 
 **Date:** 2026-09-24
 
-**Architecture owner / control plane:** ChatGPT; owner approval pending
+**Architecture owner / control plane:** ChatGPT
 
-**Prior gates (reported inputs):** M16 ARCHITECTURE INVENTORY =
-`READY_FOR_ADR_DESIGN`; M16 CONTRACT v0.2 DELTA REVIEW = `PASS`;
-independent adversarial review completed by Claude.
+**Owner approval:** 2026-09-24 — APPROVED
 
-This ADR specifies the normative V1 contract proposed for owner approval.
-MUST, MUST NOT, and REQUIRED express acceptance requirements for subsequent
-implementation; they do not assert that implementation exists. This ADR is
-not ACCEPTED. Its publication neither approves implementation nor changes
-the frozen baseline, coverage claims, or historical conformance findings.
+**Architecture gates (reported results):** All prior architecture gates passed:
+
+- M16 architecture inventory: `PASS / READY_FOR_ADR_DESIGN`.
+- Contract v0.2 adversarial delta review: `PASS`.
+- Materialized ADR review: `PASS`.
+- Final clarification review: `PASS`.
+- ChatGPT independent architecture audit: `PASS`.
+- BLOCKER/HIGH/MEDIUM requiring architecture change: `NONE`.
+
+The architecture contract is **ACCEPTED / FROZEN**. Owner approval granted on
+2026-09-24 freezes the M16 architecture contract. MUST, MUST NOT, and REQUIRED
+express requirements for subsequent implementation; this approval does NOT
+claim that M16 implementation exists or change the frozen CIA baseline,
+coverage claims, or historical conformance findings.
+
+Implementation MUST conform to this ADR and O01–O55. No architectural change
+may be introduced during implementation without explicit ADR treatment.
+Implementation MUST NOT start from this documentation branch before the
+Architecture Freeze PR is merged into main. The first implementation gate
+after merge is M16-S0 — Verified Governance Principal.
 
 ## 1. Decision, scope, and architecture authority
 
@@ -35,7 +48,8 @@ The governing references are:
 
 - [Frozen CIA baseline](./GOVIA-L0L16-CIA-v1.0.md), especially §§2–9.
 - [Official roadmap](./GOVIA-L0L16-CIA-v1.0-roadmap.md), with M15 CLOSED /
-  MERGED and M16 ARCHITECTURE FREEZE CANDIDATE at this base.
+  MERGED at the canonical base and M16 ARCHITECTURE FREEZE ACCEPTED / FROZEN;
+  the Architecture Freeze PR is pending merge into main.
 - [Implementation conformance audit](./GOVIA-L0L16-CIA-v1.0-implementation-conformance.md),
   especially G-06 and its reuse/unification requirement. This is a historical
   audit of its stated SHA, not a current M16 implementation certificate.
@@ -876,7 +890,7 @@ must preserve source, tenant, evidence, and authority boundaries.
 
 ## 23. A–O Definition of Done
 
-This explicit A–O mapping is the proposed candidate contract, not a report of
+This explicit A–O mapping is the accepted/frozen contract, not a report of
 implemented coverage. All O acceptance obligations below are REQUIRED before
 future M16 acceptance.
 
@@ -961,7 +975,7 @@ future M16 acceptance.
 ## 24. Delta-review residual closure and approval boundary
 
 All seven remaining delta-review defect areas are explicitly closed in this
-candidate contract. Closure here means a normative decision and acceptance
+accepted/frozen contract. Closure here means a normative decision and acceptance
 obligation, not implemented behavior or a new independent review verdict.
 
 | Residual area | Contract closure | Acceptance linkage |
@@ -977,11 +991,14 @@ obligation, not implemented behavior or a new independent review verdict.
 ### Final materialized-ADR review clarifications
 
 Reported independent review result: **M16 MATERIALIZED ADR REVIEW: PASS**.
-**BLOCKER/HIGH: none.** The final clarification delta incorporates the review's
+**BLOCKER/HIGH: none.** The final clarification delta incorporated the review's
 MEDIUM items **M-1, M-2, M-3, M-4, M-5, M-6** before owner approval, together
 with the measurable LOW acceptance clarifications **L-1 / L-4**. This records
 the supplied review result and the incorporated contract changes; it is not
-a new independent review, implementation validation, or owner approval.
+a new independent review or implementation validation. Subsequent final
+clarification review and ChatGPT independent architecture audit both returned
+PASS, with no BLOCKER/HIGH/MEDIUM requiring architecture change. Owner approval
+was granted on 2026-09-24, accepting and freezing this architecture contract.
 
 The following table traces the supplied clarification topics to normative
 sections and acceptance criteria.
@@ -1001,9 +1018,15 @@ sections and acceptance criteria.
 | L-1 / L-4 measurable acceptance gaps | Explicit family/outcome vocabularies, PII/identity boundaries, graph/vector authority ceiling, permission/role checks, unchanged M15 regression, wrong-fingerprint rejection, and per-class ACL negative controls; O01–O37 retain their numbering (§§21, 23). | O38–O55; 55 total criteria |
 
 The frozen CIA baseline and historical coverage/conformance documents remain
-unchanged. The roadmap's earlier execution-position update remains unchanged
-by this final clarification delta. M16 ADR status remains **PROPOSED /
-ARCHITECTURE FREEZE CANDIDATE**. Acceptance, owner approval, and final M16
-freeze remain pending. This delta changes
-only this ADR: no source, tests, migrations, baseline, database operations,
-or real OpenAI calls are part of this documentation delivery.
+unchanged. The roadmap records the accepted/frozen architecture and pending
+Architecture Freeze PR merge only. M16 ADR status is **ACCEPTED / FROZEN**,
+with **Owner approval: 2026-09-24 — APPROVED**. M16 implementation has NOT
+started. Implementation MUST conform to this ADR and O01–O55; architectural
+changes require explicit ADR treatment. Implementation MUST NOT start from
+this documentation branch before the Architecture Freeze PR is merged into
+main. After merge, the first gate is M16-S0 — Verified Governance Principal.
+
+This approval changes only the ADR and roadmap execution position. No source,
+tests, migrations, frozen CIA baseline, database operations, real OpenAI
+calls, or M16 implementation are part of this documentation delivery. No
+M17/M18/M19 work is started by this freeze.
