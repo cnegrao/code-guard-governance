@@ -95,13 +95,13 @@ object kinds or additional top-level enrichment fact families.
 
 | Artifact | Required responsibility |
 |---|---|
-| `L14Proposal` | Immutable submitted proposal: organisation, submitter, closed subject kind, typed subject content, exact target/version references where applicable, source reference, support associations, and DB-authored submission time. A correction is a new proposal linked to the prior proposal. |
+| `L14Proposal` | Immutable submitted proposal: organisation, submitter, closed subject kind and VALIDATE / REVOKE intent, typed subject content subject to §10 PII restrictions, exact target/version references where applicable, source reference, support associations, and DB-authored submission time. A correction is a new proposal linked to the prior proposal. |
 | `L14AuthorizationDecision` | Immutable action-specific current-eligibility evaluation and snapshot (§7), never a reusable bearer grant. |
-| `L14GovernanceDecision` | Immutable explicit VALIDATE / REJECT / DEFER / REVOKE disposition, actor, proposal, authorization decision, rationale/support, target subject, and decision time. |
-| `L14AuthorityPolicy` + immutable versions | Stable organisation-local policy identity, typed source/scope/permission rules, immutable rule versions, and governed validation/revocation state. |
+| `L14GovernanceDecision` | Immutable explicit VALIDATE / REJECT / DEFER / REVOKE disposition, actor, proposal, authorization decision, closed reason_code, normalized support/evidence references, target subject, and decision time; no arbitrary free-text rationale. |
+| `L14AuthorityPolicy` + immutable versions | Exactly one stable organisation-local policy identity per organisation, typed source/scope/permission rules, immutable versions, and governed validation/revocation state preserving effective-version continuity (§5). |
 | `GovernanceParty` registry + mutable identity mapping/profile | Opaque stable party identity and immutable governed states; separately correctable/erasable directory identity and PII (§10). |
-| `BusinessDomain` registry | Stable tenant-scoped semantic identity and immutable governed states; labels do not establish an assignment. |
-| `InformationDomain` registry | Stable tenant-scoped semantic identity and immutable governed states, distinct from BusinessDomain. |
+| `BusinessDomain` registry | Existing L6 BusinessDomainIdentity as the stable semantic identity, with tenant-scoped governed admission/validation/state lifecycle; no parallel ID namespace. |
+| `InformationDomain` registry | Existing L6 InformationDomainIdentity as the stable semantic identity, with tenant-scoped governed admission/validation/state lifecycle; distinct from BusinessDomain, with no parallel ID namespace. |
 | `ControlDefinition` registry + versions | Stable tenant-scoped definition identity, immutable definition versions, and explicit governed validation state. |
 | Existing `gov_repo.governance_policies` | Reused stable policy store and bounded admission path; no third policy store. |
 | Hardened `gov_repo.policy_versions` | Reused immutable exact policy content/version identity with DB-verified content hash and tenant consistency. |
@@ -114,7 +114,14 @@ Registry state keys MUST include organisation and stable registry identity;
 immutable version subjects additionally pin the exact version identity.
 Validation of a registry entry/version MUST NOT silently validate assignments
 or applicability that reference it. Registry and fact commands MUST preserve
-the same decision lineage, replay, concurrency, and immutability invariants.
+the same applicable authorization/decision lineage, replay, concurrency, and
+immutability invariants. ADMIT retains its authorization and durable admission
+result without manufacturing a VALIDATE governance decision (§7).
+
+An optional human comment MAY live only in a separate mutable/redactable
+annotation surface. Such an annotation is non-authoritative, is not part of
+command/fact identity, and is never required to reconstruct decision semantics.
+It is not an additional authoritative support or fact family (§10).
 
 Normalized support links MUST preserve their exact source/evidence identity,
 tenant, linked proposal/decision/state, and provenance. Evidence content stays
@@ -130,22 +137,42 @@ JSON/EAV authority store.
 ## 5. Root of authority and first-policy bootstrap
 
 `SYSTEM_BOOTSTRAP_L14_AUTHORITY_V1` is immutable and system-defined. It applies
-only when an organisation has no effective organisation-local L14 Authority
-Policy, and only to validate its **FIRST** local Authority Policy version.
-The actor MUST be ACTIVE, currently belong to an active organisation, and
-currently hold persisted `GOVERNANCE_ADMIN` eligibility.
+only for the **FIRST** organisation-local Authority Policy version, before
+an effective local policy exists. It may authorize ONLY ADMIT of that first
+version and VALIDATE of that exact admitted first version. The actor MUST be
+ACTIVE, currently belong to an active organisation, and resolve from current
+persistence to the seeded system role satisfying BOTH
+`role_code = 'GOVERNANCE_ADMIN'` AND `is_system_role = true`. JWT role is not
+evidence of this role, and a same-named non-system role does not qualify.
 
 Bootstrap MUST NOT authorize normal responsibility, business, policy, control,
-party, or domain facts. It MUST use the proposal → authorization → governance
-decision → state chain and record the bootstrap authority identity. Competing
-first-policy commands MUST serialize on the organisation's policy bootstrap
-guard so only one first local policy can be established.
+party, or domain facts. ADMIT MUST record its dedicated authorization and
+non-validated admission result; VALIDATE MUST use the proposal → authorization
+→ governance decision → state chain. Both MUST record the bootstrap authority
+identity and pin the same first version. The bounded bootstrap self-validation
+exception applies only to this first-policy operation. Competing first-policy
+commands MUST serialize on the organisation's policy bootstrap guard so only
+one first identity/version can be established; retries obey §17.
+
+V1 MUST have exactly ONE stable organisation-local `L14AuthorityPolicy`
+identity per organisation, with immutable versions beneath it and at most
+one effective version at any effective instant. First admission establishes
+that stable identity; first validation establishes its effective authority.
+Authority Policy V1 has no autonomous expiry that can silently leave the
+organisation ungoverned. A successor MAY have a future `effective_from`.
 
 Once a local Authority Policy has been established, every subsequent change,
 including its replacement or revocation, MUST be authorized by the effective
-local policy. A proposed successor MUST NOT authorize its own adoption.
-Revocation/expiry MUST NOT reopen first-policy bootstrap: if no local policy
-is then effective, normal actions fail closed. There is no generic fallback
+local policy. A proposed successor MUST NOT authorize its own ADMIT or
+VALIDATE decision. After the first local policy exists,
+an operation that would leave no effective local Authority Policy at an
+instant MUST be rejected. Revocation/replacement therefore requires an
+already validated successor whose effective interval preserves continuity at
+cutover, with no overlap or gap. History MUST NOT be edited to achieve this.
+
+Bootstrap NEVER reopens. Corruption or manual loss outside this governed path
+fails closed and requires an operational break-glass/recovery mechanism
+outside M16 V1; this ADR does not define one. There is no generic fallback
 to JWT `role = org_admin` or to a persisted administrator role alone.
 
 ## 6. Authority Policy mechanics and closed scopes
@@ -166,6 +193,11 @@ The closed V1 permission vocabulary is:
 
 | Permission | Subject kind(s) |
 |---|---|
+| `L14_AUTHORITY_POLICY_ADMIT` | `AUTHORITY_POLICY_VERSION` admission only |
+| `L14_PARTY_ADMIT` | `GOVERNANCE_PARTY` admission only |
+| `L14_DOMAIN_ADMIT` | `BUSINESS_DOMAIN`, `INFORMATION_DOMAIN` admission only |
+| `L14_CONTROL_DEFINITION_ADMIT` | `CONTROL_DEFINITION` admission only |
+| `L14_POLICY_CONTENT_ADMIT` | Reused policy identity/content and `POLICY_VERSION` admission only |
 | `L14_AUTHORITY_POLICY_ADMIN` | `AUTHORITY_POLICY_VERSION` |
 | `L14_PARTY_VALIDATE` | `GOVERNANCE_PARTY` |
 | `L14_DOMAIN_VALIDATE` | `BUSINESS_DOMAIN`, `INFORMATION_DOMAIN` |
@@ -181,8 +213,14 @@ The effective Authority Policy MUST map CURRENT persisted roles/eligibility
 to these permissions, permitted governance actions, source constraints, and
 typed scopes. A permission name alone MUST NOT imply REVOKE, self-validation,
 backdating, future-dating, or any action not explicitly allowed by that policy.
-Unknown permission/action values MUST be rejected. Legacy wildcard role
-permissions MUST NOT implicitly expand this closed vocabulary.
+The closed requested-action vocabulary is `ADMIT`, `VALIDATE`, `REJECT`,
+`DEFER`, `REVOKE`. ADMIT MUST NOT imply VALIDATE, create validated facts,
+or promote trust. Existing *_VALIDATE permissions continue to govern creation
+of VALIDATED state for their respective subjects; Authority Policy validation
+uses `L14_AUTHORITY_POLICY_ADMIN` under the existing effective policy or the
+bounded first-policy bootstrap. Unknown permission/action/scope tags MUST be
+rejected. Legacy wildcard role permissions MUST NOT expand either the closed
+vocabulary or the typed target scope.
 
 Self-validation means an actor validates a proposal they submitted. It MUST
 fail closed unless the effective Authority Policy explicitly permits it for
@@ -210,7 +248,25 @@ unless the effective policy explicitly establishes that authority.
 
 ## 7. Proposal → authorization → decision → state
 
-The mandatory chain is:
+### 7.1. Proposal submission, admission, and validation
+
+These are three distinct operations:
+
+| Operation | Eligibility and effect |
+|---|---|
+| PROPOSAL SUBMISSION | A verified ACTIVE same-tenant user MAY submit a typed LOCAL_HUMAN proposal. This grants no authority, creates no admitted identity/content or validated registry/fact state, performs no trust promotion, and cannot mutate authoritative current heads. Submission is not VALIDATE authority. |
+| ADMISSION | ADMIT, authorized by the matching closed admission permission in §6, creates non-validated identity/content in the bounded registry or reused content store. It preserves source/support and a durable authorization/admission result; it is not a governance VALIDATE outcome and cannot create a validated head or promote trust. |
+| VALIDATION | The matching existing validation permission and an explicit authorized VALIDATE governance decision create VALIDATED state only after all subject and dependency checks pass. |
+
+SYSTEM_SEED and SOURCE_CONNECTION proposals may be submitted only through
+their bounded trusted technical intake, preserving source/provenance; they
+cannot masquerade as LOCAL_HUMAN submissions or gain authority from intake.
+Proposal submission itself is separate from the closed requested governance
+actions. A typed proposal may precede admission, but submission MUST NOT
+implicitly perform ADMIT. Validation MUST resolve any required admitted
+identity/content and its exact version before creating governed state.
+
+The mandatory governed-state chain is:
 
 ```text
 PROPOSAL
@@ -226,6 +282,12 @@ The closed proposal subject kinds are `AUTHORITY_POLICY_VERSION`,
 `BUSINESS_CONTEXT_ASSIGNMENT`, `POLICY_APPLICABILITY`, `CONTROL_APPLICABILITY`,
 and `CONTROL_ASSESSMENT`. No generic subject discriminator is allowed.
 
+Every proposal MUST carry a closed intent: `VALIDATE` or `REVOKE`. A REVOKE
+proposal MUST pin exact `target_state_id`; it cannot carry implicit replacement
+semantics. Replacement requires its own new VALIDATE proposal/state.
+
+### 7.2. Authorization and decision lifecycle
+
 `L14AuthorizationDecision` answers: **may this actor perform this requested
 governance action NOW?** It MUST snapshot actor id, organisation, effective
 role codes, effective permissions, Authority Policy version (or the immutable
@@ -239,7 +301,25 @@ transaction as the decision/state write (§9); a prior preview is insufficient.
 requirements and current authority checks pass. REJECT and DEFER preserve
 their decisions/proposals without creating a validated fact. REVOKE MUST
 identify the governed subject/current state and create an explicit immutable
-revocation/tombstone state. DENY MUST NOT produce an authoritative mutation.
+revocation/tombstone state, subject to continuity/dependency rules.
+
+DENY is a durable `L14AuthorizationDecision`. It consumes the
+`(organisation_id, command_id)` attempt identity and MUST be replayable with
+the original result. It creates NO `L14GovernanceDecision` and NO governed
+state. A caller whose eligibility later changes MUST use a new command_id;
+an identical retry of the denied attempt does not become ALLOW.
+
+For VALIDATE intent, DEFER is non-terminal: a proposal MAY receive DEFER and
+later exactly one terminal VALIDATE or REJECT. VALIDATE and REJECT terminate
+that proposal for validation purposes. Corrected content after either outcome
+requires a NEW proposal linked to the previous proposal. Immutable proposal
+content is never edited, including while deferred. Concurrent terminal
+decisions MUST NOT both succeed.
+
+For REVOKE intent, the only permitted governance outcomes are REVOKE, REJECT,
+DEFER. DEFER is non-terminal; REVOKE or REJECT terminates that intent. A
+REVOKE proposal cannot VALIDATE a replacement. These lifecycle constraints
+are enforced with the command/proposal transactional guards in §17.
 
 The proposal, authorization, governance decision, resulting state (if any),
 source, evidence/support, authority version, and read projection MUST remain
@@ -311,9 +391,30 @@ Verified-session acceptance MUST enforce all of the following:
 - Issuer/audience cutover MUST intentionally invalidate existing sessions.
 - Authoritative governance session age MUST be **<= 8 hours**, measured from
   verified `iat`; refreshing request metadata MUST NOT extend that age.
-- For authoritative command eligibility, token `iat` MUST NOT predate
-  `governance_users.password_changed_at`; timestamp uncertainty MUST NOT grant
-  eligibility. Missing required eligibility information fails closed.
+- For authoritative command eligibility, `governance_users.password_changed_at`
+  MUST be non-null and verified `iat` MUST satisfy the strict second-precision
+  rule below. Missing required eligibility information fails closed.
+
+Before authoritative M16 commands are enabled, the future M16-S0 cutover
+migration MUST normalize legacy NULL `governance_users.password_changed_at`
+values using a DB-authored cutover timestamp for those rows. After that
+normalization, this field is REQUIRED/non-null for governance command
+eligibility. NULL MUST NOT mean unrestricted eligibility. Credential/password
+mutation MUST update `password_changed_at` atomically with the credential
+mutation. These are future migration requirements, not work performed here.
+
+JWT NumericDate `iat` has second precision. Fail-closed command eligibility
+MUST enforce:
+
+```text
+iat_seconds > floor(epoch(password_changed_at))
+```
+
+A token minted in the same wall-clock second as the password change is
+rejected and the user MUST authenticate again. Older tokens are also rejected;
+a later fresh session remains subject to all other eligibility checks. This
+rule does not weaken the issuer/audience cutover that intentionally invalidates
+existing sessions, or the 8-hour maximum age.
 
 Inside the SAME transaction that commits an authoritative state, the write
 RPC MUST revalidate actor existence/active status, organisation
@@ -351,11 +452,33 @@ correctable, pseudonymizable, or erasable without changing historical party
 identity or fact history. A mapping MAY link to a current governance user or
 future enterprise identity. GovernanceParty is NEVER the authorization basis.
 
-BusinessDomain and InformationDomain MUST have distinct tenant-scoped stable
-identities and governed registry states. A legal assignment MUST reference a
-validated registry identity of its exact semantic kind. Stable registry
-identity MUST survive descriptive corrections; authoritative changes require
-new governed states, with no rewriting of old assignments or decision support.
+Immutable `L14Proposal` content for GOVERNANCE_PARTY may contain ONLY the
+random opaque `governancePartyId`, closed party kind, and non-PII typed
+governance metadata explicitly required by this contract. It MUST NOT contain
+name, email, phone, or free-text contact/profile data. Those values live ONLY
+in the separately mutable/erasable directory/profile/mapping, including during
+proposal intake; they MUST NOT be copied into immutable proposal history.
+
+General immutable L14 proposal/authorization/decision/state records MUST NOT
+contain arbitrary free-text rationale that could retain PII. Authoritative
+decision semantics MUST use a closed `reason_code` and normalized
+support/evidence references; unknown reason codes or arbitrary text in place
+of a code MUST be rejected. An optional human comment belongs only in the
+separate mutable/redactable annotation surface (§4). It is not authority,
+is not part of command/fact identity, and is not required to reconstruct the
+decision semantics. Profile erasure/pseudonymization and annotation redaction
+MUST NOT alter fact history.
+
+BusinessDomain registry stable identity IS the existing L6
+`BusinessDomainIdentity` semantic identity. InformationDomain registry stable
+identity IS the existing L6 `InformationDomainIdentity` semantic identity.
+M16/L14 adds governed admission/validation/state lifecycle around those
+existing L6 identities and MUST NOT create a parallel semantic ID namespace.
+Tenant isolation remains mandatory. Labels/descriptions are metadata and
+NEVER define identity. A legal assignment MUST reference a validated registry
+identity of its exact semantic kind. Identity MUST survive descriptive
+corrections; authoritative changes require new governed states, with no
+rewriting of old assignments or decision support.
 
 ## 11. Responsibility roles and target/cardinality matrix
 
@@ -381,6 +504,15 @@ This cannot be achieved by silently overwriting the old party id. All affected
 keys and target/role cardinality MUST be protected transactionally. Multiple
 stewards MUST NOT allow duplicate active states for the same party/key.
 
+Single-owner non-overlap MUST be enforced by the authoritative RPC under the
+SAME fact/head transactional guard as expected-current/concurrency checks,
+never by updating predecessor history. The database guard MUST prevent two
+concurrent commands with different command_id values from creating overlapping
+BUSINESS_OWNER, TECHNICAL_OWNER, or DATA_OWNER states for the same target/role,
+even when they name different parties. DATA_STEWARD remains multi-party, but
+concurrent duplicate active assignment for the same
+`target + DATA_STEWARD + governancePartyId` MUST be rejected.
+
 ## 12. Business context legality and no inheritance
 
 V1 semantic kinds are only `BUSINESS_DOMAIN` and `INFORMATION_DOMAIN`.
@@ -395,6 +527,12 @@ The supersession key is target identity + semantic kind. V1 permits exactly
 one active assignment per such key, referencing a governed registry identity.
 All other pairings are prohibited. BusinessTerm, purpose, and capability
 bindings are deferred.
+
+Semantic-assignment non-overlap MUST be enforced under the same fact/head
+transactional guard used for expected-current/concurrency, including commands
+with different command_id values. Predecessor history MUST NOT be updated
+to satisfy one-active-assignment cardinality. Both domain kinds use the
+existing L6 semantic identities specified in §10.
 
 Assignments are exact-only. There MUST NOT be implicit inheritance from
 AGENT to AGENT_VERSION, DATA_ASSET to DATA_ELEMENT, parent to child, or object
@@ -411,8 +549,9 @@ version approval/status fields MUST NOT become authoritative automatically.
 
 V1 MUST expose bounded application commands for policy identity and immutable
 policy-version creation. These commands MUST derive the tenant/actor from the
-verified principal, check current policy-domain permission and scope, validate
-typed content, and run through constrained RPC admission. Direct SQL is not
+verified principal, check current `L14_POLICY_CONTENT_ADMIT` permission and
+scope for requested action ADMIT, validate typed content, and run through
+constrained RPC admission. Direct SQL is not
 the V1 application admission model. Creating content MUST NOT validate it.
 A `POLICY_VERSION` proposal referencing exact admitted content MUST receive
 an M16-specific authorized VALIDATE decision before governed applicability
@@ -465,12 +604,21 @@ exception/waiver lifecycle is deferred. There MUST NOT be an authoritative
 governance score, control-coverage score, maturity aggregate, or residual-risk
 computation.
 
+Assessment creation/validation requires the pinned applicability state to be
+APPLIES, valid, and non-revoked at assessment `effective_from`, with dependencies
+valid under the same effective/business time and recorded/system cutoff (§18).
+An assessment MUST NOT target DOES_NOT_APPLY, revoked applicability, or
+dependency-invalid applicability. A successor applicability is never selected
+automatically to make assessment admission succeed.
+
 Every validated assessment MUST have `effective_from` and `valid_until`, with
 `valid_until > effective_from`. Its validity interval is
 `[effective_from, valid_until)`; at expiry it ceases to be a current valid
 assessment without a historical row update. A current head alone MUST NOT
 override expiry. An explicit NOT_ASSESSED outcome is distinct from absence
 of a current valid assessment; absence is UNKNOWN in consuming projections.
+`valid_until` IS the assessment's `effective_to`, not a second independent
+end date. The immediate/explicit effective_from rules in §17 apply.
 
 The supersession key is `control_applicability_state_id`; only one current
 assessment state is permitted per applicability state. Corrections and
@@ -483,8 +631,9 @@ if target, control identity, and content are otherwise unchanged. If
 applicability is superseded/revoked, the old assessment remains historical;
 the new/current applicability starts without a current assessment. Reads
 MUST jointly check applicability identity, governed validity/revocation, and
-assessment validity/expiry. A DOES_NOT_APPLY state MUST NOT be reported as
-positive control coverage or satisfaction by aggregation.
+assessment validity/expiry and all pinned dependency validity. A
+DOES_NOT_APPLY state cannot be an assessment target and MUST NOT be reported
+as positive control coverage or satisfaction by aggregation.
 
 ## 16. Exact relationship-state references and F2
 
@@ -513,7 +662,28 @@ with logical fact key, state id, predecessor state id (or explicit first state),
 decision id, Authority Policy version, support/provenance, and trust.
 Supersession appends a new state. Revocation appends an explicit
 tombstone/revocation state. Historical UPDATE/DELETE is prohibited.
-The mutable party directory is the bounded non-authoritative exception in §10.
+The party directory and optional annotation surface are bounded,
+non-authoritative mutable/redactable surfaces (§10), not governed history.
+
+For an immediate-effective command, omitting `effective_from` instructs
+PostgreSQL to assign the transaction effective instant consistently with
+DB-authored command/state timing. For an explicitly supplied client value:
+
+- `effective_from < DB transaction time` is BACKDATED and requires explicit
+  effective Authority Policy permission.
+- `effective_from > DB transaction time` is FUTURE_DATED and requires explicit
+  effective Authority Policy permission.
+- Exact equality is immediate. There is NO implicit clock-skew tolerance;
+  callers wanting ordinary immediate effect MUST omit effective_from.
+
+For RESPONSIBILITY_ASSIGNMENT, BUSINESS_CONTEXT_ASSIGNMENT,
+POLICY_APPLICABILITY, and CONTROL_APPLICABILITY, an immutable explicit
+`effective_to` MAY be supplied only at creation when authorized and MUST
+satisfy `effective_to > effective_from`. Otherwise the interval is open-ended
+and eventual closure is derived from successor/revocation history without
+editing the predecessor. For CONTROL_ASSESSMENT, mandatory `valid_until`
+IS its effective_to (§15). Authority Policy continuity follows §5 and MUST
+NOT be bypassed by applying ordinary fact-expiry semantics to policy versions.
 
 Effective closure derived from a successor/revocation MUST NOT be implemented
 by editing the predecessor's stored interval. Any explicit end known at
@@ -522,13 +692,17 @@ only and MUST be reconstructible from history; their mutation is RPC-only.
 Future-effective states MUST NOT prematurely hide a still-effective state.
 
 Command identity is `organisation_id + command_id`. A deterministic semantic
-fingerprint MUST bind action, actor, typed subject, target, exact pinned
-versions/content, source/support references, temporal intent, and concurrency
+fingerprint MUST bind action, actor, proposal intent, typed subject, target,
+exact pinned versions/content, closed reason_code where applicable,
+source/support references, temporal intent, and concurrency
 expectations. Serialization rules MUST distinguish meaningful absence/value
 differences and normalize only representation differences; transport noise
-and DB-authored result timestamps are not command semantics. PostgreSQL MUST
-independently recompute/verify identity and fingerprint; a TypeScript hash
-alone is insufficient.
+and DB-authored result timestamps are not command semantics. Optional human
+comments are excluded from command/fact identity. An omitted effective_from
+MUST fingerprint as the same immediate-effect intent on retry; it MUST NOT
+be replaced in the retry fingerprint by a newly sampled time. PostgreSQL MUST
+independently recompute/verify command/fact identity and fingerprint; a
+deliberately WRONG caller/TypeScript fingerprint MUST be rejected.
 
 - Same command + same semantic payload MUST return the original durable
   result, including the original `recorded_at`, decision ids, and state ids.
@@ -537,13 +711,20 @@ alone is insufficient.
 - Retries still require a verified same-tenant principal and authorized
   access to the durable result. Returning it is not a new validation and
   MUST NOT replay the state transition under a new timestamp or policy.
+- A durable DENY also consumes the command attempt identity and replays its
+  original authorization result without a governance decision/state. Changed
+  eligibility requires a new command_id, not reevaluation of that attempt.
 
 Each mutation MUST supply `expected_current_state_id` or explicit
 expected-none; omission MUST NOT mean blind overwrite. Enforce unique-successor
 protection, first-state uniqueness, and family/cardinality guards in the
 database, including concurrent distinct command ids. A stale expectation
-MUST fail rather than choose a winner by timing. Durable command result,
-authorization, decision, state, and head update MUST commit atomically.
+MUST fail rather than choose a winner by timing. Proposal terminality and
+dependency validity MUST be protected by the same applicable transactional
+guards. Durable command result, authorization, and any permitted governance
+decision/state/head update MUST commit atomically. DENY commits only its
+authorization and durable result, never a governance decision/state; ADMIT
+commits its non-validated admission result without a VALIDATE decision/state.
 
 As-of reads MUST distinguish effective/business time from recorded/system
 time: ask what was effective at a business instant, as known at a specified
@@ -554,6 +735,26 @@ never rewrite recorded history. An immutable command's replay MUST preserve
 its original effective and recorded times.
 
 ## 18. Conflict and read model
+
+### 18.1. Dependency validity at both temporal coordinates
+
+A governed fact is current/usable ONLY if its own state AND EVERY governed
+registry/version/state dependency it pins are valid at the SAME requested
+effective/business time and recorded/system cutoff. This includes at minimum
+GovernanceParty, BusinessDomain, InformationDomain, PolicyVersion validation
+state, ControlDefinition version validation state, and ControlApplicability
+state, including their pinned dependencies.
+
+Revocation/supersession of a pinned dependency MUST NOT rewrite the dependent
+historical fact. It makes the dependent fact ineligible for current truth from
+the relevant effective instant, evaluated at the requested recorded cutoff.
+Historical as-of readback MUST remain available and reflect what was known
+at that cutoff. Passport and current governed reads MUST return UNKNOWN /
+no-current-fact instead of continuing to present the dependency-invalid fact
+as VALIDATED. They MUST NOT auto-select a replacement party/domain/version/
+state. A replacement binding requires its own governed decision/state.
+
+### 18.2. Conflict projection
 
 Competing proposals MUST remain explicit. Confidence, recency, a local source,
 or LLM output MUST NOT automatically select a winner. Source precedence is
@@ -629,22 +830,29 @@ regression being tested.
 compatibility smoke only, not substitute for PG17 acceptance. Tests MUST
 inspect `pg_catalog` ACLs and exercise actual denied/allowed operations with
 the intended roles. Include a deliberately unsafe/un-revoked negative-control
-object; the ACL checker MUST detect it. A checker that passes that object is
-invalid, even if all intended M16 objects appear secure.
+object; the ACL checker MUST detect it. Negative controls MUST cover each
+applicable privilege surface/class, not only one generic unsafe table:
+table direct DML; TRUNCATE; REFERENCES/TRIGGER/MAINTAIN where applicable;
+sequence privileges; routine EXECUTE; writable/updatable view exposure; and
+inherited/default-grant reintroduction. A checker that misses any applicable
+negative control is invalid, even if intended M16 objects appear secure.
 
 Concurrency tests MUST exercise role/eligibility changes against state
 commitment, not just sequential prechecks. Temporal tests MUST exercise
 expiry, supersession, revocation, and both as-of axes. M15 regression semantics
-MUST NOT be weakened or replaced by this distinct profile. No security/database
-harness is executed or claimed passing by this documentation-only ADR.
+MUST NOT be weakened or replaced by this distinct profile. The existing M15
+PostgreSQL regression MUST remain unchanged and green alongside the new M16
+security profile. No tests or security/database harness are executed or
+claimed passing by this documentation-only ADR.
 
 ## 22. Passport, lineage, graph, vector, LLM, and downstream boundaries
 
 Passport MUST consume M16 governed states only for enrichment affecting
 family 3 Ownership & Responsibility, family 4 Business Context, family 12
 Governance Controls, and family 14 Provenance & Trust where applicable.
-Without a current valid fact it MUST return UNKNOWN. The controls family
-MUST no longer imply coverage from canonical identity alone. Existing
+Without a current valid fact, including when a pinned dependency fails §18.1
+at either requested temporal coordinate, it MUST return UNKNOWN. The controls
+family MUST no longer imply coverage from canonical identity alone. Existing
 non-M16 Passport families retain their established contracts.
 
 L14 MUST expose evidence, policy/control, governance-decision, and temporal
@@ -668,7 +876,7 @@ must preserve source, tenant, evidence, and authority boundaries.
 
 ## 23. A–O Definition of Done
 
-This explicit A–O mapping is the frozen candidate contract, not a report of
+This explicit A–O mapping is the proposed candidate contract, not a report of
 implemented coverage. All O acceptance obligations below are REQUIRED before
 future M16 acceptance.
 
@@ -688,7 +896,7 @@ future M16 acceptance.
 | L | Migration impact | Future bounded L14 persistence and reused policy hardening with raising immutability, replay, ACL postflight; no F2 DDL; this ADR performs no migration (§§13, 16–17, 20–21). |
 | M | Downstream continuity | Preserve M15 regressions; M17 consumes facts without M16 risk authority; M18 projects the same facts; M19 reuses source/authority model (§§8, 21–22). |
 | N | Non-fabrication | No default owner/domain/control success, legacy automatic promotion, inherited assignment, confidence promotion, invented evidence, or risk/coverage score presented as truth (§§8, 11–15, 18–19). |
-| O | Acceptance / quality metrics | All criteria O01–O37 below MUST pass on the specified application and PG17 security harness where applicable; no untested security/coverage claim (§21). |
+| O | Acceptance / quality metrics | All criteria O01–O55 below MUST pass on the specified application and PG17 security harness where applicable; no untested security/coverage claim (§21). |
 
 ### O — Mandatory measurable acceptance criteria
 
@@ -731,6 +939,24 @@ future M16 acceptance.
 | O35 | F2 untouched: no canonical_relationships DDL/mutation or relationship_state_id unique constraint; exact tenant/relationship/state lookup required. |
 | O36 | No M17 risk authority, residual-risk calculation, waiver outcome, or authoritative governance/coverage/maturity aggregate. |
 | O37 | No M18 parallel authority; downstream projections consume the same governed M16 facts. |
+| O38 | Exactly five top-level M16 fact families exist; CONTROL_FINDING cannot create an independent authority head/family. |
+| O39 | GovernanceParty ids are opaque/random; immutable proposal/authorization/decision/state records contain no party profile PII or arbitrary free-text rationale; closed reason_code and normalized support carry decision semantics, and profile erasure/pseudonymization or annotation redaction does not alter fact history. |
+| O40 | Assessment outcomes are exactly SATISFIED, PARTIALLY_SATISFIED, NOT_SATISFIED, NOT_ASSESSED, INSUFFICIENT_EVIDENCE; WAIVED rejected; CONTROL_FINDING remains assessment-bound and cannot outlive or become authority independently of its assessment. |
+| O41 | Conflict read outcomes are exactly RESOLVED, CONFLICT, INSUFFICIENT_EVIDENCE and cannot create a second truth store. |
+| O42 | Graph and Vector acceptance proves derived/projection-only behavior with no write-back or governance authority. |
+| O43 | Authority Policy successor cannot authorize its own ADMIT/VALIDATE; bootstrap resolves exactly persisted seeded role_code = GOVERNANCE_ADMIN AND is_system_role = true, and admits/validates only the same first version. |
+| O44 | Unknown L14 permission/action/scope tags rejected; legacy wildcard permissions cannot expand the closed vocabulary or typed target scope. |
+| O45 | Concurrent duplicate DATA_STEWARD for the same target + role + party rejected while different valid steward parties may coexist; guards do not edit predecessor history. |
+| O46 | Existing M15 PostgreSQL regression remains unchanged and green alongside the new M16 security profile. |
+| O47 | A deliberately caller/TypeScript-computed WRONG command/fact fingerprint is rejected because PostgreSQL independently recomputes/verifies it. |
+| O48 | ACL checker negative controls detect every applicable privilege class: table direct DML; TRUNCATE; REFERENCES/TRIGGER/MAINTAIN where applicable; sequences; routine EXECUTE; writable/updatable views; inherited/default-grant reintroduction. A single generic unsafe-table control is insufficient. |
+| O49 | Revoked/superseded Party/Domain/PolicyVersion/ControlVersion dependencies make dependent facts unavailable as current truth without historical-row mutation; own state and all pinned dependencies use the same effective time and recorded cutoff, with correct historical as-of readback and no auto-selected replacement. |
+| O50 | Proposal submission, ADMIT, and VALIDATE are distinct: verified active same-tenant member submission cannot create admitted or VALIDATED state or mutate authoritative heads; bounded technical intake preserves source/provenance; ADMIT cannot promote trust or imply VALIDATE. |
+| O51 | Authority Policy has exactly one stable identity per organisation, no effective-version overlap/gap after bootstrap, and no autonomous expiry; revocation/replacement requires a validated successor preserving continuity and cannot reopen bootstrap. |
+| O52 | password_changed_at cutover/backfill is non-null before commands are enabled; credential changes update it atomically; same-second and older JWT iat values fail the strict iat_seconds > floor(epoch(password_changed_at)) check; a later fresh session may authorize normally. |
+| O53 | BusinessDomain/InformationDomain registry states use existing L6 BusinessDomainIdentity/InformationDomainIdentity semantic identities; no parallel domain-id namespace or label-defined identity exists. |
+| O54 | DENY is durable/replayable, consumes the command attempt, and creates no governance decision/state; changed eligibility requires a new command_id. DEFER may later terminate in VALIDATE/REJECT; terminal proposal correction requires a new linked proposal; REVOKE intent pins exact target_state_id, permits only REVOKE/REJECT/DEFER, and cannot silently replace state. |
+| O55 | Assessment rejects DOES_NOT_APPLY, revoked, or dependency-invalid applicability at effective_from; valid_until IS its effective_to and exceeds effective_from. Omitted effective_from uses the DB transaction instant; explicit past/future values require policy permission without skew tolerance, and authorized explicit fact effective_to is immutable and strictly later than effective_from. |
 
 ## 24. Delta-review residual closure and approval boundary
 
@@ -748,8 +974,36 @@ obligation, not implemented behavior or a new independent review verdict.
 | 6. Business-context legality/inheritance | Closed two-kind matrix, exact governed domain identity, no implicit inheritance or free-text promotion, UNKNOWN on absence (§12). | O26–O28, O32 |
 | 7. Assessment lifecycle/expiry | Exact applicability-state target, five outcomes, mandatory half-open validity interval, immutable renewal/revocation, no transfer to successors, no WAIVED or score authority (§15). | O23–O25, O30–O32, O36 |
 
-The frozen baseline and historical coverage/conformance documents remain
-unchanged. The roadmap update records execution position only. Acceptance
-and owner approval remain pending; M16 implementation, application changes,
-SQL migrations, database operations, and real OpenAI calls are outside this
-documentation delivery.
+### Final materialized-ADR review clarifications
+
+Reported independent review result: **M16 MATERIALIZED ADR REVIEW: PASS**.
+**BLOCKER/HIGH: none.** The final clarification delta incorporates the review's
+MEDIUM items **M-1, M-2, M-3, M-4, M-5, M-6** before owner approval, together
+with the measurable LOW acceptance clarifications **L-1 / L-4**. This records
+the supplied review result and the incorporated contract changes; it is not
+a new independent review, implementation validation, or owner approval.
+
+The following table traces the supplied clarification topics to normative
+sections and acceptance criteria.
+
+| Final clarification topic | Incorporated normative sections | Acceptance linkage |
+|---|---|---|
+| 1. Proposal / admission / validation separation | Closed admission permissions and ADMIT action; member proposal eligibility, bounded technical intake, non-validated content admission, separate validation (§§4, 6–7, 13). | O43–O44, O50 |
+| 2. Bootstrap role / first version | Persisted seeded system GOVERNANCE_ADMIN, same first version ADMIT + VALIDATE only, bounded self-validation exception (§5). | O13–O14, O43 |
+| 3. Authority Policy cardinality / continuity | One stable identity, immutable versions, no overlap/autonomous expiry/gap, validated successor at cutover, no successor self-authorization or reopened bootstrap (§§5–6, 17). | O43, O51 |
+| 4. Dependency validity | Own state and every pinned governed dependency checked at identical effective/recorded coordinates; invalidation without historical mutation or automatic replacement (§§15, 18.1, 22). | O31–O32, O49, O55 |
+| 5. password_changed_at semantics | Future cutover backfill, non-null eligibility, atomic credential timestamp update, strict second-precision iat comparison (§9). | O07, O52 |
+| 6. L6 domain identity reuse | Existing BusinessDomainIdentity and InformationDomainIdentity are registry stable identities; no parallel namespace or label identity (§§4, 10, 12). | O53 |
+| 7. Party / immutable PII | Restricted immutable party proposal, no arbitrary free-text rationale, closed reason_code + support, mutable/redactable non-authoritative comments outside identity (§§4, 10, 17). | O39 |
+| 8. Decision lifecycle | Durable DENY consumes attempt; DEFER non-terminal; terminal corrections require new proposals; exact REVOKE intent without replacement (§§7, 17). | O54 |
+| 9. Temporal rules | DB immediate instant on omission; explicit back/future date authorization without skew tolerance; immutable fact ends; assessment end and APPLIES-only validity (§§15, 17). | O25, O31, O55 |
+| 10. Cardinality guards | Same fact/head transactional guard for owner/domain non-overlap and duplicate steward exclusion across distinct commands; no predecessor edits (§§11–12, 17). | O22, O26, O45 |
+| L-1 / L-4 measurable acceptance gaps | Explicit family/outcome vocabularies, PII/identity boundaries, graph/vector authority ceiling, permission/role checks, unchanged M15 regression, wrong-fingerprint rejection, and per-class ACL negative controls; O01–O37 retain their numbering (§§21, 23). | O38–O55; 55 total criteria |
+
+The frozen CIA baseline and historical coverage/conformance documents remain
+unchanged. The roadmap's earlier execution-position update remains unchanged
+by this final clarification delta. M16 ADR status remains **PROPOSED /
+ARCHITECTURE FREEZE CANDIDATE**. Acceptance, owner approval, and final M16
+freeze remain pending. This delta changes
+only this ADR: no source, tests, migrations, baseline, database operations,
+or real OpenAI calls are part of this documentation delivery.
