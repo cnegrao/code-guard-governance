@@ -137,14 +137,18 @@ test('M15 real PostgreSQL persistence regression', { timeout: 180000 }, async t 
     begin select r.organisation_id into v from gov_repo.canonical_relationships r limit 1; return v; end $$;`);
   await t.test('Negative control: unqualified output comparison_id produces PostgreSQL 42702', async () => {
     await assert.rejects(sql('select * from public.m15_bad_output();'), error => {
-      assert.match(String(error), /42702: column reference "comparison_id" is ambiguous/);
+      const message = String(error);
+      assert.match(message, /\b42702:/);
+      assert.match(message, /"comparison_id"/);
       t.diagnostic('PostgreSQL SQLSTATE 42702 observed: comparison_id output variable / column collision');
       return true;
     });
   });
   await t.test('Negative control: row variable / alias r.organisation_id produces PostgreSQL 42702', async () => {
     await assert.rejects(sql('select public.m15_bad_alias();'), error => {
-      assert.match(String(error), /42702: column reference "r.organisation_id" is ambiguous/);
+      const message = String(error);
+      assert.match(message, /\b42702:/);
+      assert.match(message, /"r\.organisation_id"/);
       t.diagnostic('PostgreSQL SQLSTATE 42702 observed: r.organisation_id alias / row variable collision');
       return true;
     });
