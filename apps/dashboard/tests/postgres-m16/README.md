@@ -1,4 +1,4 @@
-# M16 credential security — disposable PostgreSQL 17
+# M16 credential + eligibility security — disposable PostgreSQL 17
 
 From `apps/dashboard` with Node 24+ and workspace dependencies installed:
 
@@ -40,8 +40,9 @@ Canonical chain, executed in this order as `postgres`:
 4. `20260903200000_canonical_email_identity.sql`
 5. `20260903200100_atomic_signup_legacy_rpc.sql`
 6. `20260925150000_m16_s0_credential_epoch_v1.sql`
+7. `20260925160000_m16_s0_transactional_eligibility_v1.sql` (S0.3.2; applied by `transactional-eligibility.test.ts` after step 6)
 
-The last migration is first attempted with a future legacy epoch to verify
+The credential migration (step 6) is first attempted with a future legacy epoch to verify
 atomic rollback, then executed successfully while waiting on a real concurrent
 writer. The writer authors a valid epoch after the migration starts waiting;
 this detects a cutover timestamp captured before lock acquisition. Tests cover
@@ -62,6 +63,29 @@ epoch. Its bcrypt/IdP overloading and injection concern remain
 `PRODUCTION_SECURITY_GATE_RESIDUAL`; no new identifier architecture is accepted.
 Owner DDL disabling/dropping the trigger remains Production Security Gate scope.
 
-O07/O52 remain **PARTIAL**: this slice implements cutover/base-table integrity
-and eligible session issuance. Transactional command eligibility, locking and
-human RPC wrappers are later slices. No hosted DB or real OpenAI is needed.
+## S0.3.2 — transactional eligibility helper
+
+`transactional-eligibility.test.ts` proves `gov_repo.lock_and_resolve_governance_session_eligibility_v1`
+on the same real PG17 cluster topology. Concurrency tests use the harness `session(role)`
+(long-lived interactive psql, serial statements, stdout/stderr sentinels) so distinct
+backends hold and contend for real row locks. Blocking is observed through
+`pg_stat_activity.wait_event_type='Lock'` and `pg_blocking_pids()` from a separate
+bootstrap monitor session, never by sleeping alone. Lock order is proven with
+`FOR UPDATE NOWAIT` probes while the helper is blocked on a role row.
+
+Helper posture: PL/pgSQL, VOLATILE, SECURITY DEFINER, `search_path=pg_catalog`,
+function-local `lock_timeout=5s`, READ COMMITTED only, owner-only EXECUTE (all of
+PUBLIC/anon/authenticated/service_role revoked). Lock hierarchy
+ORGANISATION -> GOVERNANCE_USER -> GOVERNANCE_ROLE (ascending role_id), all `FOR SHARE`.
+Failure SQLSTATEs: GV001 session temporal, GV002 credential stale, GV003 actor/org
+ineligible, GV004 role set invalid, GV005 unsupported isolation; lock timeout stays 55P03.
+
+Fixture note: real users get a 12h-old credential epoch via a bootstrap-only,
+single-transaction disable/enable-ALWAYS of the S0.3.1 trigger (same technique as the
+S0.3.1 monotonicity fixture). Exact-second boundary cases derive `t.s` from the DB clock
+in the same statement and first wait past a near-rollover second.
+
+The eligibility helper is not wired to any route or write wrapper (S0.3.3). GraphOS is
+unchanged and not certified here (`PRODUCTION_SECURITY_GATE_RESIDUAL`). O07/O52 remain
+**PARTIAL**; O08/O09/O10 have tested infrastructure but no production integration; O11
+is not complete. No hosted DB or real OpenAI is needed.
