@@ -40,6 +40,7 @@ mock.module("@/lib/auth/persistence", {
       throw new Error("verifyPasswordForAuth should not be called from signup tests");
     },
     verifyPasswordDummyWork: async () => {},
+    isCredentialEpochCurrentForAuth: async () => true,
     resolveRoleCodesForAuth: async () => {
       state.roleLookupCalls += 1;
       return state.roleRows;

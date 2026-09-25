@@ -18,7 +18,8 @@ mock.module('../lib/auth/session-token', { namedExports: {
 mock.module('@/lib/auth/persistence', { namedExports: {
   canonicalizeEmail: (s: string) => s.trim().toLowerCase(),
   findUserIdentityForAuth: async () => ({ ...identity, status: 'active', role_ids: ['admin'], password_changed_at: epoch }),
-  verifyPasswordForAuth: async () => true,
+  verifyPasswordForAuth: async () => ({ valid: true, passwordChangedAt: epoch }),
+  isCredentialEpochCurrentForAuth: async () => true,
   verifyPasswordDummyWork: async () => {},
   getOrganisationForAuth: async () => ({ organisation_id: 'org-1', name: 'Org', is_active: true }),
   resolveRoleCodesForAuth: async () => [{ role_id: 'admin', role_code: 'GOVERNANCE_ADMIN', is_system_role: true }],
@@ -77,5 +78,26 @@ for (const kind of ['login', 'signup']) {
     epoch = new Date(base - 1).toISOString();
     await issue(kind);
     assert.deepEqual(signedAt, [base + 200]);
+  });
+  test(`${kind}: timer wakes after a backward wall-clock step; signer waits for the rechecked boundary`, async t => {
+    // Keep the timer clock separate from Date.now so a scheduled timer can fire
+    // while the backend wall clock has moved backward. No production clock seam.
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    let wallClock = base + 200;
+    t.mock.method(Date, 'now', () => wallClock);
+    const pending = issue(kind);
+    await flush();
+    wallClock = base + 100;
+    t.mock.timers.tick(800);
+    await flush();
+    assert.deepEqual(signedAt, [], 'first wakeup is too early under the new wall clock');
+    wallClock = base + 999;
+    t.mock.timers.tick(899);
+    await flush();
+    assert.deepEqual(signedAt, []);
+    wallClock = base + 1000;
+    t.mock.timers.tick(1);
+    await pending;
+    assert.deepEqual(signedAt, [base + 1000]);
   });
 }

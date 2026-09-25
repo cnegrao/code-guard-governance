@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { credentialMigration, disposableM16Postgres } from '../helpers/disposable-m16-postgres';
+import { credentialMigration, disposableM16Postgres, migrationSource } from '../helpers/disposable-m16-postgres';
 
 test('M16 S0.3.1 canonical disposable PG17 credential security', { timeout: 120000 }, async t => {
   const pg = await disposableM16Postgres(message => t.diagnostic(message));
@@ -52,6 +52,45 @@ test('M16 S0.3.1 canonical disposable PG17 credential security', { timeout: 1200
     assert.equal(await sql(`select to_regprocedure('${helper}') is null`), 't');
     assert.doesNotMatch(await sql("select pg_get_function_result('gov_repo.signup_legacy(varchar,varchar,varchar,varchar)'::regprocedure)"), /password_changed_at/);
     await sql(`delete from ${table} where email='future@example.invalid'`);
+  });
+  await t.test('late pre-COMMIT failure rolls back backfill, function, ALWAYS trigger, NOT NULL and signup replacement', async () => {
+    const usersSnapshot = `select json_agg(r order by email) from
+      (select email,password_changed_at,updated_at from ${table}) r`;
+    const signupSnapshot = `select json_agg(r order by oid) from
+      (select oid,pg_get_functiondef(oid) as definition,pg_get_function_result(oid) as result,proacl,proargnames
+       from pg_proc where pronamespace='gov_repo'::regnamespace and proname='signup_legacy') r`;
+    const beforeUsers = await sql(usersSnapshot);
+    const beforeSignup = await sql(signupSnapshot);
+    const source = migrationSource(credentialMigration);
+    // Modify only an in-memory copy. Prove we reached the final structural state
+    // before raising; an earlier unrelated SQL error cannot satisfy this test.
+    const injected = source.replace(/COMMIT;\s*$/, `
+      do $late_failure$
+      begin
+        if exists(select 1 from ${table} where password_changed_at is null)
+          or to_regprocedure('${helper}') is null
+          or not exists(select 1 from pg_trigger where tgrelid='${table}'::regclass
+            and tgname='${trigger}' and tgenabled='A')
+          or not exists(select 1 from pg_attribute where attrelid='${table}'::regclass
+            and attname='password_changed_at' and attnotnull)
+          or pg_get_function_result('gov_repo.signup_legacy(varchar,varchar,varchar,varchar)'::regprocedure)
+            not like '%password_changed_at%'
+        then raise exception 'M16_TEST_EXPECTED_LATE_STEPS_MISSING'; end if;
+        raise exception 'M16_TEST_LATE_FAILURE_BEFORE_COMMIT';
+      end;
+      $late_failure$;
+      COMMIT;
+    `);
+    assert.notEqual(injected, source, 'failure must be injected immediately before final COMMIT');
+    await assert.rejects(sql(injected, 'postgres'), /M16_TEST_LATE_FAILURE_BEFORE_COMMIT/);
+    assert.equal(await sql(usersSnapshot), beforeUsers, 'backfill and updated_at must roll back');
+    assert.equal(await sql(`select to_regprocedure('${helper}') is null`), 't');
+    assert.equal(await sql(`select count(*) from pg_trigger where tgrelid='${table}'::regclass and tgname='${trigger}'`), '0',
+      'neither trigger nor ENABLE ALWAYS state may survive');
+    assert.equal(await sql(`select attnotnull from pg_attribute where attrelid='${table}'::regclass and attname='password_changed_at'`), 'f');
+    assert.equal(await sql(signupSnapshot), beforeSignup, 'old signup OID, definition, signature and grants must be restored');
+    assert.equal(migrationSource(credentialMigration), source, 'production migration stays unmodified');
+    // The next test executes the canonical source successfully on this same DB.
   });
   await t.test('cutover lock waits for an in-flight writer before capturing the DB instant', async () => {
     // A real concurrent writer authors a valid epoch after migration starts waiting.
@@ -110,6 +149,14 @@ test('M16 S0.3.1 canonical disposable PG17 credential security', { timeout: 1200
     await advancingUpdate('valid@example.invalid', "external_id='idp:second'");
     assert.equal(await sql(`select password_changed_at='2100-01-01T00:00:00.000002Z'::timestamptz
       from ${table} where email='valid@example.invalid'`), 't');
+  });
+  await t.test('post-sign equality predicate distinguishes one-microsecond credential rotations in PostgreSQL', async () => {
+    const id = await sql(`select user_id from ${table} where email='valid@example.invalid'`);
+    const match = (expected: string) => sql(`select count(*) from ${table}
+      where user_id='${id}' and password_changed_at='${expected}'::timestamptz`);
+    assert.equal(await match('2100-01-01T00:00:00.000001Z'), '0');
+    assert.equal(await match('2100-01-01T00:00:00.000002Z'), '1');
+    assert.equal(await match('2100-01-01T00:00:00.000002+00:00'), '1', 'DB timestamp equality, not text equality');
   });
   await t.test('11. independently updating epoch to past/future/NULL preserves old epoch', async () => {
     const before = await epoch('omitted@example.invalid');

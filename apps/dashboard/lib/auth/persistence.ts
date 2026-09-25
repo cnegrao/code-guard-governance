@@ -58,23 +58,52 @@ export async function findUserIdentityForAuth(
   return data;
 }
 
+export type PasswordVerificationForAuth =
+  | { valid: false }
+  | { valid: true; passwordChangedAt: string };
+
+/** The credential and its epoch must come from the same row snapshot. The hash
+ * stays inside this boundary; identity lookup's epoch never authorizes issuance. */
 export async function verifyPasswordForAuth(
   userId: string,
   password: string
-): Promise<boolean> {
-  const { data } = await privilegedDb
+): Promise<PasswordVerificationForAuth> {
+  const { data, error } = await privilegedDb
     .from("governance_users")
-    .select("external_id")
+    .select("external_id, password_changed_at")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
+
+  if (error) throw new AuthPublicError(GENERIC_AUTH_ERROR_MESSAGE, 500);
 
   const storedHash = extractBcryptHash(data?.external_id);
-  if (!storedHash) {
+  if (!data || !storedHash) {
     await compare(password, DUMMY_BCRYPT_HASH);
-    return false;
+    return { valid: false };
   }
 
-  return compare(password, storedHash);
+  if (!await compare(password, storedHash)) return { valid: false };
+  if (typeof data.password_changed_at !== "string" || !data.password_changed_at.trim()) {
+    throw new AuthPublicError(GENERIC_AUTH_ERROR_MESSAGE, 500);
+  }
+  return { valid: true, passwordChangedAt: data.password_changed_at };
+}
+
+/** Post-sign check: PostgreSQL compares the exact timestamp, including
+ * microseconds. Never round it through a JavaScript Date before filtering. */
+export async function isCredentialEpochCurrentForAuth(
+  userId: string,
+  expectedPasswordChangedAt: string,
+): Promise<boolean> {
+  const { data, error } = await privilegedDb
+    .from("governance_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("password_changed_at", expectedPasswordChangedAt)
+    .maybeSingle();
+
+  if (error) throw new AuthPublicError(GENERIC_AUTH_ERROR_MESSAGE, 500);
+  return data?.user_id === userId;
 }
 
 /** Bounded current-role lookup: identity comes from the verified principal,

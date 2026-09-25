@@ -27,7 +27,9 @@ before(async () => {
     if (table === 'organisations') return Response.json(orgRows);
     if (table === 'governance_roles') return Response.json([{ role_id: 'admin', role_code: 'GOVERNANCE_ADMIN', is_system_role: true }]);
     if (table === 'signup_legacy') return Response.json([{ ...user, organisation_name: org.legal_name, role_id: 'admin', role_code: 'GOVERNANCE_ADMIN' }]);
-    if (table === 'governance_users') return Response.json(select === 'external_id' ? { external_id: hash } : select.includes('email') ? user : [user]);
+    if (table === 'governance_users') return Response.json(select === 'external_id,password_changed_at'
+      ? [{ external_id: hash, password_changed_at: user.password_changed_at }]
+      : select.includes('email') ? user : [user]);
     throw new Error('Unexpected transport request');
   });
   persistence = await import('../lib/auth/persistence');

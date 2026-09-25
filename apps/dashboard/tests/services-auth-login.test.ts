@@ -33,7 +33,9 @@ mock.module("@/lib/auth/persistence", {
   namedExports: {
     canonicalizeEmail: (e: string) => e.trim().toLowerCase(),
     findUserIdentityForAuth: async () => state.user,
-    verifyPasswordForAuth: async () => state.passwordValid,
+    verifyPasswordForAuth: async () => state.passwordValid
+      ? { valid: true, passwordChangedAt: "2026-01-01T00:00:00Z" } : { valid: false },
+    isCredentialEpochCurrentForAuth: async () => true,
     verifyPasswordDummyWork: async () => {
       state.dummyWorkCalls += 1;
     },
