@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getOrgId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import * as reportRepo from "@/repositories/reports";
 import { generateDORAReport } from "@/services/reports";
 
 export async function GET() {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const data = await reportRepo.gatherReportData(orgId);
 
     if (data.org.industry !== "financial_services" && data.org.industry !== "insurance") {
@@ -25,6 +25,7 @@ export async function GET() {
       },
     });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Report generation failed" },
       { status: 500 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { asOrganisationId } from "@council/canonical-contracts";
 import { REVIEW_STATE, type ReviewState } from "@council/governance-review";
 
-import { getOrgId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import {
   REVIEW_QUEUE_DEFAULT_PAGE_SIZE,
   REVIEW_QUEUE_MAX_PAGE_SIZE,
@@ -31,7 +31,7 @@ const VALID_CANDIDATE_KINDS = new Set([
 
 export async function GET(request: Request) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { searchParams } = new URL(request.url);
 
     const stateParam = searchParams.get("state") ?? undefined;
@@ -66,6 +66,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     console.error("governance workspace queue query failed", error);
     return NextResponse.json({ error: "Unable to load the governance review queue." }, { status: 500 });
   }

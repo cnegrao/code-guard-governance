@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getOrgId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { semanticSearch, codingMemoryRepo } from "@/services/coding-memory";
 
 export async function GET(request: Request) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("query");
     const repositoryId = searchParams.get("repository_id");
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ error: "action=search requires query, action=repo requires repository_id" }, { status: 400 });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Memory query failed" },
       { status: 500 }

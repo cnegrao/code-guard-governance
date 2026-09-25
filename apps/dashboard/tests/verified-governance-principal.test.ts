@@ -14,6 +14,8 @@ const previousSecret = process.env.JWT_SECRET;
 let cookie: string | undefined;
 let headerReads = 0;
 let orgReads: string[] = [];
+let repositoryFailure = false;
+let cookieFailure = false;
 const forged = new Headers({
   "x-codeguard-user": "attacker", "x-codeguard-user-id": "attacker",
   "x-codeguard-org": "attacker-org", "x-codeguard-org-id": "attacker-org",
@@ -26,17 +28,20 @@ let navigation: typeof import("../middleware");
 before(async () => {
   mock.timers.enable({ apis: ["Date"], now: now * 1000 });
   mock.module("next/headers", { namedExports: {
-    cookies: async () => ({ get: (name: string) => name === SESSION_COOKIE_NAME && cookie ? { value: cookie } : undefined }),
+    cookies: async () => {
+      if (cookieFailure) throw new Error("private-internal-detail");
+      return { get: (name: string) => name === SESSION_COOKIE_NAME && cookie ? { value: cookie } : undefined };
+    },
     headers: async () => { headerReads++; return forged; },
   } });
   mock.module("@/repositories/organisations", { namedExports: {
-    getOrg: async (id: string) => { orgReads.push(id); return { organisation_id: id, name: "Acme", external_refs: {} }; },
+    getOrg: async (id: string) => { if (repositoryFailure) throw new Error("private-database-detail"); orgReads.push(id); return { organisation_id: id, name: "Acme", external_refs: {} }; },
   } });
   auth = await import("../lib/auth");
   me = await import("../app/api/auth/me/route");
   navigation = await import("../middleware");
 });
-beforeEach(() => { process.env.JWT_SECRET = secret; cookie = undefined; headerReads = 0; orgReads = []; });
+beforeEach(() => { process.env.JWT_SECRET = secret; cookie = undefined; headerReads = 0; orgReads = []; repositoryFailure = false; cookieFailure = false; });
 after(() => {
   if (previousSecret === undefined) delete process.env.JWT_SECRET;
   else process.env.JWT_SECRET = previousSecret;
@@ -86,7 +91,7 @@ for (const [name, value] of Object.entries({ missing: undefined, empty: "", whit
     else process.env.JWT_SECRET = value;
     assert.throws(requireJwtSecret, /^Error: JWT_SECRET must be/);
     await assert.rejects(signToken(identity), /^Error: JWT_SECRET must be/);
-    await assert.rejects(auth.requireVerifiedGovernancePrincipal, /^Error: JWT_SECRET must be/);
+    await assert.rejects(auth.requireVerifiedGovernancePrincipal, /Not authenticated/);
     assert.equal(await auth.verifyToken(cookie), null);
     assert.equal((await me.GET()).status, 401);
     assert.deepEqual(orgReads, []);
@@ -124,6 +129,8 @@ for (const claim of ["iat", "exp", "nbf"]) {
 for (const [name, changes] of invalidClaims) {
   test(`rejects ${name}`, async () => {
     cookie = await token(changes);
+    assert.equal(await auth.verifyToken(cookie), null);
+    assert.equal(await auth.getSession(), null);
     await assert.rejects(auth.requireVerifiedGovernancePrincipal);
     assert.equal((await me.GET()).status, 401);
     assert.deepEqual(orgReads, []);
@@ -176,4 +183,21 @@ test("middleware gates navigation with strict sessions and emits no identity hea
   const valid = await token();
   delete process.env.JWT_SECRET;
   assert.equal((await navigation.middleware(request(valid))).status, 307);
+});
+
+
+test("/api/auth/me returns sanitized 500 for repository failure after valid authentication", async () => {
+  cookie = await token();
+  repositoryFailure = true;
+  const response = await me.GET();
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), { error: "Unable to load account" });
+});
+
+test("/api/auth/me distinguishes an unexpected cookie infrastructure error from authentication denial", async () => {
+  cookieFailure = true;
+  const response = await me.GET();
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), { error: "Unable to load account" });
+  assert.deepEqual(orgReads, []);
 });

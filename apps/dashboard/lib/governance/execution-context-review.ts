@@ -18,8 +18,8 @@ export async function executionReviewQueue(org:OrganisationId) {
   }
   return result;
 }
-export async function submitExecutionDecision(input:unknown,ctx:{organisationId:OrganisationId;actorReference:string;role:string}) {
-  if(ctx.role!=='org_admin'||!ctx.actorReference)throw new Error('EXECUTION_REVIEW_FORBIDDEN');
+export async function submitExecutionDecision(input:unknown,ctx:{organisationId:OrganisationId;actorReference:string;currentRole:string}) {
+  if(ctx.currentRole!=='org_admin'||!ctx.actorReference)throw new Error('EXECUTION_REVIEW_FORBIDDEN');
   if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('EXECUTION_DECISION_INVALID');
   const raw=input as Record<string,unknown>;
   const required=['decisionId','canonicalObjectId','snapshotId','field','outcome'];

@@ -216,7 +216,7 @@ before(async () => {
 const baseInput = {
   organisationId: ORG,
   actorUserId: "user-1",
-  sessionRole: "org_admin",
+  currentRole: "org_admin",
   reviewSubjectId: SUBJECT_ID,
   reasonCode: "governance board approved",
 };
@@ -310,7 +310,7 @@ test("submitReconciliationDecision: a non-CERTIFIED review subject cannot reconc
 
 test("submitReconciliationDecision: a session role other than org_admin is forbidden, checked before any subject lookup", async () => {
   resetWorld();
-  const outcome = await submitReconciliationDecision({ ...baseInput, sessionRole: "user", requestedOutcome: "CREATE_NEW" });
+  const outcome = await submitReconciliationDecision({ ...baseInput, currentRole: "user", requestedOutcome: "CREATE_NEW" });
   assert.equal(outcome.kind, "FORBIDDEN");
   assert.equal(world.persistCalls.length, 0);
 });
@@ -412,7 +412,7 @@ test("triggerMaterialization: a valid CREATE_NEW OBJECT decision materializes, r
   };
   world.materializeObjectResult = { replay: false, status: "APPLIED", canonicalObjectId: "canonical-object:1", mappingId: "mapping-1" };
 
-  const outcome = await triggerMaterialization({ organisationId: ORG, sessionRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "APPLIED");
   assert.equal(outcome.kind === "APPLIED" && outcome.result.applicable, true);
 });
@@ -460,7 +460,7 @@ test("triggerMaterialization: a SOURCE_IDENTITY_ALREADY_MAPPED rejection from th
   };
   for (const code of ["SOURCE_IDENTITY_ALREADY_MAPPED", "LEGACY_OBJECT_ALREADY_CANONICAL", "LEGACY_OBJECT_MAPPING_AMBIGUOUS", "LEGACY_OBJECT_MATCH_MISMATCH"]) {
     world.materializeObjectError = `materialize_object_reconciliation failed: ${code}`;
-    const outcome = await triggerMaterialization({ organisationId: ORG, sessionRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+    const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
     assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
     assert.equal(JSON.stringify(outcome).includes(code), false);
   }
@@ -468,14 +468,14 @@ test("triggerMaterialization: a SOURCE_IDENTITY_ALREADY_MAPPED rejection from th
 
 test("triggerMaterialization: a review subject with no persisted reconciliation decision cannot materialize", async () => {
   resetWorld();
-  const outcome = await triggerMaterialization({ organisationId: ORG, sessionRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "NOT_READY");
 });
 
 test("triggerMaterialization: a non-org_admin session role is forbidden, checked before any decision lookup", async () => {
   resetWorld();
   world.existingDecisionId = "reconciliation-decision:1";
-  const outcome = await triggerMaterialization({ organisationId: ORG, sessionRole: "user", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "user", reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "FORBIDDEN");
 });
 
@@ -485,6 +485,6 @@ test("triggerMaterialization: a cross-tenant/nonexistent decision id (audit chai
   // fakeGovernancePort.getReconciliationAuditChain already defaults to
   // returning undefined, which is exactly what the real tenant-scoped query
   // returns for a decision id belonging to another organisation.
-  const outcome = await triggerMaterialization({ organisationId: ORG, sessionRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
 });

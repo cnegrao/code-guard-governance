@@ -46,12 +46,12 @@ test('M13 snapshot credential extensions cannot reach any RPC',async()=>{
   assert.deepEqual(calls,[]);assert.deepEqual(filters,[]);
 });
 const request={decisionId:'decision',canonicalObjectId:'version',snapshotId:'snapshot',field:'PRINCIPAL',outcome:'ACCEPT_PROPOSED'};
-const context={organisationId:org,actorReference:'human',role:'org_admin'};
+const context={organisationId:org,actorReference:'human',currentRole:'org_admin'};
 for(const field of ['organisationId','actor','authorizationState','grantedScopes','token'])test(`M13 command rejects caller-supplied ${field}`,async()=>{
   await assert.rejects(submit({...request,[field]:'forged'},context),/DECISION_INVALID/);
   assert.deepEqual(calls,[]);assert.deepEqual(filters,[]);
 });
 test('M13 command denies non-reviewer and missing human before reading governance state',async()=>{
-  for(const ctx of [{...context,role:'user'},{...context,actorReference:''}])await assert.rejects(submit(request,ctx),/FORBIDDEN/);
+  for(const ctx of [{...context,currentRole:'user'},{...context,actorReference:''}])await assert.rejects(submit(request,ctx),/FORBIDDEN/);
   assert.deepEqual(calls,[]);assert.deepEqual(filters,[]);
 });

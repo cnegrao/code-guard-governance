@@ -76,6 +76,21 @@ export async function verifyPasswordForAuth(
   return compare(password, storedHash);
 }
 
+/** Bounded current-role lookup: identity comes from the verified principal,
+ * never email/role claims. Role definitions are global; assignment is the
+ * same-organisation governance user's current role_ids. */
+export async function findCurrentUserForAuthorization(userId: string, organisationId: string): Promise<
+  Pick<UserIdentityForAuth, "user_id" | "organisation_id" | "status" | "role_ids"> | null
+> {
+  const { data, error } = await privilegedDb.from("governance_users")
+    .select("user_id, organisation_id, status, role_ids")
+    .eq("user_id", userId)
+    .eq("organisation_id", organisationId)
+    .maybeSingle();
+  if (error) throw new Error("Unable to resolve current governance eligibility");
+  return data;
+}
+
 export async function verifyPasswordDummyWork(password: string): Promise<void> {
   await compare(password, DUMMY_BCRYPT_HASH);
 }
@@ -99,11 +114,12 @@ export async function resolveRoleCodesForAuth(
     return [];
   }
 
-  const { data } = await privilegedDb
+  const { data, error } = await privilegedDb
     .from("governance_roles")
     .select("role_id, role_code, is_system_role")
     .in("role_id", roleIds);
 
+  if (error) throw new Error("Unable to resolve current governance roles");
   return data ?? [];
 }
 
@@ -116,12 +132,13 @@ export interface OrganisationForAuth {
 export async function getOrganisationForAuth(
   orgId: string
 ): Promise<OrganisationForAuth | null> {
-  const { data } = await privilegedDb
+  const { data, error } = await privilegedDb
     .from("organisations")
     .select("organisation_id, legal_name, is_active")
     .eq("organisation_id", orgId)
     .single();
 
+  if (error) throw new Error("Unable to resolve governance organisation");
   if (!data) return null;
 
   return {

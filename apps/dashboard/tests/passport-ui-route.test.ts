@@ -4,6 +4,7 @@ import { createElement, type ReactNode } from 'react';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SignJWT } from 'jose';
+import { signToken } from '../lib/auth/session-token';
 import { readFileSync } from 'node:fs';
 import { PASSPORT_FAMILIES, type AgentPassport360, type DataFieldFact, type PassportFamily } from '@/lib/governance/agent-passport';
 
@@ -42,7 +43,7 @@ before(async()=>{
 });
 beforeEach(async()=>{
   process.env.JWT_SECRET=secret; received=[]; available=true; listCalls=[];
-  cookie=await new SignJWT({sub:'user:1',org,email:'test@example.invalid',role:'VIEWER'}).setProtectedHeader({alg:'HS256'}).setExpirationTime('1h').sign(new TextEncoder().encode(secret));
+  cookie=await signToken({sub:'user:1',org,email:'test@example.invalid',role:'VIEWER'});
 });
 
 test('real Passport component renders exactly 16 accessible and navigable sections including UNKNOWN',()=>{

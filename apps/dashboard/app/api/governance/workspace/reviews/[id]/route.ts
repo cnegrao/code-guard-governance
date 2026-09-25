@@ -1,8 +1,9 @@
+import { resolveCurrentGovernanceRole } from "@/lib/auth/current-authorization";
 import { NextResponse } from "next/server";
 import { asOrganisationId } from "@council/canonical-contracts";
 import { REVIEW_STATE, type ReviewState } from "@council/governance-review";
 
-import { getOrgId, getSessionContext, getUserId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { asReviewSubjectId, getReviewSubjectDetail } from "@/lib/governance/workspace-query";
 import { deriveAllowedGovernanceActions, hasGovernanceReviewAuthority } from "@/lib/governance/workspace-actions";
 import { workspaceCommands, type GovernanceActionName } from "@/lib/governance/workspace-commands";
@@ -18,8 +19,9 @@ const ACTION_HANDLERS: Record<GovernanceActionName, keyof typeof workspaceComman
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const orgId = await getOrgId();
-    const { role } = await getSessionContext();
+    const principal = await requireVerifiedGovernancePrincipal();
+    const { organisationId: orgId } = principal;
+    const role = await resolveCurrentGovernanceRole(principal);
     const { id } = await params;
 
     const detail = await getReviewSubjectDetail(asOrganisationId(orgId), asReviewSubjectId(id));
@@ -30,6 +32,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const allowedActions = deriveAllowedGovernanceActions(detail.state, hasGovernanceReviewAuthority(role));
     return NextResponse.json({ ...detail, allowedActions });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     console.error("governance workspace detail query failed", error);
     return NextResponse.json({ error: "Unable to load this review subject." }, { status: 500 });
   }
@@ -37,9 +40,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const orgId = await getOrgId();
-    const userId = await getUserId();
-    const { role } = await getSessionContext();
+    const principal = await requireVerifiedGovernancePrincipal();
+    const { organisationId: orgId, userId } = principal;
+    const role = await resolveCurrentGovernanceRole(principal);
+    if (role !== "org_admin") return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     const { id } = await params;
 
     const body = (await request.json().catch(() => null)) as
@@ -62,7 +66,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const outcome = await workspaceCommands[handlerName]({
       organisationId: asOrganisationId(orgId),
       actorUserId: userId,
-      sessionRole: role,
+      currentRole: role,
       reviewSubjectId: asReviewSubjectId(id),
       expectedState: expectedState as ReviewState,
       reasonCode,
@@ -93,6 +97,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         return NextResponse.json({ error: "Unable to process this action." }, { status: 500 });
     }
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     console.error("governance workspace action failed", error);
     return NextResponse.json({ error: "Unable to process this action." }, { status: 500 });
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrgId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { updateSystemSchema } from "@/lib/validation";
 import * as systemService from "@/services/systems";
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { id } = await params;
 
     const system = await systemService.getSystem(orgId, id);
@@ -27,6 +27,7 @@ export async function GET(
       compliance_gaps: gaps,
     });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch system" },
       { status: 500 }
@@ -39,7 +40,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { id } = await params;
     const body = await request.json();
     const input = updateSystemSchema.parse(body);
@@ -48,6 +49,7 @@ export async function PUT(
 
     return NextResponse.json({ system });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update system" },
       { status: 400 }
@@ -60,7 +62,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { id } = await params;
     const body = await request.json();
 
@@ -72,6 +74,7 @@ export async function PATCH(
 
     return NextResponse.json({ compliance, compliance_score: score, compliance_gaps: gaps });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to assess compliance" },
       { status: 400 }

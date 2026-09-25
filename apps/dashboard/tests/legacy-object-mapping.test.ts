@@ -69,7 +69,7 @@ function reset(historical = object(), tenant = org) {
     canonical_objects: [{ organisation_id: tenant, canonical_object_id: "canonical:old", kind: historical.candidateKind }],
   };
 }
-const input = { organisationId: org, actorUserId: "reviewer", sessionRole: "org_admin", reviewSubjectId: asReviewSubjectId("review:new"), reasonCode: "GOVERNED" };
+const input = { organisationId: org, actorUserId: "reviewer", currentRole: "org_admin", reviewSubjectId: asReviewSubjectId("review:new"), reasonCode: "GOVERNED" };
 
 test("legacy-only same semantic object with a new discovery row cannot authorize duplicate CREATE_NEW", async () => {
   reset(); current = { ...current, candidateId: "candidate:rescan" as never, findingId: "finding:rescan" as never };

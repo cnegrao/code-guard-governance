@@ -82,7 +82,7 @@ function fakePort(options: FakePortOptions): GovernanceReviewPersistencePort {
 const baseInput = {
   organisationId: ORG,
   actorUserId: "user-1",
-  sessionRole: "org_admin",
+  currentRole: "org_admin",
   reviewSubjectId: SUBJECT_ID,
 };
 
@@ -125,7 +125,7 @@ test("workspace-commands: a stale client-supplied expectedState is rejected befo
 test("workspace-commands: a session role other than the verified org_admin role is forbidden from every action", async () => {
   const port = fakePort({ subject: buildSubject({ state: REVIEW_STATE.PROPOSED, evidenceIds: [] }) });
   const outcome = await workspaceCommands.confirmReview(
-    { ...baseInput, sessionRole: "user", expectedState: REVIEW_STATE.PROPOSED },
+    { ...baseInput, currentRole: "user", expectedState: REVIEW_STATE.PROPOSED },
     port,
   );
   assert.equal(outcome.kind, "FORBIDDEN");

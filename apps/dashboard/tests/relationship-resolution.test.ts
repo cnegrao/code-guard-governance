@@ -77,7 +77,7 @@ function existing(overrides: Row = {}) {
     relationship_state_id: "state:existing", relationship_type: "USES_TOOL", source_canonical_object_id: "canonical:version", source_kind: "AGENT_VERSION",
     target_canonical_object_id: "canonical:tool", target_kind: "TOOL", valid_to: null, ...overrides };
 }
-const commandInput = { organisationId: org, actorUserId: "reviewer:1", sessionRole: "org_admin", reviewSubjectId: subject.reviewSubjectId, reasonCode: "EXPLICIT_GOVERNANCE" };
+const commandInput = { organisationId: org, actorUserId: "reviewer:1", currentRole: "org_admin", reviewSubjectId: subject.reviewSubjectId, reasonCode: "EXPLICIT_GOVERNANCE" };
 
 test("server CREATE_NEW resolves canonical refs and real supported fingerprint; no versionCode or raw payload", async () => {
   reset(); const decision = await service.relationshipRequestedDecision(org, candidate, "CREATE_NEW", at);

@@ -30,7 +30,7 @@ import { deriveAllowedGovernanceActions, hasGovernanceReviewAuthority } from "./
  * propose. It never invents a transition the domain package does not
  * already expose, and it never accepts organisationId, actor identity, or a
  * target state from the client — every one of those is either server-derived
- * (organisationId, actorUserId, sessionRole) or a fixed semantic action name
+ * (organisationId, actorUserId, currentRole) or a fixed semantic action name
  * mapped in code to one specific domain function.
  */
 
@@ -41,8 +41,8 @@ export interface ExecuteGovernanceActionInput {
   readonly organisationId: OrganisationId;
   /** Server-derived from the trusted session context — never client-supplied. */
   readonly actorUserId: string;
-  /** Server-derived from the trusted session context — never client-supplied. */
-  readonly sessionRole: string;
+  /** Resolved from current persisted assignments, never JWT or request data. */
+  readonly currentRole: string;
   readonly reviewSubjectId: ReviewSubjectId;
   /** The state the client observed when it loaded the screen — the optimistic-concurrency precondition. */
   readonly expectedState: ReviewState;
@@ -114,7 +114,7 @@ async function executeGovernanceAction(
     return { kind: "STALE_REVIEW_SUBJECT", currentState: subject.state };
   }
 
-  const hasAuthority = hasGovernanceReviewAuthority(input.sessionRole);
+  const hasAuthority = hasGovernanceReviewAuthority(input.currentRole);
   if (!hasAuthority) {
     return { kind: "FORBIDDEN", message: "Your role does not permit governance review actions." };
   }

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSessionContext } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import * as dashboardService from "@/services/dashboard";
 import * as orgRepo from "@/repositories/organisations";
 
 export async function GET() {
   try {
-    const { orgId } = await getSessionContext();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     if (!orgId) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -17,6 +17,7 @@ export async function GET() {
 
     return NextResponse.json(summary);
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to load dashboard" },
       { status: 500 }

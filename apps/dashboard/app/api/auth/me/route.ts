@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
-import { requireVerifiedGovernancePrincipal } from "@/lib/auth";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import * as orgRepo from "@/repositories/organisations";
 
 export async function GET() {
+  let principal;
   try {
-    const { userId, organisationId: orgId, informational } = await requireVerifiedGovernancePrincipal();
-
+    principal = await requireVerifiedGovernancePrincipal();
+  } catch (error) {
+    return error instanceof SessionAuthenticationError
+      ? NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+      : NextResponse.json({ error: "Unable to load account" }, { status: 500 });
+  }
+  try {
+    const { userId, organisationId: orgId, informational } = principal;
     const org = await orgRepo.getOrg(orgId);
 
     return NextResponse.json({
@@ -20,6 +27,6 @@ export async function GET() {
         : null,
     });
   } catch {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return NextResponse.json({ error: "Unable to load account" }, { status: 500 });
   }
 }

@@ -26,11 +26,11 @@ export async function technicalFieldReviewQueue(org: OrganisationId) {
   }));
 }
 export type ReviewedFieldDecision = Omit<FieldReconciliationDecision,'organisationId'|'actor'|'decidedAt'>;
-export async function submitTechnicalFieldDecision(input: ReviewedFieldDecision, session: {organisationId:OrganisationId;actorReference:string;role:string}) {
-  if (!hasGovernanceReviewAuthority(session.role)) throw new TypeError('FIELD_AUTHORIZATION_DENIED');
-  const previous = await technicalFactPersistence.getDecision(session.organisationId,input.decisionId);
-  const decision: FieldReconciliationDecision = { ...input,organisationId:session.organisationId,
-    actor:{authorityKind:'HUMAN',actorReference:session.actorReference},decidedAt:previous?.decision.decidedAt ?? asIsoTimestamp(new Date().toISOString()) };
-  return reconcileTechnicalFact(decision,technicalFactPersistence,{authorize:d=> d.organisationId===session.organisationId &&
-    d.actor.authorityKind==='HUMAN' && d.actor.actorReference===session.actorReference && hasGovernanceReviewAuthority(session.role)});
+export async function submitTechnicalFieldDecision(input: ReviewedFieldDecision, context: {organisationId:OrganisationId;actorReference:string;currentRole:string}) {
+  if (!hasGovernanceReviewAuthority(context.currentRole)) throw new TypeError('FIELD_AUTHORIZATION_DENIED');
+  const previous = await technicalFactPersistence.getDecision(context.organisationId,input.decisionId);
+  const decision: FieldReconciliationDecision = { ...input,organisationId:context.organisationId,
+    actor:{authorityKind:'HUMAN',actorReference:context.actorReference},decidedAt:previous?.decision.decidedAt ?? asIsoTimestamp(new Date().toISOString()) };
+  return reconcileTechnicalFact(decision,technicalFactPersistence,{authorize:d=> d.organisationId===context.organisationId &&
+    d.actor.authorityKind==='HUMAN' && d.actor.actorReference===context.actorReference && hasGovernanceReviewAuthority(context.currentRole)});
 }

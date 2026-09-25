@@ -33,7 +33,7 @@ import { canonicalEndpointResolution, relationshipRequestedDecision, objectMappi
 import { governanceReviewPersistence } from "./persistence";
 import { materializationPersistence } from "./materialization";
 import { getReconciliationInputForReviewSubject } from "./reconciliation-input";
-import { createSessionReconciliationAuthorizationPort } from "./reconciliation-authorization-port";
+import { createCurrentRoleReconciliationAuthorizationPort } from "./reconciliation-authorization-port";
 import { getCanonicalObjectForMatch } from "./canonical-object-lookup";
 import { hasGovernanceReviewAuthority } from "./workspace-actions";
 import { deriveReconciliationReadiness, type ReconciliationReadinessReason } from "./reconciliation-readiness";
@@ -60,7 +60,7 @@ export type RequestedReconciliationOutcome = "CREATE_NEW" | "MATCH_EXISTING" | "
 export interface SubmitReconciliationDecisionInput {
   readonly organisationId: OrganisationId;
   readonly actorUserId: string;
-  readonly sessionRole: string;
+  readonly currentRole: string;
   readonly reviewSubjectId: ReviewSubjectId;
   readonly requestedOutcome: RequestedReconciliationOutcome;
   /** Required only for MATCH_EXISTING; re-verified against gov_repo.canonical_objects before use. */
@@ -84,7 +84,7 @@ function stableCommandId(parts: readonly unknown[]): string {
 export async function submitReconciliationDecision(
   input: SubmitReconciliationDecisionInput,
 ): Promise<SubmitReconciliationDecisionOutcome> {
-  const hasAuthority = hasGovernanceReviewAuthority(input.sessionRole);
+  const hasAuthority = hasGovernanceReviewAuthority(input.currentRole);
   if (!hasAuthority) {
     return { kind: "FORBIDDEN", message: "Your role does not permit reconciliation actions." };
   }
@@ -131,9 +131,10 @@ export async function submitReconciliationDecision(
 
   const requestedAt = asIsoTimestamp(new Date().toISOString());
   const actor = { authorityKind: "HUMAN" as const, actorReference: input.actorUserId };
-  const authorizationPort = createSessionReconciliationAuthorizationPort({
+  const authorizationPort = createCurrentRoleReconciliationAuthorizationPort({
     organisationId: input.organisationId,
     actorReference: input.actorUserId,
+    currentRole: input.currentRole,
   });
 
   try {
@@ -321,7 +322,7 @@ export type TriggerMaterializationOutcome =
 
 export interface TriggerMaterializationInput {
   readonly organisationId: OrganisationId;
-  readonly sessionRole: string;
+  readonly currentRole: string;
   readonly reviewSubjectId: ReviewSubjectId;
 }
 
@@ -335,7 +336,7 @@ export interface TriggerMaterializationInput {
 export async function triggerMaterialization(
   input: TriggerMaterializationInput,
 ): Promise<TriggerMaterializationOutcome> {
-  const hasAuthority = hasGovernanceReviewAuthority(input.sessionRole);
+  const hasAuthority = hasGovernanceReviewAuthority(input.currentRole);
   if (!hasAuthority) {
     return { kind: "FORBIDDEN", message: "Your role does not permit materialization actions." };
   }

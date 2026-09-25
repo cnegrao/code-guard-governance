@@ -27,17 +27,17 @@ const state: MockState = {
   commandOutcome: { kind: "APPLIED", subject: { state: "CONFIRMED" } },
 };
 
-mock.module("@/lib/session", {
+mock.module("@/lib/auth", {
   namedExports: {
-    getOrgId: async () => state.session.orgId,
-    getUserId: async () => state.session.userId,
-    getSessionContext: async () => ({
-      userId: state.session.userId,
-      orgId: state.session.orgId,
-      email: "test@example.com",
-      role: state.session.role,
+    SessionAuthenticationError: class extends Error {},
+    requireVerifiedGovernancePrincipal: async () => ({
+      userId: state.session.userId, organisationId: state.session.orgId,
+      informational: { email: "test@example.com", role: "user" },
     }),
   },
+});
+mock.module("@/lib/auth/current-authorization", {
+  namedExports: { resolveCurrentGovernanceRole: async () => state.session.role },
 });
 
 mock.module("@/lib/governance/workspace-query", {
@@ -107,7 +107,7 @@ test("detail route: an internal query failure is sanitized, never leaking connec
   assert.equal(JSON.stringify(json).includes("postgres://"), false);
 });
 
-test("detail route: allowedActions is attached server-side from state + session role, never trusted from the client", async () => {
+test("detail route: allowedActions is attached server-side from state + current persisted role, never trusted from the client", async () => {
   state.detail = { state: "PROPOSED", reviewSubjectId: "rs-1" };
   state.session.role = "org_admin";
   const res = await detailRoute.GET(new Request("http://localhost/api/x"), makeParams("rs-1"));
@@ -116,7 +116,7 @@ test("detail route: allowedActions is attached server-side from state + session 
   assert.deepEqual(json.allowedActions, { canPropose: false, canConfirm: true, canCertify: false, canReject: true });
 });
 
-test("detail route: a non-admin session role sees no allowed actions even though the state would otherwise permit them", async () => {
+test("detail route: a non-admin persisted role sees no allowed actions even though the state would otherwise permit them", async () => {
   state.detail = { state: "PROPOSED", reviewSubjectId: "rs-1" };
   state.session.role = "user";
   const res = await detailRoute.GET(new Request("http://localhost/api/x"), makeParams("rs-1"));
@@ -161,13 +161,13 @@ test("action route: a successful APPLIED outcome returns 200 with the new state"
   assert.equal(json.state, "CONFIRMED");
 });
 
-test("action route: never forwards a client-supplied organisationId, actor, or role — only server session values reach the command layer", async () => {
+test("action route: never forwards a client-supplied organisationId, actor, or role — only verified identity and persisted role values reach the command layer", async () => {
   const { readFileSync } = await import("node:fs");
   const source = readFileSync(new URL("../app/api/governance/workspace/reviews/[id]/route.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /body\.organisationId|body\.actorUserId|body\.sessionRole|body\.role/);
+  assert.doesNotMatch(source, /body\.organisationId|body\.actorUserId|body\.currentRole|body\.role/);
   assert.match(source, /organisationId:\s*asOrganisationId\(orgId\)/);
   assert.match(source, /actorUserId:\s*userId/);
-  assert.match(source, /sessionRole:\s*role/);
+  assert.match(source, /currentRole:\s*role/);
 });
 
 test("queue route: invalid state filter is rejected with 400 rather than silently ignored", async () => {

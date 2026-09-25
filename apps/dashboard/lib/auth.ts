@@ -1,29 +1,31 @@
 import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 import {
-  requireJwtSecret, SESSION_ALGORITHM, SESSION_COOKIE_NAME,
+  SESSION_COOKIE_NAME,
   GOVERNANCE_SESSION_MAX_AGE_SECONDS, verifyGovernanceSessionToken,
   type SessionPayload, type VerifiedGovernancePrincipal,
 } from "./auth/session-token";
 
 export { signToken, type SessionPayload } from "./auth/session-token";
 
+export class SessionAuthenticationError extends Error {
+  constructor() { super("Not authenticated"); }
+}
+
 export async function requireVerifiedGovernancePrincipal(): Promise<VerifiedGovernancePrincipal> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!token) throw new Error("Not authenticated");
-  return verifyGovernanceSessionToken(token);
+  if (!token) throw new SessionAuthenticationError();
+  try { return await verifyGovernanceSessionToken(token); }
+  catch { throw new SessionAuthenticationError(); }
 }
 
-/** DEFERRED_TO_S0.2: legacy Passport/M13 reader, not the M16 principal.
- * Retains historical claim compatibility until those consumers migrate.
- * In particular, its role claim is NOT current governance authorization. */
+/** Compatibility only: identical strict verification; role/email are display
+ * data, never authorization. Production routes use the principal directly. */
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, requireJwtSecret(), {
-      algorithms: [SESSION_ALGORITHM],
-    });
-    return payload as unknown as SessionPayload;
+    const principal = await verifyGovernanceSessionToken(token);
+    return { sub: principal.userId, org: principal.organisationId,
+      email: principal.informational.email ?? "", role: principal.informational.role ?? "" };
   } catch {
     return null;
   }

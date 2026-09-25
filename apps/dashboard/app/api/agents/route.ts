@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getOrgId, getUserId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { createAgentSchema } from "@/lib/validation";
 import * as agentService from "@/services/agents";
 
 export async function GET(request: Request) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { searchParams } = new URL(request.url);
 
     const agents = await agentService.listAgents(orgId, {
@@ -18,6 +18,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(agents);
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch agents" },
       { status: 500 }
@@ -27,8 +28,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const orgId = await getOrgId();
-    const userId = await getUserId();
+    const { organisationId: orgId, userId } = await requireVerifiedGovernancePrincipal();
     const body = await request.json();
     const input = createAgentSchema.parse(body);
 
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ agent }, { status: 201 });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create agent" },
       { status: 400 }
