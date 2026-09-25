@@ -71,7 +71,7 @@ test("boundary: signupLegacyAtomic never returns a password/hash field", async (
   process.env.SUPABASE_SERVICE_ROLE_KEY ??= "test-service-role-key";
   const source = readFileSync(path.join(ROOT, "lib/auth/persistence.ts"), "utf8");
   const resultShape = source.match(/export interface SignupLegacyResult \{([\s\S]*?)\}/)?.[1] ?? "";
-  assert.doesNotMatch(resultShape.toLowerCase(), /hash|password/);
+  assert.doesNotMatch(resultShape.replace(/password_changed_at/g, "").toLowerCase(), /hash|password/);
 });
 
 test("boundary: the atomic signup RPC's returned columns never include external_id or the password hash", () => {

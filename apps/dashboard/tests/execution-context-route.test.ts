@@ -12,7 +12,10 @@ let route:typeof import('@/app/api/governance/workspace/execution-context/route'
 before(async()=>{
   process.env.JWT_SECRET=secret;
   mock.module('next/headers',{namedExports:{cookies:async()=>({get:()=>cookie?{value:cookie}:undefined}),headers:async()=>new Headers({'x-codeguard-org':'forged','x-codeguard-user':'forged','x-codeguard-role':'org_admin'})}});
-  mock.module('@/lib/auth/current-authorization',{namedExports:{resolveCurrentGovernanceRole:async()=>currentRole}});
+  mock.module('@/lib/auth/current-authorization',{namedExports:{
+    resolveCurrentGovernanceRole:async()=>currentRole,
+    CurrentAuthorizationInfrastructureError:class extends Error {},
+  }});
   mock.module('@/lib/governance/execution-context-review',{namedExports:{
     executionReviewQueue:async(tenant:string)=>{reads.push(tenant);return [];},
     submitExecutionDecision:async(...args:unknown[])=>{writes.push(args);return {replay:false};},
@@ -43,5 +46,6 @@ test('M13 invalid signed cookie and development fallback cannot enable privilege
 test('M13 oversized and malformed requests never reach the command service',async()=>{
   assert.equal((await route.POST(request({padding:'x'.repeat(16385)}))).status,400);
   const malformed=new Request('https://example.invalid',{method:'POST',body:'{'});
-  assert.equal((await route.POST(malformed)).status,409);assert.deepEqual(writes,[]);
+  // Unclassified runtime/parsing failures no longer masquerade as business 409.
+  assert.equal((await route.POST(malformed)).status,500);assert.deepEqual(writes,[]);
 });

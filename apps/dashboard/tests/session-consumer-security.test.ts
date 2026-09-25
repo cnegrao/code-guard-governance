@@ -15,6 +15,8 @@ let user: { user_id: string; organisation_id: string; status: string; role_ids: 
 let roles: Array<{ role_id: string; role_code: string; is_system_role: boolean }>;
 let activeOrg = true;
 let databaseError = false;
+let missingOrg = false;
+let writeFailure: unknown;
 let queryLog: Array<{ table: string; select: string; filters: Array<[string, unknown]> }>;
 let reads: string[];
 let writes: Array<{ organisationId: string; actorUserId?: string; actorReference?: string; currentRole: string }>;
@@ -49,11 +51,11 @@ before(async () => {
       filters: [...url.searchParams].filter(([key]) => key !== "select").map(([key, value]) => [key, value.replace(/^eq\./, "")]) });
     const organisation = { organisation_id: org, legal_name: "Acme", is_active: activeOrg };
     const data = table === "governance_users" ? (user ? [user] : []) : table === "organisations"
-      ? (url.searchParams.get("select")?.includes("is_active") ? organisation : [organisation]) : roles;
+      ? (missingOrg ? [] : [organisation]) : roles;
     return Response.json(databaseError ? { message: "private-db-detail" } : data,
       { status: databaseError ? 400 : 200 });
   });
-  const record = async (ctx: (typeof writes)[number]) => { writes.push(ctx); return { kind: "APPLIED", subject: { state: "CONFIRMED" }, result: {} }; };
+  const record = async (ctx: (typeof writes)[number]) => { if (writeFailure) throw writeFailure; writes.push(ctx); return { kind: "APPLIED", subject: { state: "CONFIRMED" }, result: {} }; };
   const read = async (tenant: string) => { reads.push(tenant); return []; };
   mock.module("@/services/agents", { namedExports: { listAgents: read } });
   mock.module("@/lib/governance/execution-context-review", { namedExports: {
@@ -90,7 +92,8 @@ beforeEach(async () => {
   cookie = await session();
   user = { user_id: actor, organisation_id: org, status: "active", role_ids: ["admin-role"] };
   roles = [{ role_id: "admin-role", role_code: "GOVERNANCE_ADMIN", is_system_role: true }];
-  activeOrg = true; databaseError = false; queryLog = []; reads = []; writes = []; headerReads = 0;
+  activeOrg = true; databaseError = false; missingOrg = false; writeFailure = undefined;
+  queryLog = []; reads = []; writes = []; headerReads = 0;
 });
 const request = (body?: unknown, method = "POST") => new Request(`https://example.invalid/api/test?organisationId=${foreign}&actor=${forged["x-codeguard-user"]}`, {
   method, headers: forged, ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -197,4 +200,33 @@ for (const mode of ["missing", "legacy", "old", "issuer", "audience"]) {
     await assert.rejects(passport.passportOrganisation(), /NOT_FOUND/);
     assert.deepEqual(reads, []); assert.deepEqual(writes, []); assert.deepEqual(queryLog, []);
   });
+}
+
+// S0.2 LOW regression: unknown failures must never default to business conflict.
+for (const [name, invoke] of privileged.slice(0, 2)) {
+  for (const mode of ['missing organisation', 'inactive organisation', 'database failure', 'runtime failure', 'non-Error failure', 'private diagnostic containing business code']) {
+    test(`${name}: ${mode} preserves the auth/infrastructure taxonomy`, async () => {
+      if (mode === 'missing organisation') missingOrg = true;
+      if (mode === 'inactive organisation') activeOrg = false;
+      if (mode === 'database failure') databaseError = true;
+      if (mode === 'runtime failure') writeFailure = new Error('PRIVATE database details');
+      if (mode === 'non-Error failure') writeFailure = { private: 'PRIVATE runtime details' };
+      if (mode === 'private diagnostic containing business code') writeFailure = new Error('PRIVATE FIELD_STALE_SOURCE EXECUTION_STALE_SOURCE');
+      const response = await invoke();
+      assert.equal(response.status, mode.includes('organisation') ? 403 : 500);
+      assert.doesNotMatch(await response.text(), /PRIVATE|private-db-detail/);
+      assert.equal(writes.length, 0);
+    });
+  }
+  const codes = name.startsWith('execution')
+    ? ['EXECUTION_STALE_SOURCE', 'EXECUTION_STALE_POLICY', 'EXECUTION_STALE_STATE', 'EXECUTION_REPLAY_CONFLICT', 'EXECUTION_DECISION_INVALID']
+    : ['FIELD_STALE_SOURCE', 'FIELD_STALE_POLICY', 'FIELD_STALE_STATE', 'FIELD_DECISION_REPLAY_CONFLICT'];
+  for (const code of codes) {
+    test(`${name}: known business ${code} remains 409`, async () => {
+      writeFailure = new Error(code);
+      const response = await invoke();
+      assert.equal(response.status, 409);
+      if (code === 'FIELD_STALE_SOURCE' || code === 'FIELD_STALE_POLICY') assert.equal((await response.json()).code, code);
+    });
+  }
 }

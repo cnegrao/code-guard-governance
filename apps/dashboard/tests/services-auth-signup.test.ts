@@ -14,6 +14,7 @@ interface MockState {
     organisation_name: string;
     role_id: string;
     role_code: string;
+    password_changed_at: string;
   } | null;
   signupError: Error | null;
   roleRows: Array<{ role_id: string; role_code: string; is_system_role: boolean }>;
@@ -87,6 +88,7 @@ test("signup: atomic persistence completes and is re-verified before token signi
     organisation_name: "Acme Corp",
     role_id: "role-1",
     role_code: "GOVERNANCE_ADMIN",
+    password_changed_at: "2026-01-01T00:00:00Z",
   };
   state.roleRows = [{ role_id: "role-1", role_code: "GOVERNANCE_ADMIN", is_system_role: true }];
 
@@ -132,6 +134,7 @@ test("signup: fails closed to non-admin if the returned role cannot be re-verifi
     organisation_name: "Acme Corp",
     role_id: "role-2",
     role_code: "GOVERNANCE_ADMIN",
+    password_changed_at: "2026-01-01T00:00:00Z",
   };
   // Simulates a race/anomaly where the privileged lookup no longer confirms
   // is_system_role — the app must never trust the RPC's role_code string alone.

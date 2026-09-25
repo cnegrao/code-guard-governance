@@ -13,6 +13,7 @@ interface MockState {
     organisation_id: string;
     status: string;
     role_ids: string[];
+    password_changed_at: string;
   } | null;
   passwordValid: boolean;
   org: { organisation_id: string; name: string; is_active: boolean } | null;
@@ -66,6 +67,7 @@ const BASE_USER = {
   organisation_id: "org-1",
   status: "active",
   role_ids: ["role-1"],
+  password_changed_at: "2026-01-01T00:00:00Z",
 };
 
 const BASE_ORG = { organisation_id: "org-1", name: "Acme", is_active: true };

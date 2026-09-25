@@ -41,6 +41,7 @@ export interface UserIdentityForAuth {
   organisation_id: string;
   status: string;
   role_ids: string[];
+  password_changed_at: string;
 }
 
 export async function findUserIdentityForAuth(
@@ -50,7 +51,7 @@ export async function findUserIdentityForAuth(
 
   const { data } = await privilegedDb
     .from("governance_users")
-    .select("user_id, email, full_name, organisation_id, status, role_ids")
+    .select("user_id, email, full_name, organisation_id, status, role_ids, password_changed_at")
     .eq("email", canonicalEmail)
     .single();
 
@@ -136,7 +137,7 @@ export async function getOrganisationForAuth(
     .from("organisations")
     .select("organisation_id, legal_name, is_active")
     .eq("organisation_id", orgId)
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error("Unable to resolve governance organisation");
   if (!data) return null;
@@ -156,6 +157,7 @@ export interface SignupLegacyResult {
   organisation_name: string;
   role_id: string;
   role_code: string;
+  password_changed_at: string;
 }
 
 export async function signupLegacyAtomic(input: {
@@ -200,6 +202,7 @@ export async function signupLegacyAtomic(input: {
     organisation_name: result.organisation_name as string,
     role_id: result.role_id as string,
     role_code: result.role_code as string,
+    password_changed_at: result.password_changed_at as string,
   };
 }
 

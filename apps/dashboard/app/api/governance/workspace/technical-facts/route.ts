@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { asOrganisationId } from '@council/canonical-contracts';
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from '@/lib/auth';
-import { resolveCurrentGovernanceRole } from '@/lib/auth/current-authorization';
+import { resolveCurrentGovernanceRole, CurrentAuthorizationInfrastructureError } from '@/lib/auth/current-authorization';
 import { technicalFieldReviewQueue, submitTechnicalFieldDecision, type ReviewedFieldDecision } from '@/lib/governance/multivendor-exchange';
 export async function GET() {
   try {
@@ -25,8 +25,16 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch(error) {
     if(error instanceof SessionAuthenticationError)return NextResponse.json({error:'Not authenticated.'},{status:401});
+    if(error instanceof CurrentAuthorizationInfrastructureError)return NextResponse.json({error:'Unable to authorize field review.'},{status:500});
     const message = error instanceof Error ? error.message : '';
-    return NextResponse.json({error:message.includes('FIELD_AUTHORIZATION_DENIED') ? 'Not authorized.' : 'Field review changed or decision is invalid. Reload and review again.',
-      code:message.includes('FIELD_STALE_SOURCE') ? 'FIELD_STALE_SOURCE' : message.includes('FIELD_STALE_POLICY') ? 'FIELD_STALE_POLICY' : 'FIELD_DECISION_REJECTED'},{status:message.includes('FIELD_AUTHORIZATION_DENIED') ? 403 : 409});
+    if(message==='FIELD_AUTHORIZATION_DENIED')return NextResponse.json({error:'Not authorized.'},{status:403});
+    // Match exact known business errors, never substrings of private DB diagnostics.
+    if(['FIELD_STALE_SOURCE','FIELD_STALE_POLICY','FIELD_STALE_STATE','FIELD_DECISION_REPLAY_CONFLICT',
+      'FIELD_DECISION_CONTEXT_MISMATCH','FIELD_NOT_AUTHORITATIVE','FIELD_ACTOR_REQUIRED',
+      'FIELD_MACHINE_AUTHORITY_FORBIDDEN'].includes(message)) {
+      return NextResponse.json({error:'Field review changed or decision is invalid. Reload and review again.',
+        code:message==='FIELD_STALE_SOURCE'||message==='FIELD_STALE_POLICY'?message:'FIELD_DECISION_REJECTED'},{status:409});
+    }
+    return NextResponse.json({error:'Unable to submit field review.'},{status:500});
   }
 }

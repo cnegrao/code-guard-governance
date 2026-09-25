@@ -1,4 +1,4 @@
-import { signToken } from "@/lib/auth";
+import { signSessionAfterCredentialEpoch } from "@/lib/auth/session-issuance";
 import {
   findUserIdentityForAuth,
   verifyPasswordForAuth,
@@ -41,12 +41,12 @@ async function buildAuthSession(
 ): Promise<AuthSession> {
   const jwtRole = resolvedRoles.jwtRole;
 
-  const token = await signToken({
+  const token = await signSessionAfterCredentialEpoch({
     sub: userIdentity.user_id,
     org: userIdentity.organisation_id,
     email: userIdentity.email,
     role: jwtRole,
-  });
+  }, userIdentity.password_changed_at);
 
   return {
     token,
@@ -155,12 +155,12 @@ export async function signup(input: {
     })),
   });
 
-  const token = await signToken({
+  const token = await signSessionAfterCredentialEpoch({
     sub: result.user_id,
     org: result.organisation_id,
     email: result.email,
     role: resolvedRoles.jwtRole,
-  });
+  }, result.password_changed_at);
 
   return {
     success: true,
