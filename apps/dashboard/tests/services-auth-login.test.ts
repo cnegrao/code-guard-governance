@@ -1,6 +1,9 @@
 import { test, mock, before } from "node:test";
 import assert from "node:assert/strict";
 import { jwtVerify } from "jose";
+import { SESSION_ISSUER, SESSION_AUDIENCE, verifyGovernanceSessionToken } from "../lib/auth/session-token";
+
+const signingSecret = "8cbb071c283ea04e4cf0f73a09a9e531";
 
 interface MockState {
   user: {
@@ -44,6 +47,7 @@ mock.module("@/lib/auth/persistence", {
 let authService: typeof import("../services/auth");
 
 before(async () => {
+  process.env.JWT_SECRET = signingSecret;
   authService = await import("@/services/auth");
 });
 
@@ -148,10 +152,14 @@ test("login: persisted user organisation_id is the sole JWT organisation source"
   state.roleRows = [];
 
   const result = await authService.login("admin@example.com", "correct-password");
-  const secret = new TextEncoder().encode(
-    process.env.JWT_SECRET ?? "fallback-dev-secret-change-in-production"
-  );
-  const { payload } = await jwtVerify(result.session!.token, secret);
+  const secret = new TextEncoder().encode(signingSecret);
+  const { payload } = await jwtVerify(result.session!.token, secret, {
+    algorithms: ["HS256"], issuer: SESSION_ISSUER, audience: SESSION_AUDIENCE,
+  });
+  const principal = await verifyGovernanceSessionToken(result.session!.token);
+  assert.equal(principal.userId, BASE_USER.user_id);
+  assert.equal(principal.organisationId, "org-persisted-123");
+  assert.equal(principal.expiresAtSeconds - principal.issuedAtSeconds, 28800);
 
   assert.equal(payload.org, "org-persisted-123");
   // login() takes only (email, password) — there is no request-supplied

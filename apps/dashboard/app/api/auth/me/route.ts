@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
-import { getSessionContext } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal } from "@/lib/auth";
 import * as orgRepo from "@/repositories/organisations";
 
 export async function GET() {
   try {
-    const { userId, orgId, email } = await getSessionContext();
-    if (!userId || !orgId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    const { userId, organisationId: orgId, informational } = await requireVerifiedGovernancePrincipal();
 
     const org = await orgRepo.getOrg(orgId);
 
     return NextResponse.json({
-      user: { user_id: userId, email },
+      user: { user_id: userId, email: informational.email ?? "" },
       org: org
         ? {
             organisation_id: org.organisation_id,
