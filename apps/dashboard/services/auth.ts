@@ -42,8 +42,9 @@ async function signCurrentCredentialSession(payload: SessionPayload, passwordCha
   if (!await isCredentialEpochCurrentForAuth(payload.sub, passwordChangedAt)) {
     throw new AuthPublicError(INVALID_CREDENTIALS_MESSAGE, 401);
   }
-  // S0.3.2 MUST also bound verified_session_iat against DB clock_timestamp()
-  // inside transactional eligibility. This check does not replace that helper.
+  // The token binds this exact DB epoch (credential_epoch). Transactional eligibility
+  // (S0.3.2R helper, wired by S0.3.3) requires exact equality with the locked row and
+  // also bounds iat against DB clock_timestamp(). This check does not replace it.
   return token;
 }
 
