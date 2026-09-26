@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 export const credentialMigration = '20260925150000_m16_s0_credential_epoch_v1.sql';
 // S0.3.2 chain step: applied after credentialMigration by its own test file.
 export const eligibilityMigration = '20260925160000_m16_s0_transactional_eligibility_v1.sql';
+// S0.3.2R chain step: replaces the four-argument helper with the epoch-bound five-argument helper.
+export const epochBindingMigration = '20260925170000_m16_s0_credential_epoch_binding_v1.sql';
 export const m16Prerequisites = [
   '20260818003539_gov_repo_types_and_organisations.sql',
   '20260818003710_gov_repo_identity_and_ledger.sql',
@@ -18,7 +20,7 @@ export const m16Prerequisites = [
   '20260903200100_atomic_signup_legacy_rpc.sql',
 ];
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, credentialMigration, eligibilityMigration].includes(name));
+  assert.ok([...m16Prerequisites, credentialMigration, eligibilityMigration, epochBindingMigration].includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 

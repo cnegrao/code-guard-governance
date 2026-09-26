@@ -36,7 +36,7 @@ mock.module('bcryptjs', { namedExports: {
 } });
 mock.module('../lib/auth/session-token', { namedExports: {
   ...canonicalTokens,
-  signToken: async (payload: canonicalTokens.SessionPayload) => {
+  signToken: async (payload: canonicalTokens.SessionSigningInput) => {
     events.push('sign');
     if (rotation === 'sign') rotate();
     const token = await canonicalTokens.signToken(payload);
@@ -108,6 +108,10 @@ test('login rejects an old hash that verifies successfully while credentials rot
   await assert.rejects(issue('login'), rejected(401));
   assert.deepEqual(events, ['credential-read', 'password-valid', 'rotation', 'sign', 'signed', 'post-sign-check']);
   assert.deepEqual(verifiedHashes, [h1], 'the revoked credential really passed bcrypt');
+  // The old-epoch token is distinguishable from the rotated credential only by the exact epoch text:
+  // same millisecond, iat beyond floor(E2); the bound claim differs from E2 by one microsecond.
+  assert.equal(decodeJwt(signedTokens[0]).credential_epoch, e1);
+  assert.notEqual(decodeJwt(signedTokens[0]).credential_epoch, e2);
   assert.ok(decodeJwt(signedTokens[0]).iat! > Math.floor(Date.parse(e2) / 1000), 'the formerly exploitable token was internally created');
   assert.equal(Date.parse(e1), Date.parse(e2), 'a millisecond-only comparison would miss this rotation');
   assert.deepEqual(filters, [{ user: `eq.${identity.user_id}`, epoch: `eq.${e1}` }]);
@@ -116,6 +120,8 @@ for (const kind of ['login', 'signup']) {
   test(`${kind}: unchanged verified/RPC epoch succeeds, identity lookup epoch is not used`, async () => {
     const result = await issue(kind);
     assert.equal(result.session?.token, signedTokens[0]);
+    assert.equal(decodeJwt(signedTokens[0]).credential_epoch, e1, 'token binds the exact DB epoch used for the credential');
+    assert.equal((await canonicalTokens.verifyGovernanceSessionToken(signedTokens[0])).credentialEpoch, e1);
     assert.deepEqual(filters, [{ user: `eq.${identity.user_id}`, epoch: `eq.${e1}` }]);
     assert.ok(events.indexOf('post-sign-check') > events.indexOf('signed'));
   });

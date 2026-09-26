@@ -5,7 +5,7 @@ import {
   type SessionPayload, type VerifiedGovernancePrincipal,
 } from "./auth/session-token";
 
-export { signToken, type SessionPayload } from "./auth/session-token";
+export { signToken, type SessionPayload, type SessionSigningInput } from "./auth/session-token";
 
 export class SessionAuthenticationError extends Error {
   constructor() { super("Not authenticated"); }

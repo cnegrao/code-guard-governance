@@ -41,6 +41,7 @@ Canonical chain, executed in this order as `postgres`:
 5. `20260903200100_atomic_signup_legacy_rpc.sql`
 6. `20260925150000_m16_s0_credential_epoch_v1.sql`
 7. `20260925160000_m16_s0_transactional_eligibility_v1.sql` (S0.3.2; applied by `transactional-eligibility.test.ts` after step 6)
+8. `20260925170000_m16_s0_credential_epoch_binding_v1.sql` (S0.3.2R; applied by `transactional-eligibility.test.ts` after step 7; drops the four-argument helper)
 
 The credential migration (step 6) is first attempted with a future legacy epoch to verify
 atomic rollback, then executed successfully while waiting on a real concurrent
@@ -73,7 +74,7 @@ backends hold and contend for real row locks. Blocking is observed through
 bootstrap monitor session, never by sleeping alone. Lock order is proven with
 `FOR UPDATE NOWAIT` probes while the helper is blocked on a role row.
 
-Helper posture: PL/pgSQL, VOLATILE, SECURITY DEFINER, `search_path=pg_catalog`,
+Helper posture (see S0.3.2R below for the current signature and search_path): PL/pgSQL, VOLATILE, SECURITY DEFINER, `search_path=pg_catalog`,
 function-local `lock_timeout=5s`, READ COMMITTED only, owner-only EXECUTE (all of
 PUBLIC/anon/authenticated/service_role revoked). Lock hierarchy
 ORGANISATION -> GOVERNANCE_USER -> GOVERNANCE_ROLE (ascending role_id), all `FOR SHARE`.
@@ -89,3 +90,17 @@ The eligibility helper is not wired to any route or write wrapper (S0.3.3). Grap
 unchanged and not certified here (`PRODUCTION_SECURITY_GATE_RESIDUAL`). O07/O52 remain
 **PARTIAL**; O08/O09/O10 have tested infrastructure but no production integration; O11
 is not complete. No hosted DB or real OpenAI is needed.
+
+## S0.3.2R — exact credential epoch binding
+
+Architecture: `docs/architecture/ADR-GOVIA-M16-S0-CREDENTIAL-EPOCH-BINDING-v1.md`.
+The corrective migration drops the four-argument helper and creates the single canonical
+`gov_repo.lock_and_resolve_governance_session_eligibility_v1(uuid, uuid, bigint, bigint, timestamptz)`
+(`p_verified_credential_epoch`). The verified epoch must EQUAL (`timestamptz`, microsecond)
+the locked `governance_users.password_changed_at`, otherwise `GV002` /
+`M16_ELIGIBILITY_CREDENTIAL_STALE` with DETAIL `CREDENTIAL_EPOCH_MISMATCH`; the existing
+`iat > floor(epoch)` rule (DETAIL `SESSION_NOT_AFTER_CREDENTIAL_EPOCH`) must ALSO pass, and
++5/+6 future-iat behavior is unchanged. `search_path` is `pg_catalog, pg_temp`. Tests R1-R7
+in `transactional-eligibility.test.ts` cover exact/NULL/microsecond epochs, the reproduced
+backend-+5s stale-token scenario, both-conditions-required, concurrent rotation, and temp
+object shadowing. The other lock/ACL/isolation tests run unchanged against the new signature.

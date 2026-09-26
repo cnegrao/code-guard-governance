@@ -23,7 +23,7 @@ before(async()=>{
   route=await import('@/app/api/governance/workspace/execution-context/route');
 });
 async function token(role='org_admin'){
-  return signToken({sub:'human',org,email:'fixture@example.invalid',role});
+  return signToken({sub:'human',org,email:'fixture@example.invalid',role,credentialEpoch:'2026-09-25T00:00:00.000001+00:00'});
 }
 beforeEach(async()=>{process.env.JWT_SECRET=secret;currentRole='org_admin';cookie=await token();reads=[];writes=[];});
 const request=(body:unknown={decisionId:'decision'})=>new Request('https://example.invalid/api/governance/workspace/execution-context',{method:'POST',headers:{'x-codeguard-org':'forged'},body:JSON.stringify(body)});

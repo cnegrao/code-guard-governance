@@ -52,11 +52,14 @@ for (const kind of ['login', 'signup']) {
       assert.deepEqual(signedAt, [eligible]);
       const claims = decodeJwt(result.session!.token);
       assert.ok(claims.iat! > Math.floor(Date.parse(epoch as string) / 1000));
-      assert.deepEqual(Object.keys(claims).sort(), ['aud', 'email', 'exp', 'iat', 'iss', 'org', 'role', 'sub']);
+      assert.deepEqual(Object.keys(claims).sort(), ['aud', 'credential_epoch', 'email', 'exp', 'iat', 'iss', 'org', 'role', 'sub']);
+      assert.equal(claims.credential_epoch, epoch, 'token carries the exact DB epoch text verbatim');
       assert.equal(claims.iss, 'codeguard-governance');
       assert.equal(claims.aud, 'codeguard-dashboard');
       assert.equal(claims.exp! - claims.iat!, 28800);
-      assert.equal((await verifyGovernanceSessionToken(result.session!.token)).issuedAtSeconds, eligible / 1000);
+      const principal = await verifyGovernanceSessionToken(result.session!.token);
+      assert.equal(principal.issuedAtSeconds, eligible / 1000);
+      assert.equal(principal.credentialEpoch, epoch);
     });
   }
   for (const invalid of [undefined, null, '', 'not-a-date', 'infinity', '123', '2026-02-30T00:00:00Z',
@@ -73,6 +76,15 @@ for (const kind of ['login', 'signup']) {
       assert.deepEqual(signedAt, []);
     });
   }
+  test(`${kind}: microsecond DB epoch text is bound verbatim (never rounded, reformatted or derived from iat)`, async t => {
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: base + 200 });
+    for (const exact of ['2026-09-25T11:59:59.000001+00:00', '2026-09-25T11:59:59.999999Z', '2026-09-25T08:59:59.123456-03:00']) {
+      epoch = exact;
+      const result = await issue(kind);
+      assert.equal(decodeJwt(result.session!.token).credential_epoch, exact);
+      assert.equal((await verifyGovernanceSessionToken(result.session!.token)).credentialEpoch, exact);
+    }
+  });
   test(`${kind}: past epoch signs immediately with internally generated iat`, async t => {
     t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: base + 200 });
     epoch = new Date(base - 1).toISOString();

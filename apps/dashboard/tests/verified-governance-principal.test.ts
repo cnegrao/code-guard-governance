@@ -6,10 +6,14 @@ import {
   GOVERNANCE_SESSION_MAX_AGE_SECONDS, requireJwtSecret, SESSION_AUDIENCE,
   SESSION_COOKIE_NAME, SESSION_ISSUER, signToken, verifyGovernanceSessionToken,
 } from "../lib/auth/session-token";
+import { parseCredentialEpochMillis } from "../lib/auth/credential-epoch";
 
 const secret = "e2ec329fb4ac90812f819a0b8936de51";
 const now = 1_790_208_000;
 const identity = { sub: "user-1", org: "org-1", email: "user@example.invalid", role: "user" };
+// Exact DB-authored password_changed_at text (microseconds + offset preserved verbatim).
+const epoch = "2026-09-25T11:59:58.123456+00:00";
+const signing = { ...identity, credentialEpoch: epoch };
 const previousSecret = process.env.JWT_SECRET;
 let cookie: string | undefined;
 let headerReads = 0;
@@ -49,14 +53,14 @@ after(() => {
 });
 
 async function token(changes: Record<string, unknown> = {}, algorithm = "HS256", key = secret) {
-  return new SignJWT({ ...identity, iss: SESSION_ISSUER, aud: SESSION_AUDIENCE, iat: now, exp: now + 3600, ...changes })
+  return new SignJWT({ ...identity, credential_epoch: epoch, iss: SESSION_ISSUER, aud: SESSION_AUDIENCE, iat: now, exp: now + 3600, ...changes })
     .setProtectedHeader({ alg: algorithm }).sign(new TextEncoder().encode(key));
 }
 
 test("verified cookie yields identity and timestamps, with role/email only informational", async () => {
   cookie = await token();
   const principal = await auth.requireVerifiedGovernancePrincipal();
-  assert.deepEqual(principal, { userId: identity.sub, organisationId: identity.org,
+  assert.deepEqual(principal, { userId: identity.sub, organisationId: identity.org, credentialEpoch: epoch,
     issuedAtSeconds: now, expiresAtSeconds: now + 3600, informational: { email: identity.email, role: "user" } });
   assert.equal("role" in principal, false);
   assert.equal("permissions" in principal, false);
@@ -90,7 +94,7 @@ for (const [name, value] of Object.entries({ missing: undefined, empty: "", whit
     if (value === undefined) delete process.env.JWT_SECRET;
     else process.env.JWT_SECRET = value;
     assert.throws(requireJwtSecret, /^Error: JWT_SECRET must be/);
-    await assert.rejects(signToken(identity), /^Error: JWT_SECRET must be/);
+    await assert.rejects(signToken(signing), /^Error: JWT_SECRET must be/);
     await assert.rejects(auth.requireVerifiedGovernancePrincipal, /Not authenticated/);
     assert.equal(await auth.verifyToken(cookie), null);
     assert.equal((await me.GET()).status, 401);
@@ -102,7 +106,7 @@ test("secret size is measured in UTF-8 bytes; 32-byte and larger keys work", asy
   for (const key of [secret, secret + "42", "áβ漢".repeat(5)]) {
     process.env.JWT_SECRET = key;
     assert.ok(requireJwtSecret().byteLength >= 32);
-    assert.equal((await verifyGovernanceSessionToken(await signToken(identity))).userId, "user-1");
+    assert.equal((await verifyGovernanceSessionToken(await signToken(signing))).userId, "user-1");
   }
 });
 
@@ -114,6 +118,13 @@ const invalidClaims: Array<[string, Record<string, unknown>]> = [
   ["future nbf", { nbf: now + 1 }], ["future iat", { iat: now + 1 }],
   ["over eight hours despite future exp", { iat: now - GOVERNANCE_SESSION_MAX_AGE_SECONDS - 1 }],
   ["legacy token", { iss: undefined, aud: undefined, iat: undefined }],
+  // credential_epoch is REQUIRED: tokens without it (all pre-S0.3.2R tokens) fail closed.
+  ["missing credential_epoch", { credential_epoch: undefined }],
+  ...[null, "", " ", "not-a-date", "123", 1790208000, 1790208000.5, true, [], {}, [epoch], { epoch },
+    "2026-09-25T11:59:58.123456", "2026-09-25T11:59:58", "2026-02-30T00:00:00Z", "2026-13-01T00:00:00Z",
+    "2026-09-25T25:00:00Z", "2026-09-25T11:59:58.1234567Z", "2026-09-25T11:59:58Z junk", " " + epoch, epoch + " ",
+    "infinity", "-infinity", "epoch", "2026-09-25T11:59:58+0000",
+  ].map((value): [string, Record<string, unknown>] => [`credential_epoch=${JSON.stringify(value)}`, { credential_epoch: value }]),
 ];
 for (const claim of ["sub", "org"]) {
   for (const value of [undefined, null, "", " ", " padded ", "line\nbreak", 123, [], {}, "x".repeat(257)]) {
@@ -158,16 +169,42 @@ test("exactly eight hours and current nbf accepted; malformed display claims con
 test("canonical issuance pins the documented claims and cookie lifetime", async () => {
   assert.equal(SESSION_ISSUER, "codeguard-governance");
   assert.equal(SESSION_AUDIENCE, "codeguard-dashboard");
-  const issued = await auth.signToken({ ...identity, iss: "attacker", aud: "attacker", iat: 1, exp: now + 999999 } as typeof identity);
+  const issued = await auth.signToken({ ...signing, iss: "attacker", aud: "attacker", iat: 1, exp: now + 999999, credential_epoch: "attacker" } as typeof signing);
   const { payload, protectedHeader } = await jwtVerify(issued, new TextEncoder().encode(secret), {
     algorithms: ["HS256"], issuer: SESSION_ISSUER, audience: SESSION_AUDIENCE, currentDate: new Date(now * 1000),
   });
   assert.equal(protectedHeader.alg, "HS256");
-  assert.deepEqual(payload, { ...identity, iss: SESSION_ISSUER, aud: SESSION_AUDIENCE, iat: now, exp: now + 28800 });
+  // credential_epoch is the exact DB text from the signing input; a caller-supplied claim cannot override it.
+  assert.deepEqual(payload, { ...identity, credential_epoch: epoch, iss: SESSION_ISSUER, aud: SESSION_AUDIENCE, iat: now, exp: now + 28800 });
   cookie = issued;
   assert.equal((await me.GET()).status, 200);
   assert.match(auth.setTokenCookie(issued), /HttpOnly; Path=\/; Max-Age=28800; SameSite=Lax/);
-  await assert.rejects(auth.signToken({ ...identity, org: " " }), /Invalid session identity/);
+  await assert.rejects(auth.signToken({ ...signing, org: " " }), /Invalid session identity/);
+});
+
+test("signToken requires an exact zoned DB credential epoch and never invents one", async () => {
+  for (const value of [undefined, null, "", "not-a-date", "123", "2026-09-25T11:59:58", "2026-02-30T00:00:00Z", 1790208000, new Date(now * 1000)]) {
+    await assert.rejects(signToken({ ...identity, credentialEpoch: value } as never), /^Error: Invalid session credential epoch$/);
+  }
+  await assert.rejects(signToken(identity as never), /^Error: Invalid session credential epoch$/);
+});
+
+test("credential epoch text survives sign and verify verbatim (microsecond precision, offset, T/space forms)", async () => {
+  for (const value of ["2026-09-25T11:59:58.000001+00:00", "2026-09-25T11:59:58.999999Z", "2026-09-25 11:59:58.123456+00:00",
+    "2026-09-25T08:59:58.5-03:00", "2026-09-25T11:59:58+00:00"]) {
+    const principal = await verifyGovernanceSessionToken(await signToken({ ...identity, credentialEpoch: value }));
+    assert.equal(principal.credentialEpoch, value);
+    assert.equal((await auth.verifyToken(await signToken({ ...identity, credentialEpoch: value })))?.sub, "user-1");
+  }
+  assert.ok(parseCredentialEpochMillis("2026-09-25T11:59:58.000001+00:00") > parseCredentialEpochMillis("2026-09-25T11:59:58+00:00"), "sub-millisecond digits retained");
+  assert.ok(parseCredentialEpochMillis("2026-09-25T11:59:58.000002+00:00") > parseCredentialEpochMillis("2026-09-25T11:59:58.000001+00:00"));
+});
+
+test("credential_epoch is authenticated session metadata only: not derived from iat, not exposed as authorization", async () => {
+  const principal = await verifyGovernanceSessionToken(await token({ iat: now - 10, credential_epoch: "2020-01-01T00:00:00.000001+00:00" }));
+  assert.equal(principal.credentialEpoch, "2020-01-01T00:00:00.000001+00:00");
+  assert.equal(principal.issuedAtSeconds, now - 10);
+  assert.equal("permissions" in principal, false);
 });
 
 test("middleware gates navigation with strict sessions and emits no identity headers", async () => {

@@ -85,7 +85,7 @@ before(async () => {
 });
 
 async function session(role = "user") {
-  return signToken({ sub: actor, org, role, email: "user@example.invalid" });
+  return signToken({ sub: actor, org, role, email: "user@example.invalid", credentialEpoch: "2026-09-25T00:00:00.000001+00:00" });
 }
 beforeEach(async () => {
   process.env.JWT_SECRET = secret;
@@ -182,11 +182,12 @@ test("current-role resolver rejects missing, inactive, unresolved and non-system
   await assert.rejects(authorization.resolveCurrentGovernanceRole(principal), /Unable to resolve/);
 });
 
-for (const mode of ["missing", "legacy", "old", "issuer", "audience"]) {
+for (const mode of ["missing", "legacy", "old", "issuer", "audience", "no-credential-epoch"]) {
   test(`direct readers and privileged routes reject ${mode} session without middleware`, async () => {
     const now = Math.floor(Date.now() / 1000);
     const claims = { sub: actor, org, role: "org_admin", iat: now, exp: now + 3600,
-      iss: SESSION_ISSUER, aud: SESSION_AUDIENCE } as Record<string, unknown>;
+      iss: SESSION_ISSUER, aud: SESSION_AUDIENCE, credential_epoch: "2026-09-25T00:00:00.000001+00:00" } as Record<string, unknown>;
+    if (mode === "no-credential-epoch") delete claims.credential_epoch;
     if (mode === "legacy") { delete claims.iss; delete claims.aud; delete claims.iat; }
     if (mode === "old") claims.iat = now - 28801;
     if (mode === "issuer") claims.iss = "wrong";

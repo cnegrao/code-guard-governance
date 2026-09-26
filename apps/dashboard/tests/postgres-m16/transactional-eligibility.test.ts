@@ -1,20 +1,24 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { credentialMigration, disposableM16Postgres, eligibilityMigration, migrationSource } from '../helpers/disposable-m16-postgres';
+import { credentialMigration, disposableM16Postgres, eligibilityMigration, epochBindingMigration, migrationSource } from '../helpers/disposable-m16-postgres';
 
 type Session = ReturnType<Awaited<ReturnType<typeof disposableM16Postgres>>['session']>;
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-test('M16 S0.3.2 canonical disposable PG17 transactional governance eligibility', { timeout: 600000 }, async t => {
+test('M16 S0.3.2/S0.3.2R canonical disposable PG17 transactional governance eligibility', { timeout: 600000 }, async t => {
   const pg = await disposableM16Postgres(message => t.diagnostic(message));
   const { sql, bootstrapSql, migrate } = pg;
   t.after(() => pg.stop());
   await migrate(credentialMigration);
   await migrate(eligibilityMigration);
+  const oldHelperSig = 'gov_repo.lock_and_resolve_governance_session_eligibility_v1(uuid,uuid,bigint,bigint)';
+  // The S0.3.2 helper exists (and is owner-only) until the corrective migration replaces it.
+  assert.equal(await sql(`select to_regprocedure('${oldHelperSig}') is not null`), 't');
+  await migrate(epochBindingMigration);
 
   const helper = 'gov_repo.lock_and_resolve_governance_session_eligibility_v1';
-  const helperSig = `${helper}(uuid,uuid,bigint,bigint)`;
+  const helperSig = `${helper}(uuid,uuid,bigint,bigint,timestamptz)`;
   const users = 'gov_repo.governance_users';
   const roles = 'gov_repo.governance_roles';
   const orgs = 'gov_repo.organisations';
@@ -60,19 +64,22 @@ test('M16 S0.3.2 canonical disposable PG17 transactional governance eligibility'
   const stableSecond = `do $stable$ begin
     if (extract(epoch from clock_timestamp())::numeric % 1) > 0.8 then perform pg_sleep(0.3); end if; end $stable$;`;
   const uuidArg = (value: string) => value === 'null' ? 'null::uuid' : `'${value}'::uuid`;
-  const call = (org: string, user: string, iat = 't.s - 10', exp = 't.s + 3600') =>
+  // Default credential epoch: the locked row's CURRENT exact password_changed_at (as timestamptz,
+  // never text). Tests that need a different/absent epoch pass an explicit SQL expression.
+  const currentEpoch = (user: string) => `(select password_changed_at from ${users} where user_id=${uuidArg(user)})`;
+  const call = (org: string, user: string, iat = 't.s - 10', exp = 't.s + 3600', epoch = currentEpoch(user)) =>
     `with t as materialized (select floor(extract(epoch from clock_timestamp()))::bigint as s)
-     select to_json(h) from t, lateral ${helper}(${uuidArg(org)},${uuidArg(user)},${iat},${exp}) h;`;
-  const eligible = async (user: string, org = orgA, iat?: string, exp?: string) =>
-    JSON.parse(lastLine(await owner(`${stableSecond} ${call(org, user, iat, exp)}`)));
+     select to_json(h) from t, lateral ${helper}(${uuidArg(org)},${uuidArg(user)},${iat},${exp},${epoch}) h;`;
+  const eligible = async (user: string, org = orgA, iat?: string, exp?: string, epoch?: string) =>
+    JSON.parse(lastLine(await owner(`${stableSecond} ${call(org, user, iat, exp, epoch)}`)));
   const rejects = (query: string, code: string, token: string, detail?: string) =>
     assert.rejects(owner(query), (error: Error) => {
       assert.match(error.message, new RegExp(`${code}[\\s\\S]*M16_ELIGIBILITY_${token}`));
       if (detail) assert.match(error.message, new RegExp(detail));
       return true;
     });
-  const rejected = (user: string, code: string, token: string, detail?: string, org = orgA, iat?: string, exp?: string) =>
-    rejects(`${stableSecond} ${call(org, user, iat, exp)}`, code, token, detail);
+  const rejected = (user: string, code: string, token: string, detail?: string, org = orgA, iat?: string, exp?: string, epoch?: string) =>
+    rejects(`${stableSecond} ${call(org, user, iat, exp, epoch)}`, code, token, detail);
   const TEMPORAL = ['GV001', 'SESSION_TEMPORALLY_INVALID'] as const;
   const STALE = ['GV002', 'CREDENTIAL_STALE'] as const;
   const INELIGIBLE = ['GV003', 'ACTOR_OR_ORGANISATION_INELIGIBLE'] as const;
@@ -108,19 +115,26 @@ test('M16 S0.3.2 canonical disposable PG17 transactional governance eligibility'
       await writer.close();
     };
   }
-  async function heldEligibility(user: string, org = orgA, iat?: string, exp?: string) {
+  async function heldEligibility(user: string, org = orgA, iat?: string, exp?: string, epoch?: string) {
     const holder = pg.session('postgres');
     await holder.run('begin;');
-    const result = await holder.run(`${call(org, user, iat, exp)}`);
+    const result = await holder.run(`${call(org, user, iat, exp, epoch)}`);
     assert.equal(result.err, '', result.err);
     return { holder, row: JSON.parse(lastLine(result.out)) };
   }
 
-  await t.test('catalog: one canonical helper; DEFINER, VOLATILE, pinned search_path, lock_timeout, owner-only ACL', async () => {
+  await t.test('catalog: ONE canonical five-argument helper; DEFINER, VOLATILE, pg_catalog,pg_temp search_path, lock_timeout, owner-only ACL', async () => {
     assert.equal(await sql(`select count(*) from pg_proc where pronamespace='gov_repo'::regnamespace and proname like '%eligibility%'`), '1');
+    // S0.3.2R: the four-argument S0.3.2 helper is gone and is not callable as a bypass.
+    assert.equal(await sql(`select to_regprocedure('${oldHelperSig}') is null`), 't');
+    assert.equal(await sql(`select count(*) from pg_proc where pronamespace='gov_repo'::regnamespace and proname='lock_and_resolve_governance_session_eligibility_v1' and pronargs=4`), '0');
+    assert.equal(await sql(`select pronargs from pg_proc where oid='${helperSig}'::regprocedure`), '5');
+    assert.equal(await sql(`select pg_get_function_identity_arguments('${helperSig}'::regprocedure)`),
+      'p_organisation_id uuid, p_actor_user_id uuid, p_verified_session_iat bigint, p_verified_session_exp bigint, p_verified_credential_epoch timestamp with time zone');
+    await assert.rejects(owner(`select * from ${helper}('${orgA}','${randomUUID()}',1,2)`), /42883|does not exist/i);
     assert.equal(await sql(`select prosecdef and provolatile='v' and prolang=(select oid from pg_language where lanname='plpgsql')
       and pg_get_userbyid(proowner)='postgres' from pg_proc where oid='${helperSig}'::regprocedure`), 't');
-    assert.equal(await sql(`select proconfig::text from pg_proc where oid='${helperSig}'::regprocedure`), '{search_path=pg_catalog,lock_timeout=5s}');
+    assert.equal(await sql(`select proconfig::text from pg_proc where oid='${helperSig}'::regprocedure`), '{"search_path=pg_catalog, pg_temp",lock_timeout=5s}');
     assert.equal(await sql(`select proacl::text from pg_proc where oid='${helperSig}'::regprocedure`), '{postgres=X/postgres}');
     assert.equal(await sql(`select count(*) from pg_proc p, lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
       where p.oid='${helperSig}'::regprocedure and a.privilege_type='EXECUTE' and a.grantee=0`), '0', 'PUBLIC has no EXECUTE');
@@ -138,6 +152,8 @@ test('M16 S0.3.2 canonical disposable PG17 transactional governance eligibility'
     assert.doesNotMatch(source, /\.permissions\b/i);
     assert.doesNotMatch(await sql(`select pg_get_function_result('${helperSig}'::regprocedure)`), /permissions/);
     assert.match(migrationSource(eligibilityMigration), /FOR SHARE OF o[\s\S]*FOR SHARE OF u[\s\S]*FOR SHARE OF gr/);
+    assert.match(migrationSource(epochBindingMigration), /FOR SHARE OF o[\s\S]*FOR SHARE OF u[\s\S]*FOR SHARE OF gr/);
+    assert.match(migrationSource(epochBindingMigration), /DROP FUNCTION gov_repo\.lock_and_resolve_governance_session_eligibility_v1\(uuid, uuid, bigint, bigint\);/);
     t.diagnostic(`Helper ACL: ${await sql(`select proacl::text from pg_proc where oid='${helperSig}'::regprocedure`)}; config: ${await sql(`select proconfig::text from pg_proc where oid='${helperSig}'::regprocedure`)}`);
   });
   await t.test('service_role/anon/authenticated cannot directly execute; service_role DML still works on the lock-bearing rows', async () => {
@@ -172,7 +188,7 @@ test('M16 S0.3.2 canonical disposable PG17 transactional governance eligibility'
     assert.deepEqual([...row.role_codes].sort(), ['GOVERNANCE_ADMIN', 'M16_R1', 'M16_R3']);
     assert.equal(await sql(`select h.checked_at between t0.c and clock_timestamp()
       from (select clock_timestamp() c) t0, lateral ${helper}('${orgA}','${id}',
-        floor(extract(epoch from t0.c))::bigint - 10, floor(extract(epoch from t0.c))::bigint + 3600) h`, 'postgres'), 't',
+        floor(extract(epoch from t0.c))::bigint - 10, floor(extract(epoch from t0.c))::bigint + 3600, ${currentEpoch(id)}) h`, 'postgres'), 't',
       'checked_at is the database clock, bracketed by clock_timestamp() readings');
   });
   await t.test('2-6. missing/inactive org, missing/inactive user, cross-tenant all fail closed', async () => {
@@ -451,6 +467,131 @@ test('M16 S0.3.2 canonical disposable PG17 transactional governance eligibility'
       assert.equal((await probe.run('show lock_timeout;')).out.trim(), before, 'function-local lock_timeout restored on exit');
       await probe.run('rollback;');
     } finally { await probe.close(); }
+  });
+
+  // ---------------- S0.3.2R: exact DB-authored credential epoch binding ----------------
+  const MISMATCH = 'CREDENTIAL_EPOCH_MISMATCH';
+  // PostgREST-shaped exact text of the row's epoch (UTC, 6 fractional digits).
+  const epochText = (user: string) => sql(`select to_char(password_changed_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US')||'+00:00' from ${users} where user_id='${user}'`);
+
+  await t.test('R1. exact epoch equality: current epoch is eligible; NULL, older and newer epochs are GV002 CREDENTIAL_EPOCH_MISMATCH', async () => {
+    const id = await mkUser(arr(adminRole));
+    assert.equal((await eligible(id)).actor_user_id, id);
+    await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, 'null::timestamptz');
+    await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `${currentEpoch(id)} - interval '1 second'`);
+    await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `${currentEpoch(id)} + interval '1 second'`);
+    await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `clock_timestamp()`);
+  });
+  await t.test('R2. microsecond precision is exact: +/-1us and same-second-different-us epochs mismatch; DB text form round-trips', async () => {
+    const id = await mkUser(arr());
+    for (const micros of [0, 1, 123456, 999998, 999999]) {
+      await setEpoch(id, `date_trunc('second', clock_timestamp()) - interval '100 seconds' + interval '${micros} microseconds'`);
+      assert.equal((await eligible(id)).actor_user_id, id, `.${micros} exact current epoch`);
+      await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `${currentEpoch(id)} + interval '1 microsecond'`);
+      await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `${currentEpoch(id)} - interval '1 microsecond'`);
+      // The verified JWT carries the DB text verbatim; timestamptz parsing of it is exact.
+      const text = await epochText(id);
+      assert.match(text, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}\+00:00$/);
+      assert.equal((await eligible(id, orgA, undefined, undefined, `'${text}'::timestamptz`)).actor_user_id, id, `.${micros} text round-trip`);
+    }
+    // Same second, sub-millisecond difference and truncated-to-millisecond text must mismatch.
+    await setEpoch(id, `date_trunc('second', clock_timestamp()) - interval '100 seconds' + interval '500001 microseconds'`);
+    const text = await epochText(id);
+    assert.match(text, /\.500001\+00:00$/);
+    await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `'${text.replace('.500001', '.500002')}'::timestamptz`);
+    await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `'${text.replace('.500001', '.500')}'::timestamptz`);
+  });
+  await t.test('R3. FORMER STALE-TOKEN SCENARIO (backend +5s ahead): old E1 with iat>floor(E2) is now GV002; current E2 with the same iat passes', async () => {
+    const id = await mkUser(arr(adminRole));
+    // E1: an epoch a couple of seconds old; the session was "issued" with E1 by a backend
+    // whose clock is 5s ahead of the DB, so iat = DB second + 5 (inside the accepted bound).
+    await setEpoch(id, `clock_timestamp() - interval '2 seconds'`);
+    const e1 = await epochText(id);
+    // Credential rotates AFTER issuance through the production trigger => E2 > E1.
+    await sql(`update ${users} set external_id='idp:rotated-after-issuance' where user_id='${id}'`);
+    const e2 = await epochText(id);
+    assert.equal(await sql(`select '${e2}'::timestamptz > '${e1}'::timestamptz`), 't');
+    const iat = 't.s + 5';
+    // The pre-remediation rule alone would have accepted this token: iat is numerically later than floor(E2).
+    assert.equal(await sql(`select (floor(extract(epoch from clock_timestamp()))::bigint + 5) > floor(extract(epoch from '${e2}'::timestamptz))::bigint`), 't',
+      'premise: iat > floor(E2), i.e. the old iat-floor rule cannot detect this rotation');
+    await rejected(id, ...STALE, MISMATCH, orgA, iat, 't.s + 3600', `'${e1}'::timestamptz`);
+    assert.equal((await eligible(id, orgA, iat, 't.s + 3600', `'${e2}'::timestamptz`)).actor_user_id, id,
+      'same iat with the exact current E2 is eligible');
+    t.diagnostic(`Former stale-token attack: E1=${e1} E2=${e2}; iat=DB+5s > floor(E2) accepted by iat-floor alone; now E1 => GV002 ${MISMATCH}, E2 => eligible`);
+  });
+  await t.test('R4. +5s future iat still accepted with exact epoch; +6s still rejected (GV001); epoch mismatch still wins over an in-bound iat', async () => {
+    const id = await mkUser(arr());
+    assert.equal((await eligible(id, orgA, 't.s + 5', 't.s + 3600')).actor_user_id, id);
+    await rejected(id, ...TEMPORAL, 'IAT_AHEAD_OF_DATABASE_CLOCK', orgA, 't.s + 6', 't.s + 3600');
+    await rejected(id, ...STALE, MISMATCH, orgA, 't.s + 5', 't.s + 3600', `${currentEpoch(id)} - interval '1 microsecond'`);
+  });
+  await t.test('R5. BOTH conditions required: exact epoch with iat<=floor(epoch) is still GV002 SESSION_NOT_AFTER_CREDENTIAL_EPOCH; same-second rules intact', async () => {
+    const id = await mkUser(arr());
+    for (const micros of [0, 1, 999999]) {
+      await setEpoch(id, `date_trunc('second', clock_timestamp()) - interval '100 seconds' + interval '${micros} microseconds'`);
+      const epochSecond = `(select floor(extract(epoch from password_changed_at))::bigint from ${users} where user_id='${id}')`;
+      await rejected(id, ...STALE, 'SESSION_NOT_AFTER_CREDENTIAL_EPOCH', orgA, epochSecond, `${epochSecond} + 3600`);
+      await rejected(id, ...STALE, 'SESSION_NOT_AFTER_CREDENTIAL_EPOCH', orgA, `${epochSecond} - 1`, `${epochSecond} + 3600`);
+      assert.equal((await eligible(id, orgA, `${epochSecond} + 1`, `${epochSecond} + 3600`)).actor_user_id, id);
+    }
+  });
+  await t.test('R6. concurrent credential rotation still blocks behind the lock; the previously verified epoch is then GV002, the new epoch eligible', async () => {
+    const id = await mkUser(arr(adminRole));
+    const e1 = await epochText(id);
+    const { holder, row } = await heldEligibility(id, orgA, undefined, undefined, `'${e1}'::timestamptz`);
+    assert.equal(row.actor_user_id, id);
+    const release = await concurrentWriter(holder, `update ${users} set external_id='idp:rotated-r6' where user_id='${id}';`);
+    await release();
+    await holder.close();
+    const e2 = await epochText(id);
+    assert.notEqual(e2, e1);
+    await rejected(id, ...STALE, MISMATCH, orgA, undefined, undefined, `'${e1}'::timestamptz`);
+    assert.equal((await eligible(id, orgA, 't.s + 1', 't.s + 3600', `'${e2}'::timestamptz`)).actor_user_id, id);
+  });
+  await t.test('R7. search_path=pg_catalog,pg_temp: temp types/functions/tables cannot shadow system names or change the authorization result', async () => {
+    const admin = await mkUser(arr(adminRole));
+    const plain = await mkUser(arr(ownerRole));
+    // Everything below is session-local (pg_temp). The connection runs as the helper's only
+    // permitted caller (owner). Shadow objects target every unqualified type/function name a
+    // helper could resolve, so any unqualified reference would visibly change behavior.
+    // Functions/tables are created BEFORE the shadow types so their own signatures stay sane.
+    const shadows = `
+      create function pg_temp.floor(double precision) returns double precision language sql as 'select 0::double precision';
+      create function pg_temp.clock_timestamp() returns pg_catalog.timestamptz language sql as $$select 'epoch'::pg_catalog.timestamptz$$;
+      create function pg_temp.array_position(anycompatiblearray, anycompatible) returns int language sql as 'select null::int';
+      create function pg_temp.cardinality(anyarray) returns int language sql as 'select 0';
+      create function pg_temp.array_append(anycompatiblearray, anycompatible) returns anycompatiblearray language sql as 'select $1';
+      create function pg_temp.unnest(anyarray) returns setof int language sql as 'select 1';
+      create function pg_temp.count(anyelement) returns bigint language sql as 'select 0::bigint';
+      create temp table organisations (organisation_id int, is_active int);
+      create temp table governance_users (user_id int);
+      create type pg_temp.uuid as enum ('shadow');
+      create type pg_temp.text as enum ('shadow');
+      create type pg_temp.timestamptz as enum ('shadow');`;
+    // Caller SQL must not itself resolve the shadowed type names.
+    const qualified = (query: string) => query.replace(/::uuid/g, '::pg_catalog.uuid').replace(/::timestamptz/g, '::pg_catalog.timestamptz');
+    const run = (tail: string) => owner(`${stableSecond} ${shadows} ${qualified(tail)}`);
+    // Premise (differential): the shadow IS effective for a function pinned to pg_catalog ONLY
+    // (pg_temp is then searched first, implicitly, for types) but NOT under the explicit
+    // "pg_catalog, pg_temp" pin used by the helper.
+    const probe = (pin: string) => `create function pg_temp.probe() returns pg_catalog.bool language plpgsql set search_path = ${pin} as
+      $$ declare v uuid; begin return pg_catalog.pg_typeof(v) = 'pg_catalog.uuid'::pg_catalog.regtype; end $$;
+      select pg_temp.probe();`;
+    assert.equal(lastLine(await run(probe('pg_catalog'))), 'f', 'premise: temp type shadows uuid under the old pin');
+    assert.equal(lastLine(await run(probe('pg_catalog, pg_temp'))), 't', 'pg_catalog first + explicit pg_temp last is not shadowed');
+    // Real helper: results are exactly the un-shadowed results.
+    const good = JSON.parse(lastLine(await run(call(orgA, admin))));
+    assert.equal(good.actor_user_id, admin);
+    assert.equal(good.has_governance_admin, true);
+    assert.deepEqual(good.role_codes, ['GOVERNANCE_ADMIN']);
+    const notAdmin = JSON.parse(lastLine(await run(call(orgA, plain))));
+    assert.equal(notAdmin.has_governance_admin, false);
+    // A shadowed clock/floor/epoch handling would let an expired/stale session through; it must still reject.
+    await assert.rejects(run(call(orgA, admin, 't.s - 10', 't.s')), /GV001[\s\S]*SESSION_EXPIRED/);
+    await assert.rejects(run(call(orgA, admin, undefined, undefined, `${currentEpoch(admin)} - interval '1 microsecond'`)), /GV002[\s\S]*CREDENTIAL_EPOCH_MISMATCH/);
+    await assert.rejects(run(call(orgA, randomUUID())), /GV003[\s\S]*ACTOR_UNAVAILABLE_OR_NOT_MEMBER/);
+    await assert.rejects(run(call(orgOff, randomUUID())), /GV003/);
   });
 
   await t.test('no eligibility state leaks across failures: a failed call leaves no locks that block writers after rollback', async () => {

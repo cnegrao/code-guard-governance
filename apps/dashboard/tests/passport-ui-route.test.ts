@@ -43,7 +43,7 @@ before(async()=>{
 });
 beforeEach(async()=>{
   process.env.JWT_SECRET=secret; received=[]; available=true; listCalls=[];
-  cookie=await signToken({sub:'user:1',org,email:'test@example.invalid',role:'VIEWER'});
+  cookie=await signToken({sub:'user:1',org,email:'test@example.invalid',role:'VIEWER',credentialEpoch:'2026-09-25T00:00:00.000001+00:00'});
 });
 
 test('real Passport component renders exactly 16 accessible and navigable sections including UNKNOWN',()=>{
