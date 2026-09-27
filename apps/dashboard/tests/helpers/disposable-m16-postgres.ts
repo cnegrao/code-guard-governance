@@ -12,6 +12,29 @@ export const credentialMigration = '20260925150000_m16_s0_credential_epoch_v1.sq
 export const eligibilityMigration = '20260925160000_m16_s0_transactional_eligibility_v1.sql';
 // S0.3.2R chain step: replaces the four-argument helper with the epoch-bound five-argument helper.
 export const epochBindingMigration = '20260925170000_m16_s0_credential_epoch_binding_v1.sql';
+// S0.3.3B0 chain step (committed, audited, CLOSED): fixes materialize_object_reconciliation's
+// PG17-incompatible ON CONFLICT before the S0.3.3B wrappers are layered over it. Applied after
+// epochBindingMigration and before governedWriteWrapperMigration; never re-authored here.
+export const objectMaterializationCompatMigration = '20260925175000_m16_s0_object_materialization_rule_compat_v1.sql';
+// S0.3.3B chain step: governed write wrappers over the real authoritative write functions.
+export const governedWriteWrapperMigration = '20260925180000_m16_s0_governed_write_wrappers_v1.sql';
+// Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
+// runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
+// Applied chronologically AFTER the broad service_role default-grant migration, so tables and
+// functions receive the same legacy default privileges as production (nothing is stubbed).
+export const governanceWriteChain = [
+  '20260905060000_governance_persistence_v1.sql',
+  '20260906120000_canonical_materialization_v1.sql',
+  '20260906180000_discovery_intake_v1.sql',
+  '20260906190000_governance_workspace_queue_v1.sql',
+  '20260907120000_discovery_governance_input_persistence_v1.sql',
+  '20260907130000_reconciliation_materialization_workspace_v1.sql',
+  '20260908120000_agent_version_technical_profile_persistence_v1.sql',
+  '20260909210640_relationship_decision_to_truth_v1.sql',
+  '20260911120904_lineage_support_observations_v1.sql',
+  '20260911184613_technical_field_governance_v1.sql',
+  '20260915230551_execution_context_v1.sql',
+];
 export const m16Prerequisites = [
   '20260818003539_gov_repo_types_and_organisations.sql',
   '20260818003710_gov_repo_identity_and_ledger.sql',
@@ -20,11 +43,16 @@ export const m16Prerequisites = [
   '20260903200100_atomic_signup_legacy_rpc.sql',
 ];
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, credentialMigration, eligibilityMigration, epochBindingMigration].includes(name));
+  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration].includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 
-export async function disposableM16Postgres(diagnostic: (message: string) => void) {
+export interface DisposableM16Options {
+  /** Apply the real governance persistence chain (S0.3.3B). Off keeps the S0.3.1/S0.3.2 profiles unchanged. */
+  readonly governanceWriteChain?: boolean;
+}
+
+export async function disposableM16Postgres(diagnostic: (message: string) => void, options: DisposableM16Options = {}) {
   const bin = process.env.M16_PG17_BIN ?? (process.platform === 'win32' ? 'C:/Program Files/PostgreSQL/17/bin' : '');
   // Never inherit libpq service, connection, options, or credential overrides.
   const env = { ...process.env };
@@ -155,7 +183,15 @@ export async function disposableM16Postgres(diagnostic: (message: string) => voi
         set search_path = pg_catalog as 'select null::text';
       comment on function auth.email() is 'Harness-only inert RLS creation stub, never application authentication';
       grant usage on schema auth to anon, authenticated, service_role;`);
+    if (options.governanceWriteChain) {
+      // The real chain calls extensions.digest(): pgcrypto lives in schema "extensions" (as on
+      // Supabase). Established only in this disposable bootstrap; no migration is altered.
+      await bootstrapSql(`create schema extensions authorization postgres;
+        create extension pgcrypto with schema extensions;
+        grant usage on schema extensions to postgres, service_role, anon, authenticated;`);
+    }
     for (const migration of m16Prerequisites) await migrate(migration);
+    if (options.governanceWriteChain) for (const migration of governanceWriteChain) await migrate(migration);
     return { sql, bootstrapSql, migrate, session, stop };
   } catch (error) {
     if (existsSync(log)) diagnostic(readFileSync(log, 'utf8'));

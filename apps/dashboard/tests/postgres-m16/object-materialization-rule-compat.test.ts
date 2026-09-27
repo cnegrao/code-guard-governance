@@ -145,9 +145,15 @@ test('M16 S0.3.3B0 object materialization rule compatibility (real PG17, real pr
     and source_external_type=${lit(extType)} and source_external_id=${lit(extId)} and canonical_object_kind=${lit(kind)}`);
 
   let functionMeta: (label: string) => Promise<string>;
+  let functionOid: () => Promise<string>;
   let metaBeforeCorrective = '';
+  let oidBeforeCorrective = '';
   {
     const oidQuery = `(select oid from pg_proc where pronamespace='gov_repo'::regnamespace and proname='materialize_object_reconciliation')`;
+    functionOid = () => owner(`select ${oidQuery}::text`);
+    // OID is deliberately EXCLUDED from this comparable string (E. OID parity is asserted
+    // separately in test 2, so a genuine OID change would still be caught, just not silently
+    // baked into this string's own equality check).
     functionMeta = (label: string) => owner(`select ${lit(label)}||':'||pg_get_userbyid(proowner)||':'||prosecdef::text||':'||provolatile::text||':'||
       coalesce(proconfig::text,'null')||':'||pg_get_function_identity_arguments(oid)||':'||pg_get_function_result(oid)||':'||coalesce(proacl::text,'null')
       from pg_proc where oid=${oidQuery}`);
@@ -172,6 +178,8 @@ test('M16 S0.3.3B0 object materialization rule compatibility (real PG17, real pr
 
     // Function metadata snapshot BEFORE the corrective migration (compared after it below).
     metaBeforeCorrective = await functionMeta('before-corrective');
+    oidBeforeCorrective = await functionOid();
+    assert.match(oidBeforeCorrective, /^\d+$/);
   });
 
   await t.test('2. corrective migration applies successfully; function owner/security/volatility/search_path/ACL parity with before', async () => {
@@ -179,6 +187,10 @@ test('M16 S0.3.3B0 object materialization rule compatibility (real PG17, real pr
     const before = metaBeforeCorrective.replace('before-corrective', 'X');
     const after = (await functionMeta('after-corrective')).replace('after-corrective', 'X');
     assert.equal(after, before, 'owner, SECURITY mode, volatility, search_path, identity arguments, result shape and ACL are byte-for-byte unchanged');
+    // E. OID parity: CREATE OR REPLACE FUNCTION with an identical name and argument-type list
+    // preserves the function's OID; a same-signature DROP+CREATE would NOT. This distinguishes
+    // the two and is exactly what lets dependent objects/comments/permissions survive untouched.
+    assert.equal(await functionOid(), oidBeforeCorrective, 'CREATE OR REPLACE preserved the exact same function OID, not a new one');
     for (const role of ['service_role', 'anon', 'authenticated']) {
       const privilege = await owner(`select has_function_privilege('${role}','gov_repo.materialize_object_reconciliation(uuid,text,text,text,text,text,text,text,text,text,character,timestamptz)','EXECUTE')`);
       assert.equal(privilege, role === 'service_role' ? 't' : 'f', `${role} EXECUTE unchanged by the corrective migration (no GRANT/REVOKE in it)`);
@@ -286,6 +298,102 @@ test('M16 S0.3.3B0 object materialization rule compatibility (real PG17, real pr
       assert.match(message, /NORMALIZED_MAPPING_CONFLICT/);
     });
     assert.equal(await countsSql(), before, 'the incompatible attempt left zero mutation (the unique-violation catch never inserted, and the whole statement rolled back on the subsequent raise)');
+  });
+
+  // =====================================================================================
+  // B0 TEST HARDENING (independent-review deltas). These strengthen coverage only; the
+  // already-audited 20260925175000 migration is not modified by any test in this file.
+  await t.test('B0-hardening B: an UNEXPECTED unique violation propagates unchanged; it never becomes NORMALIZED_MAPPING_CONFLICT', async () => {
+    // Test-only, deterministic, real PG17 constraint scoped to a connection this test owns
+    // exclusively (created empty — earlier tests already hold other mapping rows for this org,
+    // so an org-wide singleton index could not even be created). Forces at most one mapping row
+    // for that one connection, entirely unrelated to normalized_mapping_identity_unique. A
+    // SECOND, non-colliding (different normalized identity) plain INSERT under the same
+    // connection still raises 23505, but on THIS index, not on the resolvable one.
+    const conn = 'conn-unexpected-unique';
+    await owner(`create unique index test_only_singleton_mapping_per_conn on gov_repo.canonical_normalized_object_mappings ((1)) where source_connection_id='${conn}';`);
+    try {
+      const first = await seedObjectCandidate('unexpected-unique-1', 'MODEL', { modelReference: 'model-unexpected-unique-1' }, { conn });
+      const firstDecision = await authorizeObject('unexpected-unique-1', first, 'MATCH_EXISTING', target1);
+      const firstRow = JSON.parse(lastLine(await svc(materializeSql(first, firstDecision, 'unexpected-unique-1'))));
+      assert.equal(firstRow.replay, false, 'the first mapping under this connection is created normally, occupying the test-only singleton slot');
+
+      const second = await seedObjectCandidate('unexpected-unique-2', 'MODEL', { modelReference: 'model-unexpected-unique-2' }, { conn });
+      const secondDecision = await authorizeObject('unexpected-unique-2', second, 'MATCH_EXISTING', target1);
+      const before = await countsSql();
+      await rejects(materializeSql(second, secondDecision, 'unexpected-unique-2'), (message: string) => {
+        assert.match(message, /23505/, 'the ORIGINAL unique_violation SQLSTATE propagates, not a re-coded one');
+        assert.match(message, /test_only_singleton_mapping_per_conn/, 'the message names the ACTUAL violated constraint');
+        assert.doesNotMatch(message, /NORMALIZED_MAPPING_CONFLICT/, 'an unrelated constraint name must never be treated as the resolvable one');
+      });
+      assert.equal(await countsSql(), before, 'the unexpected violation was a hard failure: zero mutation, never a resolved/caught conflict');
+    } finally {
+      await owner(`drop index gov_repo.test_only_singleton_mapping_per_conn;`);
+    }
+  });
+
+  await t.test('B0-hardening C: same normalized identity + a DIFFERENT resolved parent gives NORMALIZED_MAPPING_CONFLICT', async () => {
+    // AGENT_VERSION/DATA_ELEMENT are the only kinds with a resolved parent. Two independent
+    // AGENT canonical objects (distinct parents) are materialized first; two independent
+    // AGENT_VERSION discovery candidates then deliberately claim the SAME envelope candidateId
+    // (== normalized_object_identity) while each resolving to its OWN, different parent agent —
+    // a real UNIQUE-key collision with genuinely incompatible parents, not a mocked check.
+    const agentA = await seedObjectCandidate('parent-agent-a', 'AGENT', { agentCode: 'agent-parent-a' });
+    const agentADecision = await authorizeObject('parent-agent-a', agentA, 'CREATE_NEW', 'canonical-object:parent-agent-a');
+    assert.equal(JSON.parse(lastLine(await svc(materializeSql(agentA, agentADecision, 'parent-agent-a')))).replay, false);
+
+    const agentB = await seedObjectCandidate('parent-agent-b', 'AGENT', { agentCode: 'agent-parent-b' });
+    const agentBDecision = await authorizeObject('parent-agent-b', agentB, 'CREATE_NEW', 'canonical-object:parent-agent-b');
+    assert.equal(JSON.parse(lastLine(await svc(materializeSql(agentB, agentBDecision, 'parent-agent-b')))).replay, false);
+
+    const sharedIdentity = `candidate:agent-version:${'f'.repeat(32)}`;
+    async function seedAgentVersion(label: string, parentAgent: Candidate): Promise<Candidate> {
+      const conn = 'conn-parent-shared', extType = 'source', extId = 'parent-shared.ts';
+      const candidate = `candidate:${label}`, finding = `finding-${label}`, subject = `review-${label}`;
+      const proposedIdentity = { agent: { referenceKind: 'CANDIDATE', candidateKind: 'AGENT', candidateId: parentAgent.candidate } };
+      // This row's OWN candidate_id (PK) differs per label; its envelope deliberately claims the
+      // SAME candidateId/normalized identity as the other row — the identity string, per
+      // gov_repo.normalized_object_identity, is exactly envelope->>'candidateId', independent of
+      // the row's own candidate_id column.
+      const envelope = { candidateId: sharedIdentity, candidateKind: 'AGENT_VERSION', sourceObject: { connectionId: conn, externalType: extType, externalId: extId },
+        findingId: finding, assertionIds: [], evidenceIds: [], confidence: 1, requiresReconciliation: true, proposedIdentity };
+      await owner(`
+        insert into gov_repo.discovery_findings(organisation_id,finding_id,finding_nature,candidate_kind,source_connection_id,source_external_type,source_external_id,
+          confidence,review_status,requires_review,creates_canonical_object,detected_at,acquisition_run_id,contract_version,envelope,envelope_hash)
+          values('${org}',${lit(finding)},'CANDIDATE','AGENT_VERSION',${lit(conn)},${lit(extType)},${lit(extId)},1,'ACCEPTED',true,false,now(),${lit(run)},'1.0','{}',${HASH});
+        insert into gov_repo.discovery_candidates(organisation_id,candidate_id,candidate_kind,candidate_family,finding_id,source_connection_id,source_external_type,source_external_id,
+          confidence,requires_reconciliation,proposed_identity,acquisition_run_id,contract_version,envelope,envelope_hash)
+          values('${org}',${lit(candidate)},'AGENT_VERSION','OBJECT',${lit(finding)},${lit(conn)},${lit(extType)},${lit(extId)},1,true,${jsonLit(proposedIdentity)},${lit(run)},'1.0',${jsonLit(envelope)},${HASH});
+        insert into gov_repo.review_subjects(review_subject_id,organisation_id,finding_id,candidate_kind,source_connection_id,source_external_type,source_external_id,state,detected_at)
+          values(${lit(subject)},'${org}',${lit(finding)},'AGENT_VERSION',${lit(conn)},${lit(extType)},${lit(extId)},'CERTIFIED',now());`);
+      return { candidate, finding, subject, conn, extType, extId, kind: 'AGENT_VERSION' };
+    }
+
+    const targetId = 'canonical-object:parent-av-target';
+    const av1 = await seedAgentVersion('parent-av-1', agentA);
+    const av1Decision = await authorizeObject('parent-av-1', av1, 'CREATE_NEW', targetId);
+    const av1Row = JSON.parse(lastLine(await svc(materializeSql(av1, av1Decision, 'parent-av-1'))));
+    assert.equal(av1Row.replay, false);
+    assert.equal(av1Row.canonical_object_id, targetId);
+
+    const av2 = await seedAgentVersion('parent-av-2', agentB); // same identity, DIFFERENT resolved parent
+    const av2Decision = await authorizeObject('parent-av-2', av2, 'MATCH_EXISTING', targetId);
+    const before = await countsSql();
+    await rejects(materializeSql(av2, av2Decision, 'parent-av-2'), (message: string) => {
+      assert.match(message, /23514/);
+      assert.match(message, /NORMALIZED_MAPPING_CONFLICT/);
+    });
+    assert.equal(await countsSql(), before, 'the parent-incompatible attempt left zero mutation');
+  });
+
+  await t.test('B0-hardening D: replaying decision-baseline with a DIFFERENT idempotency fingerprint retains MATERIALIZATION_IDEMPOTENCY_CONFLICT', async () => {
+    const decision: Decision = { decisionId: 'decision-baseline', invocationId: 'invocation-baseline', canonicalObjectId: target1, outcome: 'CREATE_NEW' };
+    const before = await countsSql();
+    await rejects(materializeSql(target1Candidate, decision, 'a-completely-different-fingerprint'), (message: string) => {
+      assert.match(message, /23514/);
+      assert.match(message, /MATERIALIZATION_IDEMPOTENCY_CONFLICT/);
+    });
+    assert.equal(await countsSql(), before, 'zero mutation from the mismatched-fingerprint replay attempt');
   });
 
   // =====================================================================================
@@ -397,15 +505,19 @@ test('M16 S0.3.3B0 object materialization rule compatibility (real PG17, real pr
   });
 
   // =====================================================================================
-  await t.test('6. normalized-mapping UPDATE remains immutable (silent no-op, unchanged row)', async () => {
-    const before = await owner(`select match_method from gov_repo.canonical_normalized_object_mappings where organisation_id='${org}'
-      and source_connection_id='conn-baseline' and source_external_type='source' and source_external_id='baseline.ts' and canonical_object_kind='MODEL'`);
-    assert.equal(before, 'MANUAL');
-    await owner(`update gov_repo.canonical_normalized_object_mappings set match_method='MANUAL' where organisation_id='${org}'
-      and source_connection_id='conn-baseline' and source_external_type='source' and source_external_id='baseline.ts' and canonical_object_kind='MODEL';`);
-    const after = await owner(`select match_method||':'||valid_from::text from gov_repo.canonical_normalized_object_mappings where organisation_id='${org}'
-      and source_connection_id='conn-baseline' and source_external_type='source' and source_external_id='baseline.ts' and canonical_object_kind='MODEL'`);
-    assert.match(after, /^MANUAL:/, 'the DO INSTEAD NOTHING rule silently discarded the UPDATE');
+  await t.test('6. normalized-mapping UPDATE remains immutable (genuinely value-changing update is silently discarded)', async () => {
+    // A. Not MANUAL -> MANUAL (a no-op even without the rule). valid_from carries no CHECK
+    // constraint and is otherwise freely settable; setting it decades into the past WOULD
+    // visibly change the stored row if the rule did not intercept the UPDATE.
+    const where = `organisation_id='${org}' and source_connection_id='conn-baseline' and source_external_type='source'
+      and source_external_id='baseline.ts' and canonical_object_kind='MODEL'`;
+    const before = await owner(`select valid_from::text||':'||mapping_id from gov_repo.canonical_normalized_object_mappings where ${where}`);
+    const [beforeValidFrom] = before.split(':');
+    assert.notEqual(beforeValidFrom, '2020-01-01 00:00:00+00', 'sanity: the pre-update value is not already the value we are about to try to set');
+    await owner(`update gov_repo.canonical_normalized_object_mappings set valid_from='2020-01-01T00:00:00Z'::timestamptz,
+      match_method='NOT_MANUAL_WOULD_VIOLATE_CHECK_IF_APPLIED' where ${where};`);
+    const after = await owner(`select valid_from::text||':'||mapping_id||':'||match_method from gov_repo.canonical_normalized_object_mappings where ${where}`);
+    assert.equal(after, `${before}:MANUAL`, 'the DO INSTEAD NOTHING rule silently discarded the ENTIRE update: valid_from and match_method are both exactly as before');
   });
 
   await t.test('6b. normalized_mapping_no_update / normalized_mapping_no_delete rules themselves are untouched by the corrective migration', async () => {
