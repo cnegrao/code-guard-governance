@@ -1,7 +1,9 @@
-import { signToken } from "@/lib/auth";
+import { signSessionAfterCredentialEpoch } from "@/lib/auth/session-issuance";
+import type { SessionPayload } from "@/lib/auth/session-token";
 import {
   findUserIdentityForAuth,
   verifyPasswordForAuth,
+  isCredentialEpochCurrentForAuth,
   verifyPasswordDummyWork,
   resolveRoleCodesForAuth,
   getOrganisationForAuth,
@@ -33,20 +35,34 @@ export interface SignupResult {
   roleSource: string;
 }
 
+async function signCurrentCredentialSession(payload: SessionPayload, passwordChangedAt: string): Promise<string> {
+  const token = await signSessionAfterCredentialEpoch(payload, passwordChangedAt);
+  // A rotation during bcrypt, the issuance wait, or signing must discard this
+  // token before any caller can return it or persist it in a session cookie.
+  if (!await isCredentialEpochCurrentForAuth(payload.sub, passwordChangedAt)) {
+    throw new AuthPublicError(INVALID_CREDENTIALS_MESSAGE, 401);
+  }
+  // The token binds this exact DB epoch (credential_epoch). Transactional eligibility
+  // (S0.3.2R helper, wired by S0.3.3) requires exact equality with the locked row and
+  // also bounds iat against DB clock_timestamp(). This check does not replace it.
+  return token;
+}
+
 async function buildAuthSession(
   userIdentity: UserIdentityForAuth,
+  passwordChangedAt: string,
   org: { organisation_id: string; name: string; is_active: boolean },
   resolvedRoles: ResolvedRoleSet,
   industryProfile: string
 ): Promise<AuthSession> {
   const jwtRole = resolvedRoles.jwtRole;
 
-  const token = await signToken({
+  const token = await signCurrentCredentialSession({
     sub: userIdentity.user_id,
     org: userIdentity.organisation_id,
     email: userIdentity.email,
     role: jwtRole,
-  });
+  }, passwordChangedAt);
 
   return {
     token,
@@ -76,9 +92,9 @@ export async function login(
     throw new AuthPublicError(INVALID_CREDENTIALS_MESSAGE, 401);
   }
 
-  const passwordValid = await verifyPasswordForAuth(userIdentity.user_id, password);
+  const credential = await verifyPasswordForAuth(userIdentity.user_id, password);
 
-  if (!passwordValid) {
+  if (!credential.valid) {
     throw new AuthPublicError(INVALID_CREDENTIALS_MESSAGE, 401);
   }
 
@@ -109,6 +125,7 @@ export async function login(
 
   const session = await buildAuthSession(
     userIdentity,
+    credential.passwordChangedAt,
     org,
     resolvedRoles,
     "other"
@@ -155,12 +172,12 @@ export async function signup(input: {
     })),
   });
 
-  const token = await signToken({
+  const token = await signCurrentCredentialSession({
     sub: result.user_id,
     org: result.organisation_id,
     email: result.email,
     role: resolvedRoles.jwtRole,
-  });
+  }, result.password_changed_at);
 
   return {
     success: true,

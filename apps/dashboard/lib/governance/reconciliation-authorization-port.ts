@@ -9,37 +9,36 @@ import {
 } from "@council/governance-review";
 
 /**
- * Reconciliation & Materialization Workspace V1 — the dashboard's first
- * implementation of governance-review's ReconciliationAuthorizationPort
- * (packages/governance-review/src/reconciliation-authorization.ts). Before
- * this milestone no adapter existed at all: invokeObjectReconciliation /
- * invokeRelationshipReconciliation fail closed (AuthorizationPortRequiredError)
- * without one.
+ * M16-S0.3.3C-R1: verified-principal-bound authorization bridge for the
+ * closed reconciliation domain gate (invokeObjectReconciliation /
+ * invokeRelationshipReconciliation). This ALLOW/DENY decision is NOT the
+ * authoritative write authority — it exists only because the frozen
+ * governance-review domain contract requires an AuthorizationDecision (ALLOW
+ * or DENY) as part of every reconciliation invocation's own audit trail. It
+ * binds ONLY to the already-verified session identity (organisation, HUMAN
+ * actor reference) already carried by the request the domain package itself
+ * built; it never reads current persisted role, JWT role, or email. No
+ * policyReference is set: this ALLOW is not backed by any current-role
+ * policy, and inventing one would misrepresent an L14/legacy-policy
+ * authority that does not exist here.
  *
- * This mirrors the exact authority ceiling apps/dashboard/lib/governance/
- * workspace-actions.ts already established for the review-state machine
- * (hasGovernanceReviewAuthority: sessionRole === "org_admin", verified
- * server-side from the trusted x-codeguard-role header) — no new RBAC model
- * is invented here, and building one is out of this milestone's scope.
- *
- * decision-commands.ts calls hasGovernanceReviewAuthority itself BEFORE ever
- * constructing this Port, so by the time authorize() runs, the actor is
- * already known to hold governance-reviewer authority — this Port exists so
- * the domain gate's own defense-in-depth checks (organisationId/action/
- * subject/actorReference exact-match, reconciliation-invocation.ts:210-240)
- * still run against a real, faithful ALLOW rather than a bypassed call.
+ * The durable, authoritative decision is
+ * record_authorized_reconciliation_governed_v1's own transactional
+ * require_governed_write_eligibility_v1 check (GV006 if the actor is not a
+ * current persisted GOVERNANCE_ADMIN) — if that fails, nothing commits,
+ * regardless of what this bridge returned.
  */
-export function createSessionReconciliationAuthorizationPort(session: {
+export function createVerifiedPrincipalReconciliationAuthorizationPort(context: {
   readonly organisationId: string;
   readonly actorReference: string;
 }): ReconciliationAuthorizationPort {
   return {
     authorize(request: ReconciliationAuthorizationRequest): ReconciliationAuthorizationResult {
-      // Defense in depth: even though the caller already verified session
-      // authority before constructing this Port, a request scoped to a
-      // different organisation or actor than the session that built this
-      // Port is never granted here either.
-      if (request.organisationId !== session.organisationId || request.actor.actorReference !== session.actorReference) {
+      if (
+        request.organisationId !== context.organisationId ||
+        request.actor.authorityKind !== "HUMAN" ||
+        request.actor.actorReference !== context.actorReference
+      ) {
         return {
           authorizationDecisionId: `authz:denied:${request.organisationId}:${Date.now()}`,
           result: AUTHORIZATION_RESULT.DENY,
@@ -59,7 +58,6 @@ export function createSessionReconciliationAuthorizationPort(session: {
         subject: request.subject,
         requestedAction: request.requestedAction,
         evaluatedAt: asIsoTimestamp(new Date().toISOString()),
-        policyReference: "GOVERNANCE_REVIEWER_ROLE_V1",
       };
     },
   };

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrgId, getUserId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { getProvider } from "@/lib/discovery/providers";
 import { detectAgents } from "@council/scanner/codeguard/agent-detector";
 import { groupAgentsIntoLSystems } from "@council/scanner/codeguard/system-detector";
@@ -29,8 +29,7 @@ async function logToLedger(orgId: string, userId: string, event: string, payload
 
 export async function POST(request: Request) {
   try {
-    const orgId = await getOrgId();
-    const userId = await getUserId();
+    const { organisationId: orgId, userId } = await requireVerifiedGovernancePrincipal();
     const { provider, owner, repo, branch, token, baseUrl } = await request.json();
 
     if (!provider || !owner || !repo) {
@@ -253,6 +252,7 @@ export async function POST(request: Request) {
       message: `${enrichedAgents.length} agents discovered, ${repoIntel.domains.length} domains identified, ${crossFileLineage.totalFlows} data flows traced, ${memoryChunksIndexed + codeChunksIndexed} memory chunks indexed.`,
     });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Discovery scan failed" },
       { status: 500 }

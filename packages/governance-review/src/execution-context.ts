@@ -76,7 +76,20 @@ export async function reconcileExecutionField(decision: ExecutionFieldDecision, 
   const previous = await port.getDecision(decision.organisationId, decision.decisionId);
   if (previous) {
     if (stableCandidateContent(previous.decision) !== stableCandidateContent(decision)) throw new TypeError('EXECUTION_REPLAY_CONFLICT');
-    return { replay: true, stateId: previous.stateId };
+    // An exact replay is still a write-command execution and must traverse the
+    // SAME persistence port a first-time decision does — never a package-level
+    // short-circuit ahead of it. The supplied port decides what that means (for
+    // a HUMAN dashboard caller, that port is the governed one, which re-checks
+    // current write authority transactionally on every call, replay included).
+    const persisted = await port.recordDecision(decision);
+    if (!persisted.replay) {
+      // The port is expected to be idempotent for a decision it already knows
+      // about; replay=false here means the port and this already-verified
+      // exact-match disagree — an internal consistency fault, never a
+      // fabricated first-time success.
+      throw new Error('Execution field decision replay did not match the persisted decision.');
+    }
+    return persisted;
   }
   const ctx = await port.getReviewContext(decision.organisationId, decision.snapshotId, decision.field);
   validateExecutionSnapshot(ctx.snapshot);

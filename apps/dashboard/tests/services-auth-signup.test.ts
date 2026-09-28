@@ -1,6 +1,9 @@
 import { test, mock, before } from "node:test";
 import assert from "node:assert/strict";
 import { jwtVerify } from "jose";
+import { SESSION_ISSUER, SESSION_AUDIENCE, verifyGovernanceSessionToken } from "../lib/auth/session-token";
+
+const signingSecret = "8cbb071c283ea04e4cf0f73a09a9e531";
 
 interface MockState {
   signupResult: {
@@ -11,6 +14,7 @@ interface MockState {
     organisation_name: string;
     role_id: string;
     role_code: string;
+    password_changed_at: string;
   } | null;
   signupError: Error | null;
   roleRows: Array<{ role_id: string; role_code: string; is_system_role: boolean }>;
@@ -36,6 +40,7 @@ mock.module("@/lib/auth/persistence", {
       throw new Error("verifyPasswordForAuth should not be called from signup tests");
     },
     verifyPasswordDummyWork: async () => {},
+    isCredentialEpochCurrentForAuth: async () => true,
     resolveRoleCodesForAuth: async () => {
       state.roleLookupCalls += 1;
       return state.roleRows;
@@ -54,6 +59,7 @@ mock.module("@/lib/auth/persistence", {
 let authService: typeof import("../services/auth");
 
 before(async () => {
+  process.env.JWT_SECRET = signingSecret;
   authService = await import("@/services/auth");
 });
 
@@ -83,6 +89,7 @@ test("signup: atomic persistence completes and is re-verified before token signi
     organisation_name: "Acme Corp",
     role_id: "role-1",
     role_code: "GOVERNANCE_ADMIN",
+    password_changed_at: "2026-01-01T00:00:00Z",
   };
   state.roleRows = [{ role_id: "role-1", role_code: "GOVERNANCE_ADMIN", is_system_role: true }];
 
@@ -93,10 +100,14 @@ test("signup: atomic persistence completes and is re-verified before token signi
   assert.ok(result.session);
   assert.equal(result.jwtRole, "org_admin");
 
-  const secret = new TextEncoder().encode(
-    process.env.JWT_SECRET ?? "fallback-dev-secret-change-in-production"
-  );
-  const { payload } = await jwtVerify(result.session!.token, secret);
+  const secret = new TextEncoder().encode(signingSecret);
+  const { payload } = await jwtVerify(result.session!.token, secret, {
+    algorithms: ["HS256"], issuer: SESSION_ISSUER, audience: SESSION_AUDIENCE,
+  });
+  const principal = await verifyGovernanceSessionToken(result.session!.token);
+  assert.equal(principal.userId, "user-1");
+  assert.equal(principal.organisationId, "org-1");
+  assert.equal(principal.expiresAtSeconds - principal.issuedAtSeconds, 28800);
   assert.equal(payload.role, "org_admin");
 });
 
@@ -124,6 +135,7 @@ test("signup: fails closed to non-admin if the returned role cannot be re-verifi
     organisation_name: "Acme Corp",
     role_id: "role-2",
     role_code: "GOVERNANCE_ADMIN",
+    password_changed_at: "2026-01-01T00:00:00Z",
   };
   // Simulates a race/anomaly where the privileged lookup no longer confirms
   // is_system_role — the app must never trust the RPC's role_code string alone.

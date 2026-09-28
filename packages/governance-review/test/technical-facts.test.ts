@@ -31,6 +31,14 @@ class Store implements TechnicalFactPersistencePort {
   }
   async getDecision(tenant:typeof org,id:string){if(tenant!==org)throw Error('TENANT');const decision=this.decisions.get(id);return decision?{decision,...(this.states.find(s=>s.decisionId===id)?{stateId:this.states.find(s=>s.decisionId===id)!.stateId}:{})}:undefined;}
   async recordDecision(d:FieldReconciliationDecision){
+    // Mirrors gov_repo.record_technical_field_decision (M16-S0.3.3R3): an
+    // existing decision_id is detected and replayed BEFORE any staleness/policy
+    // re-validation — the caller (reconcileTechnicalFact) has already verified
+    // exact content equality before ever reaching this port method.
+    if(this.decisions.has(d.decisionId)){
+      const state=this.states.find(st=>st.decisionId===d.decisionId);
+      return {replay:true as const,...(state?{stateId:state.stateId}:{})};
+    }
     // Storage emulates the independent SQL transaction guards; no adapter truth port.
     if(d.expectedSourceObservationId!==this.head||d.expectedSourceSnapshotId!==this.snapshot)throw new StaleFieldDecisionError();
     if(d.expectedCurrentStateId!==this.states.at(-1)?.stateId)throw Error('FIELD_STALE_STATE');

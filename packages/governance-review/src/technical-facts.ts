@@ -99,7 +99,20 @@ export async function reconcileTechnicalFact(decision: FieldReconciliationDecisi
   const previous = await port.getDecision(decision.organisationId, decision.decisionId);
   if (previous) {
     if (stableCandidateContent(previous.decision) !== stableCandidateContent(decision)) throw new TypeError('FIELD_DECISION_REPLAY_CONFLICT');
-    return { replay: true, ...(previous.stateId ? { stateId: previous.stateId } : {}) };
+    // An exact replay is still a write-command execution and must traverse the
+    // SAME persistence port a first-time decision does — never a package-level
+    // short-circuit ahead of it. The supplied port decides what that means (for
+    // a HUMAN dashboard caller, that port is the governed one, which re-checks
+    // current write authority transactionally on every call, replay included).
+    const persisted = await port.recordDecision(decision);
+    if (!persisted.replay) {
+      // The port is expected to be idempotent for a decision it already knows
+      // about; replay=false here means the port and this already-verified
+      // exact-match disagree — an internal consistency fault, never a
+      // fabricated first-time success.
+      throw new Error('Technical field decision replay did not match the persisted decision.');
+    }
+    return persisted;
   }
   const ctx = await port.getReviewContext(decision.organisationId, decision.proposalId);
   if (!decision.expectedSourceObservationId || decision.expectedSourceObservationId !== ctx.currentSourceObservationId ||

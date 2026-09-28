@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getOrgId, getUserId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertTransition, LifecycleError } from "@/lib/lifecycle";
 
 export async function GET() {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
 
     const { data: agents } = await db.read
       .from("agents")
@@ -33,6 +33,7 @@ export async function GET() {
       approvedCount: (approved as Array<Record<string, unknown>>)?.length ?? 0,
     });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed" },
       { status: 500 }
@@ -42,8 +43,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const orgId = await getOrgId();
-    const userId = await getUserId();
+    const { organisationId: orgId, userId } = await requireVerifiedGovernancePrincipal();
     const { agentId, action } = await request.json();
 
     if (!agentId || !action) {
@@ -111,6 +111,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ agent, action, status });
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Review failed" },
       { status: 500 }

@@ -21,7 +21,9 @@ import {
 } from "@council/governance-review";
 
 import { governanceReviewPersistence } from "./persistence";
-import { deriveAllowedGovernanceActions, hasGovernanceReviewAuthority } from "./workspace-actions";
+import { deriveAllowedGovernanceActions } from "./workspace-actions";
+import { GovernedWriteError } from "./governed-write-errors";
+import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
 
 /**
  * Governance Workspace command side (CQRS write path). This module is the
@@ -29,9 +31,14 @@ import { deriveAllowedGovernanceActions, hasGovernanceReviewAuthority } from "./
  * transitions (confirm/certify/reject) and the human-eligible branch of
  * propose. It never invents a transition the domain package does not
  * already expose, and it never accepts organisationId, actor identity, or a
- * target state from the client — every one of those is either server-derived
- * (organisationId, actorUserId, sessionRole) or a fixed semantic action name
- * mapped in code to one specific domain function.
+ * target state from the client — every one of those is server-derived
+ * (organisationId, actorUserId, writePrincipal) or a fixed semantic action
+ * name mapped in code to one specific domain function.
+ *
+ * M16-S0.3.3C-R1: current-role authority is NOT decided here. State-
+ * transition validity remains enforced domain logic; the sole write
+ * authority is apply_review_transition_governed_v1's own transactional
+ * require_governed_write_eligibility_v1 check (GV006 otherwise).
  */
 
 export type GovernanceActionName = "PROPOSE" | "CONFIRM" | "CERTIFY" | "REJECT";
@@ -41,8 +48,11 @@ export interface ExecuteGovernanceActionInput {
   readonly organisationId: OrganisationId;
   /** Server-derived from the trusted session context — never client-supplied. */
   readonly actorUserId: string;
-  /** Server-derived from the trusted session context — never client-supplied. */
-  readonly sessionRole: string;
+  /** Server-derived from the trusted verified session — never client-supplied.
+   * The route already binds this into the governed `port` it passes explicitly;
+   * carried here too only so callers/tests can observe it uniformly with the
+   * other four governed routes, never independently trusted by this function. */
+  readonly writePrincipal: GovernanceWritePrincipal;
   readonly reviewSubjectId: ReviewSubjectId;
   /** The state the client observed when it loaded the screen — the optimistic-concurrency precondition. */
   readonly expectedState: ReviewState;
@@ -114,12 +124,12 @@ async function executeGovernanceAction(
     return { kind: "STALE_REVIEW_SUBJECT", currentState: subject.state };
   }
 
-  const hasAuthority = hasGovernanceReviewAuthority(input.sessionRole);
-  if (!hasAuthority) {
-    return { kind: "FORBIDDEN", message: "Your role does not permit governance review actions." };
-  }
-
-  const allowed = deriveAllowedGovernanceActions(subject.state, hasAuthority);
+  // M16-S0.3.3C-R1: current-role authority is decided transactionally by the
+  // governed DB wrapper (GV006 otherwise), never here. Passing true
+  // unconditionally yields pure state-transition validity, decoupled from
+  // any role read — deriveAllowedGovernanceActions(state, false) would
+  // otherwise deny every action regardless of state.
+  const allowed = deriveAllowedGovernanceActions(subject.state, true);
   if (!allowed[ACTION_FLAG[action]]) {
     return {
       kind: "INVALID_TRANSITION",
@@ -154,16 +164,32 @@ async function executeGovernanceAction(
     const persisted = await port.persistReviewTransition(result);
     return { kind: persisted.replay ? "REPLAYED" : "APPLIED", subject: persisted.subject };
   } catch (error) {
-    // The RPC's own SELECT ... FOR UPDATE + previous-state precondition
-    // (Governance Persistence V1, closed) is the true concurrency backstop
-    // for a genuine DB-level race between two simultaneous submissions; this
-    // never overwrites and never applies a false success.
-    const message = error instanceof Error ? error.message : String(error);
-    if (/stale review state/i.test(message)) {
-      const refreshed = await port.getReviewSubject(input.organisationId, input.reviewSubjectId);
-      return { kind: "STALE_REVIEW_SUBJECT", currentState: refreshed?.state ?? subject.state };
+    // M16-S0.3.3C-R1: ONLY the two explicitly known business conflicts from
+    // apply_review_transition(_governed_v1)'s own contract become a
+    // structured outcome here, classified by exact SQLSTATE — never by a
+    // substring match against arbitrary DB diagnostics. Everything else,
+    // including any unrecognized GovernedWriteError code (security,
+    // infrastructure, unexpected catalog/permission failures) and any
+    // non-DB transport error, propagates unchanged: the route maps a
+    // recognized GV*/55P03 code to its frozen class and anything else to a
+    // generic 500. Never a blanket PERSISTENCE_CONFLICT.
+    if (error instanceof GovernedWriteError) {
+      // The RPC's own SELECT ... FOR UPDATE + previous-state precondition
+      // (Governance Persistence V1, closed) is the true concurrency backstop
+      // for a genuine DB-level race between two simultaneous submissions;
+      // this never overwrites and never applies a false success.
+      if (error.code === "40001") {
+        const refreshed = await port.getReviewSubject(input.organisationId, input.reviewSubjectId);
+        return { kind: "STALE_REVIEW_SUBJECT", currentState: refreshed?.state ?? subject.state };
+      }
+      // A reused commandId with materially different content (Governance
+      // Persistence V1's own idempotency guard) is a genuine, expected
+      // business conflict, never a false success.
+      if (error.code === "23514" && error.message.includes("IDEMPOTENCY_CONFLICT")) {
+        return { kind: "PERSISTENCE_CONFLICT", message: "Unable to record the governance decision. Please retry." };
+      }
     }
-    return { kind: "PERSISTENCE_CONFLICT", message: "Unable to record the governance decision." };
+    throw error;
   }
 }
 

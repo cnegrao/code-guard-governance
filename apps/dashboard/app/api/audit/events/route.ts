@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getOrgId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import * as auditService from "@/services/audit";
 
 export async function GET(request: Request) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { searchParams } = new URL(request.url);
 
     const result = await auditService.getEvents(orgId, {
@@ -20,6 +20,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to load events" },
       { status: 500 }

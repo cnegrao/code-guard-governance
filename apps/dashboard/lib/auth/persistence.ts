@@ -41,6 +41,7 @@ export interface UserIdentityForAuth {
   organisation_id: string;
   status: string;
   role_ids: string[];
+  password_changed_at: string;
 }
 
 export async function findUserIdentityForAuth(
@@ -50,30 +51,74 @@ export async function findUserIdentityForAuth(
 
   const { data } = await privilegedDb
     .from("governance_users")
-    .select("user_id, email, full_name, organisation_id, status, role_ids")
+    .select("user_id, email, full_name, organisation_id, status, role_ids, password_changed_at")
     .eq("email", canonicalEmail)
     .single();
 
   return data;
 }
 
+export type PasswordVerificationForAuth =
+  | { valid: false }
+  | { valid: true; passwordChangedAt: string };
+
+/** The credential and its epoch must come from the same row snapshot. The hash
+ * stays inside this boundary; identity lookup's epoch never authorizes issuance. */
 export async function verifyPasswordForAuth(
   userId: string,
   password: string
-): Promise<boolean> {
-  const { data } = await privilegedDb
+): Promise<PasswordVerificationForAuth> {
+  const { data, error } = await privilegedDb
     .from("governance_users")
-    .select("external_id")
+    .select("external_id, password_changed_at")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
+
+  if (error) throw new AuthPublicError(GENERIC_AUTH_ERROR_MESSAGE, 500);
 
   const storedHash = extractBcryptHash(data?.external_id);
-  if (!storedHash) {
+  if (!data || !storedHash) {
     await compare(password, DUMMY_BCRYPT_HASH);
-    return false;
+    return { valid: false };
   }
 
-  return compare(password, storedHash);
+  if (!await compare(password, storedHash)) return { valid: false };
+  if (typeof data.password_changed_at !== "string" || !data.password_changed_at.trim()) {
+    throw new AuthPublicError(GENERIC_AUTH_ERROR_MESSAGE, 500);
+  }
+  return { valid: true, passwordChangedAt: data.password_changed_at };
+}
+
+/** Post-sign check: PostgreSQL compares the exact timestamp, including
+ * microseconds. Never round it through a JavaScript Date before filtering. */
+export async function isCredentialEpochCurrentForAuth(
+  userId: string,
+  expectedPasswordChangedAt: string,
+): Promise<boolean> {
+  const { data, error } = await privilegedDb
+    .from("governance_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("password_changed_at", expectedPasswordChangedAt)
+    .maybeSingle();
+
+  if (error) throw new AuthPublicError(GENERIC_AUTH_ERROR_MESSAGE, 500);
+  return data?.user_id === userId;
+}
+
+/** Bounded current-role lookup: identity comes from the verified principal,
+ * never email/role claims. Role definitions are global; assignment is the
+ * same-organisation governance user's current role_ids. */
+export async function findCurrentUserForAuthorization(userId: string, organisationId: string): Promise<
+  Pick<UserIdentityForAuth, "user_id" | "organisation_id" | "status" | "role_ids"> | null
+> {
+  const { data, error } = await privilegedDb.from("governance_users")
+    .select("user_id, organisation_id, status, role_ids")
+    .eq("user_id", userId)
+    .eq("organisation_id", organisationId)
+    .maybeSingle();
+  if (error) throw new Error("Unable to resolve current governance eligibility");
+  return data;
 }
 
 export async function verifyPasswordDummyWork(password: string): Promise<void> {
@@ -99,11 +144,12 @@ export async function resolveRoleCodesForAuth(
     return [];
   }
 
-  const { data } = await privilegedDb
+  const { data, error } = await privilegedDb
     .from("governance_roles")
     .select("role_id, role_code, is_system_role")
     .in("role_id", roleIds);
 
+  if (error) throw new Error("Unable to resolve current governance roles");
   return data ?? [];
 }
 
@@ -116,12 +162,13 @@ export interface OrganisationForAuth {
 export async function getOrganisationForAuth(
   orgId: string
 ): Promise<OrganisationForAuth | null> {
-  const { data } = await privilegedDb
+  const { data, error } = await privilegedDb
     .from("organisations")
     .select("organisation_id, legal_name, is_active")
     .eq("organisation_id", orgId)
-    .single();
+    .maybeSingle();
 
+  if (error) throw new Error("Unable to resolve governance organisation");
   if (!data) return null;
 
   return {
@@ -139,6 +186,7 @@ export interface SignupLegacyResult {
   organisation_name: string;
   role_id: string;
   role_code: string;
+  password_changed_at: string;
 }
 
 export async function signupLegacyAtomic(input: {
@@ -183,6 +231,7 @@ export async function signupLegacyAtomic(input: {
     organisation_name: result.organisation_name as string,
     role_id: result.role_id as string,
     role_code: result.role_code as string,
+    password_changed_at: result.password_changed_at as string,
   };
 }
 

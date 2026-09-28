@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { SESSION_COOKIE_NAME, verifyGovernanceSessionToken } from "@/lib/auth/session-token";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -10,31 +10,15 @@ export async function middleware(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   if (isPublic) return NextResponse.next();
 
-  const token = request.cookies.get("codeguard-token")?.value;
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const { jwtVerify } = await import("jose");
-  const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET ?? "fallback-dev-secret-change-in-production"
-  );
-
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const session = payload as unknown as {
-      sub: string;
-      org: string;
-      email: string;
-      role: string;
-    };
-
-    const response = NextResponse.next();
-    response.headers.set("x-codeguard-user", session.sub);
-    response.headers.set("x-codeguard-org", session.org);
-    response.headers.set("x-codeguard-email", session.email);
-    response.headers.set("x-codeguard-role", session.role);
-    return response;
+    // Navigation only. APIs must resolve their own verified principal.
+    await verifyGovernanceSessionToken(token);
+    return NextResponse.next();
   } catch {
     return NextResponse.redirect(new URL("/login", request.url));
   }

@@ -552,6 +552,20 @@ async function processAgentVersionTechnicalProfileProposal(
  * Never invokes CONFIRMED, CERTIFIED, authorization, reconciliation, or
  * materialization: those remain exclusively human-gated, downstream, and out
  * of scope for this milestone.
+ *
+ * DORMANT (M16-S0.3.3A/D): this DETERMINISTIC_RULE producer's proposal path
+ * ends in `ports.review.persistReviewTransition`, which defaults to
+ * `governanceReviewPersistence` — the UNGOVERNED port bound directly to the
+ * raw `gov_repo.apply_review_transition` RPC. S0.3.3D revoked service_role
+ * EXECUTE on that raw RPC entirely (it is no longer callable through the
+ * current DB boundary at all, by any role). This function has zero active
+ * production callers (no route, handler, or scheduled job invokes it) and is
+ * NOT ACTIVATABLE as-is: calling it in production would now fail at the
+ * database, not silently bypass governed write authority. It must not be
+ * wired to a route, and its `ports.review` must not be silently redirected
+ * through a HUMAN `createGoverned*` wrapper, until a future, explicit,
+ * owner-controlled machine write boundary is designed and approved — a
+ * distinct DETERMINISTIC_RULE authority model, not a reuse of the HUMAN one.
  */
 export async function runGovernanceDiscoveryScan(
   input: RunGovernanceDiscoveryScanInput,

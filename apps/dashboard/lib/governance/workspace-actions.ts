@@ -37,18 +37,11 @@ export function deriveAllowedGovernanceActions(
   });
 }
 
-/**
- * Current coarse authority ceiling: the dashboard's session JWT carries a
- * single verified role ("org_admin" | "user"), resolved fail-closed at login
- * from a persisted GOVERNANCE_ADMIN system role
- * (apps/dashboard/lib/auth/legacy-authorization.ts). There is no
- * per-transition permission model wired at this layer today, and building
- * one is out of this milestone's scope (broad RBAC redesign) — so every
- * human governance review action (propose/confirm/certify/reject) is gated
- * on this same verified role, never on an unverified client-supplied value.
- */
+/** Existing coarse reviewer ceiling. The input must come from
+ * resolveCurrentGovernanceRole's current persisted assignments, never a JWT
+ * or caller value. Per-transition L14 policy is outside this slice. */
 const GOVERNANCE_REVIEWER_ROLE = "org_admin";
 
-export function hasGovernanceReviewAuthority(sessionRole: string): boolean {
-  return sessionRole === GOVERNANCE_REVIEWER_ROLE;
+export function hasGovernanceReviewAuthority(currentRole: string): boolean {
+  return currentRole === GOVERNANCE_REVIEWER_ROLE;
 }

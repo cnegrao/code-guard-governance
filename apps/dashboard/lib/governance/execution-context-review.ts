@@ -2,7 +2,8 @@ import 'server-only';
 import { asCanonicalObjectId, asIsoTimestamp, DIRECT_EXECUTION_FIELDS, type OrganisationId, type ExecutionFieldDecision } from '@council/canonical-contracts';
 import { executionPolicy, reconcileExecutionField } from '@council/governance-review';
 import { executionRows, readExecutionReview, readExecutionDecision } from './execution-context-read';
-import { executionContextPersistence } from './execution-context-persistence';
+import { createGovernedExecutionContextPersistence } from './execution-context-persistence';
+import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
 
 export async function executionReviewQueue(org:OrganisationId) {
   const rows=await executionRows(org,'execution_source_snapshots');
@@ -18,8 +19,11 @@ export async function executionReviewQueue(org:OrganisationId) {
   }
   return result;
 }
-export async function submitExecutionDecision(input:unknown,ctx:{organisationId:OrganisationId;actorReference:string;role:string}) {
-  if(ctx.role!=='org_admin'||!ctx.actorReference)throw new Error('EXECUTION_REVIEW_FORBIDDEN');
+// M16-S0.3.3C-R1: current-role authority is NOT decided here. The sole write
+// authority is record_execution_field_decision_governed_v1's own
+// transactional require_governed_write_eligibility_v1 check (GV006 otherwise).
+export async function submitExecutionDecision(input:unknown,ctx:{organisationId:OrganisationId;actorReference:string;writePrincipal:GovernanceWritePrincipal}) {
+  if(!ctx.actorReference)throw new Error('EXECUTION_REVIEW_FORBIDDEN');
   if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('EXECUTION_DECISION_INVALID');
   const raw=input as Record<string,unknown>;
   const required=['decisionId','canonicalObjectId','snapshotId','field','outcome'];
@@ -33,5 +37,5 @@ export async function submitExecutionDecision(input:unknown,ctx:{organisationId:
     ...(raw.expectedCurrentStateId?{expectedCurrentStateId:raw.expectedCurrentStateId as string}:{}),
     ...(raw.policyId?{policyId:raw.policyId as string}:{}),...(raw.policyVersion?{policyVersion:raw.policyVersion as string}:{}),
     actor:{authorityKind:'HUMAN',actorReference:ctx.actorReference},decidedAt:prior?.decision.decidedAt??asIsoTimestamp(new Date().toISOString())};
-  return reconcileExecutionField(decision,executionContextPersistence,{authorize:d=>d.organisationId===ctx.organisationId&&d.actor.actorReference===ctx.actorReference});
+  return reconcileExecutionField(decision,createGovernedExecutionContextPersistence(ctx.writePrincipal),{authorize:d=>d.organisationId===ctx.organisationId&&d.actor.actorReference===ctx.actorReference});
 }

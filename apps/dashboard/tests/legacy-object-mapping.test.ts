@@ -37,12 +37,15 @@ const db = {
   },
   rpc() { throw new Error("No migration or canonical write may occur during legacy preflight"); },
 };
+const fakeGovernancePort = {
+  getReviewSubject: async () => subject(), persistAuthorizedReconciliation: async (input: Row) => {
+    persisted.push(input); return { replay: false, reconciliationDecisionId: input.decision.decisionId };
+  },
+};
 mock.module("@/lib/governance/persistence", { namedExports: { privilegedDb: db, canonicalStringify: stableCandidateContent,
-  sha256Hex: (value: string) => createHash("sha256").update(value).digest("hex"), governanceReviewPersistence: {
-    getReviewSubject: async () => subject(), persistAuthorizedReconciliation: async (input: Row) => {
-      persisted.push(input); return { replay: false, reconciliationDecisionId: input.decision.decisionId };
-    },
-  } } });
+  sha256Hex: (value: string) => createHash("sha256").update(value).digest("hex"), governanceReviewPersistence: fakeGovernancePort,
+  // M16-S0.3.3C: production code now calls this factory for the human write path.
+  createGovernedReviewPersistence: () => fakeGovernancePort } });
 mock.module("@/lib/governance/reconciliation-input", { namedExports: { getReconciliationInputForReviewSubject: async () => ({
   status: "OBJECT_INPUT_AVAILABLE", reviewSubject: subject(), candidate: current,
   finding: { ...current, findingNature: "CANDIDATE", requiresReview: true, createsCanonicalObject: false, detectedAt: at },
@@ -69,7 +72,9 @@ function reset(historical = object(), tenant = org) {
     canonical_objects: [{ organisation_id: tenant, canonical_object_id: "canonical:old", kind: historical.candidateKind }],
   };
 }
-const input = { organisationId: org, actorUserId: "reviewer", sessionRole: "org_admin", reviewSubjectId: asReviewSubjectId("review:new"), reasonCode: "GOVERNED" };
+const input = { organisationId: org, actorUserId: "reviewer", currentRole: "org_admin",
+  writePrincipal: { organisationId: org, actorUserId: "reviewer", issuedAtSeconds: 1_700_000_000, expiresAtSeconds: 1_700_028_800, credentialEpoch: "2026-01-01T00:00:00.000000+00:00" },
+  reviewSubjectId: asReviewSubjectId("review:new"), reasonCode: "GOVERNED" };
 
 test("legacy-only same semantic object with a new discovery row cannot authorize duplicate CREATE_NEW", async () => {
   reset(); current = { ...current, candidateId: "candidate:rescan" as never, findingId: "finding:rescan" as never };

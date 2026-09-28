@@ -4,6 +4,8 @@ import { asOrganisationId, asCanonicalObjectId, asSourceConnectionId, asSourceSy
   type FieldReconciliationDecision, type GovernedTechnicalFieldState, type OrganisationId, type TrustedInboundConnection } from '@council/canonical-contracts';
 import { StaleFieldDecisionError, StaleFieldPolicyError, type TechnicalFactPersistencePort, type FieldReviewContext } from '@council/governance-review';
 import { privilegedDb } from './persistence';
+import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
+import { GovernedWriteError } from './governed-write-errors';
 
 // JSON is database transport only. Domain values are reconstructed from the
 // explicit SQL columns; no vendor JSON or arbitrary fact-value column exists.
@@ -131,6 +133,35 @@ export const technicalFactPersistence: TechnicalFactPersistencePort = {
     return {replay:r.replay,...(r.state_id ? {stateId:r.state_id}:{})};
   },
 };
+
+/** M16-S0.3.3C — governed field decision. Reuses every read method unchanged
+ * (recordProposal is the machine intake path, never called from the D route,
+ * so it is left calling record_technical_fact directly); only recordDecision
+ * is overridden to call record_technical_field_decision_governed_v1. The
+ * FIELD_STALE_SOURCE/FIELD_STALE_POLICY business-error rewriting is preserved
+ * byte-for-byte so existing route-level classification is unaffected. */
+export function createGovernedTechnicalFactPersistence(
+  writePrincipal: GovernanceWritePrincipal,
+): TechnicalFactPersistencePort {
+  return {
+    ...technicalFactPersistence,
+    async recordDecision(decision) {
+      const {data,error}=await privilegedDb.rpc('record_technical_field_decision_governed_v1',{
+        p_verified_organisation_id:writePrincipal.organisationId,
+        p_verified_actor_user_id:writePrincipal.actorUserId,
+        p_verified_session_iat:writePrincipal.issuedAtSeconds,
+        p_verified_session_exp:writePrincipal.expiresAtSeconds,
+        p_verified_credential_epoch:writePrincipal.credentialEpoch,
+        p_decision:decision,
+      });
+      if (error?.message?.includes('FIELD_STALE_SOURCE')) throw new StaleFieldDecisionError();
+      if (error?.message?.includes('FIELD_STALE_POLICY')) throw new StaleFieldPolicyError();
+      if (error) throw new GovernedWriteError(`record_technical_field_decision_governed_v1 failed: ${error.message}`, error.code);
+      const r=one(data??[],'FIELD_DECISION_RESULT_MISSING');
+      return {replay:r.replay,...(r.state_id ? {stateId:r.state_id}:{})};
+    },
+  };
+}
 
 /** Tenant-local review queue, including pending, conflicting and historical proposals. */
 export async function listTechnicalFactProposalIds(org: OrganisationId): Promise<string[]> {

@@ -30,12 +30,12 @@ import {
 
 import { assertLegacyObjectCompatibility, LegacyObjectMappingConflict } from "./legacy-object-mapping";
 import { canonicalEndpointResolution, relationshipRequestedDecision, objectMappingIdentity } from "./relationship-resolution";
-import { governanceReviewPersistence } from "./persistence";
-import { materializationPersistence } from "./materialization";
+import { governanceReviewPersistence, createGovernedReviewPersistence } from "./persistence";
+import { createGovernedMaterializationPersistence } from "./materialization";
 import { getReconciliationInputForReviewSubject } from "./reconciliation-input";
-import { createSessionReconciliationAuthorizationPort } from "./reconciliation-authorization-port";
+import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
+import { createVerifiedPrincipalReconciliationAuthorizationPort } from "./reconciliation-authorization-port";
 import { getCanonicalObjectForMatch } from "./canonical-object-lookup";
-import { hasGovernanceReviewAuthority } from "./workspace-actions";
 import { deriveReconciliationReadiness, type ReconciliationReadinessReason } from "./reconciliation-readiness";
 import { findReconciliationDecisionIdForReviewSubject, findMaterializationForDecision } from "./decision-query";
 
@@ -60,7 +60,9 @@ export type RequestedReconciliationOutcome = "CREATE_NEW" | "MATCH_EXISTING" | "
 export interface SubmitReconciliationDecisionInput {
   readonly organisationId: OrganisationId;
   readonly actorUserId: string;
-  readonly sessionRole: string;
+  /** Server-derived from the trusted verified session — never client-supplied.
+   * Bound into the governed DB write wrapper as the sole write authority. */
+  readonly writePrincipal: GovernanceWritePrincipal;
   readonly reviewSubjectId: ReviewSubjectId;
   readonly requestedOutcome: RequestedReconciliationOutcome;
   /** Required only for MATCH_EXISTING; re-verified against gov_repo.canonical_objects before use. */
@@ -84,11 +86,11 @@ function stableCommandId(parts: readonly unknown[]): string {
 export async function submitReconciliationDecision(
   input: SubmitReconciliationDecisionInput,
 ): Promise<SubmitReconciliationDecisionOutcome> {
-  const hasAuthority = hasGovernanceReviewAuthority(input.sessionRole);
-  if (!hasAuthority) {
-    return { kind: "FORBIDDEN", message: "Your role does not permit reconciliation actions." };
-  }
-
+  // M16-S0.3.3C-R1: current-role authority is NOT decided here. The sole
+  // write authority is record_authorized_reconciliation_governed_v1's own
+  // transactional require_governed_write_eligibility_v1 check (GV006
+  // otherwise) — see createVerifiedPrincipalReconciliationAuthorizationPort
+  // below for the (non-authoritative) domain-audit-trail bridge this needs.
   const subject = await governanceReviewPersistence.getReviewSubject(input.organisationId, input.reviewSubjectId);
   if (!subject) return { kind: "NOT_FOUND" };
 
@@ -101,14 +103,43 @@ export async function submitReconciliationDecision(
   if (existingDecisionId && recovery.status === RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {
     const chain = await governanceReviewPersistence.getReconciliationAuditChain(input.organisationId, existingDecisionId);
     const decision = chain?.family === "RELATIONSHIP" ? chain.decision as import("@council/canonical-contracts").RelationshipReconciliationDecision : undefined;
-    if (decision && decision.organisationId === input.organisationId && decision.decisionId === existingDecisionId &&
+    const matches = !!(chain && decision && decision.organisationId === input.organisationId && decision.decisionId === existingDecisionId &&
         decision.relationshipCandidateId === recovery.candidate.candidateId && decision.outcome === input.requestedOutcome &&
         decision.reasonCode === input.reasonCode && decision.authority.authorityKind === "HUMAN" &&
         decision.authority.actorReference === input.actorUserId &&
-        (decision.outcome !== "MATCH_EXISTING" || decision.matchedState.relationshipId === input.matchCanonicalRelationshipId)) {
-      return { kind: "REPLAYED", reconciliationDecisionId: existingDecisionId, outcome: input.requestedOutcome };
+        (decision.outcome !== "MATCH_EXISTING" || decision.matchedState.relationshipId === input.matchCanonicalRelationshipId));
+    if (!matches) {
+      return { kind: "PERSISTENCE_CONFLICT", message: "This relationship review already has a different finalized decision." };
     }
-    return { kind: "PERSISTENCE_CONFLICT", message: "This relationship review already has a different finalized decision." };
+    // M16-S0.3.3C-R2: a replay of an already-persisted decision is still a
+    // successful HUMAN write-command execution and must pass through the
+    // governed DB boundary exactly like a first-time decision — the actor's
+    // CURRENT authority (GOVERNANCE_ADMIN) is re-checked transactionally by
+    // record_authorized_reconciliation_governed_v1's own
+    // require_governed_write_eligibility_v1 guard (GV006 if it has since been
+    // revoked), never assumed from the fact that this decision once existed.
+    // Reuse the EXISTING persisted authorization/invocation/decision
+    // verbatim (same commandId, same command fingerprint, same envelope):
+    // no new AuthorizationDecision is synthesized, no new commandId is
+    // minted, no new policyReference is invented.
+    const governedReview = createGovernedReviewPersistence(input.writePrincipal);
+    const persisted = await governedReview.persistAuthorizedReconciliation({
+      family: "RELATIONSHIP",
+      decision: chain.decision as import("@council/canonical-contracts").RelationshipReconciliationDecision,
+      authorization: chain.authorization,
+      invocation: chain.invocation,
+    });
+    if (!persisted.replay) {
+      // An existing persisted decision for this exact commandId is known;
+      // record_authorized_reconciliation's own idempotency arbitration
+      // (Governance Persistence V1, closed) must report replay=true for the
+      // identical content replayed here. replay=false would mean the
+      // persisted chain and the DB's own replay detection disagree — an
+      // internal consistency/infrastructure fault, never a fabricated
+      // success and never surfaced with any raw internal detail.
+      throw new Error("Relationship reconciliation replay did not match the persisted decision.");
+    }
+    return { kind: "REPLAYED", reconciliationDecisionId: existingDecisionId, outcome: input.requestedOutcome };
   }
 
   // Read-before-write concurrency guard: another operator (or another tab)
@@ -131,10 +162,13 @@ export async function submitReconciliationDecision(
 
   const requestedAt = asIsoTimestamp(new Date().toISOString());
   const actor = { authorityKind: "HUMAN" as const, actorReference: input.actorUserId };
-  const authorizationPort = createSessionReconciliationAuthorizationPort({
+  // Binds ONLY organisation/HUMAN-actor identity — see the bridge's own
+  // documentation. Its ALLOW is not authoritative; the governed DB wrapper is.
+  const authorizationPort = createVerifiedPrincipalReconciliationAuthorizationPort({
     organisationId: input.organisationId,
     actorReference: input.actorUserId,
   });
+  const governedReview = createGovernedReviewPersistence(input.writePrincipal);
 
   try {
     if (recovery.status === RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {
@@ -166,7 +200,7 @@ export async function submitReconciliationDecision(
         requestedDecision,
       });
 
-      const persisted = await governanceReviewPersistence.persistAuthorizedReconciliation({
+      const persisted = await governedReview.persistAuthorizedReconciliation({
         family: "RELATIONSHIP",
         decision: result.decision,
         authorization: result.authorization,
@@ -265,7 +299,7 @@ export async function submitReconciliationDecision(
     };
     const result = await invokeObjectReconciliation(command);
 
-    const persisted = await governanceReviewPersistence.persistAuthorizedReconciliation({
+    const persisted = await governedReview.persistAuthorizedReconciliation({
       family: "OBJECT",
       decision: result.decision,
       authorization: result.authorization,
@@ -321,7 +355,9 @@ export type TriggerMaterializationOutcome =
 
 export interface TriggerMaterializationInput {
   readonly organisationId: OrganisationId;
-  readonly sessionRole: string;
+  /** Server-derived from the trusted verified session — never client-supplied.
+   * Bound into the governed DB write wrapper as the sole write authority. */
+  readonly writePrincipal: GovernanceWritePrincipal;
   readonly reviewSubjectId: ReviewSubjectId;
 }
 
@@ -335,11 +371,9 @@ export interface TriggerMaterializationInput {
 export async function triggerMaterialization(
   input: TriggerMaterializationInput,
 ): Promise<TriggerMaterializationOutcome> {
-  const hasAuthority = hasGovernanceReviewAuthority(input.sessionRole);
-  if (!hasAuthority) {
-    return { kind: "FORBIDDEN", message: "Your role does not permit materialization actions." };
-  }
-
+  // M16-S0.3.3C-R1: current-role authority is NOT decided here. The sole
+  // write authority is materialize_*_reconciliation_governed_v1's own
+  // transactional require_governed_write_eligibility_v1 check (GV006 otherwise).
   const subject = await governanceReviewPersistence.getReviewSubject(input.organisationId, input.reviewSubjectId);
   if (!subject) return { kind: "NOT_FOUND" };
 
@@ -358,8 +392,11 @@ export async function triggerMaterialization(
   // existing canonical result, never a second materialization. No separate
   // pre-check is needed here.
   try {
+    // materialization is the ONLY write here; governance (reads only inside
+    // materializeReconciliationDecision) stays on the shared, unchanged port.
+    const governedMaterialization = createGovernedMaterializationPersistence(input.writePrincipal);
     const result = await materializeReconciliationDecision(
-      { governance: governanceReviewPersistence, materialization: materializationPersistence },
+      { governance: governanceReviewPersistence, materialization: governedMaterialization },
       { organisationId: input.organisationId, reconciliationDecisionId },
     );
     if (!result.applicable) {

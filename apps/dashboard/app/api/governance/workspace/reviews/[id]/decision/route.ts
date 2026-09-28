@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { asOrganisationId } from "@council/canonical-contracts";
 
-import { getOrgId, getSessionContext, getUserId } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { asReviewSubjectId } from "@/lib/governance/workspace-query";
 import { getGovernanceDecisionDetail } from "@/lib/governance/decision-query";
 import { submitReconciliationDecision, type RequestedReconciliationOutcome } from "@/lib/governance/decision-commands";
+import { governedWriteErrorResponse } from "@/lib/governance/governed-write-errors";
+import { toGovernanceWritePrincipal } from "@/lib/auth/governance-write-principal";
 
 const VALID_OUTCOMES = new Set<string>(["CREATE_NEW", "MATCH_EXISTING", "REJECT", "DEFER"]);
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const orgId = await getOrgId();
+    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const { id } = await params;
 
     const detail = await getGovernanceDecisionDetail(asOrganisationId(orgId), asReviewSubjectId(id));
@@ -19,6 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     }
     return NextResponse.json(detail);
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     console.error("governance decision detail query failed", error);
     return NextResponse.json({ error: "Unable to load reconciliation decision detail." }, { status: 500 });
   }
@@ -26,9 +29,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const orgId = await getOrgId();
-    const userId = await getUserId();
-    const { role } = await getSessionContext();
+    const principal = await requireVerifiedGovernancePrincipal();
+    const { organisationId: orgId, userId } = principal;
     const { id } = await params;
 
     const body = (await request.json().catch(() => null)) as
@@ -46,7 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const outcome = await submitReconciliationDecision({
       organisationId: asOrganisationId(orgId),
       actorUserId: userId,
-      sessionRole: role,
+      writePrincipal: toGovernanceWritePrincipal(principal),
       reviewSubjectId: asReviewSubjectId(id),
       requestedOutcome: requestedOutcome as RequestedReconciliationOutcome,
       matchCanonicalObjectId,
@@ -79,6 +81,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         return NextResponse.json({ error: "Unable to process this reconciliation decision." }, { status: 500 });
     }
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    const security = governedWriteErrorResponse(error);
+    if (security) return security;
     console.error("governance reconciliation decision submission failed", error);
     return NextResponse.json({ error: "Unable to process this reconciliation decision." }, { status: 500 });
   }

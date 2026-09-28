@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getSessionContext } from "@/lib/session";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import * as talkService from "@/services/talk";
 
 export async function POST(request: Request) {
   try {
-    const { orgId, userId } = await getSessionContext();
+    const { organisationId: orgId, userId } = await requireVerifiedGovernancePrincipal();
     if (!orgId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     const { query } = await request.json();
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Query failed" },
       { status: 500 }
