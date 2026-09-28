@@ -18,6 +18,7 @@ import {
   type GovernanceReviewPersistencePort,
   type ReviewSubject,
 } from "@council/governance-review";
+import { GovernedWriteError } from "@/lib/governance/governed-write-errors";
 
 const ORG = asOrganisationId("org-1");
 const SUBJECT_ID = asReviewSubjectId("review-subject:test:1");
@@ -119,9 +120,11 @@ interface WorldState {
   matchCandidate: unknown;
   persistCalls: Array<{ family: string; decision: unknown; invocation: unknown }>;
   persistReplay: boolean;
+  persistAuthorizedReconciliationError: Error | undefined;
   reconciliationAuditChain: unknown;
   materializeObjectResult: unknown;
   materializeObjectError: string | undefined;
+  materializeObjectFullError: Error | undefined;
 }
 
 const world: WorldState = {
@@ -132,9 +135,11 @@ const world: WorldState = {
   matchCandidate: undefined,
   persistCalls: [],
   persistReplay: false,
+  persistAuthorizedReconciliationError: undefined,
   reconciliationAuditChain: undefined,
   materializeObjectResult: undefined,
   materializeObjectError: undefined,
+  materializeObjectFullError: undefined,
 };
 
 function notImplemented(name: string) {
@@ -150,6 +155,7 @@ const fakeGovernancePort: GovernanceReviewPersistencePort = {
   getReviewAuditChain: notImplemented("getReviewAuditChain") as never,
   persistAuthorizationDecision: notImplemented("persistAuthorizationDecision") as never,
   persistAuthorizedReconciliation: async (input) => {
+    if (world.persistAuthorizedReconciliationError) throw world.persistAuthorizedReconciliationError;
     world.persistCalls.push({ family: input.family, decision: input.decision, invocation: input.invocation });
     return {
       replay: world.persistReplay,
@@ -175,6 +181,7 @@ mock.module("@/lib/governance/persistence", {
 
 const fakeMaterializationPort = {
   materializeObjectReconciliation: async () => {
+    if (world.materializeObjectFullError) throw world.materializeObjectFullError;
     if (world.materializeObjectError) throw new Error(world.materializeObjectError);
     if (!world.materializeObjectResult) throw new Error("materializeObjectReconciliation should not be called in this test");
     return world.materializeObjectResult;
@@ -234,7 +241,6 @@ before(async () => {
 const baseInput = {
   organisationId: ORG,
   actorUserId: "user-1",
-  currentRole: "org_admin",
   writePrincipal: TEST_WRITE_PRINCIPAL,
   reviewSubjectId: SUBJECT_ID,
   reasonCode: "governance board approved",
@@ -253,9 +259,11 @@ function resetWorld() {
   world.matchCandidate = undefined;
   world.persistCalls = [];
   world.persistReplay = false;
+  world.persistAuthorizedReconciliationError = undefined;
   world.reconciliationAuditChain = undefined;
   world.materializeObjectResult = undefined;
   world.materializeObjectError = undefined;
+  world.materializeObjectFullError = undefined;
 }
 
 test("submitReconciliationDecision: MODEL CERTIFIED + OBJECT_INPUT_AVAILABLE with CREATE_NEW applies and persists an OBJECT-family decision", async () => {
@@ -327,11 +335,24 @@ test("submitReconciliationDecision: a non-CERTIFIED review subject cannot reconc
   assert.equal(world.persistCalls.length, 0);
 });
 
-test("submitReconciliationDecision: a session role other than org_admin is forbidden, checked before any subject lookup", async () => {
+// M16-S0.3.3C-R1: SubmitReconciliationDecisionInput carries no currentRole/
+// advisory-role field — there is nothing here for a stale or forged role
+// value to deny with. CASE 1 (current DB authority ALLOW reaches the adapter
+// without any app role allow) is exercised by the "applies and persists"
+// tests above, which needed no role of any kind to reach persistence.
+test("submitReconciliationDecision: SubmitReconciliationDecisionInput has no currentRole/advisory-role field to deny or allow with", () => {
+  assert.equal("currentRole" in baseInput, false);
+});
+
+test("submitReconciliationDecision: current DB authority DENY (GV006 from the governed wrapper) propagates for the route to classify as 403 — it is never a FORBIDDEN outcome fabricated here, and no business-success result is produced", async () => {
   resetWorld();
-  const outcome = await submitReconciliationDecision({ ...baseInput, currentRole: "user", requestedOutcome: "CREATE_NEW" });
-  assert.equal(outcome.kind, "FORBIDDEN");
-  assert.equal(world.persistCalls.length, 0);
+  world.persistAuthorizedReconciliationError = new GovernedWriteError(
+    "record_authorized_reconciliation_governed_v1 failed: M16_WRITE_AUTHORITY_DENIED", "GV006");
+  await assert.rejects(
+    submitReconciliationDecision({ ...baseInput, requestedOutcome: "CREATE_NEW" }),
+    (error: unknown) => error instanceof GovernedWriteError && error.code === "GV006",
+  );
+  assert.equal(world.persistCalls.length, 0, "no business-success result was produced");
 });
 
 test("submitReconciliationDecision: a review subject that already has a reconciliation decision is ALREADY_RECONCILED, never reconciled twice", async () => {
@@ -431,7 +452,7 @@ test("triggerMaterialization: a valid CREATE_NEW OBJECT decision materializes, r
   };
   world.materializeObjectResult = { replay: false, status: "APPLIED", canonicalObjectId: "canonical-object:1", mappingId: "mapping-1" };
 
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "APPLIED");
   assert.equal(outcome.kind === "APPLIED" && outcome.result.applicable, true);
 });
@@ -479,7 +500,7 @@ test("triggerMaterialization: a SOURCE_IDENTITY_ALREADY_MAPPED rejection from th
   };
   for (const code of ["SOURCE_IDENTITY_ALREADY_MAPPED", "LEGACY_OBJECT_ALREADY_CANONICAL", "LEGACY_OBJECT_MAPPING_AMBIGUOUS", "LEGACY_OBJECT_MATCH_MISMATCH"]) {
     world.materializeObjectError = `materialize_object_reconciliation failed: ${code}`;
-    const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
+    const outcome = await triggerMaterialization({ organisationId: ORG, writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
     assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
     assert.equal(JSON.stringify(outcome).includes(code), false);
   }
@@ -487,15 +508,67 @@ test("triggerMaterialization: a SOURCE_IDENTITY_ALREADY_MAPPED rejection from th
 
 test("triggerMaterialization: a review subject with no persisted reconciliation decision cannot materialize", async () => {
   resetWorld();
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "NOT_READY");
 });
 
-test("triggerMaterialization: a non-org_admin session role is forbidden, checked before any decision lookup", async () => {
+// M16-S0.3.3C-R1: TriggerMaterializationInput carries no currentRole/
+// advisory-role field — there is nothing here for a stale or forged role
+// value to deny with. CASE 1 (current DB authority ALLOW reaches the adapter
+// without any app role allow) is exercised by the "a valid CREATE_NEW OBJECT
+// decision materializes" test above, which needed no role of any kind.
+test("triggerMaterialization: TriggerMaterializationInput has no currentRole/advisory-role field to deny or allow with", () => {
+  assert.equal("currentRole" in { organisationId: ORG, writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID }, false);
+});
+
+test("triggerMaterialization: current DB authority DENY (GV006 from the governed wrapper) propagates for the route to classify as 403 — it is never a FORBIDDEN outcome fabricated here, and no business-success result is produced", async () => {
   resetWorld();
   world.existingDecisionId = "reconciliation-decision:1";
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "user", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
-  assert.equal(outcome.kind, "FORBIDDEN");
+  world.reconciliationAuditChain = {
+    family: "OBJECT",
+    authorization: {
+      authorizationDecisionId: "authz-1",
+      result: "ALLOW",
+      organisationId: ORG,
+      actorReference: "user-1",
+      subject: { subjectKind: "CANDIDATE", candidateId: "candidate-1" },
+      requestedAction: "CREATE_NEW",
+      evaluatedAt: asIsoTimestamp(new Date().toISOString()),
+    },
+    invocation: {
+      invocationId: "invocation-1",
+      commandId: "cmd-1",
+      organisationId: ORG,
+      reviewSubjectId: SUBJECT_ID,
+      authorizationDecisionId: "authz-1",
+      reconciliationDecisionId: "reconciliation-decision:1",
+      requestedAction: "CREATE_NEW",
+      actor: { authorityKind: "HUMAN", actorReference: "user-1" },
+      requestedAt: asIsoTimestamp(new Date().toISOString()),
+      reasonCode: "x",
+      commandFingerprint: "fp",
+    },
+    decision: {
+      decisionId: "reconciliation-decision:1",
+      organisationId: ORG,
+      outcome: "CREATE_NEW",
+      candidateKind: "MODEL",
+      authority: { authorityKind: "HUMAN", actorReference: "user-1" },
+      reasonCode: "x",
+      assertionIds: [],
+      evidenceIds: [],
+      decidedAt: asIsoTimestamp(new Date().toISOString()),
+      subject: { subjectKind: "CANDIDATE", candidateId: "candidate-1", candidateKind: "MODEL" },
+      canonicalObject: { organisationId: ORG, objectId: "canonical-object:1", kind: "MODEL" },
+    },
+  };
+  world.materializeObjectFullError = new GovernedWriteError(
+    "materialize_object_reconciliation_governed_v1 failed: M16_WRITE_AUTHORITY_DENIED", "GV006");
+  await assert.rejects(
+    triggerMaterialization({ organisationId: ORG, writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID }),
+    (error: unknown) => error instanceof GovernedWriteError && error.code === "GV006",
+  );
+  assert.equal(world.persistCalls.length, 0, "no business-success result was produced");
 });
 
 test("triggerMaterialization: a cross-tenant/nonexistent decision id (audit chain lookup returns nothing for this org — getReconciliationAuditChain is itself organisation-scoped) fails closed, never materializing", async () => {
@@ -504,6 +577,6 @@ test("triggerMaterialization: a cross-tenant/nonexistent decision id (audit chai
   // fakeGovernancePort.getReconciliationAuditChain already defaults to
   // returning undefined, which is exactly what the real tenant-scoped query
   // returns for a decision id belonging to another organisation.
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
 });

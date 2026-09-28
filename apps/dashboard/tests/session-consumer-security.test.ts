@@ -19,7 +19,7 @@ let missingOrg = false;
 let writeFailure: unknown;
 let queryLog: Array<{ table: string; select: string; filters: Array<[string, unknown]> }>;
 let reads: string[];
-let writes: Array<{ organisationId: string; actorUserId?: string; actorReference?: string; currentRole: string;
+let writes: Array<{ organisationId: string; actorUserId?: string; actorReference?: string;
   writePrincipal?: { organisationId: string; actorUserId: string; issuedAtSeconds: number; expiresAtSeconds: number; credentialEpoch: string } }>;
 let headerReads = 0;
 let agents: typeof import("../app/api/agents/route");
@@ -135,7 +135,6 @@ for (const [name, invoke] of privileged) {
     assert.equal((await invoke()).status, 200);
     assert.equal(writes.length, 1);
     assert.equal(writes[0].organisationId, org);
-    assert.equal(writes[0].currentRole, "org_admin");
     if (!name.startsWith("materialize")) assert.equal(writes[0].actorUserId ?? writes[0].actorReference, actor);
     // M16-S0.3.3C: the governed write principal reaching the command layer is
     // built ONLY from the verified cookie (organisationId=org, actorUserId=
@@ -148,25 +147,42 @@ for (const [name, invoke] of privileged) {
     assert.equal(wp!.credentialEpoch, "2026-09-25T00:00:00.000001+00:00");
     assert.equal(typeof wp!.issuedAtSeconds, "number");
     assert.equal(wp!.expiresAtSeconds - wp!.issuedAtSeconds, 8 * 3600);
-    assert.deepEqual(queryLog[0].filters, [["user_id", actor], ["organisation_id", org]]);
+    // M16-S0.3.3C-R1: no current-role DB lookup happens ahead of the governed
+    // write — resolveCurrentGovernanceRole is no longer consulted on this path.
+    assert.deepEqual(queryLog, []);
     assert.equal(headerReads, 0);
   });
-  test(`${name}: stale JWT admin and forged admin header cannot override current non-admin`, async () => {
+  // M16-S0.3.3C-R1 (Finding C-R1-01): the app must never deny a HUMAN write
+  // before the governed DB wrapper — that was a stale-read/TOCTOU false-deny
+  // path. The mocked governance_users/governance_roles rows below simulate
+  // exactly the "current role" state that used to be resolved and checked at
+  // the app layer; now nothing in the write route consults them, so mutating
+  // them must have zero effect on the outcome. The DB wrapper's own
+  // transactional authority check (GV006 -> 403) is covered by the
+  // GovernedWriteError propagation tests in workspace-commands.test.ts and
+  // decision-commands.test.ts, and by the real PG17 wrapper harness.
+  test(`${name}: stale/forged role data and mismatched current-role DB rows cannot deny at the app layer — only the governed DB wrapper may`, async () => {
     cookie = await session("org_admin"); roles = [];
-    assert.equal((await invoke()).status, 403); assert.deepEqual(writes, []);
+    assert.equal((await invoke()).status, 200, "no advisory role value may prevent the RPC call from being reached");
+    assert.equal(writes.length, 1);
   });
-  test(`${name}: foreign organisation or different user's role state never authorizes`, async () => {
+  test(`${name}: a mismatched current-role DB row (foreign organisation or different user) does not change the verified write principal`, async () => {
     for (const identity of [{ user_id: actor, organisation_id: foreign }, { user_id: "another-user", organisation_id: org }]) {
       user = { ...user!, ...identity };
-      assert.equal((await invoke()).status, 403);
+      assert.equal((await invoke()).status, 200);
     }
-    assert.deepEqual(writes, []);
+    assert.equal(writes.length, 2);
+    for (const write of writes) {
+      assert.equal(write.organisationId, org, "the write principal is bound to the verified session, never the mocked current-role row");
+      assert.equal(write.writePrincipal?.organisationId, org);
+      assert.equal(write.writePrincipal?.actorUserId, actor);
+    }
   });
-  test(`${name}: role revocation after one request is honored on the next request`, async () => {
+  test(`${name}: role revocation in current-role data has no effect on a later request — the app performs no such check`, async () => {
     assert.equal((await invoke()).status, 200);
     user!.role_ids = [];
-    assert.equal((await invoke()).status, 403);
-    assert.equal(writes.length, 1);
+    assert.equal((await invoke()).status, 200);
+    assert.equal(writes.length, 2);
   });
 }
 
@@ -232,17 +248,27 @@ for (const mode of ["missing", "legacy", "old", "issuer", "audience", "no-creden
 }
 
 // S0.2 LOW regression: unknown failures must never default to business conflict.
+// M16-S0.3.3C-R1: "missing organisation"/"inactive organisation"/"database
+// failure" used to be resolved via resolveCurrentGovernanceRole ahead of the
+// governed DB wrapper — an app-level authority gate now removed (Finding
+// C-R1-01). That concern lives exclusively inside
+// lock_and_resolve_governance_session_eligibility_v1 now, so those mocked
+// current-role DB knobs no longer have any effect on these write routes.
 for (const [name, invoke] of privileged.slice(0, 2)) {
-  for (const mode of ['missing organisation', 'inactive organisation', 'database failure', 'runtime failure', 'non-Error failure', 'private diagnostic containing business code']) {
+  test(`${name}: missing or inactive organisation state in the mocked current-role DB rows cannot deny at the app layer — only the governed DB wrapper may`, async () => {
+    missingOrg = true;
+    assert.equal((await invoke()).status, 200);
+    activeOrg = false; missingOrg = false;
+    assert.equal((await invoke()).status, 200);
+    assert.equal(writes.length, 2);
+  });
+  for (const mode of ['runtime failure', 'non-Error failure', 'private diagnostic containing business code']) {
     test(`${name}: ${mode} preserves the auth/infrastructure taxonomy`, async () => {
-      if (mode === 'missing organisation') missingOrg = true;
-      if (mode === 'inactive organisation') activeOrg = false;
-      if (mode === 'database failure') databaseError = true;
       if (mode === 'runtime failure') writeFailure = new Error('PRIVATE database details');
       if (mode === 'non-Error failure') writeFailure = { private: 'PRIVATE runtime details' };
       if (mode === 'private diagnostic containing business code') writeFailure = new Error('PRIVATE FIELD_STALE_SOURCE EXECUTION_STALE_SOURCE');
       const response = await invoke();
-      assert.equal(response.status, mode.includes('organisation') ? 403 : 500);
+      assert.equal(response.status, 500);
       assert.doesNotMatch(await response.text(), /PRIVATE|private-db-detail/);
       assert.equal(writes.length, 0);
     });

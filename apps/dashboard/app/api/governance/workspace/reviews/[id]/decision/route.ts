@@ -1,4 +1,3 @@
-import { resolveCurrentGovernanceRole } from "@/lib/auth/current-authorization";
 import { NextResponse } from "next/server";
 import { asOrganisationId } from "@council/canonical-contracts";
 
@@ -32,8 +31,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const principal = await requireVerifiedGovernancePrincipal();
     const { organisationId: orgId, userId } = principal;
-    const role = await resolveCurrentGovernanceRole(principal);
-    if (role !== "org_admin") return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     const { id } = await params;
 
     const body = (await request.json().catch(() => null)) as
@@ -51,7 +48,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const outcome = await submitReconciliationDecision({
       organisationId: asOrganisationId(orgId),
       actorUserId: userId,
-      currentRole: role,
       writePrincipal: toGovernanceWritePrincipal(principal),
       reviewSubjectId: asReviewSubjectId(id),
       requestedOutcome: requestedOutcome as RequestedReconciliationOutcome,

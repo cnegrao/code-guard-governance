@@ -47,12 +47,16 @@ test('M13 snapshot credential extensions cannot reach any RPC',async()=>{
 });
 const request={decisionId:'decision',canonicalObjectId:'version',snapshotId:'snapshot',field:'PRINCIPAL',outcome:'ACCEPT_PROPOSED'};
 const writePrincipal={organisationId:org,actorUserId:'human',issuedAtSeconds:1_700_000_000,expiresAtSeconds:1_700_028_800,credentialEpoch:'2026-01-01T00:00:00.000000+00:00'};
-const context={organisationId:org,actorReference:'human',currentRole:'org_admin',writePrincipal};
+const context={organisationId:org,actorReference:'human',writePrincipal};
 for(const field of ['organisationId','actor','authorizationState','grantedScopes','token'])test(`M13 command rejects caller-supplied ${field}`,async()=>{
   await assert.rejects(submit({...request,[field]:'forged'},context),/DECISION_INVALID/);
   assert.deepEqual(calls,[]);assert.deepEqual(filters,[]);
 });
-test('M13 command denies non-reviewer and missing human before reading governance state',async()=>{
-  for(const ctx of [{...context,currentRole:'user'},{...context,actorReference:''}])await assert.rejects(submit(request,ctx),/FORBIDDEN/);
+// M16-S0.3.3C-R1: submitExecutionDecision carries no currentRole/advisory-role
+// field — the governed DB wrapper (record_execution_field_decision_governed_v1)
+// is the sole write authority. Only the deterministic missing-actor binding
+// invariant is enforced here, before reading governance state.
+test('M13 command denies missing human actor reference before reading governance state',async()=>{
+  await assert.rejects(submit(request,{...context,actorReference:''}),/FORBIDDEN/);
   assert.deepEqual(calls,[]);assert.deepEqual(filters,[]);
 });

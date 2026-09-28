@@ -6,7 +6,6 @@ import { configuredTechnicalConnection, technicalFactPersistence, createGoverned
 import { discoveryIntakePersistence } from './discovery-intake-persistence';
 import { governanceReviewPersistence } from './persistence';
 import { materializationPersistence } from './materialization';
-import { hasGovernanceReviewAuthority } from './workspace-actions';
 import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
 
 /** Server-only fixture/transport entry point. No HTTP or credentials in adapter. */
@@ -27,13 +26,15 @@ export async function technicalFieldReviewQueue(org: OrganisationId) {
   }));
 }
 export type ReviewedFieldDecision = Omit<FieldReconciliationDecision,'organisationId'|'actor'|'decidedAt'>;
-export async function submitTechnicalFieldDecision(input: ReviewedFieldDecision, context: {organisationId:OrganisationId;actorReference:string;currentRole:string;writePrincipal:GovernanceWritePrincipal}) {
-  if (!hasGovernanceReviewAuthority(context.currentRole)) throw new TypeError('FIELD_AUTHORIZATION_DENIED');
+// M16-S0.3.3C-R1: current-role authority is NOT decided here. The sole write
+// authority is record_technical_field_decision_governed_v1's own
+// transactional require_governed_write_eligibility_v1 check (GV006
+// otherwise); the authorize callback below enforces ONLY deterministic
+// organisation/HUMAN-actor identity binding.
+export async function submitTechnicalFieldDecision(input: ReviewedFieldDecision, context: {organisationId:OrganisationId;actorReference:string;writePrincipal:GovernanceWritePrincipal}) {
   const previous = await technicalFactPersistence.getDecision(context.organisationId,input.decisionId);
   const decision: FieldReconciliationDecision = { ...input,organisationId:context.organisationId,
     actor:{authorityKind:'HUMAN',actorReference:context.actorReference},decidedAt:previous?.decision.decidedAt ?? asIsoTimestamp(new Date().toISOString()) };
-  // The DB wrapper is the final write authority (M16-S0.3.3C): the route-level
-  // currentRole/authorize() check above remains only for early/UX rejection.
   return reconcileTechnicalFact(decision,createGovernedTechnicalFactPersistence(context.writePrincipal),{authorize:d=> d.organisationId===context.organisationId &&
-    d.actor.authorityKind==='HUMAN' && d.actor.actorReference===context.actorReference && hasGovernanceReviewAuthority(context.currentRole)});
+    d.actor.authorityKind==='HUMAN' && d.actor.actorReference===context.actorReference});
 }

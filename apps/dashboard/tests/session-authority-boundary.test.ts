@@ -39,11 +39,25 @@ test("identity header guard catches all prohibited names but preserves client/si
   for (const name of ["client", "signature"]) assert.doesNotMatch(`headers.get("x-codeguard-${name}")`, identityHeader);
 });
 
-test("every existing privileged route derives current roles from persistence", () => {
-  for (const route of ["execution-context", "technical-facts", "reviews/[id]", "reviews/[id]/decision", "reviews/[id]/materialize"]) {
+// M16-S0.3.3C-R1: the app-level role resolved from persistence is a UI/
+// read-model concern only now — it must never gate a HUMAN write ahead of
+// the governed DB wrapper (Finding C-R1-01). Only reviews/[id]'s GET still
+// resolves a role at all (for its allowedActions read-model); every other
+// route, and every write handler, must not.
+test("every existing privileged route authenticates via a verified principal; only GET/read paths may additionally resolve a role, and never a write handler", () => {
+  const routesWithNoRoleResolution = ["execution-context", "technical-facts", "reviews/[id]/decision", "reviews/[id]/materialize"];
+  for (const route of routesWithNoRoleResolution) {
     const source = readFileSync(join(root, "app/api/governance/workspace", route, "route.ts"), "utf8");
     assert.match(source, /requireVerifiedGovernancePrincipal\(\)/, route);
-    assert.match(source, /await resolveCurrentGovernanceRole\(principal\)/, route);
+    assert.doesNotMatch(source, /resolveCurrentGovernanceRole/, route);
     assert.doesNotMatch(source, /informational|body\.(?:role|currentRole|actorUserId|organisationId)/, route);
   }
+
+  const reviewSource = readFileSync(join(root, "app/api/governance/workspace/reviews/[id]/route.ts"), "utf8");
+  assert.match(reviewSource, /requireVerifiedGovernancePrincipal\(\)/, "reviews/[id]");
+  assert.match(reviewSource, /await resolveCurrentGovernanceRole\(principal\)/, "reviews/[id]");
+  assert.doesNotMatch(reviewSource, /informational|body\.(?:role|currentRole|actorUserId|organisationId)/, "reviews/[id]");
+  const putIndex = reviewSource.indexOf("export async function PUT");
+  assert.notEqual(putIndex, -1, "reviews/[id]/route.ts must still export PUT");
+  assert.doesNotMatch(reviewSource.slice(putIndex), /resolveCurrentGovernanceRole/, "reviews/[id] PUT must not resolve or gate on a role");
 });

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { asOrganisationId } from '@council/canonical-contracts';
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from '@/lib/auth';
-import { resolveCurrentGovernanceRole, CurrentAuthorizationInfrastructureError } from '@/lib/auth/current-authorization';
 import { executionReviewQueue, submitExecutionDecision } from '@/lib/governance/execution-context-review';
 import { governedWriteErrorResponse } from '@/lib/governance/governed-write-errors';
 import { toGovernanceWritePrincipal } from '@/lib/auth/governance-write-principal';
@@ -18,14 +17,11 @@ export async function GET() {
 export async function POST(request:Request) {
   try {
     const principal=await requireVerifiedGovernancePrincipal();
-    const currentRole=await resolveCurrentGovernanceRole(principal);
-    if(currentRole!=='org_admin')return NextResponse.json({error:'Not authorized.'},{status:403});
     const text=await request.text();if(text.length>16384)return NextResponse.json({error:'Request too large.'},{status:400});
     return NextResponse.json(await submitExecutionDecision(JSON.parse(text),{organisationId:asOrganisationId(principal.organisationId),
-      actorReference:principal.userId,currentRole,writePrincipal:toGovernanceWritePrincipal(principal)}));
+      actorReference:principal.userId,writePrincipal:toGovernanceWritePrincipal(principal)}));
   } catch(error) {
     if(error instanceof SessionAuthenticationError)return NextResponse.json({error:'Not authenticated.'},{status:401});
-    if(error instanceof CurrentAuthorizationInfrastructureError)return NextResponse.json({error:'Unable to authorize execution review.'},{status:500});
     const security = governedWriteErrorResponse(error);
     if (security) return security;
     const message=error instanceof Error?error.message:'';

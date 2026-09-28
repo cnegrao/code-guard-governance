@@ -31,8 +31,11 @@ test('M13 GET and POST derive tenant and human exclusively from a verified cooki
   assert.equal((await route.GET()).status,200);assert.deepEqual(reads,[org]);
   assert.equal((await route.POST(request())).status,200);
   const ctx=writes[0][1] as any;
-  assert.deepEqual({organisationId:ctx.organisationId,actorReference:ctx.actorReference,currentRole:ctx.currentRole},
-    {organisationId:org,actorReference:'human',currentRole:'org_admin'});
+  // M16-S0.3.3C-R1: no currentRole/advisory-role field reaches the command
+  // context — the governed DB wrapper is the sole write authority.
+  assert.equal('currentRole' in ctx, false);
+  assert.deepEqual({organisationId:ctx.organisationId,actorReference:ctx.actorReference},
+    {organisationId:org,actorReference:'human'});
   // M16-S0.3.3C: the governed write principal is derived ONLY from the verified
   // cookie, never from the forged x-codeguard-* headers this request also sends.
   assert.deepEqual(ctx.writePrincipal, {organisationId:org,actorUserId:'human',
@@ -40,10 +43,12 @@ test('M13 GET and POST derive tenant and human exclusively from a verified cooki
     credentialEpoch:'2026-09-25T00:00:00.000001+00:00'});
   assert.equal(ctx.writePrincipal.expiresAtSeconds-ctx.writePrincipal.issuedAtSeconds,8*3600);
 });
-test('M13 forged headers cannot authenticate or grant reviewer authority',async()=>{
+test('M13 forged headers cannot authenticate; a non-admin JWT role or stale current-role value no longer denies at the app layer — the governed DB wrapper is the sole write authority (M16-S0.3.3C-R1)',async()=>{
   cookie=undefined;assert.equal((await route.GET()).status,401);assert.equal((await route.POST(request())).status,401);
-  cookie=await token('user');currentRole='user';assert.equal((await route.POST(request())).status,403);
   assert.deepEqual(writes,[]);assert.deepEqual(reads,[]);
+  cookie=await token('user');currentRole='user';
+  assert.equal((await route.POST(request())).status,200);
+  assert.equal(writes.length,1);
 });
 test('M13 invalid signed cookie and development fallback cannot enable privileged reads',async()=>{
   cookie='invalid';assert.equal((await route.GET()).status,401);

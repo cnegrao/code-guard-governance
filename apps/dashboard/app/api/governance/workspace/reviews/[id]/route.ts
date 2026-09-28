@@ -45,8 +45,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const principal = await requireVerifiedGovernancePrincipal();
     const { organisationId: orgId, userId } = principal;
-    const role = await resolveCurrentGovernanceRole(principal);
-    if (role !== "org_admin") return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     const { id } = await params;
 
     const body = (await request.json().catch(() => null)) as
@@ -72,7 +70,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       {
         organisationId: asOrganisationId(orgId),
         actorUserId: userId,
-        currentRole: role,
         writePrincipal,
         reviewSubjectId: asReviewSubjectId(id),
         expectedState: expectedState as ReviewState,

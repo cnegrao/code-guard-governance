@@ -34,9 +34,8 @@ import { governanceReviewPersistence, createGovernedReviewPersistence } from "./
 import { createGovernedMaterializationPersistence } from "./materialization";
 import { getReconciliationInputForReviewSubject } from "./reconciliation-input";
 import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
-import { createCurrentRoleReconciliationAuthorizationPort } from "./reconciliation-authorization-port";
+import { createVerifiedPrincipalReconciliationAuthorizationPort } from "./reconciliation-authorization-port";
 import { getCanonicalObjectForMatch } from "./canonical-object-lookup";
-import { hasGovernanceReviewAuthority } from "./workspace-actions";
 import { deriveReconciliationReadiness, type ReconciliationReadinessReason } from "./reconciliation-readiness";
 import { findReconciliationDecisionIdForReviewSubject, findMaterializationForDecision } from "./decision-query";
 
@@ -61,7 +60,6 @@ export type RequestedReconciliationOutcome = "CREATE_NEW" | "MATCH_EXISTING" | "
 export interface SubmitReconciliationDecisionInput {
   readonly organisationId: OrganisationId;
   readonly actorUserId: string;
-  readonly currentRole: string;
   /** Server-derived from the trusted verified session — never client-supplied.
    * Bound into the governed DB write wrapper as the sole write authority. */
   readonly writePrincipal: GovernanceWritePrincipal;
@@ -88,11 +86,11 @@ function stableCommandId(parts: readonly unknown[]): string {
 export async function submitReconciliationDecision(
   input: SubmitReconciliationDecisionInput,
 ): Promise<SubmitReconciliationDecisionOutcome> {
-  const hasAuthority = hasGovernanceReviewAuthority(input.currentRole);
-  if (!hasAuthority) {
-    return { kind: "FORBIDDEN", message: "Your role does not permit reconciliation actions." };
-  }
-
+  // M16-S0.3.3C-R1: current-role authority is NOT decided here. The sole
+  // write authority is record_authorized_reconciliation_governed_v1's own
+  // transactional require_governed_write_eligibility_v1 check (GV006
+  // otherwise) — see createVerifiedPrincipalReconciliationAuthorizationPort
+  // below for the (non-authoritative) domain-audit-trail bridge this needs.
   const subject = await governanceReviewPersistence.getReviewSubject(input.organisationId, input.reviewSubjectId);
   if (!subject) return { kind: "NOT_FOUND" };
 
@@ -135,13 +133,12 @@ export async function submitReconciliationDecision(
 
   const requestedAt = asIsoTimestamp(new Date().toISOString());
   const actor = { authorityKind: "HUMAN" as const, actorReference: input.actorUserId };
-  const authorizationPort = createCurrentRoleReconciliationAuthorizationPort({
+  // Binds ONLY organisation/HUMAN-actor identity — see the bridge's own
+  // documentation. Its ALLOW is not authoritative; the governed DB wrapper is.
+  const authorizationPort = createVerifiedPrincipalReconciliationAuthorizationPort({
     organisationId: input.organisationId,
     actorReference: input.actorUserId,
-    currentRole: input.currentRole,
   });
-  // The DB wrapper is the final write authority (M16-S0.3.3C): this route-level
-  // authorizationPort check above remains only for early/UX rejection.
   const governedReview = createGovernedReviewPersistence(input.writePrincipal);
 
   try {
@@ -329,7 +326,6 @@ export type TriggerMaterializationOutcome =
 
 export interface TriggerMaterializationInput {
   readonly organisationId: OrganisationId;
-  readonly currentRole: string;
   /** Server-derived from the trusted verified session — never client-supplied.
    * Bound into the governed DB write wrapper as the sole write authority. */
   readonly writePrincipal: GovernanceWritePrincipal;
@@ -346,11 +342,9 @@ export interface TriggerMaterializationInput {
 export async function triggerMaterialization(
   input: TriggerMaterializationInput,
 ): Promise<TriggerMaterializationOutcome> {
-  const hasAuthority = hasGovernanceReviewAuthority(input.currentRole);
-  if (!hasAuthority) {
-    return { kind: "FORBIDDEN", message: "Your role does not permit materialization actions." };
-  }
-
+  // M16-S0.3.3C-R1: current-role authority is NOT decided here. The sole
+  // write authority is materialize_*_reconciliation_governed_v1's own
+  // transactional require_governed_write_eligibility_v1 check (GV006 otherwise).
   const subject = await governanceReviewPersistence.getReviewSubject(input.organisationId, input.reviewSubjectId);
   if (!subject) return { kind: "NOT_FOUND" };
 

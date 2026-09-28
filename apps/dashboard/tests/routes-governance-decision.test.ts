@@ -107,12 +107,13 @@ test("decision POST: a successful APPLIED outcome returns 200 with the reconcili
   assert.equal(json.reconciliationDecisionId, "reconciliation-decision:1");
 });
 
-test("decision POST: never forwards a client-supplied organisationId, actor, or role — only verified identity and persisted role values reach the command layer", async () => {
+test("decision POST: never forwards a client-supplied organisationId, actor, or role, and never gates the write on an app-level role before the governed DB wrapper (M16-S0.3.3C-R1)", async () => {
   const source = readFileSync(new URL("../app/api/governance/workspace/reviews/[id]/decision/route.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /body\.organisationId|body\.actorUserId|body\.currentRole|body\.role/);
   assert.match(source, /organisationId:\s*asOrganisationId\(orgId\)/);
   assert.match(source, /actorUserId:\s*userId/);
-  assert.match(source, /currentRole:\s*role/);
+  assert.doesNotMatch(source, /currentRole/, "the DB governed wrapper is the sole write authority, not an app-level role");
+  assert.doesNotMatch(source, /resolveCurrentGovernanceRole/);
 });
 
 test("decision POST: never accepts a raw reconciliation outcome envelope or canonical object from the client beyond the semantic requestedOutcome/matchCanonicalObjectId/reasonCode fields", async () => {

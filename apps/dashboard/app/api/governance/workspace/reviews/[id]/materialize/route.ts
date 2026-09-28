@@ -1,4 +1,3 @@
-import { resolveCurrentGovernanceRole } from "@/lib/auth/current-authorization";
 import { NextResponse } from "next/server";
 import { asOrganisationId } from "@council/canonical-contracts";
 
@@ -12,13 +11,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   try {
     const principal = await requireVerifiedGovernancePrincipal();
     const { organisationId: orgId } = principal;
-    const role = await resolveCurrentGovernanceRole(principal);
-    if (role !== "org_admin") return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     const { id } = await params;
 
     const outcome = await triggerMaterialization({
       organisationId: asOrganisationId(orgId),
-      currentRole: role,
       writePrincipal: toGovernanceWritePrincipal(principal),
       reviewSubjectId: asReviewSubjectId(id),
     });

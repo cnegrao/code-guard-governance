@@ -169,13 +169,15 @@ test("action route: a successful APPLIED outcome returns 200 with the new state"
   assert.equal(json.state, "CONFIRMED");
 });
 
-test("action route: never forwards a client-supplied organisationId, actor, or role — only verified identity and persisted role values reach the command layer", async () => {
+test("action route: never forwards a client-supplied organisationId, actor, or role, and the PUT handler never gates the write on an app-level role before the governed DB wrapper (M16-S0.3.3C-R1)", async () => {
   const { readFileSync } = await import("node:fs");
   const source = readFileSync(new URL("../app/api/governance/workspace/reviews/[id]/route.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /body\.organisationId|body\.actorUserId|body\.currentRole|body\.role/);
   assert.match(source, /organisationId:\s*asOrganisationId\(orgId\)/);
   assert.match(source, /actorUserId:\s*userId/);
-  assert.match(source, /currentRole:\s*role/);
+  const putSource = source.slice(source.indexOf("export async function PUT"));
+  assert.doesNotMatch(putSource, /currentRole/, "the DB governed wrapper is the sole write authority, not an app-level role");
+  assert.doesNotMatch(putSource, /resolveCurrentGovernanceRole/, "GET may still resolve a role for allowedActions, but PUT must not");
 });
 
 test("queue route: invalid state filter is rejected with 400 rather than silently ignored", async () => {

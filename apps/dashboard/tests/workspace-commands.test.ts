@@ -15,6 +15,7 @@ import {
   type GovernanceReviewPersistencePort,
   type ReviewSubject,
 } from "@council/governance-review";
+import { GovernedWriteError } from "@/lib/governance/governed-write-errors";
 
 // workspace-commands.ts transitively imports lib/governance/persistence.ts,
 // which reads SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY at module-load time. A
@@ -82,7 +83,6 @@ function fakePort(options: FakePortOptions): GovernanceReviewPersistencePort {
 const baseInput = {
   organisationId: ORG,
   actorUserId: "user-1",
-  currentRole: "org_admin",
   writePrincipal: {
     organisationId: ORG, actorUserId: "user-1",
     issuedAtSeconds: 1_700_000_000, expiresAtSeconds: 1_700_028_800,
@@ -127,13 +127,30 @@ test("workspace-commands: a stale client-supplied expectedState is rejected befo
   assert.equal(persistCalled, false, "a stale expectedState must never reach the persistence layer");
 });
 
-test("workspace-commands: a session role other than the verified org_admin role is forbidden from every action", async () => {
-  const port = fakePort({ subject: buildSubject({ state: REVIEW_STATE.PROPOSED, evidenceIds: [] }) });
-  const outcome = await workspaceCommands.confirmReview(
-    { ...baseInput, currentRole: "user", expectedState: REVIEW_STATE.PROPOSED },
-    port,
+// M16-S0.3.3C-R1: ExecuteGovernanceActionInput carries no currentRole/advisory
+// role field at all — there is nothing here for a stale or forged role value
+// to deny with. CASE 1 (current DB authority ALLOW reaches the adapter
+// without any app role allow) is exercised by the "a legal confirm applies"
+// test below, which needed no role of any kind to reach persistence. CASE 2
+// (DB denies via GV006) is proven next.
+test("workspace-commands: ExecuteGovernanceActionInput has no currentRole/advisory-role field to deny or allow with", () => {
+  assert.equal("currentRole" in baseInput, false);
+});
+
+test("workspace-commands: current DB authority DENY (GV006 from the governed wrapper) propagates for the route to classify as 403 — it is never a FORBIDDEN outcome fabricated here, and no business-success result is produced", async () => {
+  let persistAttempted = false;
+  const port = fakePort({
+    subject: buildSubject({ state: REVIEW_STATE.PROPOSED, evidenceIds: [asEvidenceId("evidence-1")] }),
+    persistReviewTransition: async () => {
+      persistAttempted = true;
+      throw new GovernedWriteError("apply_review_transition_governed_v1 failed: M16_WRITE_AUTHORITY_DENIED", "GV006");
+    },
+  });
+  await assert.rejects(
+    workspaceCommands.confirmReview({ ...baseInput, expectedState: REVIEW_STATE.PROPOSED }, port),
+    (error: unknown) => error instanceof GovernedWriteError && error.code === "GV006",
   );
-  assert.equal(outcome.kind, "FORBIDDEN");
+  assert.equal(persistAttempted, true, "the governed RPC WAS reached — no app-level role gate intercepted the call before it");
 });
 
 test("workspace-commands: an action not legal for the current state is rejected as INVALID_TRANSITION, not silently coerced", async () => {
@@ -195,11 +212,11 @@ test("workspace-commands: a replayed persistence result is surfaced as REPLAYED,
   assert.equal(outcome.kind, "REPLAYED");
 });
 
-test("workspace-commands: a concurrent-race stale-state error surfaced by the persistence RPC is mapped to STALE_REVIEW_SUBJECT, never a false success", async () => {
+test("workspace-commands: a concurrent-race stale-state failure (SQLSTATE 40001) from the governed RPC is mapped to STALE_REVIEW_SUBJECT, never a false success", async () => {
   const port = fakePort({
     subject: buildSubject({ state: REVIEW_STATE.PROPOSED, evidenceIds: [asEvidenceId("evidence-1")] }),
     persistReviewTransition: async () => {
-      throw new Error("apply_review_transition failed: Stale review state: expected PROPOSED but found CONFIRMED");
+      throw new GovernedWriteError("apply_review_transition_governed_v1 failed: Stale review state: expected PROPOSED but found CONFIRMED", "40001");
     },
   });
   const outcome = await workspaceCommands.confirmReview(
@@ -209,11 +226,11 @@ test("workspace-commands: a concurrent-race stale-state error surfaced by the pe
   assert.equal(outcome.kind, "STALE_REVIEW_SUBJECT");
 });
 
-test("workspace-commands: an unrecognized persistence failure is sanitized as PERSISTENCE_CONFLICT, never a raw internal error", async () => {
+test("workspace-commands: a known idempotency conflict (SQLSTATE 23514, IDEMPOTENCY_CONFLICT) from the governed RPC is mapped to PERSISTENCE_CONFLICT", async () => {
   const port = fakePort({
     subject: buildSubject({ state: REVIEW_STATE.PROPOSED, evidenceIds: [asEvidenceId("evidence-1")] }),
     persistReviewTransition: async () => {
-      throw new Error("connection to postgres://internal-host:5432 refused");
+      throw new GovernedWriteError("apply_review_transition_governed_v1 failed: IDEMPOTENCY_CONFLICT", "23514");
     },
   });
   const outcome = await workspaceCommands.confirmReview(
@@ -221,8 +238,28 @@ test("workspace-commands: an unrecognized persistence failure is sanitized as PE
     port,
   );
   assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
-  assert.equal(JSON.stringify(outcome).includes("postgres://"), false);
 });
+
+// M16-S0.3.3C-R1 (finding C-R1-02): an unrecognized failure — whether an
+// unrecognized GovernedWriteError SQLSTATE (e.g. 42501, an unexpected
+// infrastructure/permission error) or a non-DB transport error — must NEVER
+// be collapsed into a blanket PERSISTENCE_CONFLICT (409). It propagates so
+// the route can map it to its own generic 500, never leaking raw DB DETAIL.
+for (const [name, error] of [
+  ["an unrecognized GovernedWriteError SQLSTATE (42501)", new GovernedWriteError("apply_review_transition_governed_v1 failed: permission denied for table PRIVATE_TABLE_NAME", "42501")],
+  ["a non-DB transport failure", new Error("connection to postgres://internal-host:5432 refused")],
+] as const) {
+  test(`workspace-commands: ${name} propagates unchanged — never sanitized as PERSISTENCE_CONFLICT here`, async () => {
+    const port = fakePort({
+      subject: buildSubject({ state: REVIEW_STATE.PROPOSED, evidenceIds: [asEvidenceId("evidence-1")] }),
+      persistReviewTransition: async () => { throw error; },
+    });
+    await assert.rejects(
+      workspaceCommands.confirmReview({ ...baseInput, expectedState: REVIEW_STATE.PROPOSED }, port),
+      (caught: unknown) => caught === error,
+    );
+  });
+}
 
 test("workspace-commands: reject is available from DETECTED, PROPOSED, and CONFIRMED but certify only from CONFIRMED", async () => {
   for (const state of [REVIEW_STATE.DETECTED, REVIEW_STATE.PROPOSED, REVIEW_STATE.CONFIRMED]) {

@@ -103,6 +103,54 @@ test("static: every legacy RPC name still resolves (it is not orphaned/renamed) 
   }
 });
 
+/**
+ * M16-S0.3.3C-R1 (Finding C-R1-01, §14) — the app must never deny a HUMAN
+ * write before the governed DB wrapper has had a chance to authorize it.
+ * This is a repo-wide scan of the active production HUMAN write call graph —
+ * not just route files, and not just RPC names — for the exact anti-pattern
+ * the audit found: an authoritative `role !== 'org_admin'` branch, or a
+ * `hasGovernanceReviewAuthority(currentRole)` denial, reachable ahead of a
+ * governed persistence call. GET/read/UI-only role checks (e.g. review's GET
+ * allowedActions) are explicitly out of scope and must not be flagged.
+ */
+// Write-only production files: the anti-pattern must not appear ANYWHERE in
+// the file (there is no GET/read handler in these to carve out an exception for).
+const HUMAN_WRITE_ONLY_PRODUCTION_FILES = [
+  "app/api/governance/workspace/reviews/[id]/decision/route.ts",
+  "app/api/governance/workspace/reviews/[id]/materialize/route.ts",
+  "app/api/governance/workspace/technical-facts/route.ts",
+  "app/api/governance/workspace/execution-context/route.ts",
+  "lib/governance/workspace-commands.ts",
+  "lib/governance/decision-commands.ts",
+  "lib/governance/multivendor-exchange.ts",
+  "lib/governance/execution-context-review.ts",
+  "lib/governance/reconciliation-authorization-port.ts",
+];
+// Mixed GET+PUT route: only its PUT handler is a HUMAN write; its GET may
+// legitimately resolve a role for its own allowedActions read-model.
+const REVIEW_ROUTE = "app/api/governance/workspace/reviews/[id]/route.ts";
+
+function assertNoWriteAuthorityGate(source: string, label: string) {
+  assert.doesNotMatch(source, /hasGovernanceReviewAuthority\s*\(/, `${label}: hasGovernanceReviewAuthority must not gate a write`);
+  assert.doesNotMatch(source, /currentRole\s*!==\s*['"]org_admin['"]/, `${label}: no currentRole!=='org_admin' deny`);
+  assert.doesNotMatch(source, /role\s*!==\s*['"]org_admin['"]/, `${label}: no role!=='org_admin' deny`);
+  assert.doesNotMatch(source, /\bcurrentRole\b/, `${label}: currentRole must not appear at all on this write path`);
+}
+
+test("HUMAN write path: no production write handler contains an app-level role-authority deny ahead of the governed DB wrapper", () => {
+  for (const file of HUMAN_WRITE_ONLY_PRODUCTION_FILES) {
+    assertNoWriteAuthorityGate(readFileSync(join(ROOT, file), "utf8"), file);
+  }
+  // reviews/[id]/route.ts's GET handler alone may still resolve a role, but
+  // only to build the read-model allowedActions — never to gate its PUT.
+  const reviewRoute = readFileSync(join(ROOT, REVIEW_ROUTE), "utf8");
+  const putIndex = reviewRoute.indexOf("export async function PUT");
+  assert.notEqual(putIndex, -1, `${REVIEW_ROUTE} must still export PUT`);
+  const putSource = reviewRoute.slice(putIndex);
+  assertNoWriteAuthorityGate(putSource, `${REVIEW_ROUTE} (PUT)`);
+  assert.doesNotMatch(putSource, /resolveCurrentGovernanceRole/, `${REVIEW_ROUTE} (PUT) must not resolve a role at all`);
+});
+
 // ---------------------------------------------------------------------------
 // Runtime: exact RPC name + exact p_verified_* args + error classification.
 // ---------------------------------------------------------------------------
