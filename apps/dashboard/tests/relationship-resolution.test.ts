@@ -46,7 +46,15 @@ const db = {
 const fakeGovernancePort = {
   getReviewSubject: async (tenant: string) => tenant === org ? subject : undefined,
   getReconciliationAuditChain: async () => chain,
-  persistAuthorizedReconciliation: async (input: any) => { persisted.push(input); return { replay: false, reconciliationDecisionId: input.decision.decisionId }; },
+  // M16-S0.3.3C-R2: mirrors the real gov_repo.record_authorized_reconciliation
+  // contract — idempotency is arbitrated by (organisation_id, command_id), so
+  // a second call reusing the EXISTING invocation's commandId (a genuine
+  // replay) reports replay=true; a fresh commandId reports replay=false.
+  persistAuthorizedReconciliation: async (input: any) => {
+    const isReplay = persisted.some(p => p.invocation.commandId === input.invocation.commandId);
+    persisted.push(input);
+    return { replay: isReplay, reconciliationDecisionId: input.decision.decisionId };
+  },
 };
 mock.module("@/lib/governance/persistence", { namedExports: { privilegedDb: db, canonicalStringify: stableCandidateContent,
   sha256Hex: (value: string) => createHash("sha256").update(value).digest("hex"), governanceReviewPersistence: fakeGovernancePort,
@@ -99,9 +107,13 @@ test("real dashboard command persists a governed relationship decision with reso
   assert.equal(persisted[0].decision.authorizedState.source.canonicalObject.kind, "AGENT_VERSION");
   assert.deepEqual(persisted[0].decision.evidenceIds, candidate.evidenceIds);
   chain = persisted[0]; existingDecisionId = chain.decision.decisionId;
+  // M16-S0.3.3C-R2: a matching replay still reaches the governed persistence
+  // boundary (reusing the existing chain verbatim) — it is not a free
+  // short-circuit. Only the mismatched REJECT command below never calls it.
   assert.equal((await commands.submitReconciliationDecision({ ...commandInput, requestedOutcome: "CREATE_NEW" })).kind, "REPLAYED");
+  assert.equal(persisted.length, 2, "the matching replay also reaches the governed persistence boundary");
   assert.equal((await commands.submitReconciliationDecision({ ...commandInput, requestedOutcome: "REJECT" })).kind, "PERSISTENCE_CONFLICT");
-  assert.equal(persisted.length, 1);
+  assert.equal(persisted.length, 2, "a mismatched existing decision never calls the governed persistence boundary");
 });
 for (const outcome of ["REJECT", "DEFER"] as const) test(`dashboard ${outcome} requires durable candidate but no canonical endpoints or writes`, async () => {
   reset(); endpoints = {};

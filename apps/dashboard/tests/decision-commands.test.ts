@@ -118,7 +118,7 @@ interface WorldState {
   existingDecisionId: string | undefined;
   materializationSummary: unknown;
   matchCandidate: unknown;
-  persistCalls: Array<{ family: string; decision: unknown; invocation: unknown }>;
+  persistCalls: Array<{ family: string; decision: unknown; invocation: unknown; authorization: unknown }>;
   persistReplay: boolean;
   persistAuthorizedReconciliationError: Error | undefined;
   reconciliationAuditChain: unknown;
@@ -156,7 +156,7 @@ const fakeGovernancePort: GovernanceReviewPersistencePort = {
   persistAuthorizationDecision: notImplemented("persistAuthorizationDecision") as never,
   persistAuthorizedReconciliation: async (input) => {
     if (world.persistAuthorizedReconciliationError) throw world.persistAuthorizedReconciliationError;
-    world.persistCalls.push({ family: input.family, decision: input.decision, invocation: input.invocation });
+    world.persistCalls.push({ family: input.family, decision: input.decision, invocation: input.invocation, authorization: input.authorization });
     return {
       replay: world.persistReplay,
       authorizationDecisionId: input.authorization.authorizationDecisionId,
@@ -298,6 +298,146 @@ for (const requestedOutcome of ["REJECT", "DEFER"] as const) test(`submitReconci
   const outcome = await submitReconciliationDecision({ ...baseInput, requestedOutcome });
   assert.equal(outcome.kind, "APPLIED");
   assert.equal(world.persistCalls[0]!.family, "RELATIONSHIP");
+});
+
+// M16-S0.3.3C-R2: an exact-match replay of an already-persisted RELATIONSHIP
+// decision used to short-circuit straight to REPLAYED without ever invoking
+// record_authorized_reconciliation_governed_v1 — a HUMAN actor whose
+// GOVERNANCE_ADMIN role had since been revoked could still "replay" the
+// identical command and receive REPLAYED, because the governed wrapper's own
+// require_governed_write_eligibility_v1 guard was never given the chance to
+// re-check CURRENT authority. These tests set up a real, production-built
+// RelationshipReconciliationDecision/authorization/invocation chain (from a
+// first genuine APPLIED call) and then drive the identical command again,
+// simulating the review subject now having a persisted decision.
+function setUpRelationshipScenario() {
+  world.subject = buildSubject({ candidateKind: "RELATIONSHIP" });
+  world.recovery = {
+    status: RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE,
+    reviewSubject: buildSubject({ candidateKind: "RELATIONSHIP" }),
+    finding: relationshipFinding(),
+    candidate: relationshipCandidate(),
+  };
+}
+
+test("submitReconciliationDecision: RELATIONSHIP replay CASE A (current admin) — the governed persistence boundary is invoked exactly once, reusing the EXISTING chain verbatim, before REPLAYED is returned", async () => {
+  resetWorld();
+  setUpRelationshipScenario();
+  const first = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+  assert.equal(first.kind, "APPLIED");
+  assert.equal(world.persistCalls.length, 1);
+  const existing = world.persistCalls[0]!;
+
+  // Simulate the review subject now having exactly this persisted decision.
+  world.existingDecisionId = (existing.decision as { decisionId: string }).decisionId;
+  world.reconciliationAuditChain = { family: "RELATIONSHIP", decision: existing.decision, authorization: existing.authorization, invocation: existing.invocation };
+  world.persistCalls = [];
+  world.persistReplay = true; // the real governed wrapper's own idempotent replay reports true
+
+  const replay = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+  assert.equal(replay.kind, "REPLAYED");
+  assert.equal(replay.kind === "REPLAYED" && replay.reconciliationDecisionId, world.existingDecisionId);
+
+  assert.equal(world.persistCalls.length, 1, "the governed persistence boundary is invoked exactly once for the replay");
+  const call = world.persistCalls[0]!;
+  // Strict object identity: the EXISTING chain is reused verbatim, never
+  // reconstructed, and no new AuthorizationDecision/commandId is synthesized.
+  assert.equal(call.decision, existing.decision, "the existing persisted decision object is reused, not reconstructed");
+  assert.equal(call.authorization, existing.authorization, "the existing AuthorizationDecision is reused; no new one is synthesized");
+  assert.equal(call.invocation, existing.invocation, "the existing invocation (same commandId/fingerprint) is reused; no new commandId is minted");
+});
+
+test("submitReconciliationDecision: RELATIONSHIP replay CASE B (admin revoked) — GV006 from the governed wrapper propagates; it is NEVER converted to REPLAYED", async () => {
+  resetWorld();
+  setUpRelationshipScenario();
+  const first = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+  assert.equal(first.kind, "APPLIED");
+  const existing = world.persistCalls[0]!;
+  world.existingDecisionId = (existing.decision as { decisionId: string }).decisionId;
+  world.reconciliationAuditChain = { family: "RELATIONSHIP", decision: existing.decision, authorization: existing.authorization, invocation: existing.invocation };
+  world.persistCalls = [];
+  world.persistAuthorizedReconciliationError = new GovernedWriteError(
+    "record_authorized_reconciliation_governed_v1 failed: M16_WRITE_AUTHORITY_DENIED", "GV006");
+
+  await assert.rejects(
+    submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" }),
+    (error: unknown) => error instanceof GovernedWriteError && error.code === "GV006",
+  );
+  assert.equal(world.persistCalls.length, 0, "no business-success result was produced");
+});
+
+for (const code of ["GV002", "GV001"]) {
+  test(`submitReconciliationDecision: RELATIONSHIP replay propagates ${code} unchanged (never converted to REPLAYED or any business outcome)`, async () => {
+    resetWorld();
+    setUpRelationshipScenario();
+    const first = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+    assert.equal(first.kind, "APPLIED");
+    const existing = world.persistCalls[0]!;
+    world.existingDecisionId = (existing.decision as { decisionId: string }).decisionId;
+    world.reconciliationAuditChain = { family: "RELATIONSHIP", decision: existing.decision, authorization: existing.authorization, invocation: existing.invocation };
+    world.persistCalls = [];
+    world.persistAuthorizedReconciliationError = new GovernedWriteError(
+      `record_authorized_reconciliation_governed_v1 failed: session check failed (${code})`, code);
+
+    await assert.rejects(
+      submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" }),
+      (error: unknown) => error instanceof GovernedWriteError && error.code === code,
+    );
+    assert.equal(world.persistCalls.length, 0);
+  });
+}
+
+test("submitReconciliationDecision: RELATIONSHIP replay propagates a lock-timeout (55P03) unchanged", async () => {
+  resetWorld();
+  setUpRelationshipScenario();
+  const first = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+  assert.equal(first.kind, "APPLIED");
+  const existing = world.persistCalls[0]!;
+  world.existingDecisionId = (existing.decision as { decisionId: string }).decisionId;
+  world.reconciliationAuditChain = { family: "RELATIONSHIP", decision: existing.decision, authorization: existing.authorization, invocation: existing.invocation };
+  world.persistCalls = [];
+  world.persistAuthorizedReconciliationError = new GovernedWriteError(
+    "record_authorized_reconciliation_governed_v1 failed: lock not obtained", "55P03");
+
+  await assert.rejects(
+    submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" }),
+    (error: unknown) => error instanceof GovernedWriteError && error.code === "55P03",
+  );
+  assert.equal(world.persistCalls.length, 0);
+});
+
+test("submitReconciliationDecision: RELATIONSHIP replay — an impossible replay=false from the governed wrapper (persisted chain known, but the DB disagrees) fails closed with no fabricated success and no raw internal detail", async () => {
+  resetWorld();
+  setUpRelationshipScenario();
+  const first = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+  assert.equal(first.kind, "APPLIED");
+  const existing = world.persistCalls[0]!;
+  world.existingDecisionId = (existing.decision as { decisionId: string }).decisionId;
+  world.reconciliationAuditChain = { family: "RELATIONSHIP", decision: existing.decision, authorization: existing.authorization, invocation: existing.invocation };
+  world.persistCalls = [];
+  world.persistReplay = false; // simulates the governed wrapper disagreeing with the known persisted chain
+
+  await assert.rejects(
+    submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" }),
+    (error: unknown) => error instanceof Error && !(error instanceof GovernedWriteError) &&
+      !/DETAIL|SQLSTATE|postgres|constraint/i.test(error.message),
+  );
+});
+
+test("submitReconciliationDecision: RELATIONSHIP replay — a mismatched existing decision remains PERSISTENCE_CONFLICT and never calls the governed persistence boundary", async () => {
+  resetWorld();
+  setUpRelationshipScenario();
+  const first = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "REJECT" });
+  assert.equal(first.kind, "APPLIED");
+  const existing = world.persistCalls[0]!;
+  world.existingDecisionId = (existing.decision as { decisionId: string }).decisionId;
+  // A different semantic command (DEFER, not the persisted REJECT) against the same existing decision.
+  world.reconciliationAuditChain = { family: "RELATIONSHIP", decision: existing.decision, authorization: existing.authorization, invocation: existing.invocation };
+  world.persistCalls = [];
+
+  const outcome = await submitReconciliationDecision({ ...baseInput, requestedOutcome: "DEFER" });
+  assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
+  assert.equal(world.persistCalls.length, 0, "the governed persistence boundary must never be called for a mismatched existing decision");
 });
 
 test("submitReconciliationDecision: RELATIONSHIP CREATE_NEW/MATCH_EXISTING fail closed when exact canonical endpoints are unavailable", async () => {

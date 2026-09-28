@@ -103,14 +103,43 @@ export async function submitReconciliationDecision(
   if (existingDecisionId && recovery.status === RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {
     const chain = await governanceReviewPersistence.getReconciliationAuditChain(input.organisationId, existingDecisionId);
     const decision = chain?.family === "RELATIONSHIP" ? chain.decision as import("@council/canonical-contracts").RelationshipReconciliationDecision : undefined;
-    if (decision && decision.organisationId === input.organisationId && decision.decisionId === existingDecisionId &&
+    const matches = !!(chain && decision && decision.organisationId === input.organisationId && decision.decisionId === existingDecisionId &&
         decision.relationshipCandidateId === recovery.candidate.candidateId && decision.outcome === input.requestedOutcome &&
         decision.reasonCode === input.reasonCode && decision.authority.authorityKind === "HUMAN" &&
         decision.authority.actorReference === input.actorUserId &&
-        (decision.outcome !== "MATCH_EXISTING" || decision.matchedState.relationshipId === input.matchCanonicalRelationshipId)) {
-      return { kind: "REPLAYED", reconciliationDecisionId: existingDecisionId, outcome: input.requestedOutcome };
+        (decision.outcome !== "MATCH_EXISTING" || decision.matchedState.relationshipId === input.matchCanonicalRelationshipId));
+    if (!matches) {
+      return { kind: "PERSISTENCE_CONFLICT", message: "This relationship review already has a different finalized decision." };
     }
-    return { kind: "PERSISTENCE_CONFLICT", message: "This relationship review already has a different finalized decision." };
+    // M16-S0.3.3C-R2: a replay of an already-persisted decision is still a
+    // successful HUMAN write-command execution and must pass through the
+    // governed DB boundary exactly like a first-time decision — the actor's
+    // CURRENT authority (GOVERNANCE_ADMIN) is re-checked transactionally by
+    // record_authorized_reconciliation_governed_v1's own
+    // require_governed_write_eligibility_v1 guard (GV006 if it has since been
+    // revoked), never assumed from the fact that this decision once existed.
+    // Reuse the EXISTING persisted authorization/invocation/decision
+    // verbatim (same commandId, same command fingerprint, same envelope):
+    // no new AuthorizationDecision is synthesized, no new commandId is
+    // minted, no new policyReference is invented.
+    const governedReview = createGovernedReviewPersistence(input.writePrincipal);
+    const persisted = await governedReview.persistAuthorizedReconciliation({
+      family: "RELATIONSHIP",
+      decision: chain.decision as import("@council/canonical-contracts").RelationshipReconciliationDecision,
+      authorization: chain.authorization,
+      invocation: chain.invocation,
+    });
+    if (!persisted.replay) {
+      // An existing persisted decision for this exact commandId is known;
+      // record_authorized_reconciliation's own idempotency arbitration
+      // (Governance Persistence V1, closed) must report replay=true for the
+      // identical content replayed here. replay=false would mean the
+      // persisted chain and the DB's own replay detection disagree — an
+      // internal consistency/infrastructure fault, never a fabricated
+      // success and never surfaced with any raw internal detail.
+      throw new Error("Relationship reconciliation replay did not match the persisted decision.");
+    }
+    return { kind: "REPLAYED", reconciliationDecisionId: existingDecisionId, outcome: input.requestedOutcome };
   }
 
   // Read-before-write concurrency guard: another operator (or another tab)

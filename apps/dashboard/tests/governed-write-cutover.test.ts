@@ -151,6 +151,36 @@ test("HUMAN write path: no production write handler contains an app-level role-a
   assert.doesNotMatch(putSource, /resolveCurrentGovernanceRole/, `${REVIEW_ROUTE} (PUT) must not resolve a role at all`);
 });
 
+/**
+ * M16-S0.3.3C-R2 — a replay of an already-persisted RELATIONSHIP
+ * reconciliation decision must pass through the governed persistence
+ * boundary exactly like a first-time decision; it must never short-circuit
+ * to REPLAYED before record_authorized_reconciliation_governed_v1 has had a
+ * chance to re-check the actor's CURRENT authority. This is bounded to the
+ * specific existing-decision branch (not a brittle whole-file token scan)
+ * and checks call-before-return ORDER, so a future edit that reintroduces
+ * an early `return { kind: "REPLAYED" }` ahead of the governed call is
+ * caught even if the call is still present somewhere else in the function.
+ */
+test("static: a successful RELATIONSHIP reconciliation replay always reaches the governed persistence boundary before REPLAYED is returned", () => {
+  const source = readFileSync(join(ROOT, "lib/governance/decision-commands.ts"), "utf8");
+  const branchMarker = "RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {";
+  const branchStart = source.indexOf(branchMarker);
+  assert.notEqual(branchStart, -1, "the existing-relationship-decision replay branch must still exist");
+  const branchEnd = source.indexOf("Read-before-write concurrency guard", branchStart);
+  assert.notEqual(branchEnd, -1, "could not bound the replay branch against the next section");
+  const branch = source.slice(branchStart, branchEnd);
+
+  const persistIndex = branch.indexOf("persistAuthorizedReconciliation(");
+  const replayIndex = branch.indexOf('kind: "REPLAYED"');
+  assert.notEqual(persistIndex, -1, "the existing-decision branch must invoke the governed persistence boundary (persistAuthorizedReconciliation)");
+  assert.notEqual(replayIndex, -1, "the existing-decision branch must still return REPLAYED on a successful replay");
+  assert.ok(
+    persistIndex < replayIndex,
+    "REPLAYED must only be returned AFTER the governed persistence boundary has run — a replay must never bypass require_governed_write_eligibility_v1",
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Runtime: exact RPC name + exact p_verified_* args + error classification.
 // ---------------------------------------------------------------------------
