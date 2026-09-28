@@ -166,15 +166,44 @@ This is a deliberate, explicit deferral, not an oversight:
 
 ### Legacy registry routes — explicitly outside this scope (M-1)
 
-`app/api/discovery/scan/route.ts` and `app/api/discovery/review/route.ts`
-perform direct table DML (`INSERT`/`UPDATE`) against a plain `agents` registry
-table, entirely outside the `gov_repo` governance schema this document
-covers. These routes are **`LEGACY_NOT_AUTHORITATIVE`**: they do not define or
-mutate canonical governance system-of-record state, so they are architecturally
-outside S0.3.3's authoritative-governance scope by definition, not by
-oversight. They are also **`PRODUCTION_SECURITY_GATE_RESIDUAL`** — tracked for
-resolution at the Production Security Gate, not migrated or rewritten by
-S0.3.3D or S0.3.3R3.
+**Correction (post-closure independent review, LOW-1)**: `gov_repo.agents` and
+`gov_repo.ai_systems` are tables **inside** the `gov_repo` schema — not, as an
+earlier draft of this document said, "entirely outside" it. Being in the same
+schema as the canonical governance tables does not make them canonical: they
+are a separate, pre-M16 agent/system registry model, never part of the
+`review_subjects` / `reconciliation_decisions` / `technical_field_decisions` /
+`execution_field_decisions` system-of-record this document covers, and they
+carry none of S0.3.3's verified-principal or governed-write-eligibility
+machinery. They remain **`LEGACY_NOT_AUTHORITATIVE`**: schema co-location, not
+canonical governance authority.
+
+They are also **`PRODUCTION_SECURITY_GATE_RESIDUAL`**, because their active
+routes perform direct `service_role` DML (`lib/db.ts`'s `db.write`, a Supabase
+client authenticated with the service-role key against the `gov_repo` schema)
+with no call to `require_governed_write_eligibility_v1` or any governed
+wrapper — the S0.3.3 write boundary does not cover them at all. The route
+families, with only the HTTP methods actually implemented in each:
+
+- `POST /api/discovery/scan` — inserts a new `gov_repo.agents` row per
+  discovered agent (`app/api/discovery/scan/route.ts`).
+- `GET`/`PUT /api/discovery/review` — `GET` reads pending/approved
+  `gov_repo.agents` rows; `PUT` (`approve`/`activate`/`reject`) updates
+  `gov_repo.agents.status` (`app/api/discovery/review/route.ts`).
+- `GET`/`POST /api/agents` — `POST` inserts a `gov_repo.agents` row
+  (`app/api/agents/route.ts`, via `services/agents.ts` → `repositories/agents.ts`).
+- `GET`/`PUT`/`PATCH /api/agents/[id]` — `PUT` updates a `gov_repo.agents` row;
+  `PATCH` records a compliance assessment, also updating `gov_repo.agents`
+  (`app/api/agents/[id]/route.ts`).
+- `GET`/`POST /api/systems` — `POST` inserts a `gov_repo.ai_systems` row
+  (`app/api/systems/route.ts`, via `services/systems.ts` → `repositories/systems.ts`).
+- `GET`/`PUT`/`PATCH /api/systems/[id]` — `PUT` updates a `gov_repo.ai_systems`
+  row; `PATCH` records a compliance assessment, also updating
+  `gov_repo.ai_systems` (`app/api/systems/[id]/route.ts`).
+
+These routes and tables are architecturally outside S0.3.3's authoritative-governance
+scope by definition — a separate registry model, not a canonical fact family —
+not by oversight, and are tracked for resolution at the Production Security
+Gate, not migrated, rewritten, or governed by S0.3.3D or S0.3.3R3.
 
 ### `materialize_agent_version_technical_profile` — latent canonical writer (M-2)
 
