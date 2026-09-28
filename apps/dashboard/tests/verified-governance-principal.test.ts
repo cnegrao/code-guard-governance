@@ -169,7 +169,7 @@ test("exactly eight hours and current nbf accepted; malformed display claims con
 test("canonical issuance pins the documented claims and cookie lifetime", async () => {
   assert.equal(SESSION_ISSUER, "codeguard-governance");
   assert.equal(SESSION_AUDIENCE, "codeguard-dashboard");
-  const issued = await auth.signToken({ ...signing, iss: "attacker", aud: "attacker", iat: 1, exp: now + 999999, credential_epoch: "attacker" } as typeof signing);
+  const issued = await signToken({ ...signing, iss: "attacker", aud: "attacker", iat: 1, exp: now + 999999, credential_epoch: "attacker" } as typeof signing);
   const { payload, protectedHeader } = await jwtVerify(issued, new TextEncoder().encode(secret), {
     algorithms: ["HS256"], issuer: SESSION_ISSUER, audience: SESSION_AUDIENCE, currentDate: new Date(now * 1000),
   });
@@ -179,7 +179,7 @@ test("canonical issuance pins the documented claims and cookie lifetime", async 
   cookie = issued;
   assert.equal((await me.GET()).status, 200);
   assert.match(auth.setTokenCookie(issued), /HttpOnly; Path=\/; Max-Age=28800; SameSite=Lax/);
-  await assert.rejects(auth.signToken({ ...signing, org: " " }), /Invalid session identity/);
+  await assert.rejects(signToken({ ...signing, org: " " }), /Invalid session identity/);
 });
 
 test("signToken requires an exact zoned DB credential epoch and never invents one", async () => {

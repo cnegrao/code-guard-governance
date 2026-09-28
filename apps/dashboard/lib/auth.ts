@@ -5,7 +5,16 @@ import {
   type SessionPayload, type VerifiedGovernancePrincipal,
 } from "./auth/session-token";
 
-export { signToken, type SessionPayload, type SessionSigningInput } from "./auth/session-token";
+export type { SessionPayload, SessionSigningInput } from "./auth/session-token";
+
+// M16-S0.3.3D: signToken (the credential/token-issuance capability) is
+// deliberately NOT re-exported from this broad barrel. Production code that
+// legitimately issues a session token imports it narrowly from
+// "@/lib/auth/session-token" (see lib/auth/session-issuance.ts) — never
+// through this general-purpose auth surface, which every route/module in the
+// app already imports for unrelated reasons (requireVerifiedGovernancePrincipal,
+// SessionAuthenticationError, etc.). Narrowing the import path means a
+// broader set of call sites can no longer casually mint a session token.
 
 export class SessionAuthenticationError extends Error {
   constructor() { super("Not authenticated"); }

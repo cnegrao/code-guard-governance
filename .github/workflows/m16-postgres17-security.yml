@@ -1,0 +1,50 @@
+name: M16 PostgreSQL 17 security suite
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  postgres17-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # ubuntu-24.04 runners ship PostgreSQL 16 by default, not the canonical
+      # M16 profile (17). Native package installation from the official PGDG
+      # apt repository is the simplest reliable way to pin an exact major
+      # version on a GitHub-hosted runner without a third-party action.
+      - name: Install PostgreSQL 17 from the official PGDG apt repository
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg lsb-release
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/pgdg.gpg
+          echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-17
+      # Fails the job outright if PG17 did not actually get installed, rather
+      # than letting a later step silently resolve some other PostgreSQL
+      # version from PATH. M16_PG17_BIN is the harness's own explicit
+      # override (see apps/dashboard/tests/postgres-m16/README.md); the
+      # disposable-cluster helper additionally asserts server_version_num is
+      # 17.x at connect time and fails the whole suite if it is not.
+      - name: Verify PostgreSQL 17 binaries and pin M16_PG17_BIN
+        run: |
+          set -euo pipefail
+          test -x /usr/lib/postgresql/17/bin/initdb
+          test -x /usr/lib/postgresql/17/bin/pg_ctl
+          test -x /usr/lib/postgresql/17/bin/psql
+          /usr/lib/postgresql/17/bin/initdb --version | grep -q '17\.'
+          echo "M16_PG17_BIN=/usr/lib/postgresql/17/bin" >> "$GITHUB_ENV"
+      # Canonical M16 PostgreSQL 17 security gate for S0.3.3 (credential epoch,
+      # transactional eligibility, governed write wrappers expand+contract,
+      # object-materialization compatibility). No hosted database, no mock DB:
+      # every suite here owns and tears down its own disposable local cluster.
+      - name: Execute the M16 PG17 governance security suite
+        working-directory: apps/dashboard
+        run: node --conditions=react-server --import tsx --test tests/postgres-m16/*.test.ts

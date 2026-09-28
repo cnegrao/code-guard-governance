@@ -8,7 +8,18 @@ import { governanceReviewPersistence } from './persistence';
 import { materializationPersistence } from './materialization';
 import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
 
-/** Server-only fixture/transport entry point. No HTTP or credentials in adapter. */
+/** Server-only fixture/transport entry point. No HTTP or credentials in adapter.
+ *
+ * DORMANT (M16-S0.3.3A/D): passes `review: governanceReviewPersistence` (the
+ * UNGOVERNED port, bound to the raw `gov_repo.apply_review_transition` RPC)
+ * into `intakeInboundExchange`'s DETERMINISTIC_RULE proposal path. S0.3.3D
+ * revoked service_role EXECUTE on that raw RPC entirely, so this path is no
+ * longer callable through the current DB boundary at all. This function has
+ * zero active production callers (no route imports it) and is NOT
+ * ACTIVATABLE as-is. It must not be wired to a route, and `review` must not
+ * be silently redirected through a HUMAN `createGoverned*` wrapper, until a
+ * future, explicit, owner-controlled machine write boundary is designed and
+ * approved. */
 export async function importAzureSqlCatalog(json: string, organisationId: OrganisationId, connectionId: string) {
   const trusted = await configuredTechnicalConnection(organisationId,connectionId);
   return intakeInboundExchange(purviewInbound(json,trusted,asIsoTimestamp(new Date().toISOString())),trusted,PURVIEW_ADAPTER,{

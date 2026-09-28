@@ -91,6 +91,33 @@ unchanged and not certified here (`PRODUCTION_SECURITY_GATE_RESIDUAL`). O07/O52 
 **PARTIAL**; O08/O09/O10 have tested infrastructure but no production integration; O11
 is not complete. No hosted DB or real OpenAI is needed.
 
+## S0.3.3D — contract phase: raw write RPC revocation
+
+`contract-raw-rpc-revocation.test.ts` applies
+`20260928190000_m16_s0_contract_raw_write_rpc_revocation_v1.sql` on top of the full S0.3.3B
+chain (credential + eligibility + epoch-binding + object-materialization-compat + governed
+write wrappers) and proves, against real catalog state (never migration text alone):
+service_role/PUBLIC/anon/authenticated can no longer execute any of the seven now-unused raw
+functions (`apply_review_transition`, `record_authorized_reconciliation`,
+`materialize_object_reconciliation`, `materialize_relationship_reconciliation`,
+`record_technical_field_decision`, `record_execution_field_decision`,
+`record_authorization_decision`); the six `*_governed_v1` wrappers and the owner-only guard
+keep their already-frozen ACLs unchanged; a governed wrapper still successfully executes a
+valid HUMAN write for a current `GOVERNANCE_ADMIN` actor and still returns GV006 for a
+current non-admin actor. This is the CONTRACT half of S0.3.3's expand/contract; S0.3.3B left
+the raw functions deliberately callable, and this migration closes that transitional bypass.
+No table/sequence privilege changes (the broad service_role table-DML grant remains
+`PRODUCTION_SECURITY_GATE_RESIDUAL`, unchanged and out of scope here).
+
+## CI
+
+`.github/workflows/m16-postgres17-security.yml` runs `tests/postgres-m16/*.test.ts` (all
+four files above) against a real PostgreSQL 17 installed from the official PGDG apt
+repository on every push/PR, with `M16_PG17_BIN` pinned explicitly to the installed 17
+binaries. The harness's own `server_version_num` assertion (this file, `disposableM16Postgres`)
+means the suite fails outright rather than silently running against a different PostgreSQL
+major version.
+
 ## S0.3.2R — exact credential epoch binding
 
 Architecture: `docs/architecture/ADR-GOVIA-M16-S0-CREDENTIAL-EPOCH-BINDING-v1.md`.

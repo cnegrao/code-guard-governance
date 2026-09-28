@@ -18,6 +18,10 @@ export const epochBindingMigration = '20260925170000_m16_s0_credential_epoch_bin
 export const objectMaterializationCompatMigration = '20260925175000_m16_s0_object_materialization_rule_compat_v1.sql';
 // S0.3.3B chain step: governed write wrappers over the real authoritative write functions.
 export const governedWriteWrapperMigration = '20260925180000_m16_s0_governed_write_wrappers_v1.sql';
+// S0.3.3D chain step: revokes service_role/PUBLIC/anon/authenticated EXECUTE on the seven
+// now-unused raw write RPCs (the CONTRACT half of S0.3.3's expand/contract). Applied after
+// governedWriteWrapperMigration; never re-authored here.
+export const contractRawRpcRevocationMigration = '20260928190000_m16_s0_contract_raw_write_rpc_revocation_v1.sql';
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
 // Applied chronologically AFTER the broad service_role default-grant migration, so tables and
@@ -43,7 +47,7 @@ export const m16Prerequisites = [
   '20260903200100_atomic_signup_legacy_rpc.sql',
 ];
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration].includes(name));
+  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration].includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 

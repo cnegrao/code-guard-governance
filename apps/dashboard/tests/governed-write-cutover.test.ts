@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { before, test } from "node:test";
 
@@ -179,6 +179,54 @@ test("static: a successful RELATIONSHIP reconciliation replay always reaches the
     persistIndex < replayIndex,
     "REPLAYED must only be returned AFTER the governed persistence boundary has run — a replay must never bypass require_governed_write_eligibility_v1",
   );
+});
+
+/**
+ * M16-S0.3.3D §5/§6/§15 — the two dormant DETERMINISTIC_RULE (machine)
+ * producer entry points, and the unused standalone authorization-decision
+ * recorder, must have ZERO active production callers. This is what makes it
+ * safe that S0.3.3D revoked service_role EXECUTE on the raw RPCs they
+ * ultimately depend on: nothing in the live HTTP/route call graph reaches
+ * them. It also proves this slice did not quietly create a "machine wrapper"
+ * or redirect either producer through a HUMAN createGoverned* factory —
+ * both still bind to the plain, ungoverned default ports.
+ */
+const DORMANT_MACHINE_ENTRY_POINTS = [
+  { name: "runGovernanceDiscoveryScan", definedIn: "lib/governance/discovery-intake.ts" },
+  { name: "importAzureSqlCatalog", definedIn: "lib/governance/multivendor-exchange.ts" },
+];
+
+test("machine producer boundary: the dormant DETERMINISTIC_RULE entry points have zero active production callers anywhere outside their own definition", () => {
+  const files = listProductionSources(ROOT);
+  for (const { name, definedIn } of DORMANT_MACHINE_ENTRY_POINTS) {
+    for (const file of files) {
+      if (file.endsWith(definedIn.replace(/\//g, sep))) continue;
+      const source = readFileSync(file, "utf8");
+      assert.doesNotMatch(source, new RegExp(`\\b${name}\\s*\\(`), `${file}: must not call the dormant machine entry point ${name}`);
+    }
+  }
+});
+
+test("machine producer boundary: record_authorization_decision (S0.3.3A: no active production caller) has no production caller of its port method either", () => {
+  const files = listProductionSources(ROOT);
+  for (const file of files) {
+    const source = readFileSync(file, "utf8");
+    assert.doesNotMatch(source, /\.persistAuthorizationDecision\s*\(/, `${file}: must not call persistAuthorizationDecision`);
+  }
+});
+
+test("machine producer boundary: neither dormant producer was quietly redirected through a HUMAN createGoverned* wrapper", () => {
+  const discoveryIntake = readFileSync(join(ROOT, "lib/governance/discovery-intake.ts"), "utf8");
+  assert.doesNotMatch(discoveryIntake, /createGoverned\w*\s*\(/, "discovery-intake.ts must not call any createGoverned* factory");
+  assert.match(discoveryIntake, /review:\s*governanceReviewPersistence/, "discovery-intake.ts must still bind the plain, ungoverned default port");
+
+  const multivendorExchange = readFileSync(join(ROOT, "lib/governance/multivendor-exchange.ts"), "utf8");
+  const importStart = multivendorExchange.indexOf("export async function importAzureSqlCatalog");
+  const importEnd = multivendorExchange.indexOf("export async function technicalFieldReviewQueue", importStart);
+  assert.ok(importStart !== -1 && importEnd > importStart, "could not bound importAzureSqlCatalog's own source slice");
+  const importSource = multivendorExchange.slice(importStart, importEnd);
+  assert.doesNotMatch(importSource, /createGoverned\w*\s*\(/, "importAzureSqlCatalog must not call any createGoverned* factory");
+  assert.match(importSource, /review:\s*governanceReviewPersistence/, "importAzureSqlCatalog must still bind the plain, ungoverned default port");
 });
 
 // ---------------------------------------------------------------------------
