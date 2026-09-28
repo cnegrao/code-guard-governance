@@ -23,7 +23,14 @@ function fixture(tenant=org) {
     outcome:'ACCEPT_PROPOSED',actor:{authorityKind:'HUMAN',actorReference:'reviewer'},decidedAt:time};
   let writes=0;let previous:{decision:ExecutionFieldDecision;stateId:string}|undefined;
   const port:ExecutionContextPersistencePort={recordSnapshot:async()=>{},getReviewContext:async()=>ctx,getDecision:async()=>previous,
-    recordDecision:async d=>{writes++;previous={decision:d,stateId:'state'};return {replay:false,stateId:'state'};}};
+    recordDecision:async d=>{
+      // Mirrors gov_repo.record_execution_field_decision (M16-S0.3.3R3): an
+      // existing decision_id is detected and replayed immediately; the caller
+      // (reconcileExecutionField) has already verified exact content equality
+      // before ever reaching this port method.
+      const isReplay=previous!==undefined;
+      writes++;previous={decision:d,stateId:'state'};return {replay:isReplay,stateId:'state'};
+    }};
   return {snapshot,ctx,decision,port,writes:()=>writes};
 }
 test('explicit human field governance accepts declared principal without authorizing execution',async()=>{
@@ -37,11 +44,13 @@ test('same principal identifier in different organisations has separate snapshot
   assert.notEqual(a.snapshot.snapshotId,b.snapshot.snapshotId);
   assert.throws(()=>validateExecutionSnapshot({...a.snapshot,organisationId:b.snapshot.organisationId}),/IDENTITY_MISMATCH/);
 });
-test('completed replay preserves original decision without another state write',async()=>{
+test('completed replay still reaches the persistence port exactly once more (never a package-level short-circuit) and survives later drift',async()=>{
   const f=fixture();await reconcileExecutionField(f.decision,f.port,{authorize:()=>true});
   f.ctx.currentSourceSnapshotId='new-source' as never;
-  assert.equal((await reconcileExecutionField(f.decision,f.port,{authorize:()=>true})).replay,true);assert.equal(f.writes(),1);
+  assert.equal((await reconcileExecutionField(f.decision,f.port,{authorize:()=>true})).replay,true);
+  assert.equal(f.writes(),2,'the exact replay still calls port.recordDecision — this is what lets a governed port re-check current write authority on every replay, not just first-time writes');
   await assert.rejects(reconcileExecutionField({...f.decision,outcome:'DEFER'},f.port,{authorize:()=>true}),/REPLAY_CONFLICT/);
+  assert.equal(f.writes(),2,'a mismatched existing decision never reaches recordDecision');
 });
 for(const [name,mutate,error] of [
   ['cross tenant', (f:ReturnType<typeof fixture>)=>{f.ctx.object={...f.ctx.object!,organisationId:asOrganisationId('foreign')};}, /BINDING_MISMATCH/],

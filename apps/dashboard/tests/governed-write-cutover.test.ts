@@ -182,6 +182,53 @@ test("static: a successful RELATIONSHIP reconciliation replay always reaches the
 });
 
 /**
+ * M16-S0.3.3R3 (Finding H-1) — reconcileTechnicalFact and reconcileExecutionField
+ * (packages/governance-review/src/technical-facts.ts, execution-context.ts) used
+ * to short-circuit an exact replay straight to a success result BEFORE ever
+ * calling the supplied persistence port's recordDecision. In production that
+ * port is the governed one, so a replay could skip the transactional
+ * require_governed_write_eligibility_v1 re-check entirely. This is a bounded
+ * branch/order assertion (not a whole-file token check): it locates each
+ * function's own "if (previous)" replay branch and proves recordDecision is
+ * called, and called BEFORE the branch's own return, inside that exact branch.
+ */
+test("static: an exact replay in reconcileTechnicalFact always reaches port.recordDecision before returning", () => {
+  const source = readFileSync(join(ROOT, "..", "..", "packages/governance-review/src/technical-facts.ts"), "utf8");
+  const branchStart = source.indexOf("const previous = await port.getDecision(");
+  assert.notEqual(branchStart, -1, "the existing-decision replay branch must still exist");
+  const branchEnd = source.indexOf("const ctx = await port.getReviewContext(", branchStart);
+  assert.notEqual(branchEnd, -1, "could not bound the replay branch against the fresh-decision path");
+  const branch = source.slice(branchStart, branchEnd);
+
+  const conflictIndex = branch.indexOf("FIELD_DECISION_REPLAY_CONFLICT");
+  const recordIndex = branch.indexOf("port.recordDecision(");
+  const returnIndex = branch.lastIndexOf("return persisted");
+  assert.notEqual(conflictIndex, -1, "a mismatched existing decision must still throw FIELD_DECISION_REPLAY_CONFLICT");
+  assert.notEqual(recordIndex, -1, "the existing-decision branch must invoke the governed persistence boundary (port.recordDecision)");
+  assert.notEqual(returnIndex, -1, "the existing-decision branch must still return the persisted replay result");
+  assert.ok(conflictIndex < recordIndex, "the mismatch check must run BEFORE recordDecision is ever called");
+  assert.ok(recordIndex < returnIndex, "recordDecision must be called BEFORE returning — a replay must never bypass the governed persistence boundary");
+});
+
+test("static: an exact replay in reconcileExecutionField always reaches port.recordDecision before returning", () => {
+  const source = readFileSync(join(ROOT, "..", "..", "packages/governance-review/src/execution-context.ts"), "utf8");
+  const branchStart = source.indexOf("const previous = await port.getDecision(");
+  assert.notEqual(branchStart, -1, "the existing-decision replay branch must still exist");
+  const branchEnd = source.indexOf("const ctx = await port.getReviewContext(", branchStart);
+  assert.notEqual(branchEnd, -1, "could not bound the replay branch against the fresh-decision path");
+  const branch = source.slice(branchStart, branchEnd);
+
+  const conflictIndex = branch.indexOf("EXECUTION_REPLAY_CONFLICT");
+  const recordIndex = branch.indexOf("port.recordDecision(");
+  const returnIndex = branch.lastIndexOf("return persisted");
+  assert.notEqual(conflictIndex, -1, "a mismatched existing decision must still throw EXECUTION_REPLAY_CONFLICT");
+  assert.notEqual(recordIndex, -1, "the existing-decision branch must invoke the governed persistence boundary (port.recordDecision)");
+  assert.notEqual(returnIndex, -1, "the existing-decision branch must still return the persisted replay result");
+  assert.ok(conflictIndex < recordIndex, "the mismatch check must run BEFORE recordDecision is ever called");
+  assert.ok(recordIndex < returnIndex, "recordDecision must be called BEFORE returning — a replay must never bypass the governed persistence boundary");
+});
+
+/**
  * M16-S0.3.3D §5/§6/§15 — the two dormant DETERMINISTIC_RULE (machine)
  * producer entry points, and the unused standalone authorization-decision
  * recorder, must have ZERO active production callers. This is what makes it

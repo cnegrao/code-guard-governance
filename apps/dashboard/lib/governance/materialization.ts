@@ -141,8 +141,12 @@ export const materializationPersistence: MaterializationPersistencePort = {
  * read-only findActiveObjectSourceMapping is reused unchanged (it carries no
  * write authority and needs no verified principal). materialize_object_
  * reconciliation / materialize_relationship_reconciliation have no other
- * production caller, so the legacy RPCs below are left byte-for-byte
- * untouched (their EXECUTE grant is not revoked in this slice).
+ * production caller, so the legacy RPC definitions below are left
+ * byte-for-byte untouched. M16-S0.3.3D subsequently revoked service_role
+ * EXECUTE on both raw functions entirely (see
+ * 20260928190000_m16_s0_contract_raw_write_rpc_revocation_v1.sql) — they are
+ * no longer callable by this or any other application role; only the
+ * *_governed_v1 wrappers below remain reachable.
  */
 export function createGovernedMaterializationPersistence(
   writePrincipal: GovernanceWritePrincipal,
