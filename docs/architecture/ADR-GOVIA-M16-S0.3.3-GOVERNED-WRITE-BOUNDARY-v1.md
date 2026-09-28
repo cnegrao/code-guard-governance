@@ -178,27 +178,45 @@ machinery. They remain **`LEGACY_NOT_AUTHORITATIVE`**: schema co-location, not
 canonical governance authority.
 
 They are also **`PRODUCTION_SECURITY_GATE_RESIDUAL`**, because their active
-routes perform direct `service_role` DML (`lib/db.ts`'s `db.write`, a Supabase
-client authenticated with the service-role key against the `gov_repo` schema)
-with no call to `require_governed_write_eligibility_v1` or any governed
-wrapper — the S0.3.3 write boundary does not cover them at all. The route
-families, with only the HTTP methods actually implemented in each:
+mutation paths reach `gov_repo.agents`/`gov_repo.ai_systems` directly — with
+no call to `require_governed_write_eligibility_v1` or any governed wrapper —
+regardless of which Supabase client performs the actual write. **The
+architectural residual is direct legacy DML outside the governed-write
+boundary; it is not uniformly `service_role` DML.** `lib/db.ts` defines two
+distinct clients (`db.read` = `SUPABASE_ANON_KEY`, `db.write` =
+`SUPABASE_SERVICE_ROLE_KEY`), and the legacy repository code does not use them
+consistently:
 
 - `POST /api/discovery/scan` — inserts a new `gov_repo.agents` row per
-  discovered agent (`app/api/discovery/scan/route.ts`).
+  discovered agent, via **`db.write`** (`app/api/discovery/scan/route.ts`).
 - `GET`/`PUT /api/discovery/review` — `GET` reads pending/approved
-  `gov_repo.agents` rows; `PUT` (`approve`/`activate`/`reject`) updates
-  `gov_repo.agents.status` (`app/api/discovery/review/route.ts`).
-- `GET`/`POST /api/agents` — `POST` inserts a `gov_repo.agents` row
-  (`app/api/agents/route.ts`, via `services/agents.ts` → `repositories/agents.ts`).
-- `GET`/`PUT`/`PATCH /api/agents/[id]` — `PUT` updates a `gov_repo.agents` row;
-  `PATCH` records a compliance assessment, also updating `gov_repo.agents`
-  (`app/api/agents/[id]/route.ts`).
-- `GET`/`POST /api/systems` — `POST` inserts a `gov_repo.ai_systems` row
-  (`app/api/systems/route.ts`, via `services/systems.ts` → `repositories/systems.ts`).
+  `gov_repo.agents` rows via `db.read`; `PUT` (`approve`/`activate`/`reject`)
+  updates `gov_repo.agents.status` via **`db.write`**
+  (`app/api/discovery/review/route.ts`).
+- `GET`/`POST /api/agents` — `POST` inserts a `gov_repo.agents` row via
+  **`db.write`** (`app/api/agents/route.ts` → `services/agents.ts` →
+  `repositories/agents.ts`'s `createAgent`).
+- `GET`/`PUT`/`PATCH /api/agents/[id]` — `PUT` updates a `gov_repo.agents` row
+  via **`db.write`** (`repositories/agents.ts`'s `updateAgent`); `PATCH`
+  records a compliance assessment and updates `gov_repo.agents` via
+  **`db.read`** — the anon-key client — not `db.write`
+  (`repositories/agents.ts`'s `updateAgentCompliance`, reached through
+  `services/agents.ts`'s `assessCompliance`; `app/api/agents/[id]/route.ts`).
+- `GET`/`POST /api/systems` — `POST` inserts a `gov_repo.ai_systems` row via
+  **`db.write`** (`app/api/systems/route.ts` → `services/systems.ts` →
+  `repositories/systems.ts`'s `createSystem`).
 - `GET`/`PUT`/`PATCH /api/systems/[id]` — `PUT` updates a `gov_repo.ai_systems`
-  row; `PATCH` records a compliance assessment, also updating
-  `gov_repo.ai_systems` (`app/api/systems/[id]/route.ts`).
+  row via **`db.write`** (`repositories/systems.ts`'s `updateSystem`); `PATCH`
+  records a compliance assessment and updates `gov_repo.ai_systems` via
+  **`db.read`** — the anon-key client, identically to the agents case
+  (`repositories/systems.ts`'s `updateSystemCompliance`, reached through
+  `services/systems.ts`'s `assessCompliance`; `app/api/systems/[id]/route.ts`).
+
+The compliance-`PATCH` paths mutating through `db.read` (an anon-key client
+performing a write) is itself a separate, narrower data-access-layer
+irregularity from the governed-write-boundary gap this document tracks; it is
+noted here for an accurate residual inventory, not analyzed further, and is
+not remediated in this or any S0.3.3 slice.
 
 These routes and tables are architecturally outside S0.3.3's authoritative-governance
 scope by definition — a separate registry model, not a canonical fact family —
