@@ -12,6 +12,8 @@ import type {
 } from "@council/governance-review";
 
 import { privilegedDb } from "./persistence";
+import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
+import { GovernedWriteError } from "./governed-write-errors";
 
 /**
  * Canonical Materialization V1 — server-only Supabase adapter.
@@ -131,3 +133,90 @@ export const materializationPersistence: MaterializationPersistencePort = {
     };
   },
 };
+
+/**
+ * M16-S0.3.3C — governed materialization. One factory per request, built from
+ * the route's already-verified GovernanceWritePrincipal. Only the two
+ * materialize* writes are overridden to call the *_governed_v1 wrappers; the
+ * read-only findActiveObjectSourceMapping is reused unchanged (it carries no
+ * write authority and needs no verified principal). materialize_object_
+ * reconciliation / materialize_relationship_reconciliation have no other
+ * production caller, so the legacy RPCs below are left byte-for-byte
+ * untouched (their EXECUTE grant is not revoked in this slice).
+ */
+export function createGovernedMaterializationPersistence(
+  writePrincipal: GovernanceWritePrincipal,
+): MaterializationPersistencePort {
+  return {
+    async materializeObjectReconciliation(
+      input: ObjectMaterializationInput,
+    ): Promise<ObjectMaterializationResult> {
+      const { data, error } = await privilegedDb.rpc("materialize_object_reconciliation_governed_v1", {
+        p_verified_organisation_id: writePrincipal.organisationId,
+        p_verified_actor_user_id: writePrincipal.actorUserId,
+        p_verified_session_iat: writePrincipal.issuedAtSeconds,
+        p_verified_session_exp: writePrincipal.expiresAtSeconds,
+        p_verified_credential_epoch: writePrincipal.credentialEpoch,
+        p_reconciliation_decision_id: input.reconciliationDecisionId,
+        p_invocation_id: input.invocationId,
+        p_outcome: input.outcome,
+        p_canonical_object_id: input.canonicalObjectId,
+        p_canonical_object_kind: input.canonicalObjectKind,
+        p_source_connection_id: input.sourceConnectionId,
+        p_source_external_type: input.sourceExternalType,
+        p_source_external_id: input.sourceExternalId,
+        p_match_method: input.matchMethod,
+        p_idempotency_fingerprint: input.idempotencyFingerprint,
+        p_occurred_at: input.occurredAt,
+      });
+      if (error) {
+        throw new GovernedWriteError(`materialize_object_reconciliation_governed_v1 failed: ${error.message}`, error.code);
+      }
+      const row = (Array.isArray(data) ? data[0] : data) as ObjectMaterializationRow;
+
+      return {
+        replay: row.replay,
+        status: row.status,
+        canonicalObjectId: row.canonical_object_id,
+        mappingId: row.mapping_id,
+      };
+    },
+
+    async materializeRelationshipReconciliation(
+      input: RelationshipMaterializationInput,
+    ): Promise<RelationshipMaterializationResult> {
+      const { data, error } = await privilegedDb.rpc("materialize_relationship_reconciliation_governed_v1", {
+        p_verified_organisation_id: writePrincipal.organisationId,
+        p_verified_actor_user_id: writePrincipal.actorUserId,
+        p_verified_session_iat: writePrincipal.issuedAtSeconds,
+        p_verified_session_exp: writePrincipal.expiresAtSeconds,
+        p_verified_credential_epoch: writePrincipal.credentialEpoch,
+        p_reconciliation_decision_id: input.reconciliationDecisionId,
+        p_invocation_id: input.invocationId,
+        p_outcome: input.outcome,
+        p_relationship_id: input.relationshipId,
+        p_relationship_state_id: input.relationshipStateId,
+        p_relationship_type: input.relationshipType,
+        p_source_canonical_object_id: input.sourceCanonicalObjectId,
+        p_source_kind: input.sourceKind,
+        p_target_canonical_object_id: input.targetCanonicalObjectId,
+        p_target_kind: input.targetKind,
+        p_valid_from: input.validFrom,
+        p_recorded_at: input.recordedAt,
+        p_idempotency_fingerprint: input.idempotencyFingerprint,
+      });
+      if (error) {
+        throw new GovernedWriteError(`materialize_relationship_reconciliation_governed_v1 failed: ${error.message}`, error.code);
+      }
+      const row = (Array.isArray(data) ? data[0] : data) as RelationshipMaterializationRow;
+
+      return {
+        replay: row.replay,
+        status: row.status,
+        relationshipId: row.relationship_id,
+      };
+    },
+
+    findActiveObjectSourceMapping: materializationPersistence.findActiveObjectSourceMapping,
+  };
+}

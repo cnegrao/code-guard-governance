@@ -40,6 +40,14 @@ mock.module("@/lib/auth/current-authorization", {
   namedExports: { resolveCurrentGovernanceRole: async () => state.session.role },
 });
 
+// M16-S0.3.3C: the route now imports this factory directly (workspaceCommands
+// below is itself fully mocked and ignores the port it's given, so a bare stub
+// is enough — this exists only so importing the route never loads the real,
+// env-var-requiring persistence.ts module in this route-level HTTP test).
+mock.module("@/lib/governance/persistence", {
+  namedExports: { createGovernedReviewPersistence: () => ({}) },
+});
+
 mock.module("@/lib/governance/workspace-query", {
   namedExports: {
     asReviewSubjectId: (id: string) => id,

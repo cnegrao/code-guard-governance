@@ -21,6 +21,13 @@ import {
 
 const ORG = asOrganisationId("org-1");
 const SUBJECT_ID = asReviewSubjectId("review-subject:test:1");
+const TEST_WRITE_PRINCIPAL = {
+  organisationId: ORG,
+  actorUserId: "user-1",
+  issuedAtSeconds: 1_700_000_000,
+  expiresAtSeconds: 1_700_028_800,
+  credentialEpoch: "2026-01-01T00:00:00.000000+00:00",
+};
 
 function buildSubject(overrides: Partial<ReviewSubject> = {}): ReviewSubject {
   return Object.freeze({
@@ -155,20 +162,31 @@ const fakeGovernancePort: GovernanceReviewPersistencePort = {
 };
 
 mock.module("@/lib/governance/persistence", {
-  namedExports: { governanceReviewPersistence: fakeGovernancePort, privilegedDb: {} },
+  namedExports: {
+    governanceReviewPersistence: fakeGovernancePort,
+    privilegedDb: {},
+    // M16-S0.3.3C: production code now calls this factory instead of the
+    // legacy governanceReviewPersistence.persist* methods directly for the
+    // human write paths; return the SAME fake port so world tracking is
+    // exercised identically regardless of which name production calls.
+    createGovernedReviewPersistence: () => fakeGovernancePort,
+  },
 });
+
+const fakeMaterializationPort = {
+  materializeObjectReconciliation: async () => {
+    if (world.materializeObjectError) throw new Error(world.materializeObjectError);
+    if (!world.materializeObjectResult) throw new Error("materializeObjectReconciliation should not be called in this test");
+    return world.materializeObjectResult;
+  },
+  materializeRelationshipReconciliation: notImplemented("materializeRelationshipReconciliation"),
+  findActiveObjectSourceMapping: notImplemented("findActiveObjectSourceMapping"),
+};
 
 mock.module("@/lib/governance/materialization", {
   namedExports: {
-    materializationPersistence: {
-      materializeObjectReconciliation: async () => {
-        if (world.materializeObjectError) throw new Error(world.materializeObjectError);
-        if (!world.materializeObjectResult) throw new Error("materializeObjectReconciliation should not be called in this test");
-        return world.materializeObjectResult;
-      },
-      materializeRelationshipReconciliation: notImplemented("materializeRelationshipReconciliation"),
-      findActiveObjectSourceMapping: notImplemented("findActiveObjectSourceMapping"),
-    },
+    materializationPersistence: fakeMaterializationPort,
+    createGovernedMaterializationPersistence: () => fakeMaterializationPort,
   },
 });
 
@@ -217,6 +235,7 @@ const baseInput = {
   organisationId: ORG,
   actorUserId: "user-1",
   currentRole: "org_admin",
+  writePrincipal: TEST_WRITE_PRINCIPAL,
   reviewSubjectId: SUBJECT_ID,
   reasonCode: "governance board approved",
 };
@@ -412,7 +431,7 @@ test("triggerMaterialization: a valid CREATE_NEW OBJECT decision materializes, r
   };
   world.materializeObjectResult = { replay: false, status: "APPLIED", canonicalObjectId: "canonical-object:1", mappingId: "mapping-1" };
 
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "APPLIED");
   assert.equal(outcome.kind === "APPLIED" && outcome.result.applicable, true);
 });
@@ -460,7 +479,7 @@ test("triggerMaterialization: a SOURCE_IDENTITY_ALREADY_MAPPED rejection from th
   };
   for (const code of ["SOURCE_IDENTITY_ALREADY_MAPPED", "LEGACY_OBJECT_ALREADY_CANONICAL", "LEGACY_OBJECT_MAPPING_AMBIGUOUS", "LEGACY_OBJECT_MATCH_MISMATCH"]) {
     world.materializeObjectError = `materialize_object_reconciliation failed: ${code}`;
-    const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+    const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
     assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
     assert.equal(JSON.stringify(outcome).includes(code), false);
   }
@@ -468,14 +487,14 @@ test("triggerMaterialization: a SOURCE_IDENTITY_ALREADY_MAPPED rejection from th
 
 test("triggerMaterialization: a review subject with no persisted reconciliation decision cannot materialize", async () => {
   resetWorld();
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "NOT_READY");
 });
 
 test("triggerMaterialization: a non-org_admin session role is forbidden, checked before any decision lookup", async () => {
   resetWorld();
   world.existingDecisionId = "reconciliation-decision:1";
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "user", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "user", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "FORBIDDEN");
 });
 
@@ -485,6 +504,6 @@ test("triggerMaterialization: a cross-tenant/nonexistent decision id (audit chai
   // fakeGovernancePort.getReconciliationAuditChain already defaults to
   // returning undefined, which is exactly what the real tenant-scoped query
   // returns for a decision id belonging to another organisation.
-  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", reviewSubjectId: SUBJECT_ID });
+  const outcome = await triggerMaterialization({ organisationId: ORG, currentRole: "org_admin", writePrincipal: TEST_WRITE_PRINCIPAL, reviewSubjectId: SUBJECT_ID });
   assert.equal(outcome.kind, "PERSISTENCE_CONFLICT");
 });

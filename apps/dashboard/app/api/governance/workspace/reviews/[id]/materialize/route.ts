@@ -5,6 +5,8 @@ import { asOrganisationId } from "@council/canonical-contracts";
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { asReviewSubjectId } from "@/lib/governance/workspace-query";
 import { triggerMaterialization } from "@/lib/governance/decision-commands";
+import { governedWriteErrorResponse } from "@/lib/governance/governed-write-errors";
+import { toGovernanceWritePrincipal } from "@/lib/auth/governance-write-principal";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,6 +19,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     const outcome = await triggerMaterialization({
       organisationId: asOrganisationId(orgId),
       currentRole: role,
+      writePrincipal: toGovernanceWritePrincipal(principal),
       reviewSubjectId: asReviewSubjectId(id),
     });
 
@@ -39,6 +42,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     }
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    const security = governedWriteErrorResponse(error);
+    if (security) return security;
     console.error("governance materialization trigger failed", error);
     return NextResponse.json({ error: "Unable to materialize this decision." }, { status: 500 });
   }

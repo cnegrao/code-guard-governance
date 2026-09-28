@@ -83,6 +83,11 @@ const baseInput = {
   organisationId: ORG,
   actorUserId: "user-1",
   currentRole: "org_admin",
+  writePrincipal: {
+    organisationId: ORG, actorUserId: "user-1",
+    issuedAtSeconds: 1_700_000_000, expiresAtSeconds: 1_700_028_800,
+    credentialEpoch: "2026-01-01T00:00:00.000000+00:00",
+  },
   reviewSubjectId: SUBJECT_ID,
 };
 

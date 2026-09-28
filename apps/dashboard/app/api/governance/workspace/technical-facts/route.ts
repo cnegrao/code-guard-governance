@@ -3,6 +3,8 @@ import { asOrganisationId } from '@council/canonical-contracts';
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from '@/lib/auth';
 import { resolveCurrentGovernanceRole, CurrentAuthorizationInfrastructureError } from '@/lib/auth/current-authorization';
 import { technicalFieldReviewQueue, submitTechnicalFieldDecision, type ReviewedFieldDecision } from '@/lib/governance/multivendor-exchange';
+import { governedWriteErrorResponse } from '@/lib/governance/governed-write-errors';
+import { toGovernanceWritePrincipal } from '@/lib/auth/governance-write-principal';
 export async function GET() {
   try {
     const principal=await requireVerifiedGovernancePrincipal();
@@ -21,11 +23,13 @@ export async function POST(request: Request) {
     const input = JSON.parse(raw) as ReviewedFieldDecision;
     if (!input || typeof input !== 'object' || Object.keys(input).some(k=>!['decisionId','canonicalObject','field','proposalId','observationIds','expectedSourceObservationId','expectedSourceSnapshotId','expectedCurrentStateId','policyId','policyVersion','outcome'].includes(k)) ||
       !Array.isArray(input.observationIds) || input.observationIds.length > 5000) return NextResponse.json({error:'Invalid field decision.'},{status:400});
-    const result = await submitTechnicalFieldDecision(input,{organisationId:asOrganisationId(principal.organisationId),actorReference:principal.userId,currentRole});
+    const result = await submitTechnicalFieldDecision(input,{organisationId:asOrganisationId(principal.organisationId),actorReference:principal.userId,currentRole,writePrincipal:toGovernanceWritePrincipal(principal)});
     return NextResponse.json(result);
   } catch(error) {
     if(error instanceof SessionAuthenticationError)return NextResponse.json({error:'Not authenticated.'},{status:401});
     if(error instanceof CurrentAuthorizationInfrastructureError)return NextResponse.json({error:'Unable to authorize field review.'},{status:500});
+    const security = governedWriteErrorResponse(error);
+    if (security) return security;
     const message = error instanceof Error ? error.message : '';
     if(message==='FIELD_AUTHORIZATION_DENIED')return NextResponse.json({error:'Not authorized.'},{status:403});
     // Match exact known business errors, never substrings of private DB diagnostics.

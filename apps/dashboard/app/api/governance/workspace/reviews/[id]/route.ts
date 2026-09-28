@@ -7,6 +7,9 @@ import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "
 import { asReviewSubjectId, getReviewSubjectDetail } from "@/lib/governance/workspace-query";
 import { deriveAllowedGovernanceActions, hasGovernanceReviewAuthority } from "@/lib/governance/workspace-actions";
 import { workspaceCommands, type GovernanceActionName } from "@/lib/governance/workspace-commands";
+import { createGovernedReviewPersistence } from "@/lib/governance/persistence";
+import { governedWriteErrorResponse } from "@/lib/governance/governed-write-errors";
+import { toGovernanceWritePrincipal } from "@/lib/auth/governance-write-principal";
 
 const VALID_STATES = new Set<string>(Object.values(REVIEW_STATE));
 
@@ -63,14 +66,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const reasonCode = typeof body?.reasonCode === "string" ? body.reasonCode : undefined;
 
     const handlerName = ACTION_HANDLERS[action as GovernanceActionName];
-    const outcome = await workspaceCommands[handlerName]({
-      organisationId: asOrganisationId(orgId),
-      actorUserId: userId,
-      currentRole: role,
-      reviewSubjectId: asReviewSubjectId(id),
-      expectedState: expectedState as ReviewState,
-      reasonCode,
-    });
+    const writePrincipal = toGovernanceWritePrincipal(principal);
+    const governedPort = createGovernedReviewPersistence(writePrincipal);
+    const outcome = await workspaceCommands[handlerName](
+      {
+        organisationId: asOrganisationId(orgId),
+        actorUserId: userId,
+        currentRole: role,
+        writePrincipal,
+        reviewSubjectId: asReviewSubjectId(id),
+        expectedState: expectedState as ReviewState,
+        reasonCode,
+      },
+      governedPort,
+    );
 
     switch (outcome.kind) {
       case "APPLIED":
@@ -98,6 +107,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    const security = governedWriteErrorResponse(error);
+    if (security) return security;
     console.error("governance workspace action failed", error);
     return NextResponse.json({ error: "Unable to process this action." }, { status: 500 });
   }

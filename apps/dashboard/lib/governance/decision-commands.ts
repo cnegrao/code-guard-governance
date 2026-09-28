@@ -30,9 +30,10 @@ import {
 
 import { assertLegacyObjectCompatibility, LegacyObjectMappingConflict } from "./legacy-object-mapping";
 import { canonicalEndpointResolution, relationshipRequestedDecision, objectMappingIdentity } from "./relationship-resolution";
-import { governanceReviewPersistence } from "./persistence";
-import { materializationPersistence } from "./materialization";
+import { governanceReviewPersistence, createGovernedReviewPersistence } from "./persistence";
+import { createGovernedMaterializationPersistence } from "./materialization";
 import { getReconciliationInputForReviewSubject } from "./reconciliation-input";
+import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
 import { createCurrentRoleReconciliationAuthorizationPort } from "./reconciliation-authorization-port";
 import { getCanonicalObjectForMatch } from "./canonical-object-lookup";
 import { hasGovernanceReviewAuthority } from "./workspace-actions";
@@ -61,6 +62,9 @@ export interface SubmitReconciliationDecisionInput {
   readonly organisationId: OrganisationId;
   readonly actorUserId: string;
   readonly currentRole: string;
+  /** Server-derived from the trusted verified session — never client-supplied.
+   * Bound into the governed DB write wrapper as the sole write authority. */
+  readonly writePrincipal: GovernanceWritePrincipal;
   readonly reviewSubjectId: ReviewSubjectId;
   readonly requestedOutcome: RequestedReconciliationOutcome;
   /** Required only for MATCH_EXISTING; re-verified against gov_repo.canonical_objects before use. */
@@ -136,6 +140,9 @@ export async function submitReconciliationDecision(
     actorReference: input.actorUserId,
     currentRole: input.currentRole,
   });
+  // The DB wrapper is the final write authority (M16-S0.3.3C): this route-level
+  // authorizationPort check above remains only for early/UX rejection.
+  const governedReview = createGovernedReviewPersistence(input.writePrincipal);
 
   try {
     if (recovery.status === RECONCILIATION_INPUT_STATUS.RELATIONSHIP_INPUT_AVAILABLE) {
@@ -167,7 +174,7 @@ export async function submitReconciliationDecision(
         requestedDecision,
       });
 
-      const persisted = await governanceReviewPersistence.persistAuthorizedReconciliation({
+      const persisted = await governedReview.persistAuthorizedReconciliation({
         family: "RELATIONSHIP",
         decision: result.decision,
         authorization: result.authorization,
@@ -266,7 +273,7 @@ export async function submitReconciliationDecision(
     };
     const result = await invokeObjectReconciliation(command);
 
-    const persisted = await governanceReviewPersistence.persistAuthorizedReconciliation({
+    const persisted = await governedReview.persistAuthorizedReconciliation({
       family: "OBJECT",
       decision: result.decision,
       authorization: result.authorization,
@@ -323,6 +330,9 @@ export type TriggerMaterializationOutcome =
 export interface TriggerMaterializationInput {
   readonly organisationId: OrganisationId;
   readonly currentRole: string;
+  /** Server-derived from the trusted verified session — never client-supplied.
+   * Bound into the governed DB write wrapper as the sole write authority. */
+  readonly writePrincipal: GovernanceWritePrincipal;
   readonly reviewSubjectId: ReviewSubjectId;
 }
 
@@ -359,8 +369,11 @@ export async function triggerMaterialization(
   // existing canonical result, never a second materialization. No separate
   // pre-check is needed here.
   try {
+    // materialization is the ONLY write here; governance (reads only inside
+    // materializeReconciliationDecision) stays on the shared, unchanged port.
+    const governedMaterialization = createGovernedMaterializationPersistence(input.writePrincipal);
     const result = await materializeReconciliationDecision(
-      { governance: governanceReviewPersistence, materialization: materializationPersistence },
+      { governance: governanceReviewPersistence, materialization: governedMaterialization },
       { organisationId: input.organisationId, reconciliationDecisionId },
     );
     if (!result.applicable) {

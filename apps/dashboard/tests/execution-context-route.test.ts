@@ -30,7 +30,15 @@ const request=(body:unknown={decisionId:'decision'})=>new Request('https://examp
 test('M13 GET and POST derive tenant and human exclusively from a verified cookie',async()=>{
   assert.equal((await route.GET()).status,200);assert.deepEqual(reads,[org]);
   assert.equal((await route.POST(request())).status,200);
-  assert.deepEqual(writes[0][1],{organisationId:org,actorReference:'human',currentRole:'org_admin'});
+  const ctx=writes[0][1] as any;
+  assert.deepEqual({organisationId:ctx.organisationId,actorReference:ctx.actorReference,currentRole:ctx.currentRole},
+    {organisationId:org,actorReference:'human',currentRole:'org_admin'});
+  // M16-S0.3.3C: the governed write principal is derived ONLY from the verified
+  // cookie, never from the forged x-codeguard-* headers this request also sends.
+  assert.deepEqual(ctx.writePrincipal, {organisationId:org,actorUserId:'human',
+    issuedAtSeconds:ctx.writePrincipal.issuedAtSeconds,expiresAtSeconds:ctx.writePrincipal.expiresAtSeconds,
+    credentialEpoch:'2026-09-25T00:00:00.000001+00:00'});
+  assert.equal(ctx.writePrincipal.expiresAtSeconds-ctx.writePrincipal.issuedAtSeconds,8*3600);
 });
 test('M13 forged headers cannot authenticate or grant reviewer authority',async()=>{
   cookie=undefined;assert.equal((await route.GET()).status,401);assert.equal((await route.POST(request())).status,401);

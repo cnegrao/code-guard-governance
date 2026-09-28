@@ -2,7 +2,8 @@ import 'server-only';
 import { asCanonicalObjectId, asIsoTimestamp, DIRECT_EXECUTION_FIELDS, type OrganisationId, type ExecutionFieldDecision } from '@council/canonical-contracts';
 import { executionPolicy, reconcileExecutionField } from '@council/governance-review';
 import { executionRows, readExecutionReview, readExecutionDecision } from './execution-context-read';
-import { executionContextPersistence } from './execution-context-persistence';
+import { createGovernedExecutionContextPersistence } from './execution-context-persistence';
+import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
 
 export async function executionReviewQueue(org:OrganisationId) {
   const rows=await executionRows(org,'execution_source_snapshots');
@@ -18,7 +19,7 @@ export async function executionReviewQueue(org:OrganisationId) {
   }
   return result;
 }
-export async function submitExecutionDecision(input:unknown,ctx:{organisationId:OrganisationId;actorReference:string;currentRole:string}) {
+export async function submitExecutionDecision(input:unknown,ctx:{organisationId:OrganisationId;actorReference:string;currentRole:string;writePrincipal:GovernanceWritePrincipal}) {
   if(ctx.currentRole!=='org_admin'||!ctx.actorReference)throw new Error('EXECUTION_REVIEW_FORBIDDEN');
   if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('EXECUTION_DECISION_INVALID');
   const raw=input as Record<string,unknown>;
@@ -33,5 +34,7 @@ export async function submitExecutionDecision(input:unknown,ctx:{organisationId:
     ...(raw.expectedCurrentStateId?{expectedCurrentStateId:raw.expectedCurrentStateId as string}:{}),
     ...(raw.policyId?{policyId:raw.policyId as string}:{}),...(raw.policyVersion?{policyVersion:raw.policyVersion as string}:{}),
     actor:{authorityKind:'HUMAN',actorReference:ctx.actorReference},decidedAt:prior?.decision.decidedAt??asIsoTimestamp(new Date().toISOString())};
-  return reconcileExecutionField(decision,executionContextPersistence,{authorize:d=>d.organisationId===ctx.organisationId&&d.actor.actorReference===ctx.actorReference});
+  // The DB wrapper is the final write authority (M16-S0.3.3C): the route-level
+  // currentRole check above remains only for early/UX rejection.
+  return reconcileExecutionField(decision,createGovernedExecutionContextPersistence(ctx.writePrincipal),{authorize:d=>d.organisationId===ctx.organisationId&&d.actor.actorReference===ctx.actorReference});
 }

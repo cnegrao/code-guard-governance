@@ -6,6 +6,8 @@ import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "
 import { asReviewSubjectId } from "@/lib/governance/workspace-query";
 import { getGovernanceDecisionDetail } from "@/lib/governance/decision-query";
 import { submitReconciliationDecision, type RequestedReconciliationOutcome } from "@/lib/governance/decision-commands";
+import { governedWriteErrorResponse } from "@/lib/governance/governed-write-errors";
+import { toGovernanceWritePrincipal } from "@/lib/auth/governance-write-principal";
 
 const VALID_OUTCOMES = new Set<string>(["CREATE_NEW", "MATCH_EXISTING", "REJECT", "DEFER"]);
 
@@ -50,6 +52,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       organisationId: asOrganisationId(orgId),
       actorUserId: userId,
       currentRole: role,
+      writePrincipal: toGovernanceWritePrincipal(principal),
       reviewSubjectId: asReviewSubjectId(id),
       requestedOutcome: requestedOutcome as RequestedReconciliationOutcome,
       matchCanonicalObjectId,
@@ -83,6 +86,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    const security = governedWriteErrorResponse(error);
+    if (security) return security;
     console.error("governance reconciliation decision submission failed", error);
     return NextResponse.json({ error: "Unable to process this reconciliation decision." }, { status: 500 });
   }

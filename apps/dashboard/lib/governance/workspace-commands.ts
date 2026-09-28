@@ -22,6 +22,8 @@ import {
 
 import { governanceReviewPersistence } from "./persistence";
 import { deriveAllowedGovernanceActions, hasGovernanceReviewAuthority } from "./workspace-actions";
+import { isGovernedWriteSecurityError } from "./governed-write-errors";
+import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
 
 /**
  * Governance Workspace command side (CQRS write path). This module is the
@@ -43,6 +45,11 @@ export interface ExecuteGovernanceActionInput {
   readonly actorUserId: string;
   /** Resolved from current persisted assignments, never JWT or request data. */
   readonly currentRole: string;
+  /** Server-derived from the trusted verified session — never client-supplied.
+   * The route already binds this into the governed `port` it passes explicitly;
+   * carried here too only so callers/tests can observe it uniformly with the
+   * other four governed routes, never independently trusted by this function. */
+  readonly writePrincipal: GovernanceWritePrincipal;
   readonly reviewSubjectId: ReviewSubjectId;
   /** The state the client observed when it loaded the screen — the optimistic-concurrency precondition. */
   readonly expectedState: ReviewState;
@@ -154,6 +161,10 @@ async function executeGovernanceAction(
     const persisted = await port.persistReviewTransition(result);
     return { kind: persisted.replay ? "REPLAYED" : "APPLIED", subject: persisted.subject };
   } catch (error) {
+    // M16-S0.3.3C: a governed-wrapper security/infrastructure failure (GV001-
+    // GV006, 55P03) must reach the route for its own frozen classification,
+    // never be collapsed into a generic 409 here.
+    if (isGovernedWriteSecurityError(error)) throw error;
     // The RPC's own SELECT ... FOR UPDATE + previous-state precondition
     // (Governance Persistence V1, closed) is the true concurrency backstop
     // for a genuine DB-level race between two simultaneous submissions; this

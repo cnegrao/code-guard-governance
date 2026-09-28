@@ -49,6 +49,9 @@ import {
   type TransitionResult,
 } from "@council/governance-review";
 
+import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
+import { GovernedWriteError } from "./governed-write-errors";
+
 function getEnv(key: string): string {
   const value = process.env[key];
   if (!value) throw new Error(`Missing env var: ${key}`);
@@ -366,6 +369,80 @@ async function fetchEvidenceIds(table: string, column: string, id: string): Prom
 }
 
 // ---------------------------------------------------------------------------
+// Shared authorized-reconciliation column derivation, reused by both the
+// legacy RPC caller and the governed-wrapper caller below — identical
+// business-field mapping, only the RPC name/arg set that consumes it differs.
+// ---------------------------------------------------------------------------
+
+interface AuthorizedReconciliationColumns {
+  readonly envelopeHash: string;
+  readonly actorColumns: ActorColumns;
+  readonly candidateKind: string;
+  readonly subjectCandidateId: string | null;
+  readonly subjectCandidateMergeId: string | null;
+  readonly canonicalObjectId: string | null;
+  readonly canonicalObjectKind: string | null;
+  readonly relationshipCandidateId: string | null;
+  readonly relationshipTypeCode: string | null;
+  readonly candidateMergeId: string | null;
+  readonly mergeMemberCandidateIds: string[];
+}
+
+function authorizedReconciliationColumns(
+  input: AuthorizedReconciliationPersistenceInput,
+): AuthorizedReconciliationColumns {
+  const { family, invocation, decision } = input;
+  const envelopeHash = hashEnvelope(decision);
+  const actorColumns = actorToColumns(invocation.actor);
+  if (actorColumns.actor_kind !== "HUMAN" || !actorColumns.actor_reference) {
+    throw new TypeError("Authorized reconciliation requires a HUMAN actor with a non-empty actorReference");
+  }
+
+  let candidateKind: string;
+  let subjectCandidateId: string | null = null;
+  let subjectCandidateMergeId: string | null = null;
+  let canonicalObjectId: string | null = null;
+  let canonicalObjectKind: string | null = null;
+  let relationshipCandidateId: string | null = null;
+  let relationshipTypeCode: string | null = null;
+  let candidateMergeId: string | null = null;
+  let mergeMemberCandidateIds: string[] = [];
+
+  if (family === "OBJECT") {
+    const objectDecision = decision as ReconciliationDecision;
+    if (objectDecision.outcome === "MERGE_CANDIDATES") {
+      throw new TypeError("OBJECT family reconciliation decision cannot have outcome MERGE_CANDIDATES");
+    }
+    candidateKind = objectDecision.candidateKind;
+    if (objectDecision.subject.subjectKind === "CANDIDATE") {
+      subjectCandidateId = objectDecision.subject.candidateId;
+    } else {
+      subjectCandidateMergeId = objectDecision.subject.candidateMergeId;
+    }
+    if ("canonicalObject" in objectDecision && objectDecision.canonicalObject) {
+      canonicalObjectId = objectDecision.canonicalObject.objectId;
+      canonicalObjectKind = objectDecision.canonicalObject.kind;
+    }
+  } else if (family === "RELATIONSHIP") {
+    const relationshipDecision = decision as RelationshipReconciliationDecision;
+    candidateKind = "RELATIONSHIP";
+    relationshipCandidateId = relationshipDecision.relationshipCandidateId;
+    relationshipTypeCode = relationshipDecision.relationshipTypeCode;
+  } else {
+    const mergeDecision = decision as MergeCandidatesReconciliationDecision;
+    candidateKind = mergeDecision.candidateKind;
+    candidateMergeId = mergeDecision.candidateMergeId;
+    mergeMemberCandidateIds = [...mergeDecision.contributingCandidateIds];
+  }
+
+  return {
+    envelopeHash, actorColumns, candidateKind, subjectCandidateId, subjectCandidateMergeId,
+    canonicalObjectId, canonicalObjectKind, relationshipCandidateId, relationshipTypeCode,
+    candidateMergeId, mergeMemberCandidateIds,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Port implementation
 // ---------------------------------------------------------------------------
 
@@ -516,49 +593,8 @@ export const governanceReviewPersistence: GovernanceReviewPersistencePort = {
   async persistAuthorizedReconciliation(
     input: AuthorizedReconciliationPersistenceInput,
   ): Promise<AuthorizedReconciliationPersistenceResult> {
+    const cols = authorizedReconciliationColumns(input);
     const { family, authorization, invocation, decision } = input;
-    const envelopeHash = hashEnvelope(decision);
-    const actorColumns = actorToColumns(invocation.actor);
-    if (actorColumns.actor_kind !== "HUMAN" || !actorColumns.actor_reference) {
-      throw new TypeError("Authorized reconciliation requires a HUMAN actor with a non-empty actorReference");
-    }
-
-    let candidateKind: string;
-    let subjectCandidateId: string | null = null;
-    let subjectCandidateMergeId: string | null = null;
-    let canonicalObjectId: string | null = null;
-    let canonicalObjectKind: string | null = null;
-    let relationshipCandidateId: string | null = null;
-    let relationshipTypeCode: string | null = null;
-    let candidateMergeId: string | null = null;
-    let mergeMemberCandidateIds: string[] = [];
-
-    if (family === "OBJECT") {
-      const objectDecision = decision as ReconciliationDecision;
-      if (objectDecision.outcome === "MERGE_CANDIDATES") {
-        throw new TypeError("OBJECT family reconciliation decision cannot have outcome MERGE_CANDIDATES");
-      }
-      candidateKind = objectDecision.candidateKind;
-      if (objectDecision.subject.subjectKind === "CANDIDATE") {
-        subjectCandidateId = objectDecision.subject.candidateId;
-      } else {
-        subjectCandidateMergeId = objectDecision.subject.candidateMergeId;
-      }
-      if ("canonicalObject" in objectDecision && objectDecision.canonicalObject) {
-        canonicalObjectId = objectDecision.canonicalObject.objectId;
-        canonicalObjectKind = objectDecision.canonicalObject.kind;
-      }
-    } else if (family === "RELATIONSHIP") {
-      const relationshipDecision = decision as RelationshipReconciliationDecision;
-      candidateKind = "RELATIONSHIP";
-      relationshipCandidateId = relationshipDecision.relationshipCandidateId;
-      relationshipTypeCode = relationshipDecision.relationshipTypeCode;
-    } else {
-      const mergeDecision = decision as MergeCandidatesReconciliationDecision;
-      candidateKind = mergeDecision.candidateKind;
-      candidateMergeId = mergeDecision.candidateMergeId;
-      mergeMemberCandidateIds = [...mergeDecision.contributingCandidateIds];
-    }
 
     const { data, error } = await privilegedDb.rpc("record_authorized_reconciliation", {
       p_organisation_id: decision.organisationId,
@@ -581,22 +617,22 @@ export const governanceReviewPersistence: GovernanceReviewPersistencePort = {
       p_decision_id: decision.decisionId,
       p_family: family,
       p_outcome: decision.outcome,
-      p_candidate_kind: candidateKind,
-      p_authority_reference: actorColumns.actor_reference,
+      p_candidate_kind: cols.candidateKind,
+      p_authority_reference: cols.actorColumns.actor_reference,
       p_decided_at: decision.decidedAt,
-      p_subject_candidate_id: subjectCandidateId,
-      p_subject_candidate_merge_id: subjectCandidateMergeId,
-      p_canonical_object_id: canonicalObjectId,
-      p_canonical_object_kind: canonicalObjectKind,
-      p_relationship_candidate_id: relationshipCandidateId,
-      p_relationship_type_code: relationshipTypeCode,
-      p_candidate_merge_id: candidateMergeId,
-      p_merge_member_candidate_ids: mergeMemberCandidateIds,
+      p_subject_candidate_id: cols.subjectCandidateId,
+      p_subject_candidate_merge_id: cols.subjectCandidateMergeId,
+      p_canonical_object_id: cols.canonicalObjectId,
+      p_canonical_object_kind: cols.canonicalObjectKind,
+      p_relationship_candidate_id: cols.relationshipCandidateId,
+      p_relationship_type_code: cols.relationshipTypeCode,
+      p_candidate_merge_id: cols.candidateMergeId,
+      p_merge_member_candidate_ids: cols.mergeMemberCandidateIds,
       p_assertion_ids: [...decision.assertionIds],
       p_evidence_ids: [...decision.evidenceIds],
       p_contract_version: "1.1",
       p_envelope: decision,
-      p_envelope_hash: envelopeHash,
+      p_envelope_hash: cols.envelopeHash,
     });
     if (error) throw new Error(`record_authorized_reconciliation failed: ${error.message}`);
     const row = (Array.isArray(data) ? data[0] : data) as {
@@ -692,6 +728,144 @@ export const governanceReviewPersistence: GovernanceReviewPersistencePort = {
     return { family, authorization, invocation, decision };
   },
 };
+
+// ---------------------------------------------------------------------------
+// M16-S0.3.3C — governed writes. One factory per request, built from the
+// route's already-verified GovernanceWritePrincipal, never from request body/
+// header/query values. Read methods are reused unchanged from
+// governanceReviewPersistence; ONLY persistReviewTransition and
+// persistAuthorizedReconciliation are overridden, to call the corresponding
+// *_governed_v1 DB wrapper instead of the legacy RPC. The legacy RPC names
+// themselves, and governanceReviewPersistence's own bound methods, are left
+// completely untouched — they remain the ONLY path for the still-dormant
+// DETERMINISTIC_RULE (machine) producers in discovery-intake.ts /
+// inbound-exchange.ts, which this human-write cutover deliberately does not
+// touch or activate.
+// ---------------------------------------------------------------------------
+
+export function createGovernedReviewPersistence(
+  writePrincipal: GovernanceWritePrincipal,
+): GovernanceReviewPersistencePort {
+  return {
+    ...governanceReviewPersistence,
+
+    async persistReviewTransition(result: TransitionResult): Promise<ReviewTransitionPersistenceResult> {
+      const { subject, event } = result;
+      const actorColumns = actorToColumns(event.actor);
+      if (actorColumns.actor_kind !== "HUMAN" || !actorColumns.actor_reference) {
+        throw new TypeError("Governed review transition requires a HUMAN actor with a non-empty actorReference");
+      }
+      // Defense in depth: the wrapper independently asserts this DB-side too,
+      // but a mismatch here means the caller built the command wrong, not
+      // that the request is a genuine attempt to substitute identity.
+      if (actorColumns.actor_reference !== writePrincipal.actorUserId) {
+        throw new TypeError("Governed review transition actor must match the verified write principal");
+      }
+      if (subject.organisationId !== writePrincipal.organisationId) {
+        throw new TypeError("Governed review transition organisation must match the verified write principal");
+      }
+
+      const { data, error } = await privilegedDb.rpc("apply_review_transition_governed_v1", {
+        p_verified_organisation_id: writePrincipal.organisationId,
+        p_verified_actor_user_id: writePrincipal.actorUserId,
+        p_verified_session_iat: writePrincipal.issuedAtSeconds,
+        p_verified_session_exp: writePrincipal.expiresAtSeconds,
+        p_verified_credential_epoch: writePrincipal.credentialEpoch,
+        p_review_subject_id: subject.reviewSubjectId,
+        p_finding_id: subject.findingId,
+        p_previous_state: event.previousState,
+        p_new_state: event.newState,
+        p_occurred_at: event.occurredAt,
+        p_evidence_ids: [...event.evidenceIds],
+        p_reason_code: event.reasonCode ?? null,
+        p_command_id: event.commandId,
+        p_event_id: event.eventId,
+      });
+      if (error) throw new GovernedWriteError(`apply_review_transition_governed_v1 failed: ${error.message}`, error.code);
+      const row = (Array.isArray(data) ? data[0] : data) as { replay: boolean; revision: number; state: string };
+
+      return {
+        replay: row.replay,
+        event,
+        subject: Object.freeze({
+          ...subject,
+          state: row.state as ReviewSubject["state"],
+          lastTransition: event,
+        }),
+      };
+    },
+
+    async persistAuthorizedReconciliation(
+      input: AuthorizedReconciliationPersistenceInput,
+    ): Promise<AuthorizedReconciliationPersistenceResult> {
+      const cols = authorizedReconciliationColumns(input);
+      const { family, authorization, invocation, decision } = input;
+      if (decision.organisationId !== writePrincipal.organisationId) {
+        throw new TypeError("Governed reconciliation organisation must match the verified write principal");
+      }
+      if (cols.actorColumns.actor_reference !== writePrincipal.actorUserId) {
+        throw new TypeError("Governed reconciliation actor must match the verified write principal");
+      }
+
+      const { data, error } = await privilegedDb.rpc("record_authorized_reconciliation_governed_v1", {
+        p_verified_organisation_id: writePrincipal.organisationId,
+        p_verified_actor_user_id: writePrincipal.actorUserId,
+        p_verified_session_iat: writePrincipal.issuedAtSeconds,
+        p_verified_session_exp: writePrincipal.expiresAtSeconds,
+        p_verified_credential_epoch: writePrincipal.credentialEpoch,
+        p_review_subject_id: invocation.reviewSubjectId ?? null,
+        p_authorization_decision_id: authorization.authorizationDecisionId,
+        p_authorization_subject_kind: authorization.subject.subjectKind,
+        p_authorization_subject_candidate_id:
+          authorization.subject.subjectKind === "CANDIDATE" ? authorization.subject.candidateId : null,
+        p_authorization_subject_candidate_merge_id:
+          authorization.subject.subjectKind === "CANDIDATE_MERGE" ? authorization.subject.candidateMergeId : null,
+        p_requested_action: authorization.requestedAction,
+        p_authorization_evaluated_at: authorization.evaluatedAt,
+        p_policy_reference: authorization.policyReference ?? null,
+        p_invocation_id: invocation.invocationId,
+        p_command_id: invocation.commandId,
+        p_command_fingerprint: invocation.commandFingerprint,
+        p_requested_at: invocation.requestedAt,
+        p_reason_code: invocation.reasonCode,
+        p_decision_id: decision.decisionId,
+        p_family: family,
+        p_outcome: decision.outcome,
+        p_candidate_kind: cols.candidateKind,
+        p_decided_at: decision.decidedAt,
+        p_subject_candidate_id: cols.subjectCandidateId,
+        p_subject_candidate_merge_id: cols.subjectCandidateMergeId,
+        p_canonical_object_id: cols.canonicalObjectId,
+        p_canonical_object_kind: cols.canonicalObjectKind,
+        p_relationship_candidate_id: cols.relationshipCandidateId,
+        p_relationship_type_code: cols.relationshipTypeCode,
+        p_candidate_merge_id: cols.candidateMergeId,
+        p_merge_member_candidate_ids: cols.mergeMemberCandidateIds,
+        p_assertion_ids: [...decision.assertionIds],
+        p_evidence_ids: [...decision.evidenceIds],
+        p_contract_version: "1.1",
+        p_envelope: decision,
+        p_envelope_hash: cols.envelopeHash,
+      });
+      if (error) {
+        throw new GovernedWriteError(`record_authorized_reconciliation_governed_v1 failed: ${error.message}`, error.code);
+      }
+      const row = (Array.isArray(data) ? data[0] : data) as {
+        replay: boolean;
+        authorization_decision_id: string;
+        invocation_id: string;
+        reconciliation_decision_id: string;
+      };
+
+      return {
+        replay: row.replay,
+        authorizationDecisionId: row.authorization_decision_id,
+        invocationId: row.invocation_id,
+        reconciliationDecisionId: row.reconciliation_decision_id,
+      };
+    },
+  };
+}
 
 // Exported for direct unit testing of otherwise-pure, security-critical
 // logic (hashing, rehydration, actor mapping) without needing to mock the

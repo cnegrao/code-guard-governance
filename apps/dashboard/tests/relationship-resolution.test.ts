@@ -43,15 +43,18 @@ const db = {
     return { data, error: data.length ? null : { message: "ENDPOINT_NOT_CANONICAL" } };
   },
 };
-mock.module("@/lib/governance/persistence", { namedExports: { privilegedDb: db, canonicalStringify: stableCandidateContent,
-  sha256Hex: (value: string) => createHash("sha256").update(value).digest("hex"), governanceReviewPersistence: {
+const fakeGovernancePort = {
   getReviewSubject: async (tenant: string) => tenant === org ? subject : undefined,
   getReconciliationAuditChain: async () => chain,
   persistAuthorizedReconciliation: async (input: any) => { persisted.push(input); return { replay: false, reconciliationDecisionId: input.decision.decisionId }; },
-} } });
+};
+mock.module("@/lib/governance/persistence", { namedExports: { privilegedDb: db, canonicalStringify: stableCandidateContent,
+  sha256Hex: (value: string) => createHash("sha256").update(value).digest("hex"), governanceReviewPersistence: fakeGovernancePort,
+  // M16-S0.3.3C: production code now calls this factory for the human write path.
+  createGovernedReviewPersistence: () => fakeGovernancePort } });
 mock.module("@/lib/governance/reconciliation-input", { namedExports: { getReconciliationInputForReviewSubject: async () => ({ status: "RELATIONSHIP_INPUT_AVAILABLE", reviewSubject: subject, finding, candidate }) } });
 mock.module("@/lib/governance/decision-query", { namedExports: { findReconciliationDecisionIdForReviewSubject: async () => existingDecisionId, findMaterializationForDecision: async () => undefined } });
-mock.module("@/lib/governance/materialization", { namedExports: { materializationPersistence: {} } });
+mock.module("@/lib/governance/materialization", { namedExports: { materializationPersistence: {}, createGovernedMaterializationPersistence: () => ({}) } });
 let service: typeof import("@/lib/governance/relationship-resolution");
 let commands: typeof import("@/lib/governance/decision-commands");
 let hash: typeof import("@/lib/governance/discovery-intake-persistence").normalizedCandidateEnvelopeHash;
@@ -77,7 +80,9 @@ function existing(overrides: Row = {}) {
     relationship_state_id: "state:existing", relationship_type: "USES_TOOL", source_canonical_object_id: "canonical:version", source_kind: "AGENT_VERSION",
     target_canonical_object_id: "canonical:tool", target_kind: "TOOL", valid_to: null, ...overrides };
 }
-const commandInput = { organisationId: org, actorUserId: "reviewer:1", currentRole: "org_admin", reviewSubjectId: subject.reviewSubjectId, reasonCode: "EXPLICIT_GOVERNANCE" };
+const commandInput = { organisationId: org, actorUserId: "reviewer:1", currentRole: "org_admin",
+  writePrincipal: { organisationId: org, actorUserId: "reviewer:1", issuedAtSeconds: 1_700_000_000, expiresAtSeconds: 1_700_028_800, credentialEpoch: "2026-01-01T00:00:00.000000+00:00" },
+  reviewSubjectId: subject.reviewSubjectId, reasonCode: "EXPLICIT_GOVERNANCE" };
 
 test("server CREATE_NEW resolves canonical refs and real supported fingerprint; no versionCode or raw payload", async () => {
   reset(); const decision = await service.relationshipRequestedDecision(org, candidate, "CREATE_NEW", at);

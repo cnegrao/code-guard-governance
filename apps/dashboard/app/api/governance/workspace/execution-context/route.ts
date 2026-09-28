@@ -3,6 +3,8 @@ import { asOrganisationId } from '@council/canonical-contracts';
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from '@/lib/auth';
 import { resolveCurrentGovernanceRole, CurrentAuthorizationInfrastructureError } from '@/lib/auth/current-authorization';
 import { executionReviewQueue, submitExecutionDecision } from '@/lib/governance/execution-context-review';
+import { governedWriteErrorResponse } from '@/lib/governance/governed-write-errors';
+import { toGovernanceWritePrincipal } from '@/lib/auth/governance-write-principal';
 export async function GET() {
   try {
     const principal=await requireVerifiedGovernancePrincipal();
@@ -20,10 +22,12 @@ export async function POST(request:Request) {
     if(currentRole!=='org_admin')return NextResponse.json({error:'Not authorized.'},{status:403});
     const text=await request.text();if(text.length>16384)return NextResponse.json({error:'Request too large.'},{status:400});
     return NextResponse.json(await submitExecutionDecision(JSON.parse(text),{organisationId:asOrganisationId(principal.organisationId),
-      actorReference:principal.userId,currentRole}));
+      actorReference:principal.userId,currentRole,writePrincipal:toGovernanceWritePrincipal(principal)}));
   } catch(error) {
     if(error instanceof SessionAuthenticationError)return NextResponse.json({error:'Not authenticated.'},{status:401});
     if(error instanceof CurrentAuthorizationInfrastructureError)return NextResponse.json({error:'Unable to authorize execution review.'},{status:500});
+    const security = governedWriteErrorResponse(error);
+    if (security) return security;
     const message=error instanceof Error?error.message:'';
     if(message==='EXECUTION_REVIEW_FORBIDDEN')return NextResponse.json({error:'Not authorized.'},{status:403});
     // Only known business failures are conflicts. S0.3.3 adds wrapper SQLSTATE mapping.

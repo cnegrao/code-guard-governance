@@ -19,7 +19,8 @@ let missingOrg = false;
 let writeFailure: unknown;
 let queryLog: Array<{ table: string; select: string; filters: Array<[string, unknown]> }>;
 let reads: string[];
-let writes: Array<{ organisationId: string; actorUserId?: string; actorReference?: string; currentRole: string }>;
+let writes: Array<{ organisationId: string; actorUserId?: string; actorReference?: string; currentRole: string;
+  writePrincipal?: { organisationId: string; actorUserId: string; issuedAtSeconds: number; expiresAtSeconds: number; credentialEpoch: string } }>;
 let headerReads = 0;
 let agents: typeof import("../app/api/agents/route");
 let execution: typeof import("../app/api/governance/workspace/execution-context/route");
@@ -136,6 +137,17 @@ for (const [name, invoke] of privileged) {
     assert.equal(writes[0].organisationId, org);
     assert.equal(writes[0].currentRole, "org_admin");
     if (!name.startsWith("materialize")) assert.equal(writes[0].actorUserId ?? writes[0].actorReference, actor);
+    // M16-S0.3.3C: the governed write principal reaching the command layer is
+    // built ONLY from the verified cookie (organisationId=org, actorUserId=
+    // actor), never from the forged headers/query/body this same request also
+    // carries (organisationId=foreign, actor="attacker").
+    const wp = writes[0].writePrincipal;
+    assert.ok(wp, `${name} did not receive a governed write principal`);
+    assert.equal(wp!.organisationId, org);
+    assert.equal(wp!.actorUserId, actor);
+    assert.equal(wp!.credentialEpoch, "2026-09-25T00:00:00.000001+00:00");
+    assert.equal(typeof wp!.issuedAtSeconds, "number");
+    assert.equal(wp!.expiresAtSeconds - wp!.issuedAtSeconds, 8 * 3600);
     assert.deepEqual(queryLog[0].filters, [["user_id", actor], ["organisation_id", org]]);
     assert.equal(headerReads, 0);
   });
@@ -165,6 +177,22 @@ test("review allowedActions follows current persistence, never informational JWT
   cookie = await session("user"); roles = [{ role_id: "admin-role", role_code: "GOVERNANCE_ADMIN", is_system_role: true }];
   const allowed = await (await review.GET(request(undefined, "GET"), params())).json();
   assert.equal(allowed.allowedActions.canConfirm, true);
+});
+
+test("JWT email claim has no authorization effect: a forged email changes nothing about the outcome or the write principal", async () => {
+  const forgedEmail = await new SignJWT({ org, role: "org_admin", email: "attacker@evil.invalid", credential_epoch: "2026-09-25T00:00:00.000001+00:00" })
+    .setProtectedHeader({ alg: "HS256" }).setSubject(actor).setIssuer(SESSION_ISSUER).setAudience(SESSION_AUDIENCE)
+    .setIssuedAt().setExpirationTime(Math.floor(Date.now() / 1000) + 3600).sign(new TextEncoder().encode(secret));
+  cookie = forgedEmail;
+  for (const [, invoke] of privileged) {
+    const response = await invoke();
+    assert.equal(response.status, 200, "a forged email claim never denies or blocks a legitimately-authorized write");
+  }
+  assert.equal(writes.length, privileged.length);
+  for (const write of writes) {
+    assert.equal(write.organisationId, org);
+    assert.equal(write.writePrincipal?.actorUserId, actor);
+  }
 });
 
 test("current-role resolver rejects missing, inactive, unresolved and non-system admin records", async () => {
