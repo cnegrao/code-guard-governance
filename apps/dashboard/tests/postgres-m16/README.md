@@ -157,3 +157,26 @@ migration. Three files:
   inherited role grant, default-privilege reintroduction); each control is also rejected by
   a re-execution of the migration's own postflight. Direct app-role table access and the RPC
   EXECUTE boundary are exercised; the S0 six-wrapper count is unchanged.
+
+## S1A.2 — L14 Authority Policy successor lifecycle
+
+Additive migration `20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql` (the audited
+S1A.1 migration is not edited), applied by `helpers/m16-l14-fixtures.ts` after S1A.1, so every
+S1A.1 suite now also runs as regression on the S1A.2 schema. `helpers/m16-l14-successor-fixtures.ts`
+bootstraps each organisation through the real RPCs.
+
+- `l14-authority-policy-successor.test.ts`: action-sensitive self-basis and NULL-basis constraint
+  probes, state uniqueness, successor ADMIT ALLOW and every DENY reason (NO_EFFECTIVE_AUTHORITY
+  with explicit NULL basis, NO_MATCHING, SOURCE including contradictory keys, SCOPE via the
+  evaluator), successor self-authorization, ALLOW and DENY replay after authority change, REVOKE
+  proposals, immediate / future / backdated VALIDATE with flags, strictly increasing instants,
+  self-validation, REJECT/DEFER/correction, pending-successor cancellation, GV011 continuity,
+  current-policy self-revocation at a successor cutover, no resurrection, bitemporal matrix,
+  authorization snapshots, and re-execution of the S1A.2 postflight.
+- `l14-authority-policy-successor-concurrency.test.ts`: concurrent successor ADMITs, terminal
+  decisions, VALIDATEs, future-successor vs revocation, role/credential/actor/organisation races,
+  policy-head change, guard lock timeout.
+
+The S1A.1 bootstrap suite's "bootstrap never reopens" test and one proposal assertion encoded the
+S1A.1-only "successor lifecycle not available" placeholder; they now assert the S1A.2 behaviour
+(local-policy basis, never bootstrap) instead.

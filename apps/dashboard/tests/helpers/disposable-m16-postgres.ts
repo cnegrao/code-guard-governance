@@ -25,6 +25,8 @@ export const contractRawRpcRevocationMigration = '20260928190000_m16_s0_contract
 // M16-S1A.1 chain step: L14 Authority Policy foundation + first-policy bootstrap. Applied after
 // contractRawRpcRevocationMigration on the full governance chain; never re-authored here.
 export const l14AuthorityPolicyMigration = '20260929120000_m16_s1a_l14_authority_policy_v1.sql';
+// M16-S1A.2 chain step: additive successor lifecycle on top of l14AuthorityPolicyMigration.
+export const l14AuthorityPolicySuccessorMigration = '20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql';
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
 // Applied chronologically AFTER the broad service_role default-grant migration, so tables and
@@ -50,7 +52,7 @@ export const m16Prerequisites = [
   '20260903200100_atomic_signup_legacy_rpc.sql',
 ];
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration].includes(name));
+  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration].includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 

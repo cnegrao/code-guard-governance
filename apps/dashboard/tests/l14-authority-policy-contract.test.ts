@@ -63,6 +63,21 @@ test("the migration CHECK vocabularies match the TypeScript contract", () => {
   assert.ok(!/require_governed_write_eligibility_v1\(/.test(migration.replace(/--.*$/gm, "")), "legacy GV006 guard is not reused");
 });
 
+test("the additive S1A.2 migration: no S1A.1 edit, GV011 continuity, no silent immutability, no F2, same three RPC signatures", () => {
+  const successor = readFileSync(fileURLToPath(new URL("../../../supabase/migrations/20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql", import.meta.url)), "utf8");
+  const code = successor.replace(/--.*$/gm, "");
+  assert.ok(code.includes("'GV011'") && code.includes("L14_CONTINUITY_VIOLATION"));
+  assert.ok(!/DO INSTEAD NOTHING/i.test(code));
+  assert.ok(!/canonical_relationships/i.test(code), "F2: the successor migration never touches canonical_relationships");
+  assert.ok(!/gov_repo\.evidence\b/.test(code));
+  assert.ok(!/require_governed_write_eligibility_v1/.test(code));
+  assert.equal((code.match(/CREATE OR REPLACE FUNCTION gov_repo\.l14_(admit_authority_policy_version|submit_proposal|decide_authority_policy_proposal)_v1\(/g) ?? []).length, 3);
+  assert.ok(!/CREATE (OR REPLACE )?FUNCTION gov_repo\.l14_\w*(eligibility|governed)/.test(code));
+  for (const reason of L14_AUTHORIZATION_DENY_REASONS.filter(r => !r.startsWith("BOOTSTRAP_"))) {
+    assert.ok(code.includes(`'${reason}'`), `successor migration lacks ${reason}`);
+  }
+});
+
 test("content hash is deterministic, order-independent, UTF-8 byte ordered, and rejects duplicates/unknown values", () => {
   const rules = [rule(), rule({ permission: "L14_AUTHORITY_POLICY_ADMIT", requestedAction: "ADMIT" }),
     rule({ roleId: "44444444-4444-4444-8444-444444444444", permission: "L14_PARTY_VALIDATE", scopeTag: "CANONICAL_OBJECT",

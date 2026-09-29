@@ -317,7 +317,7 @@ test('M16 S1A.1 L14 Authority Policy bootstrap (disposable PG17)', { timeout: 90
     await rejects(c.svc(submitSql(memberA, { commandId: 'x-4', proposal: firstProposal(), fingerprint: 'd'.repeat(64) })), 'GV008');
     await rejects(c.svc(submitSql(memberA, { commandId: 'x-5', proposal: { ...firstProposal(), subjectKind: 'GOVERNANCE_PARTY' } })), 'GV010', /SUBJECT_KIND_NOT_EXECUTABLE/);
     await rejects(c.svc(submitSql(memberA, { commandId: 'x-6', proposal: { ...firstProposal(), sourceClass: 'SOURCE_CONNECTION' } })), 'GV010', /SOURCE_CLASS_NOT_EXECUTABLE/);
-    await rejects(c.svc(submitSql(memberA, { commandId: 'x-7', proposal: { ...firstProposal(), intent: 'REVOKE', targetStateId: randomUUID() } })), 'GV010', /SUCCESSOR_LIFECYCLE_NOT_AVAILABLE/);
+    await rejects(c.svc(submitSql(memberA, { commandId: 'x-7', proposal: { ...firstProposal(), intent: 'REVOKE', targetStateId: randomUUID() } })), 'GV010', /TARGET_STATE_UNRESOLVED/);
     await rejects(c.svc(submitSql(memberA, { commandId: 'x-8', proposal: { ...firstProposal(), contentHash: 'f'.repeat(64) } })), 'GV010', /PINNED_VERSION_UNRESOLVED/);
     assert.deepEqual(await counts(orgA), before);
     assert.deepEqual(await counts(orgB), Object.fromEntries(L14_TABLES.map(table => [table, 0])));
@@ -422,20 +422,28 @@ test('M16 S1A.1 L14 Authority Policy bootstrap (disposable PG17)', { timeout: 90
     assert.equal(await owner(`select is_self_validation from gov_repo.l14_authorization_decisions where authorization_decision_id='${validated.authorization_decision_id}'`), 't');
   });
 
-  await t.test('bootstrap never reopens: every further first/non-first Authority Policy command fails closed', async () => {
+  // S1A.2 supersedes the S1A.1 "successor lifecycle not available" placeholders: non-first
+  // commands are now authorized by the effective LOCAL policy. Bootstrap still never reopens.
+  await t.test('bootstrap never reopens: after the first policy every command is decided by the local policy, never the bootstrap', async () => {
     const before = await counts(orgA);
     await rejects(c.svc(admitSql(adminA, { commandId: 'n-1', rules: policyRules() })), 'GV009');
-    await rejects(c.svc(admitSql(adminA, { commandId: 'n-2', rules: policyRules(),
-      expected: { authorityPolicyId: admittedA.authority_policy_id, latestVersionId: admittedA.version_id } })), 'GV010', /SUCCESSOR_LIFECYCLE_NOT_AVAILABLE/);
+    const successor = await exec(admitSql(adminA, { commandId: 'n-2', rules: policyRules({ allowFutureDating: true }),
+      expected: { authorityPolicyId: admittedA.authority_policy_id, latestVersionId: admittedA.version_id } }));
+    assert.equal(successor.outcome, 'ADMITTED');
     const second = await exec(submitSql(memberA, { commandId: 'n-3', proposal: firstProposal() }));
     await rejects(c.svc(decideSql(adminA, { commandId: 'n-4', proposalId: second.proposal_id, proposal: firstProposal() })), 'GV009', /AUTHORITY_POLICY_STATE_EXISTS/);
-    await rejects(c.svc(decideSql(adminA, { commandId: 'n-5', proposalId: second.proposal_id, proposal: firstProposal(), expected: validatedA.state_id })), 'GV010', /SUCCESSOR_LIFECYCLE_NOT_AVAILABLE/);
-    await rejects(c.svc(decideSql(adminA, { commandId: 'n-6', proposalId: second.proposal_id, proposal: firstProposal(), outcome: 'REJECT', expected: validatedA.state_id })), 'GV010');
+    await rejects(c.svc(decideSql(adminA, { commandId: 'n-5', proposalId: second.proposal_id, proposal: firstProposal(), expected: validatedA.state_id })), 'GV010', /VERSION_ALREADY_VALIDATED/);
+    const rejected = await exec(decideSql(adminA, { commandId: 'n-6', proposalId: second.proposal_id, proposal: firstProposal(), outcome: 'REJECT', expected: validatedA.state_id }));
+    assert.equal(rejected.deny_reason, 'NO_MATCHING_AUTHORITY_RULE', 'the local policy grants no REJECT; the bootstrap is not consulted');
     await rejects(c.svc(decideSql(adminA, { commandId: 'n-7', proposalId: proposalA.proposal_id, proposal: firstProposal() })), 'GV010', /PROPOSAL_TERMINAL/);
+    const bases = JSON.parse(lastLine(await owner(`select json_agg(authority_basis || ':' || coalesce(basis_version_id::text, '-') order by evaluated_at)
+      from gov_repo.l14_authorization_decisions where organisation_id='${orgA}' and command_id in ('n-2','n-6')`)));
+    assert.deepEqual(bases, [`AUTHORITY_POLICY_VERSION:${admittedA.version_id}`, `AUTHORITY_POLICY_VERSION:${admittedA.version_id}`]);
+    assert.equal(await owner(`select count(*) from gov_repo.l14_authorization_decisions where organisation_id='${orgA}'
+      and authority_basis='SYSTEM_BOOTSTRAP_L14_AUTHORITY_V1' and evaluated_at > '${validatedA.recorded_at}'::timestamptz`), '0');
     const after = await counts(orgA);
-    assert.deepEqual(after, { ...before, l14_proposals: before.l14_proposals + 1,
-      l14_authority_policy_version_proposals: before.l14_authority_policy_version_proposals + 1, l14_command_results: before.l14_command_results + 1 },
-      'only the harmless proposal submission was written; no authorization, decision or state');
+    assert.equal(after.l14_authority_policy_states, before.l14_authority_policy_states, 'no state written');
+    assert.equal(after.l14_governance_decisions, before.l14_governance_decisions, 'no governance decision written');
   });
 
   await t.test('bitemporal resolver: first state by effective + recorded coordinates; no earlier visibility; no fabrication', async () => {
