@@ -131,3 +131,29 @@ the locked `governance_users.password_changed_at`, otherwise `GV002` /
 in `transactional-eligibility.test.ts` cover exact/NULL/microsecond epochs, the reproduced
 backend-+5s stale-token scenario, both-conditions-required, concurrent rotation, and temp
 object shadowing. The other lock/ACL/isolation tests run unchanged against the new signature.
+
+## S1A.1 — L14 Authority Policy foundation + first-policy bootstrap
+
+Architecture: `docs/architecture/ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md`
+(§§4-7, 9, 16-17, 20-21) plus the S1A architecture-owner decisions U1-U9. Migration:
+`20260929120000_m16_s1a_l14_authority_policy_v1.sql`, applied by `helpers/m16-l14-fixtures.ts`
+after the full governance chain (including the broad `20260818013113` defaults) and every S0
+migration. Three files:
+
+- `l14-authority-policy-bootstrap.test.ts`: first ADMIT / proposal / first VALIDATE, durable
+  DENY + exact DENY replay (also after a later role grant), GV007/GV008/GV009/GV010 paths,
+  DB content hash and fingerprint parity with the TypeScript mirror, typed scope operands
+  (CANONICAL_OBJECT FK, read-only RELATIONSHIP_STATE triple lookup), support NONE/PRESENT,
+  authorization snapshot, lineage, self-validation, bootstrap-never-reopens, bitemporal
+  resolver coordinates, raising immutability (UPDATE/DELETE/TRUNCATE, even as owner).
+  The RELATIONSHIP_STATE fixture inserts one canonical_relationships row as the owner; the
+  S1A.1 migration and RPCs never write that table (F2 untouched).
+- `l14-authority-policy-concurrency.test.ts`: concurrent first ADMITs / same-command ADMITs /
+  first VALIDATEs, role/is_system_role/organisation/actor changes racing commitment in both
+  orders (observed via `pg_blocking_pids`), guard lock timeout `55P03`, no partial writes.
+- `l14-authority-policy-acl.test.ts`: real-catalog ACL checker over the whole L14 surface with
+  per-class negative controls (table DML, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN, column
+  grants, PUBLIC, sequences, routine EXECUTE, non-invoker and out-of-prefix writable views,
+  inherited role grant, default-privilege reintroduction); each control is also rejected by
+  a re-execution of the migration's own postflight. Direct app-role table access and the RPC
+  EXECUTE boundary are exercised; the S0 six-wrapper count is unchanged.

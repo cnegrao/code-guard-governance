@@ -11,3 +11,4 @@ export * from "./technical-facts.ts";
 export * from "./execution-context.ts";
 export * from "./runtime-observation.ts";
 export * from "./cross-signal-comparison.ts";
+export * from "./l14-authority-policy.ts";
