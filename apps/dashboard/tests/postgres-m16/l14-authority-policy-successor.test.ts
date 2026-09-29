@@ -511,6 +511,6 @@ test('M16 S1A.2 L14 Authority Policy successor lifecycle (disposable PG17)', { t
     const text = readFileSync(fileURLToPath(new URL('../../../../supabase/migrations/20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql', import.meta.url)), 'utf8');
     await owner(text.slice(text.indexOf('DO $postflight$'), text.indexOf('$postflight$;') + '$postflight$;'.length));
     await rejects(owner(`select * from gov_repo.l14_evaluate_authority_rules_v1(gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),'{}'::uuid[],'x','y',false,'IMMEDIATE')`)
-      .then(() => c.sql(`select * from gov_repo.l14_authority_policy_schedule_continuous_v1(gen_random_uuid(),null,null,null,null)`, 'service_role')), '42501');
+      .then(() => c.sql(`select * from gov_repo.l14_authority_policy_schedule_continuous_v2(gen_random_uuid(),null,null,null,null,null)`, 'service_role')), '42501');
   });
 });

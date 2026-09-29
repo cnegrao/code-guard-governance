@@ -7,7 +7,7 @@ import {
 } from '@council/governance-review';
 import {
   contractRawRpcRevocationMigration, credentialMigration, disposableM16Postgres, eligibilityMigration, epochBindingMigration,
-  governedWriteWrapperMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, objectMaterializationCompatMigration,
+  governedWriteWrapperMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, objectMaterializationCompatMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -48,7 +48,7 @@ export async function l14Cluster(diagnostic: (message: string) => void) {
   try {
     for (const migration of [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
       governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
-      l14AuthorityPolicySuccessorMigration]) await pg.migrate(migration);
+      l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration]) await pg.migrate(migration);
   } catch (error) { pg.stop(); throw error; }
   const { sql, bootstrapSql } = pg;
   const owner = (query: string) => sql(query, 'postgres');

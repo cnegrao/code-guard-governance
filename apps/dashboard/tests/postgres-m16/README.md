@@ -180,3 +180,14 @@ bootstraps each organisation through the real RPCs.
 The S1A.1 bootstrap suite's "bootstrap never reopens" test and one proposal assertion encoded the
 S1A.1-only "successor lifecycle not available" placeholder; they now assert the S1A.2 behaviour
 (local-policy basis, never bootstrap) instead.
+
+## S1A.2R1 — no-resurrection corrective (F-1 BLOCKER, F-2 LOW)
+
+Additive migration `20260929140000_m16_s1a2r1_l14_no_resurrection_v1.sql` (S1A.1 and S1A.2
+migrations untouched) replaces the S1A.2 continuity helper with the recorded-time-aware
+`l14_authority_policy_schedule_continuous_v2` (only a target still PENDING when the tombstone is
+recorded can be cancelled), rejects a backdated REVOKE at/before an already-effective target's
+start (GV011 `BACKDATED_REVOKE_WOULD_RESURRECT`), returns GV011 `EFFECTIVE_INSTANT_ALREADY_USED`
+instead of raw 23505, and drops the obsolete helper. `l14-authority-policy-no-resurrection.test.ts`
+proves cases A-F, F-2, zero residue, command reuse, recorded-cutoff knowledge, and a concurrent
+cancellation/cut-over race. The S1A.2 successor suite's helper-EXECUTE probe now targets `_v2`.

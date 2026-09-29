@@ -78,6 +78,18 @@ test("the additive S1A.2 migration: no S1A.1 edit, GV011 continuity, no silent i
   }
 });
 
+test("the additive S1A.2R1 corrective: recorded-time-aware continuity, closed F-2 error, obsolete helper dropped, no F2", () => {
+  const corrective = readFileSync(fileURLToPath(new URL("../../../supabase/migrations/20260929140000_m16_s1a2r1_l14_no_resurrection_v1.sql", import.meta.url)), "utf8");
+  const code = corrective.replace(/--.*$/gm, "");
+  for (const detail of ["BACKDATED_REVOKE_WOULD_RESURRECT", "EFFECTIVE_INSTANT_ALREADY_USED", "NO_EFFECTIVE_AUTHORITY_AT_CUTOVER"]) {
+    assert.ok(code.includes(`'${detail}'`), detail);
+  }
+  assert.ok(code.includes("DROP FUNCTION gov_repo.l14_authority_policy_schedule_continuous_v1("));
+  assert.ok(code.includes("v.effective_from > r.revoked_recorded_at"), "cancellation depends on the tombstone's recorded_at");
+  assert.equal((code.match(/CREATE OR REPLACE FUNCTION gov_repo\.l14_\w+_v1\(/g) ?? []).length, 1, "only the decide RPC body is replaced");
+  assert.ok(!/canonical_relationships|DO INSTEAD NOTHING/i.test(code));
+});
+
 test("content hash is deterministic, order-independent, UTF-8 byte ordered, and rejects duplicates/unknown values", () => {
   const rules = [rule(), rule({ permission: "L14_AUTHORITY_POLICY_ADMIT", requestedAction: "ADMIT" }),
     rule({ roleId: "44444444-4444-4444-8444-444444444444", permission: "L14_PARTY_VALIDATE", scopeTag: "CANONICAL_OBJECT",
