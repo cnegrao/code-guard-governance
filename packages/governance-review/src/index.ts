@@ -28,3 +28,4 @@ export * from "./canonical-endpoint-resolution";
 export * from './execution-context';
 export * from './runtime-observation.ts';
 export * from './cross-signal-comparison.ts';
+export * from './l14-authority-policy.ts';

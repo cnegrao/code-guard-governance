@@ -131,3 +131,63 @@ the locked `governance_users.password_changed_at`, otherwise `GV002` /
 in `transactional-eligibility.test.ts` cover exact/NULL/microsecond epochs, the reproduced
 backend-+5s stale-token scenario, both-conditions-required, concurrent rotation, and temp
 object shadowing. The other lock/ACL/isolation tests run unchanged against the new signature.
+
+## S1A.1 — L14 Authority Policy foundation + first-policy bootstrap
+
+Architecture: `docs/architecture/ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md`
+(§§4-7, 9, 16-17, 20-21) plus the S1A architecture-owner decisions U1-U9. Migration:
+`20260929120000_m16_s1a_l14_authority_policy_v1.sql`, applied by `helpers/m16-l14-fixtures.ts`
+after the full governance chain (including the broad `20260818013113` defaults) and every S0
+migration. Three files:
+
+- `l14-authority-policy-bootstrap.test.ts`: first ADMIT / proposal / first VALIDATE, durable
+  DENY + exact DENY replay (also after a later role grant), GV007/GV008/GV009/GV010 paths,
+  DB content hash and fingerprint parity with the TypeScript mirror, typed scope operands
+  (CANONICAL_OBJECT FK, read-only RELATIONSHIP_STATE triple lookup), support NONE/PRESENT,
+  authorization snapshot, lineage, self-validation, bootstrap-never-reopens, bitemporal
+  resolver coordinates, raising immutability (UPDATE/DELETE/TRUNCATE, even as owner).
+  The RELATIONSHIP_STATE fixture inserts one canonical_relationships row as the owner; the
+  S1A.1 migration and RPCs never write that table (F2 untouched).
+- `l14-authority-policy-concurrency.test.ts`: concurrent first ADMITs / same-command ADMITs /
+  first VALIDATEs, role/is_system_role/organisation/actor changes racing commitment in both
+  orders (observed via `pg_blocking_pids`), guard lock timeout `55P03`, no partial writes.
+- `l14-authority-policy-acl.test.ts`: real-catalog ACL checker over the whole L14 surface with
+  per-class negative controls (table DML, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN, column
+  grants, PUBLIC, sequences, routine EXECUTE, non-invoker and out-of-prefix writable views,
+  inherited role grant, default-privilege reintroduction); each control is also rejected by
+  a re-execution of the migration's own postflight. Direct app-role table access and the RPC
+  EXECUTE boundary are exercised; the S0 six-wrapper count is unchanged.
+
+## S1A.2 — L14 Authority Policy successor lifecycle
+
+Additive migration `20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql` (the audited
+S1A.1 migration is not edited), applied by `helpers/m16-l14-fixtures.ts` after S1A.1, so every
+S1A.1 suite now also runs as regression on the S1A.2 schema. `helpers/m16-l14-successor-fixtures.ts`
+bootstraps each organisation through the real RPCs.
+
+- `l14-authority-policy-successor.test.ts`: action-sensitive self-basis and NULL-basis constraint
+  probes, state uniqueness, successor ADMIT ALLOW and every DENY reason (NO_EFFECTIVE_AUTHORITY
+  with explicit NULL basis, NO_MATCHING, SOURCE including contradictory keys, SCOPE via the
+  evaluator), successor self-authorization, ALLOW and DENY replay after authority change, REVOKE
+  proposals, immediate / future / backdated VALIDATE with flags, strictly increasing instants,
+  self-validation, REJECT/DEFER/correction, pending-successor cancellation, GV011 continuity,
+  current-policy self-revocation at a successor cutover, no resurrection, bitemporal matrix,
+  authorization snapshots, and re-execution of the S1A.2 postflight.
+- `l14-authority-policy-successor-concurrency.test.ts`: concurrent successor ADMITs, terminal
+  decisions, VALIDATEs, future-successor vs revocation, role/credential/actor/organisation races,
+  policy-head change, guard lock timeout.
+
+The S1A.1 bootstrap suite's "bootstrap never reopens" test and one proposal assertion encoded the
+S1A.1-only "successor lifecycle not available" placeholder; they now assert the S1A.2 behaviour
+(local-policy basis, never bootstrap) instead.
+
+## S1A.2R1 — no-resurrection corrective (F-1 BLOCKER, F-2 LOW)
+
+Additive migration `20260929140000_m16_s1a2r1_l14_no_resurrection_v1.sql` (S1A.1 and S1A.2
+migrations untouched) replaces the S1A.2 continuity helper with the recorded-time-aware
+`l14_authority_policy_schedule_continuous_v2` (only a target still PENDING when the tombstone is
+recorded can be cancelled), rejects a backdated REVOKE at/before an already-effective target's
+start (GV011 `BACKDATED_REVOKE_WOULD_RESURRECT`), returns GV011 `EFFECTIVE_INSTANT_ALREADY_USED`
+instead of raw 23505, and drops the obsolete helper. `l14-authority-policy-no-resurrection.test.ts`
+proves cases A-F, F-2, zero residue, command reuse, recorded-cutoff knowledge, and a concurrent
+cancellation/cut-over race. The S1A.2 successor suite's helper-EXECUTE probe now targets `_v2`.
