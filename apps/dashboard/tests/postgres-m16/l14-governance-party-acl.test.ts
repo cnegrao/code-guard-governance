@@ -23,7 +23,7 @@ const PARTY_SIGNATURES = [
 ];
 
 /**
- * M16-S1B.1 real-catalog ACL checker at the S1B1 horizon: every gov_repo relation/routine named l14_*,
+ * M16-S1B.1 real-catalog ACL checker at the live S1B1R1 horizon: every gov_repo relation/routine named l14_*,
  * the Party directory/profile table, and any gov_repo view depending on either (the S1A / S1B.0 suites
  * keep asserting their own exact catalogs at their own horizons).
  */
@@ -59,7 +59,7 @@ v(line) as (
 select coalesce(string_agg(line, E'\\n' order by line), '') from v;`;
 
 test('M16 S1B.1 GovernanceParty ACL / privilege boundary (disposable PG17)', { timeout: 900_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1R1' });
   t.after(() => c.stop());
   const { owner, bootstrapSql, sql } = c;
   const k = await partyKit(c);

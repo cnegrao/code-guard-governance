@@ -273,3 +273,20 @@ original result instead of racing the unique command identity.
   exactly six service_role RPCs), per-class negative controls (incl. profile grants, profile view, profile
   RPC), each also rejected by a re-execution of the S1B.1 postflight; disabled guards, PII/JSON columns,
   profile references and a weakened mapping FK also fail the postflight.
+
+## S1B.1R1 — pending GovernanceParty validation cancellation (S1B1-F1)
+
+Additive migration `20260930140000_m16_s1b1r1_governance_party_pending_cancel_v1.sql` (S1B.1 migration not
+edited). A Party REVOKE is legal iff `revoke.effective_from >= target.effective_from`; only strictly-before
+fails (GV011 `REVOKE_BEFORE_TARGET_EFFECTIVE`). Both enforcement layers — the state guard trigger function and
+the decide RPC — are `CREATE OR REPLACE`d with identical signatures/ACLs and differ from S1B.1 only in that
+rule. Future vs past E is not special-cased: FUTURE_DATED / BACKDATED authorization already governs it.
+
+Horizons: `'S1B1'` ends at S1B.1 exactly (historical); `'S1B1R1'` adds the corrective and is the horizon of the
+four S1B.1 suites (their one equal-instant assertion now covers strictly-before only).
+`l14-governance-party-pending-cancel.test.ts` starts at `'S1B1'`, observes the old strict rule on real history,
+applies the corrective, and proves: additive surface (signatures, ACLs, other bodies, relations, both postflights),
+guard/RPC agreement (incl. a direct owner insert exercising the trigger alone), pending future cancellation at E
+with the full recorded-cutoff matrix, target byte-identity, head advance, replay, already-effective backdated
+equal-E REVOKE (allowed with `allow_backdating`, durable DENY without), equal-E re-validation with a unique
+resolver result, strictly-before GV011, and concurrent equal-E cancellations linearizing.

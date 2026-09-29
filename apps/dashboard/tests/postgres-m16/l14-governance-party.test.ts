@@ -12,7 +12,7 @@ import { partyKit } from '../helpers/m16-l14-party-fixtures';
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 test('M16 S1B.1 GovernanceParty registry lifecycle (disposable PG17)', { timeout: 1_800_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1R1' });
   t.after(() => c.stop());
   const { owner, exec, rejects } = c;
   const k = await partyKit(c);
@@ -481,21 +481,24 @@ test('M16 S1B.1 GovernanceParty registry lifecycle (disposable PG17)', { timeout
     assert.equal(await one(`select count(*) from gov_repo.l14_governance_parties where organisation_id='${ctx.org}' and admission_authorization_decision_id='${party.authorization_decision_id}'`), '1');
   });
 
-  await t.test('REVOKE must fall strictly inside the target validity (GV011); immediate REVOKE of a pending future state fails closed', async () => {
+  // S1B.1R1: a REVOKE at the target's own effective_from is legal (l14-governance-party-pending-cancel.test.ts);
+  // only a revocation strictly BEFORE it is rejected.
+  await t.test('REVOKE strictly before the target effective_from is GV011; immediate REVOKE of a pending future state fails closed', async () => {
     const x = await k.setup();
     const a = await k.validated(x, 'ri');
     const tV = await k.canonical(a.decided.effective_from);
-    for (const [name, at] of [['ri-at', tV], ['ri-before', await one(`select to_char(('${tV}'::timestamptz - interval '1 second') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`)]]) {
+    for (const [name, at] of [['ri-before-1us', await one(`select to_char(('${tV}'::timestamptz - interval '1 microsecond') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`)],
+      ['ri-before', await one(`select to_char(('${tV}'::timestamptz - interval '1 second') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`)]]) {
       const rp = k.revokeProposal(a.partyId, a.decided.registry_state_id, 'PERSON', at);
       const rs = await k.submit(x, x.member, `${name}-submit`, rp);
       await rejects(c.svc(k.decideSql(x.flex, { commandId: x.cmd(name), proposalId: rs.proposal_id, proposal: rp, outcome: 'REVOKE',
-        expected: a.decided.registry_state_id })), 'GV011', /REVOKE_NOT_AFTER_TARGET_EFFECTIVE/);
+        expected: a.decided.registry_state_id })), 'GV011', /REVOKE_BEFORE_TARGET_EFFECTIVE/);
     }
     const f = await k.validated(x, 'rf', 'PERSON', await k.instant('1 hour'), x.flex);
     const rp = k.revokeProposal(f.partyId, f.decided.registry_state_id);
     const rs = await k.submit(x, x.member, 'rf-revoke-submit', rp);
     await rejects(c.svc(k.decideSql(x.steward, { commandId: x.cmd('rf-now'), proposalId: rs.proposal_id, proposal: rp, outcome: 'REVOKE',
-      expected: f.decided.registry_state_id })), 'GV011', /REVOKE_NOT_AFTER_TARGET_EFFECTIVE/);
+      expected: f.decided.registry_state_id })), 'GV011', /REVOKE_BEFORE_TARGET_EFFECTIVE/);
     // Revocation needs the exact dating grant too (steward has none): future-dated inside the validity → DENY.
     const later = k.revokeProposal(f.partyId, f.decided.registry_state_id, 'PERSON', await k.instant('3 hours'));
     const ls = await k.submit(x, x.member, 'rf-later-submit', later);

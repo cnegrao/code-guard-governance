@@ -35,6 +35,9 @@ export const l14RegistryFrameworkMigration = '20260930120000_m16_s1b0_l14_regist
 // M16-S1B.1 chain step: additive GOVERNANCE_PARTY registry + PII boundary on top of S1B.0. Applied
 // only by the S1B1 migration horizon; the S1A and S1B0 horizons end before it.
 export const l14GovernancePartyMigration = '20260930130000_m16_s1b1_l14_governance_party_v1.sql';
+// M16-S1B.1R1 chain step: additive pending-cancellation corrective (REVOKE at >= the target's
+// effective_from). Applied only by the S1B1R1 horizon; the S1B1 horizon ends before it.
+export const l14GovernancePartyPendingCancelMigration = '20260930140000_m16_s1b1r1_governance_party_pending_cancel_v1.sql';
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
 // Applied chronologically AFTER the broad service_role default-grant migration, so tables and
@@ -60,7 +63,7 @@ export const m16Prerequisites = [
   '20260903200100_atomic_signup_legacy_rpc.sql',
 ];
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration].includes(name));
+  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration].includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 

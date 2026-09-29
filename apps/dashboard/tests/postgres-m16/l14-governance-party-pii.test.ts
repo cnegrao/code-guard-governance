@@ -15,7 +15,7 @@ const PII_NAME = /(^|_)(name|email|phone|profile|display|external|erasure)(_|$)/
 const ALLOWED_USER_FK_COLUMNS = ['actor_user_id', 'admitted_by_actor_user_id', 'submitted_by_actor_user_id'];
 
 test('M16 S1B.1 GovernanceParty PII boundary (disposable PG17)', { timeout: 1_200_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1R1' });
   t.after(() => c.stop());
   const { owner, exec, rejects } = c;
   const k = await partyKit(c);

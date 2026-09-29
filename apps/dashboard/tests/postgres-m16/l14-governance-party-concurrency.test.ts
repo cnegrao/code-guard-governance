@@ -11,7 +11,7 @@ import { partyKit } from '../helpers/m16-l14-party-fixtures';
  * separate monitor session, never by sleeping alone.
  */
 test('M16 S1B.1 GovernanceParty concurrency (disposable PG17)', { timeout: 1_200_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1B1R1' });
   t.after(() => c.stop());
   const k = await partyKit(c);
   const { owner, memberRole } = c;

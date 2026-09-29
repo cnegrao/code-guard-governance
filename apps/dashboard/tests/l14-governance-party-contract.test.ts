@@ -180,3 +180,25 @@ test("no HTTP route or UI consumes the Party adapter in S1B.1; no profile write 
   walk(`${root}app`); walk(`${root}lib`); walk(`${root}components`);
   assert.deepEqual(offenders, []);
 });
+
+test("the additive S1B.1R1 corrective: only the state guard and the decide RPC are replaced (same signatures); equality legal; no other surface", () => {
+  const r1 = readFileSync(fileURLToPath(new URL("../../../supabase/migrations/20260930140000_m16_s1b1r1_governance_party_pending_cancel_v1.sql", import.meta.url)), "utf8");
+  const r1Code = r1.replace(/--.*$/gm, "");
+  const r1NoStrings = r1Code.replace(/'[^']*'/g, "");
+  assert.equal((r1Code.match(/^BEGIN;$/gm) ?? []).length, 1);
+  assert.equal((r1Code.match(/^COMMIT;$/gm) ?? []).length, 1);
+  assert.deepEqual(r1Code.match(/CREATE (OR REPLACE )?FUNCTION gov_repo\.\w+/g),
+    ["CREATE OR REPLACE FUNCTION gov_repo.l14_governance_party_state_guard_v1", "CREATE OR REPLACE FUNCTION gov_repo.l14_decide_governance_party_proposal_v1"]);
+  assert.ok(!/\b(CREATE|ALTER|DROP) (TABLE|INDEX|TRIGGER|VIEW|SEQUENCE)\b/i.test(r1NoStrings), "no DDL beyond the two replaced routines");
+  assert.equal((r1NoStrings.match(/\bGRANT\b/g) ?? []).length, 1);
+  assert.ok(/GRANT EXECUTE ON FUNCTION\s+gov_repo\.l14_decide_governance_party_proposal_v1\(uuid, uuid, bigint, bigint, timestamptz, text, uuid, text, text, uuid, text, text\[\], text\)\s+TO service_role;/.test(r1Code));
+  assert.equal((r1Code.match(/SECURITY DEFINER/g) ?? []).length, 1, "only the (existing) decide RPC is a definer");
+  assert.ok(r1Code.includes("IF NEW.state_kind = 'REVOKED' AND v_envelope.effective_from < v_related_from THEN"));
+  assert.ok(r1Code.includes("IF p_outcome = 'REVOKE' AND v_effective_from < v_latest_from THEN"));
+  assert.equal((r1Code.match(/DETAIL = 'REVOKE_BEFORE_TARGET_EFFECTIVE'/g) ?? []).length, 2, "both layers raise the same closed detail");
+  assert.ok(!/DETAIL = 'REVOKE_NOT_AFTER_TARGET_EFFECTIVE'/.test(r1Code));
+  assert.ok(!/canonical_relationships|DO INSTEAD NOTHING|require_governed_write_eligibility_v1/i.test(r1Code));
+  assert.ok(!/(postgres(ql)?:\/\/|supabase\.co|api\.openai\.com)/i.test(r1));
+  // The audited S1B.1 migration still carries its original (historical) strict rule text.
+  assert.ok(code.includes("DETAIL = 'REVOKE_NOT_AFTER_TARGET_EFFECTIVE'"));
+});
