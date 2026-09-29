@@ -29,6 +29,9 @@ export const l14AuthorityPolicyMigration = '20260929120000_m16_s1a_l14_authority
 export const l14AuthorityPolicySuccessorMigration = '20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql';
 // M16-S1A.2R1 chain step: additive no-resurrection corrective (F-1/F-2) on top of the successor migration.
 export const l14NoResurrectionMigration = '20260929140000_m16_s1a2r1_l14_no_resurrection_v1.sql';
+// M16-S1B.0 chain step: additive governed-registry framework + typed target-scope evidence. Applied
+// only by the S1B migration horizon (m16-l14-fixtures.ts); the S1A horizon ends at S1A.2R1.
+export const l14RegistryFrameworkMigration = '20260930120000_m16_s1b0_l14_registry_framework_v1.sql';
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
 // Applied chronologically AFTER the broad service_role default-grant migration, so tables and
@@ -54,7 +57,7 @@ export const m16Prerequisites = [
   '20260903200100_atomic_signup_legacy_rpc.sql',
 ];
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration].includes(name));
+  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration].includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 

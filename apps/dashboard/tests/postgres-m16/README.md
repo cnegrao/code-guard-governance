@@ -191,3 +191,37 @@ start (GV011 `BACKDATED_REVOKE_WOULD_RESURRECT`), returns GV011 `EFFECTIVE_INSTA
 instead of raw 23505, and drops the obsolete helper. `l14-authority-policy-no-resurrection.test.ts`
 proves cases A-F, F-2, zero residue, command reuse, recorded-cutoff knowledge, and a concurrent
 cancellation/cut-over race. The S1A.2 successor suite's helper-EXECUTE probe now targets `_v2`.
+
+## S1B.0 — governed-registry framework + typed target-scope evidence
+
+Additive migration `20260930120000_m16_s1b0_l14_registry_framework_v1.sql` (no S0/S1A migration
+edited; the three public Authority Policy RPC bodies, the rule parser and the evaluator are
+byte-identical). FRAMEWORK ONLY: no registry subject is executable and no public RPC is added.
+
+**Migration horizons.** `l14Cluster(diagnostic, { horizon })` in `helpers/m16-l14-fixtures.ts`:
+`'S1A'` (default) ends at S1A.2R1 exactly, so every S1A suite keeps asserting the exact S1A catalog
+(13 relations, its own postflight) unchanged; `'S1B0'` additionally applies S1B.0. A suite may also
+start at `'S1A'` and apply S1B.0 itself (`l14-registry-framework.test.ts` does, to prove
+compatibility on real S1A history).
+
+- `l14-registry-framework.test.ts`: real S1A history (bootstrap, successor, durable DENY, DEFER/REJECT,
+  PRESENT support) written through the RPCs, THEN the migration: historical rows unchanged, every new
+  constraint VALID (except the deliberately NOT VALID D-14 CHECK), historical DENY replays its original
+  result, AP RPC/parser/evaluator bodies unchanged, successor lifecycle still works; D-14 (32 rejected
+  registry x non-ALL combinations, authorized = GV010 + nothing written, unauthorized = durable DENY +
+  no rule, owner stopped by the insertion guard and the CHECK backstop, fact permissions keep all five
+  scopes); typed request-target shapes (CANONICAL_KIND / RELATIONSHIP_TYPE rejected, cross-tenant
+  object rejected, no relationship-state FK/uniqueness); F-4 audit shapes; exact operand snapshot;
+  registry governance-decision matrix; the registry-state envelope (generic kind / lineage /
+  revocation / decision / basis shapes, generated derived columns, no JSON); immutability; command
+  result and support-link widening; replay-first syntactic support canonicalization; F2 untouched.
+- `l14-registry-framework-guards.test.ts`: SHARED Authority Policy guard on the SAME advisory key as the
+  S1A exclusive guard (both directions, including the REAL unchanged ADMIT RPC), registry subject
+  guard serialization and framing, fail-closed keys, owner-only EXECUTE.
+- `l14-registry-framework-acl.test.ts`: S1B-horizon real-catalog checker (14 relations, exactly the
+  three S1A service_role RPCs), per-class negative controls on S1B objects, each also rejected by a
+  re-execution of the S1B.0 postflight; disabled guards / JSON column also fail the postflight.
+
+D-14 is enforced at rule INSERTION (BEFORE INSERT guard + NOT VALID CHECK), not in the parser: the
+unchanged AP ADMIT RPC parses before replay arbitration, so a parser-level check would make a
+historical ADMIT (legal under S1A) fail GV010 on replay instead of returning its original result.
