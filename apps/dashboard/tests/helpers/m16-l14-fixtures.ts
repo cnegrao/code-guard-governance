@@ -8,7 +8,7 @@ import {
 import {
   contractRawRpcRevocationMigration, credentialMigration, disposableM16Postgres, eligibilityMigration, epochBindingMigration,
   governedWriteWrapperMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, objectMaterializationCompatMigration,
-  l14RegistryFrameworkMigration,
+  l14RegistryFrameworkMigration, l14GovernancePartyMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -46,10 +46,11 @@ const uuidOrNull = (value: string | null) => (value === null ? 'null::uuid' : `'
 
 /**
  * Migration horizon of the disposable L14 cluster. 'S1A' (the default) ends at S1A.2R1 exactly, so
- * the audited S1A suites keep asserting the exact S1A catalog; 'S1B0' additionally applies the
- * S1B.0 registry framework. A suite may also start at 'S1A' and apply later migrations itself.
+ * the audited S1A suites keep asserting the exact S1A catalog; 'S1B0' ends at the S1B.0 registry
+ * framework exactly (its suites keep their exact S1B.0 assertions); 'S1B1' additionally applies the
+ * S1B.1 GOVERNANCE_PARTY registry. A suite may also start earlier and apply later migrations itself.
  */
-export type L14Horizon = 'S1A' | 'S1B0';
+export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1';
 export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
   S1A: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
     governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
@@ -57,6 +58,10 @@ export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
   S1B0: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
     governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
     l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration],
+  S1B1: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
+    governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
+    l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration,
+    l14GovernancePartyMigration],
 };
 
 export async function l14Cluster(diagnostic: (message: string) => void, options: { readonly horizon?: L14Horizon } = {}) {

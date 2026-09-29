@@ -225,3 +225,51 @@ compatibility on real S1A history).
 D-14 is enforced at rule INSERTION (BEFORE INSERT guard + NOT VALID CHECK), not in the parser: the
 unchanged AP ADMIT RPC parses before replay arbitration, so a parser-level check would make a
 historical ADMIT (legal under S1A) fail GV010 on replay instead of returning its original result.
+
+## S1B.1 — GOVERNANCE_PARTY registry + PII boundary
+
+Additive migration `20260930130000_m16_s1b1_l14_governance_party_v1.sql` (no S0 / S1A / S1B.0 migration
+edited; no Authority Policy RPC, parser, evaluator or S1B.0 helper replaced). Horizons: `'S1A'` and
+`'S1B0'` are unchanged (their suites keep their exact historical catalog assertions); `'S1B1'` adds the
+Party migration. `helpers/m16-l14-party-fixtures.ts` bootstraps each organisation's Authority Policy
+through the real AP RPCs (registrar = `L14_PARTY_ADMIT`, steward = `L14_PARTY_VALIDATE` without flags,
+flex steward = self-validation + future/back dating, contributor = a CONTRIBUTING ADMIT rule) and drives
+every Party command through the three real Party RPCs as service_role.
+
+Identity: `organisation_id + governance_party_id`, the id minted by PostgreSQL (`DEFAULT gen_random_uuid()`),
+never an RPC input, never derived from user / email / name / external identity / profile. ADMIT pins the
+exact ALLOW / GOVERNANCE_PARTY / ADMIT authorization and creates the identity, ADMISSION support links and a
+technical head with no state — never a governance decision or a VALIDATED state. A durable DENY mints nothing.
+State detail over `l14_registry_states` is linear, same-Party and alternating (VALIDATED → REVOKED →
+VALIDATED …), so an overlapping second VALIDATED state is structurally impossible; a REVOKE falls strictly
+inside the target's validity and a re-validation begins at or after the tombstone (GV011 otherwise).
+`gov_repo.governance_party_directory_profiles` is the mutable, NON-authoritative, deliberately non-`l14`
+profile table — the only place Party PII can live — with no application privilege and no RPC.
+
+All three Party RPCs are replay-first: base session → syntactic shape → syntactic support → DB fingerprint →
+AP guard SHARED → registry subject guard (existing Party) → per-command guard → replay arbitration →
+tenant/reference/support resolution → current effective Authority Policy (exact hash) → rule evaluation →
+mutation → base-eligibility recheck. The per-command guard makes a concurrent duplicate command replay its
+original result instead of racing the unique command identity.
+
+- `l14-governance-party.test.ts`: ADMIT ALLOW (DB-minted v4 id, admission/authorization/snapshot evidence,
+  head without state), no caller id (catalog default + 42883), durable DENY variants incl. NO_EFFECTIVE_AUTHORITY
+  for a system admin, ALLOW/DENY replay after role and AP change, GV007/GV008, shape/eligibility failures
+  unconsumed, replay-first support ordering (vanished and foreign-tenant evidence), D-14 ordering, proposals,
+  VALIDATE lineage, no overlapping VALIDATED, decision DENY variants, REJECT/DEFER/correction, self-validation,
+  temporal dating, REVOKE + target immutability + double revoke, re-validation (exact instant, overlap GV011),
+  REVOKE interval rules, head CAS + head guard, bitemporal resolver matrix (recorded cutoff, backdated
+  revocation, no fallback, ambiguity fails closed), structural detail guard.
+- `l14-governance-party-pii.test.ts`: catalog proof that no L14 structure can represent PII (column names,
+  exact Party column sets, closed-vocabulary text only, no profile FK, only actor user FKs), no PII RPC
+  argument (42883) or result field, profile correction/pseudonymisation/erasure leave every L14 row
+  byte-identical, profile values never appear in L14 rows/fingerprints/replays, user deletion nulls only the
+  mapping, PERSON-only unique same-tenant mapping, erasure shapes, fixed binding, no app access / no profile RPC.
+- `l14-governance-party-concurrency.test.ts`: same-command ADMIT (one id), different commands in parallel,
+  different Parties in parallel, terminal-decision race, expected-none VALIDATE race, REVOKE vs VALIDATE /
+  re-VALIDATE / REVOKE races, role / credential / actor / organisation races, in-flight VALIDATE holding
+  roles, AP change races in both directions (shared vs exclusive guard), subject / command / AP guard 55P03.
+- `l14-governance-party-acl.test.ts`: S1B1-horizon real-catalog checker (18 l14 tables + the profile table,
+  exactly six service_role RPCs), per-class negative controls (incl. profile grants, profile view, profile
+  RPC), each also rejected by a re-execution of the S1B.1 postflight; disabled guards, PII/JSON columns,
+  profile references and a weakened mapping FK also fail the postflight.
