@@ -38,6 +38,9 @@ export const l14GovernancePartyMigration = '20260930130000_m16_s1b1_l14_governan
 // M16-S1B.1R1 chain step: additive pending-cancellation corrective (REVOKE at >= the target's
 // effective_from). Applied only by the S1B1R1 horizon; the S1B1 horizon ends before it.
 export const l14GovernancePartyPendingCancelMigration = '20260930140000_m16_s1b1r1_governance_party_pending_cancel_v1.sql';
+// M16-S1B.2 chain step: additive hardening of the REUSED policy stores (governance_policies /
+// policy_versions). Applied only by the S1B2 horizon, which also needs policyStorePrerequisites.
+export const l14PolicyStoreHardeningMigration = '20260930150000_m16_s1b2_policy_store_hardening_v1.sql';
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
 // Applied chronologically AFTER the broad service_role default-grant migration, so tables and
@@ -62,14 +65,46 @@ export const m16Prerequisites = [
   '20260903200000_canonical_email_identity.sql',
   '20260903200100_atomic_signup_legacy_rpc.sql',
 ];
+/**
+ * Existing (never edited, never copied) migrations that create and shape the reused policy stores.
+ * Merged chronologically into m16Prerequisites only when DisposableM16Options.policyStorePrerequisites
+ * is set (the S1B2 horizon), so every historical horizon keeps its exact chain:
+ * - 003755 part_1 creates gov_repo.governance_policies and gov_repo.policy_versions (the historical
+ *   ON DELETE CASCADE version FK, the USING(true)/org-scoped RLS policies, the updated_at trigger) and
+ *   gov_repo.mandates, which part_2's policy_mandate_mappings references.
+ * - 003822 part_2 completes the same unit: policy_versions indexes/RLS policies, the legacy
+ *   governance_policies.current_version_id -> policy_versions FK, and policy_mandate_mappings.
+ * - 003836 part_3 is the tail of the same split migration (the gov_repo.evidence indexes/RLS and
+ *   evidence_files); no deployed database holds parts 1-2 without it.
+ * All three precede 20260818013113, so its hostile blanket GRANT ALL lands on them exactly as in production.
+ * - 134812 (after 013113) adds governance_policies_organisation_policy_unique (organisation_id, policy_id),
+ *   the parent key the S1B.2 tenant-safe version FK must reuse, and the invoker mapping triggers that
+ *   read governance_policies.
+ */
+export const policyStorePrerequisites = [
+  '20260818003755_gov_repo_policies_risks_evidence_part_1.sql',
+  '20260818003822_gov_repo_policies_risks_evidence_part_2.sql',
+  '20260818003836_gov_repo_policies_risks_evidence_part_3.sql',
+  '20260901134812_policy_mandate_mapping_tenant_isolation.sql',
+];
+export function m16PrerequisiteChain(policyStore = false): readonly string[] {
+  if (!policyStore) return m16Prerequisites;
+  // Timestamped names sort chronologically: the three parts land before the broad-grant migration.
+  const chain = [...m16Prerequisites, ...policyStorePrerequisites].sort();
+  assert.ok(chain.indexOf('20260818013113_grant_service_role_gov_repo_access.sql') > chain.indexOf(policyStorePrerequisites[2])
+    && chain.indexOf('20260818013113_grant_service_role_gov_repo_access.sql') < chain.indexOf(policyStorePrerequisites[3]));
+  return chain;
+}
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration].includes(name));
+  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration].includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 
 export interface DisposableM16Options {
   /** Apply the real governance persistence chain (S0.3.3B). Off keeps the S0.3.1/S0.3.2 profiles unchanged. */
   readonly governanceWriteChain?: boolean;
+  /** Merge policyStorePrerequisites into the prerequisite chain (S1B2 horizon only). Off keeps every older profile unchanged. */
+  readonly policyStorePrerequisites?: boolean;
 }
 
 export async function disposableM16Postgres(diagnostic: (message: string) => void, options: DisposableM16Options = {}) {
@@ -210,7 +245,7 @@ export async function disposableM16Postgres(diagnostic: (message: string) => voi
         create extension pgcrypto with schema extensions;
         grant usage on schema extensions to postgres, service_role, anon, authenticated;`);
     }
-    for (const migration of m16Prerequisites) await migrate(migration);
+    for (const migration of m16PrerequisiteChain(options.policyStorePrerequisites)) await migrate(migration);
     if (options.governanceWriteChain) for (const migration of governanceWriteChain) await migrate(migration);
     return { sql, bootstrapSql, migrate, session, stop };
   } catch (error) {

@@ -290,3 +290,37 @@ guard/RPC agreement (incl. a direct owner insert exercising the trigger alone), 
 with the full recorded-cutoff matrix, target byte-identity, head advance, replay, already-effective backdated
 equal-E REVOKE (allowed with `allow_backdating`, durable DENY without), equal-E re-validation with a unique
 resolver result, strictly-before GV011, and concurrent equal-E cancellations linearizing.
+
+## S1B.2 — reused policy-store hardening (hardening only)
+
+Additive migration `20260930150000_m16_s1b2_policy_store_hardening_v1.sql` (no historical migration edited; no L14
+object, no Policy lifecycle, no RPC, no application-callable routine, no TS surface). It hardens the REUSED
+`gov_repo.governance_policies` / `gov_repo.policy_versions` in place for S1B.3 (admission) and S1B.4 (validation).
+
+**Harness.** `policyStorePrerequisites` (helpers/disposable-m16-postgres.ts) are the existing, never-edited
+`20260818003755/003822/003836` (policies/risks/evidence parts 1-3: they create both stores, the historical CASCADE FK,
+the legacy RLS policies and `current_version_id` FK) and `20260901134812` (the reused parent key
+`governance_policies (organisation_id, policy_id)` and the invoker mapping triggers). They are merged
+chronologically, so parts 1-3 land BEFORE the hostile `20260818013113` blanket grant exactly as in production.
+Horizon `'S1B2'` = S1B1R1 + those prerequisites + S1B.2. `l14Cluster(..., { horizon: 'S1B1R1', policyStore: true })`
+gives the pre-S1B.2 state with the prerequisites (to seed legacy rows). `'S1A'`..`'S1B1R1'` are unchanged.
+
+- Tenancy: `policy_versions.organisation_id` backfilled only from the exact parent, proven, NOT NULL; the CASCADE
+  FK is replaced by `(organisation_id, policy_id) -> governance_policies ON UPDATE/DELETE RESTRICT`; tenant keys
+  `(organisation_id, policy_id, version_id)` and `(..., content_hash)`.
+- D-3: `content_hash = encode(sha256(convert_to(content_markdown,'UTF8')),'hex')`, no normalization; BEFORE INSERT
+  guard authors an omitted hash and rejects any differing caller hash (23514); NOT VALID CHECK backstop; legacy
+  hashes are not rewritten.
+- D-5: every `policy_versions` row is entirely immutable (UPDATE/DELETE/TRUNCATE raise 55000, ENABLE ALWAYS);
+  `governance_policies` identity/provenance immutable, DELETE/TRUNCATE raise. Legacy descriptive fields stay mutable
+  legacy data with no M16 authority; `owner_user_id` (D-4) and `current_version_id` (legacy/inert) untouched.
+- D-13: zero privilege (incl. SELECT) for PUBLIC/anon/authenticated/service_role; legacy RLS policies dropped;
+  views and SECURITY DEFINER routines reaching the stores lose every application-role privilege.
+
+Suites: `l14-policy-store-hardening.test.ts` (legacy rows + hostile grants + bridge view + definer score routine,
+atomic abort on an orphan version, backfill/byte-identity, no promotion, tenancy, delete semantics, hash matrix vs
+Node mirror and pgcrypto, full-column immutability, identity/provenance, D-4/current_version_id, D-13 closure);
+`l14-policy-store-acl.test.ts` (S1B2 horizon with a live Party flow: independent checker + per-class negative
+controls, each also rejected by the S1B.2 postflight; S1B.1/S1B.1R1 postflights still re-execute; exactly six RPCs).
+Consequence recorded: the 20260901134812 invoker mapping trigger reads `governance_policies`, so service_role can no
+longer write `policy_mandate_mappings` directly either.
