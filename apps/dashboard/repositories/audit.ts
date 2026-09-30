@@ -116,7 +116,8 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
         .eq("organisation_id", orgId)
         .gte("event_timestamp", new Date(Date.now() - 30 * 86400000).toISOString()),
 
-      db.read
+      // governance_ledger is not readable by the anon role: tenant-bound read through the service client.
+      db.write
         .from("governance_ledger")
         .select("event_type")
         .eq("organisation_id", orgId),

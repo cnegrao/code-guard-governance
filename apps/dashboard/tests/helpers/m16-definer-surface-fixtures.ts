@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   definerCapabilitySurfaceMigration, disposableM16Postgres, l14PolicyStoreHardeningMigration, migrationSource,
-  runtimeExecutionClosureMigration,
+  runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
 } from './disposable-m16-postgres';
 import { hex32, jsonLit, lit } from './m16-governed-write-fixtures';
 
@@ -39,6 +39,7 @@ const blockOf = (name: string, tag: string) => {
 };
 export const r1Postflight = () => blockOf(definerCapabilitySurfaceMigration, 'M16_S1B2R1_POSTFLIGHT');
 export const r2Postflight = () => blockOf(runtimeExecutionClosureMigration, 'M16_S1B2R2_POSTFLIGHT');
+export const r3Postflight = () => blockOf(s0ExecutionContextClosureMigration, 'M16_S1B2R3_POSTFLIGHT');
 /** The four runtime definers whose config S1B.2R2 moves from `pg_catalog` to `pg_catalog, pg_temp`. */
 export const RUNTIME_DEFINERS = [
   'gov_repo.record_execution_snapshot(uuid,jsonb,text)', 'gov_repo.admit_runtime_observation(uuid,text,gov_repo.runtime_observations)',
@@ -85,12 +86,16 @@ export interface InventoryRow {
   service_role: boolean; owner_store: boolean; config: string; sha256: string;
 }
 
-/** Full primary chain + S1B.2R1 (default) and, with `r2`, the S1B.2R2 runtime execution closure on top. */
-export async function fullChainCluster(diagnostic: (message: string) => void, options: { readonly r1?: boolean; readonly r2?: boolean } = {}) {
+/**
+ * Full primary chain + S1B.2R1 (default); with `r2`, the S1B.2R2 runtime execution closure on top; with `r3` (implies
+ * `r2`), the S1B.2R3 S0 execution-context closure on top of that.
+ */
+export async function fullChainCluster(diagnostic: (message: string) => void, options: { readonly r1?: boolean; readonly r2?: boolean; readonly r3?: boolean } = {}) {
   const pg = await disposableM16Postgres(diagnostic, { fullPrimaryChain: true });
   try {
     if (options.r1 ?? true) await pg.migrate(definerCapabilitySurfaceMigration);
-    if (options.r2) await pg.migrate(runtimeExecutionClosureMigration);
+    if (options.r2 || options.r3) await pg.migrate(runtimeExecutionClosureMigration);
+    if (options.r3) await pg.migrate(s0ExecutionContextClosureMigration);
   } catch (error) { pg.stop(); throw error; }
   const owner = (query: string) => pg.sql(query, 'postgres');
   const svc = (query: string) => pg.sql(query, 'service_role');

@@ -394,3 +394,34 @@ reviewer's persisted forgery, and the routine-only pin still leaking via `frame_
 postflights; R2 negative controls; AFTER under a full type-shadow prelude: snapshot persist/replay/stale head,
 observation replay + tenant-exact read, cross-signal record/replay/cross-tenant errors identical to R1, the reviewer's
 call forging nothing, canonical_relationships unchanged). `l14-definer-surface-functional.test.ts` runs on R1 and R1+R2.
+
+## S1B.2R3 — S0 governed-wrapper execution-context closure (full primary chain)
+
+Additive migration `20260930180000_m16_s1b2r3_s0_execution_context_closure_v1.sql`; only `proconfig` changes (no body,
+signature, owner, ACL or return-shape change; the frozen S0 wrappers are untouched; the application surface stays 22).
+
+**Root cause (I6).** The six frozen S0 `*_governed_v1` wrappers (and their guard / eligibility helper) pin
+`search_path = pg_catalog, pg_temp`, but ten inner routines they execute pin a path WITHOUT `pg_temp`
+(`gov_repo, pg_catalog` or `pg_catalog`). While one of them runs, PostgreSQL searches the caller's temporary schema FIRST
+for relations and types, so the same call resolves `text` / `jsonb` differently in the wrapper frame and the inner frame:
+a caller `pg_temp` domain CHECK runs as `postgres` inside every wrapper (a CREATEROLE-only action persisted through
+`apply_review_transition_governed_v1`), and an inert shadow alone breaks five wrappers with 42804.
+
+**Correction.** The measured closure's still-affected routines keep their existing path with `pg_temp` named LAST:
+`apply_review_transition`, `record_authorized_reconciliation`, `guard_final_review_decision` (trigger),
+`materialize_object_reconciliation`, `legacy_canonical_object_for_candidate`, `materialize_relationship_reconciliation`,
+`resolve_canonical_endpoint`, `record_technical_field_decision`, `record_execution_field_decision`, `technical_field_valid`
+(CHECK). Already correct: the eight frozen S0 definers, the R2 shared helpers (`frame_identity`,
+`normalized_object_identity`, `execution_field_valid`, `execution_immutable`); `set_updated_at` inherits its caller's
+path. Postflight: exact closure (owner, definer flag, body hash, config), a generic catalog rule (call graph from the six
+wrappers + trigger/CHECK functions of every table the closure writes must pin `pg_temp` last or inherit), wrapper
+service_role-only EXECUTE, guard owner-only, surface = 22.
+
+`fullChainCluster(..., { r3: true })` applies R2 then R3 after R1.
+
+Suites: `l14-s0-execution-context-closure.test.ts` (control on the R2 catalog; BEFORE: shadow executes as postgres in all
+six wrappers, 42804 inconsistency, persisted CREATEROLE escalation; R3 application; R3/R2/R1/S1B.2 postflights; proconfig-only
+catalog diff; negative controls; AFTER under a full type-shadow prelude: write/replay/deterministic ids identical to the
+control, GV006 with no partial writes, no escalation, canonical materialization identical). `audit-integrity-read-path.test.ts`
+(the real `getIntegrity()` with `db.read`/`db.write` bound to their database roles `anon`/`service_role`: anon is denied
+`governance_ledger`; events_by_type is aggregated from actual tenant rows; empty ledger; tampered chain -> false).
