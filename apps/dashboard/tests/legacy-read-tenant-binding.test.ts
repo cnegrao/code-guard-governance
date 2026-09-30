@@ -111,7 +111,7 @@ test('audit integrity reads hash_chain_valid from the ledger_verify row set and 
   assert.equal((await integrity([])).hash_chain_valid, false, 'no verification row fails closed');
 });
 
-test('audit integrity: an empty tenant ledger yields no event types and a valid empty chain; a failed read yields none', async () => {
+test('audit integrity: an empty tenant yields no event types and a valid chain; a failed read rejects', async () => {
   reset();
   rpcResult = call => (call.name === 'ledger_verify' ? { data: [{ is_valid: true, entries_checked: 0, first_break_at: null, break_reason: null }], error: null } : { data: [], error: null });
   fromResult = () => ({ data: [], count: 0, error: null });
@@ -120,7 +120,7 @@ test('audit integrity: an empty tenant ledger yields no event types and a valid 
   assert.equal(empty.hash_chain_valid, true);
   reset();
   fromResult = () => ({ data: null, count: null, error: { message: 'permission denied for table governance_ledger' } });
-  assert.deepEqual((await audit.getIntegrity(ORG)).events_by_type, []);
+  await assert.rejects(audit.getIntegrity(ORG), /permission denied for table governance_ledger/);
 });
 
 const source = (path: string) => readFileSync(fileURLToPath(new URL(`../${path}`, import.meta.url)), 'utf8');

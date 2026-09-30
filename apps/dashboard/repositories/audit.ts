@@ -45,7 +45,8 @@ export async function getEvents(
   const limit = filters?.limit ?? 50;
   const offset = (page - 1) * limit;
 
-  let query = db.read
+  // The anon client cannot read the canonical ledger; bind the tenant on the service client.
+  let query = db.write
     .from("governance_ledger")
     .select("*", { count: "exact", head: false })
     .eq("organisation_id", orgId);
@@ -71,9 +72,11 @@ export async function getEvents(
     query = query.lte("event_timestamp", filters.dateTo);
   }
 
-  const { data, count } = await query
+  const { data, count, error } = await query
     .order("entry_sequence", { ascending: false })
     .range(offset, offset + limit - 1);
+
+  if (error) throw new Error(error.message);
 
   return {
     events: (data as LedgerEntry[]) ?? [],
@@ -85,32 +88,34 @@ export async function getEventById(
   orgId: string,
   entrySequence: number
 ): Promise<LedgerEntry | null> {
-  const { data } = await db.read
+  const { data, error } = await db.write
     .from("governance_ledger")
     .select("*")
     .eq("organisation_id", orgId)
     .eq("entry_sequence", entrySequence)
-    .single();
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
 
   return (data as LedgerEntry) ?? null;
 }
 
 export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
-  const [{ count: total }, { data: latest }, { count: last30Days }, { data: byType }, { data: verifyRows }] =
+  const results =
     await Promise.all([
-      db.read
+      db.write
         .from("governance_ledger")
         .select("*", { count: "exact", head: true })
         .eq("organisation_id", orgId),
 
-      db.read
+      db.write
         .from("governance_ledger")
         .select("entry_sequence")
         .eq("organisation_id", orgId)
         .order("entry_sequence", { ascending: false })
         .limit(1),
 
-      db.read
+      db.write
         .from("governance_ledger")
         .select("*", { count: "exact", head: true })
         .eq("organisation_id", orgId)
@@ -127,6 +132,12 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
         p_to_sequence: null,
       }),
     ]);
+
+  // Missing rows are valid empty results; a failed query must not become a false metric.
+  for (const result of results) {
+    if (result.error) throw new Error(result.error.message);
+  }
+  const [{ count: total }, { data: latest }, { count: last30Days }, { data: byType }, { data: verifyRows }] = results;
 
   const latestSeq = (latest as Array<{ entry_sequence: number }>)?.[0]?.entry_sequence ?? 0;
 

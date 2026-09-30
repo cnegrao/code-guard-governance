@@ -425,3 +425,23 @@ catalog diff; negative controls; AFTER under a full type-shadow prelude: write/r
 control, GV006 with no partial writes, no escalation, canonical materialization identical). `audit-integrity-read-path.test.ts`
 (the real `getIntegrity()` with `db.read`/`db.write` bound to their database roles `anon`/`service_role`: anon is denied
 `governance_ledger`; events_by_type is aggregated from actual tenant rows; empty ledger; tampered chain -> false).
+
+## S1B.2R4 — audit repository canonical reads
+
+Repository-only correction; no migration or routine configuration change. All six direct `governance_ledger`
+reads now use the existing service client with `organisation_id` bound: `getEvents`, `getEventById`, and the
+four `getIntegrity` queries (total, latest sequence, last 30 days, event types). R3 had corrected only event types;
+the other five reads were denied to `db.read`/`anon` and silently became zero, empty, or null results.
+
+`audit-repository-read-closure.test.ts` runs the actual repository on the full primary chain + R1/R2/R3 through
+a test transport executing SQL as each client's database role. It proves all integrity metrics, empty tenants,
+foreign-row exclusion, default and explicit pagination, exact totals, descending sequence order, every filter,
+combined filters, and existing/missing/foreign lookup. Each integrity component is independently failed through
+a real database permission denial. Invalid UUID queries prove list/lookup errors reject instead of returning
+plausible empty data. `maybeSingle()` preserves null for a successful lookup with no matching row.
+
+The legacy test that accepted permission errors as empty event types is corrected: no-data remains valid, while
+query failure rejects using the existing repository `Error(error.message)` convention. Public TypeScript shapes
+and successful empty-result semantics are unchanged. `ledger_verify(1, null)` remains GLOBAL, as in R3: even an
+empty tenant sees false when another tenant's row breaks the shared chain. The top-ten aggregation and closed
+application routine surface of 22 remain intact.
