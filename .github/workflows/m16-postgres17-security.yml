@@ -26,7 +26,7 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
-          sudo apt-get install -y postgresql-17
+          sudo apt-get install -y postgresql-17 postgresql-17-pgvector
       # Fails the job outright if PG17 did not actually get installed, rather
       # than letting a later step silently resolve some other PostgreSQL
       # version from PATH. M16_PG17_BIN is the harness's own explicit

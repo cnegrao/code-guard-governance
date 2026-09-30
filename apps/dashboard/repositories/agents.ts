@@ -44,7 +44,7 @@ export async function getAgentWithOwner(
   orgId: string,
   agentId: string
 ): Promise<Record<string, unknown> | null> {
-  const { data } = await db.read.rpc("agent_compliance_gaps", {
+  const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
   });
   const gaps = (data as Array<Record<string, unknown>>) ?? [];

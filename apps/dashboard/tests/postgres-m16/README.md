@@ -324,3 +324,44 @@ Node mirror and pgcrypto, full-column immutability, identity/provenance, D-4/cur
 controls, each also rejected by the S1B.2 postflight; S1B.1/S1B.1R1 postflights still re-execute; exactly six RPCs).
 Consequence recorded: the 20260901134812 invoker mapping trigger reads `governance_policies`, so service_role can no
 longer write `policy_mandate_mappings` directly either.
+
+## S1B.2R1 — capability-based definer surface closure (full primary chain)
+
+Additive migration `20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql` (no historical migration edited, no
+routine body changed). `supabase/migrations` is the ONLY canonical Governance Core migration authority; the noncanonical
+roots are hash-pinned and classified in `docs/architecture/m16-noncanonical-migration-roots.manifest.json`
+(`tests/noncanonical-migration-roots-contract.test.ts`).
+
+**Harness.** `disposableM16Postgres(..., { fullPrimaryChain: true })` applies EVERY canonical migration in timestamp
+order (the S1B.2R1 target; the historical horizons are unchanged). `postgres` now mirrors the architecture-owner
+READ-ONLY measurement of hosted Supabase (NOSUPERUSER, CREATEROLE, CREATEDB, BYPASSRLS); CREATEROLE is what lets R1
+create its NOLOGIN technical owners, and R1 grants itself SET on them only for the ownership transfer. pgvector: CI
+installs `postgresql-17-pgvector`; where it is not installed the harness registers a labelled text-backed stand-in type
+and asserts that the single HNSW index statement of `20260818004053` is the only failing statement.
+
+**Authority boundary = effective capability, not source text.**
+- Control A (closed surface): every SECURITY DEFINER routine executable by PUBLIC/anon/authenticated/service_role
+  (effective privilege, incl. inherited roles and defaults; extension-member routines excluded) must be one of exactly
+  22 identities with exact owner class, body hash, config and service_role-only EXECUTE; no overload.
+- Control B (least-privilege owner): only the frozen 12 (six S0 `*_governed_v1` + six L14 RPCs, postgres-owned) may run
+  as an owner with any policy-store capability. The other 10 run as NOLOGIN/NOBYPASSRLS/NOINHERIT owners with exact
+  column/table/sequence grants and role-specific RLS policies (checked as an exact map):
+  `govia_ledger_executor` (ledger_append, ledger_verify; search_path pinned to pgcrypto's catalog schema),
+  `govia_runtime_executor` (record_execution_snapshot, admit_runtime_observation, read_runtime_observation_exact,
+  record_cross_signal_comparison_result; canonical_relationships SELECT only), `govia_legacy_read_executor`
+  (agent_compliance_gaps, agent_graph_traverse, agent_semantic_search), `govia_legacy_graph_executor`
+  (recompute_risk_propagation; may execute exactly agent_graph_traverse).
+- Forbidden / quarantined: `gov_exec` / `gov_exec_dml` (any overload) lose application EXECUTE; the five consumer-less
+  legacy definers and the GraphOS trigger functions lose application EXECUTE; the setup-8.2 `ledger_append(text,...)`
+  overload is dropped (no CASCADE); M008E objects -> `NONCANONICAL_GOVERNANCE_ROOT_CONFLICT`; `coding_memory_search`
+  -> `NONCANONICAL_TARGET_DRIFT` (S1B2-I4); extension credit definers fail the closed surface (S1B2-I5).
+- Default privileges: postgres-created routines default to neither PUBLIC (global) nor service_role (gov_repo).
+
+Suites (full chain): `l14-definer-surface-preflight.test.ts` (pre-R1 measured inventory, tracked GraphOS bridge
+replicas proving the gov_exec bypass, every fail-closed preflight control, real application, gov_exec/GraphOS trigger
+closure, default privileges); `l14-definer-surface-postflight.test.ts` (baseline 22, technical-owner shape, and every
+negative control re-executing the R1 postflight: dynamic SQL and helper chains that the S1B.2 detector misses, default
+grants, inherited roles, public-schema executors, 23rd definer, wrong owner, frozen body/config/overload, application
+EXECUTE, owner policy SELECT/DML/REFERENCES/BYPASSRLS/membership/escalation/extra grant/CREATE/extra policy, noncanonical
+drift); `l14-definer-surface-functional.test.ts` (ledger chain + tamper, execution snapshot, M15 admit/read/cross-signal,
+legacy reads, risk propagation, no owner reaches a policy-store row). Dashboard: `legacy-read-tenant-binding.test.ts`.

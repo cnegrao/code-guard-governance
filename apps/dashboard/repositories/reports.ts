@@ -39,7 +39,7 @@ export async function gatherReportData(orgId: string): Promise<ReportData> {
 
     db.read.from("agents").select("risk_level").eq("organisation_id", orgId).neq("status", "decommissioned"),
 
-    db.read.rpc("agent_compliance_gaps", { p_organisation_id: orgId }),
+    db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId }),
 
     db.read.from("control_findings").select("finding_id, severity, status").not("status", "in", '("closed","accepted")'),
 

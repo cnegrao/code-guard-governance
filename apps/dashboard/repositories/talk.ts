@@ -73,7 +73,7 @@ const HANDLERS: Array<{
     name: "compliance_gaps",
     patterns: [/compliance.*gap|governance.*gap|not.*compliant|why.*compliance|what.*missing|top.*gap/i],
     handler: async (orgId) => {
-      const { data } = await db.read.rpc("agent_compliance_gaps", { p_organisation_id: orgId });
+      const { data } = await db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId });
       const r = (data as Array<Record<string, unknown>>) ?? [];
       if (r.length === 0) return ans("All agents are fully compliant. No governance gaps.", 98, [], r, "compliance_gaps", "Ran agent_compliance_gaps(). Zero agents with gaps.", 0);
       const list = r.slice(0, 10).map((g) => `· ${g.agent_name} (${g.agent_code}) — ${g.total_gaps} gaps`).join("\n");
@@ -552,7 +552,7 @@ export async function buildGovernanceContext(orgId: string): Promise<GovernanceE
   const [{ data: agents }, { data: systems }, { data: gaps }, { data: incidents }] = await Promise.all([
     db.read.from("agents").select("agent_code, name, risk_level, agent_type, oversight_level, status, cg_ag_002_owner, cg_ag_008_audit_trail").eq("organisation_id", orgId).neq("status", "decommissioned").limit(15),
     db.read.from("ai_systems").select("system_code, name, risk_class, lifecycle, status").eq("organisation_id", orgId).neq("status", "decommissioned").limit(10),
-    db.read.rpc("agent_compliance_gaps", { p_organisation_id: orgId }),
+    db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId }),
     db.read.from("ict_incidents").select("incident_code, title, severity, status, occurred_at").eq("organisation_id", orgId).not("status", "in", '("resolved","closed")').order("occurred_at", { ascending: false }).limit(5),
   ]);
 
@@ -573,7 +573,7 @@ export async function buildGovernanceContext(orgId: string): Promise<GovernanceE
 }
 
 export async function semanticSearch(orgId: string, embedding: number[], limit: number = 10): Promise<GovernanceEvidence[]> {
-  const { data } = await db.read.rpc("agent_semantic_search", {
+  const { data } = await db.write.rpc("agent_semantic_search", {
     p_query_embedding: embedding,
     p_organisation_id: orgId,
     p_limit: limit,

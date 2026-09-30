@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
@@ -41,6 +41,22 @@ export const l14GovernancePartyPendingCancelMigration = '20260930140000_m16_s1b1
 // M16-S1B.2 chain step: additive hardening of the REUSED policy stores (governance_policies /
 // policy_versions). Applied only by the S1B2 horizon, which also needs policyStorePrerequisites.
 export const l14PolicyStoreHardeningMigration = '20260930150000_m16_s1b2_policy_store_hardening_v1.sql';
+// M16-S1B.2R1 chain step: closed application SECURITY DEFINER surface (22) + least-privilege technical
+// owners. Applied only on the FULL primary chain (fullPrimaryChain), which is its canonical target.
+export const definerCapabilitySurfaceMigration = '20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql';
+// The only statement of the full chain that needs a real pgvector index access method.
+export const hnswIndexMigration = '20260818004053_agent_registry_graph_part_3.sql';
+const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url));
+/**
+ * Every canonical migration under supabase/migrations (the ONLY Governance Core migration authority), in
+ * timestamp order, ending before S1B.2R1. Noncanonical roots (apps/dashboard/supabase-setup-8.2.sql,
+ * apps/extension/supabase/migrations, graphos-complete/supabase/migrations) are never composed here.
+ */
+export function fullPrimaryChainMigrations(): readonly string[] {
+  const names = readdirSync(migrationsDirectory).filter(name => /^\d{14}_[a-z0-9_]+\.sql$/.test(name)).sort();
+  assert.ok(names.includes(definerCapabilitySurfaceMigration) && names.at(-1) === definerCapabilitySurfaceMigration);
+  return names.filter(name => name !== definerCapabilitySurfaceMigration);
+}
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
 // Applied chronologically AFTER the broad service_role default-grant migration, so tables and
@@ -96,7 +112,8 @@ export function m16PrerequisiteChain(policyStore = false): readonly string[] {
   return chain;
 }
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration].includes(name));
+  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration].includes(name)
+    || fullPrimaryChainMigrations().includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
 
@@ -105,6 +122,13 @@ export interface DisposableM16Options {
   readonly governanceWriteChain?: boolean;
   /** Merge policyStorePrerequisites into the prerequisite chain (S1B2 horizon only). Off keeps every older profile unchanged. */
   readonly policyStorePrerequisites?: boolean;
+  /**
+   * Apply EVERY canonical migration (fullPrimaryChainMigrations) instead of the historical horizons: the
+   * S1B.2R1 target. Uses real pgvector when installed; otherwise a disposable, labelled stand-in type (text
+   * I/O + typmod, vector_dims, <=>) registered as extension "vector", and then the one HNSW index statement is
+   * the only statement allowed to fail (asserted exactly). Excludes governanceWriteChain/policyStorePrerequisites.
+   */
+  readonly fullPrimaryChain?: boolean;
 }
 
 export async function disposableM16Postgres(diagnostic: (message: string) => void, options: DisposableM16Options = {}) {
@@ -213,6 +237,19 @@ export async function disposableM16Postgres(diagnostic: (message: string) => voi
     return { run, close };
   };
   const bootstrapSql = (query: string) => sql(query, 'm16_bootstrap');
+  // Statement-granular run (no ON_ERROR_STOP): resolves with stderr so the caller asserts the exact failures.
+  const sqlLenient = (query: string, role: Role): Promise<string> => new Promise((accept, reject) => {
+    const child = spawn(bin ? join(bin, 'psql') : 'psql', [
+      '-X', '-q', '-A', '-t', '-h', '127.0.0.1', '-p', String(port), '-U', role, '-d', 'postgres', '-v', 'VERBOSITY=terse',
+    ], { env, windowsHide: true, stdio: 'pipe' });
+    let err = '';
+    child.stdout.resume();
+    child.stderr.setEncoding('utf8').on('data', chunk => { err += chunk; });
+    child.on('error', reject);
+    child.on('close', code => (code === 0 ? accept(err) : reject(new Error(`psql (${role}) failed: ${code}\n${err}`))));
+    child.stdin.on('error', () => {});
+    child.stdin.end(query);
+  });
   const migrate = async (name: string) => {
     await sql(migrationSource(name), 'postgres');
     diagnostic(`Executed canonical migration as postgres NOSUPERUSER: ${name}`);
@@ -227,7 +264,9 @@ export async function disposableM16Postgres(diagnostic: (message: string) => voi
     const version = Number(await bootstrapSql('show server_version_num;'));
     assert.ok(version >= 170000 && version < 180000, `Canonical M16 profile requires PostgreSQL 17.x; got ${version}`);
     diagnostic(`Real PG17 server: ${await bootstrapSql('select version();')} at 127.0.0.1:${port}; owned disposable cluster verified`);
-    await bootstrapSql(`create role postgres login nosuperuser bypassrls;
+    // postgres mirrors the architecture-owner READ-ONLY measurement of hosted Supabase: NOSUPERUSER,
+    // CREATEROLE, CREATEDB, BYPASSRLS. CREATEROLE is what lets S1B.2R1 create its NOLOGIN technical owners.
+    await bootstrapSql(`create role postgres login nosuperuser createrole createdb bypassrls;
       create role service_role login nosuperuser bypassrls;
       create role anon login nosuperuser nobypassrls;
       create role authenticated login nosuperuser nobypassrls;
@@ -238,15 +277,31 @@ export async function disposableM16Postgres(diagnostic: (message: string) => voi
         set search_path = pg_catalog as 'select null::text';
       comment on function auth.email() is 'Harness-only inert RLS creation stub, never application authentication';
       grant usage on schema auth to anon, authenticated, service_role;`);
-    if (options.governanceWriteChain) {
+    if (options.governanceWriteChain || options.fullPrimaryChain) {
       // The real chain calls extensions.digest(): pgcrypto lives in schema "extensions" (as on
       // Supabase). Established only in this disposable bootstrap; no migration is altered.
       await bootstrapSql(`create schema extensions authorization postgres;
         create extension pgcrypto with schema extensions;
         grant usage on schema extensions to postgres, service_role, anon, authenticated;`);
     }
-    for (const migration of m16PrerequisiteChain(options.policyStorePrerequisites)) await migrate(migration);
-    if (options.governanceWriteChain) for (const migration of governanceWriteChain) await migrate(migration);
+    if (options.fullPrimaryChain) {
+      assert.ok(!options.governanceWriteChain && !options.policyStorePrerequisites);
+      const realVector = await bootstrapSql(`select count(*) from pg_available_extensions where name = 'vector';`) === '1';
+      if (realVector) await bootstrapSql('create extension vector with schema public;');
+      else await bootstrapSql(vectorStandIn);
+      diagnostic(`Full primary chain: pgvector ${realVector ? 'REAL extension' : 'NOT INSTALLED -> disposable stand-in type (HNSW index statement expected to fail)'}`);
+      for (const migration of fullPrimaryChainMigrations()) {
+        if (migration === hnswIndexMigration && !realVector) {
+          const errors = (await sqlLenient(migrationSource(migration), 'postgres')).split(/\r?\n/).filter(line => /\bERROR\b/.test(line));
+          assert.equal(errors.length, 1, errors.join('\n'));
+          assert.match(errors[0], /access method "hnsw" does not exist/);
+          diagnostic(`Executed canonical migration as postgres NOSUPERUSER: ${migration} (only the HNSW index statement failed: stand-in pgvector)`);
+        } else await migrate(migration);
+      }
+    } else {
+      for (const migration of m16PrerequisiteChain(options.policyStorePrerequisites)) await migrate(migration);
+      if (options.governanceWriteChain) for (const migration of governanceWriteChain) await migrate(migration);
+    }
     return { sql, bootstrapSql, migrate, session, stop };
   } catch (error) {
     if (existsSync(log)) diagnostic(readFileSync(log, 'utf8'));
@@ -254,3 +309,21 @@ export async function disposableM16Postgres(diagnostic: (message: string) => voi
     throw error;
   }
 }
+
+/**
+ * Harness-only pgvector stand-in for hosts without the extension: a text-backed varlena type with a typmod,
+ * vector_dims() and <=>, registered in pg_extension as "vector" so the canonical "create extension if not
+ * exists" statements are no-ops. It never computes similarity (distance is always 0); CI installs real pgvector.
+ */
+const vectorStandIn = `create type public.vector;
+  create function public.vector_in(cstring, oid, int4) returns public.vector language internal immutable strict as 'textin';
+  create function public.vector_out(public.vector) returns cstring language internal immutable strict as 'textout';
+  create function public.vector_typmod_in(cstring[]) returns int4 language internal immutable strict as 'varchartypmodin';
+  create type public.vector (input = public.vector_in, output = public.vector_out, typmod_in = public.vector_typmod_in,
+    internallength = variable, storage = extended);
+  create function public.vector_dims(public.vector) returns integer language sql immutable strict as 'select 0';
+  create function public.vector_cosine_distance(public.vector, public.vector) returns float8 language sql immutable strict as 'select 0::float8';
+  create operator public.<=> (leftarg = public.vector, rightarg = public.vector, function = public.vector_cosine_distance);
+  comment on type public.vector is 'M16 harness stand-in for pgvector (not installed on this host); never a product type';
+  insert into pg_catalog.pg_extension(oid, extname, extowner, extnamespace, extrelocatable, extversion)
+    values ((select max(oid)::int + 1000 from pg_catalog.pg_extension)::oid, 'vector', 'm16_bootstrap'::regrole, 'public'::regnamespace, true, '0.0-harness');`;

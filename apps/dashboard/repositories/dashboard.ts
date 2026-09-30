@@ -159,7 +159,7 @@ async function computeCompliance(orgId: string): Promise<{ rate: number }> {
     .eq("organisation_id", orgId)
     .neq("status", "decommissioned");
 
-  const { data: gaps } = await db.read.rpc("agent_compliance_gaps", {
+  const { data: gaps } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
   });
 
@@ -252,7 +252,7 @@ async function countOpenDoraIncidents(orgId: string): Promise<number> {
 }
 
 async function countTotalGovernanceGaps(orgId: string): Promise<number> {
-  const { data } = await db.read.rpc("agent_compliance_gaps", {
+  const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
   });
   const gaps = data as Array<{ total_gaps: number }> | null;
@@ -328,7 +328,7 @@ async function getRecentIncidents(
 async function getTopGaps(
   orgId: string
 ): Promise<DashboardSummary["topGaps"]> {
-  const { data } = await db.read.rpc("agent_compliance_gaps", {
+  const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
   });
 

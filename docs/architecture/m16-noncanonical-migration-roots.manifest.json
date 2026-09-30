@@ -1,0 +1,281 @@
+{
+  "contract": "M16-S1B.2R1 noncanonical migration-root quarantine",
+  "canonicalMigrationAuthority": "supabase/migrations",
+  "hash": "sha256 of the file bytes with CRLF normalized to LF",
+  "noncanonicalRoots": [
+    "apps/dashboard/supabase-setup-8.2.sql",
+    "apps/extension/supabase/migrations/",
+    "graphos-complete/supabase/migrations/",
+    "supabase/legacy-migrations/",
+    "vibe-code-compliance/supabase/migrations/"
+  ],
+  "quarantinedRoutines": [
+    "gov_repo.coding_memory_search",
+    "gov_repo.ledger_append(text,text,text,uuid,uuid,text,uuid,jsonb)",
+    "gov_repo.log_agent_event",
+    "gov_repo.compute_cg_ag_008",
+    "gov_repo.update_agent_compliance_flags (SECURITY DEFINER variant)",
+    "public.get_credits",
+    "public.use_credits",
+    "public.add_credits",
+    "public.search_coding_memory",
+    "public.search_files",
+    "public.gov_exec",
+    "public.gov_exec_dml",
+    "public.handle_new_user",
+    "public.set_graphos_updated_at"
+  ],
+  "holds": {
+    "S1B2-I1": "Policy controlled descriptor read (S1B.3)",
+    "S1B2-I2": "policy_mandate_mappings write disposition",
+    "S1B2-I3": "GraphOS gov_exec/gov_exec_dml consumers need controlled replacement APIs before merge/deploy where GraphOS is deployed",
+    "S1B2-I4": "Coding memory controlled server-side tenant-bound read contract",
+    "S1B2-I5": "Extension billing isolation / explicit billing topology before Governance Core deployment to an environment containing the credit RPCs"
+  },
+  "files": {
+    "apps/dashboard/supabase-setup-8.2.sql": {
+      "sha256": "5a9d4887a715318c1af1179b44867a523d1375bb9d89a318a6545c56f62270d4",
+      "root": "DASHBOARD_SETUP_SCRIPT",
+      "conflicts": [
+        "LEGACY_LEDGER_OVERLOAD: gov_repo.ledger_append(text,text,text,uuid,uuid,text,uuid,jsonb) -> uuid is LEGACY_NON_CANONICAL / OBSOLETE; R1 drops it (exact identity, no CASCADE) if present",
+        "LEDGER_TABLE_SHAPE_CONFLICT: CREATE TABLE IF NOT EXISTS gov_repo.governance_ledger with a non-canonical shape",
+        "S1B2-I4 CODING_MEMORY_CONTROLLED_READ: gov_repo.coding_memory_search SECURITY DEFINER, anon-callable by default, caller-selected tenant; R1 preflight/postflight FAIL if present"
+      ]
+    },
+    "apps/extension/src/credits/schema.sql": {
+      "sha256": "11a373f531d09ac50a6712263a335c2be1a337db21befe458836f15185d2da85",
+      "root": "EXTENSION_BILLING",
+      "conflicts": [
+        "S1B2-I5 EXTENSION_BILLING_ISOLATION: public.get_credits / use_credits / add_credits SECURITY DEFINER; the Governance Core closed-surface gate FAILS if application-executable in the target"
+      ]
+    },
+    "apps/extension/supabase/migrations/20240119020000_create_credits_table.sql": {
+      "sha256": "8bffd7c48583171e90d5a22fc8635123e9868f86884dfd6775c6584ef7b409f9",
+      "root": "EXTENSION_BILLING",
+      "conflicts": [
+        "S1B2-I5 EXTENSION_BILLING_ISOLATION: public.get_credits / use_credits / add_credits SECURITY DEFINER; the Governance Core closed-surface gate FAILS if application-executable in the target"
+      ]
+    },
+    "apps/extension/supabase/migrations/20260128170000_security_fixes.sql": {
+      "sha256": "39377e58d730d901325545196cb420a66cf543d6708e964bb4bbb2774508917a",
+      "root": "EXTENSION_BILLING",
+      "conflicts": [
+        "S1B2-I5 EXTENSION_BILLING_ISOLATION: public.get_credits / use_credits / add_credits SECURITY DEFINER; the Governance Core closed-surface gate FAILS if application-executable in the target"
+      ]
+    },
+    "apps/extension/supabase/migrations/20260128171000_linter_fixes.sql": {
+      "sha256": "16de9b99208311bd97cb97457ba2bcbc71df6ddd1d4e979f6cf82e385b66cedd",
+      "root": "EXTENSION_BILLING",
+      "conflicts": [
+        "S1B2-I5 EXTENSION_BILLING_ISOLATION: public.get_credits / use_credits / add_credits SECURITY DEFINER; the Governance Core closed-surface gate FAILS if application-executable in the target",
+        "EXTENSION_PUBLIC_DEFINERS: public.search_coding_memory / public.search_files / public.handle_new_user (extension subsystem, not Governance Core)"
+      ]
+    },
+    "apps/extension/supabase/migrations/20260128172000_performance_fixes.sql": {
+      "sha256": "5cab6063197962e0a0c608ff059cd60905e2c5aa237e7688a8a49cdaa6734871",
+      "root": "EXTENSION_BILLING",
+      "conflicts": [
+        "S1B2-I5 EXTENSION_BILLING_ISOLATION: public.get_credits / use_credits / add_credits SECURITY DEFINER; the Governance Core closed-surface gate FAILS if application-executable in the target",
+        "EXTENSION_PUBLIC_DEFINERS: public.search_coding_memory / public.search_files / public.handle_new_user (extension subsystem, not Governance Core)"
+      ]
+    },
+    "apps/extension/supabase/migrations/20260128173000_force_search_path.sql": {
+      "sha256": "f59a8414f1e3e04da48e86842aa1d0cae978231a3ec54f9e698b3c40d91aa1f1",
+      "root": "EXTENSION_BILLING",
+      "conflicts": [
+        "EXTENSION_PUBLIC_DEFINERS: public.search_coding_memory / public.search_files / public.handle_new_user (extension subsystem, not Governance Core)"
+      ]
+    },
+    "apps/extension/supabase/migrations/M008E_GOVERNANCE_LEDGER_ACTIVATION.sql": {
+      "sha256": "49c12183aa9d4228aeed8738a5aa282f947e0d2638f19de51bdba069253593fd",
+      "root": "EXTENSION_M008E",
+      "conflicts": [
+        "NONCANONICAL_GOVERNANCE_ROOT_CONFLICT: gov_repo.log_agent_event, gov_repo.compute_cg_ag_008, SECURITY DEFINER gov_repo.update_agent_compliance_flags, redefinition of canonical gov_repo.agent_compliance_gaps; R1 FAILS PRE-FLIGHT if present",
+        "Calls gov_repo.ledger_append from definer/trigger context outside the canonical service_role-only ledger surface"
+      ]
+    },
+    "apps/extension/supabase/migrations/M008E_ROLLBACK.sql": {
+      "sha256": "e4a4cf09d53ec211c369a39d4ea703667d075f123dbb422d7e8eb0f5cab6b919",
+      "root": "EXTENSION_M008E",
+      "conflicts": [
+        "NONCANONICAL_GOVERNANCE_ROOT_CONFLICT: redefines canonical gov_repo.update_agent_compliance_flags and gov_repo.agent_compliance_gaps"
+      ]
+    },
+    "apps/extension/tests/M008E_ledger_test.sql": {
+      "sha256": "2fbdfc096b8fec6fb86301552eb11ceb937d82fcf2f4c51bc49d755bc41bd6ca",
+      "root": "EXTENSION_M008E",
+      "conflicts": [
+        "Test script for the noncanonical M008E objects"
+      ]
+    },
+    "graphos-complete/supabase/migrations/00_create_profiles.sql": {
+      "sha256": "0139f2febdd945d1ce1698cc2a6ccd1d4dfd59650f4d8126f3846b0d6ef58a15",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/20260222155306_init_rag_system.sql": {
+      "sha256": "1551fd63ca1dbce0726ad85d5020d9efed0aa7c97b78278c1e477052a1313409",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/20260224_custom_expert_persona.sql": {
+      "sha256": "aaf7031deba0393501bf25e5aad37a36b7eba99aebf060bbd4fc53531016a28e",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/20260620_audit_logs.sql": {
+      "sha256": "a11647a337b9e068139a333b30f749aa316e415818ea7b4217fb75b470dc3223",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/20260620_compliance_v2.sql": {
+      "sha256": "f846723cb86ccfd9f0fdb8b46c8aa7f118574d9560239f84073a0281a9af8ccf",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/20260620_graphos_phase4.sql": {
+      "sha256": "cacd0457e02bf93ad8a79033c3d8b1bd865608a6f794f78e0e52876d65ede169",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_TRIGGER_DEFINER: public.set_graphos_updated_at SECURITY DEFINER; R1 revokes direct application EXECUTE (trigger binding untouched)"
+      ]
+    },
+    "graphos-complete/supabase/migrations/20260621_graphos_phase5_enum_extensions.sql": {
+      "sha256": "b43267e3785092fc351b623f7bd71e9604196a7081093d3c210e19e5d6ae684e",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/20260622_expose_gov_repo_bridge.sql": {
+      "sha256": "80ebb2f9c3776cfeb01b3b25950b29f91c6a640cfe76188d58e958e5164dbdfd",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "FORBIDDEN_ARBITRARY_SQL_EXECUTOR: public.gov_exec(text) / public.gov_exec_dml(text); never approvable; R1 revokes application EXECUTE on every overload; S1B2-I3 GRAPHOS_ARBITRARY_EXECUTOR_REPLACEMENT",
+        "BRIDGE_VIEWS: public.gov_* views over gov_repo incl. governance_policies (S1B.2 D-13 removes application privileges on views reaching the policy stores)"
+      ]
+    },
+    "graphos-complete/supabase/migrations/99_enterprise_governance.sql": {
+      "sha256": "738c52929bfb46541edaf6d25f93e7edd7c4903656e371aeeee96050a3ef3f53",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/99_fix_tenants_trigger.sql": {
+      "sha256": "e6cec4c4a3fe9a8082c898d5432fd1cd0ed467d6cc92f9b80da848ea8f72bed7",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_TRIGGER_DEFINER: public.handle_new_user SECURITY DEFINER; R1 revokes direct application EXECUTE (trigger binding untouched)"
+      ]
+    },
+    "graphos-complete/supabase/migrations/phase4_repo_files.sql": {
+      "sha256": "8fd9cd36bca7f9a40a62181c719eb0347a9ceffe35545c7a370adb4da40f94c7",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/sdi_debate_tables.sql": {
+      "sha256": "878f6c48ead470d06bcfde8cdc9b0fd5342b5de5c6a7a3f99e5b5791dabd71f4",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/sprint3_compliance.sql": {
+      "sha256": "b8ae2f5a1cdb078e3572a483e179594c81a2d0b7724ea1a77bcd6379f0cefe59",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "graphos-complete/supabase/migrations/sprint4_business.sql": {
+      "sha256": "ecea118619cfb3390883cd2c127968a0894594c4ba4bd8d12b45d88a25df5fb4",
+      "root": "GRAPHOS",
+      "conflicts": [
+        "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618001000_gov_repo_types_and_organisations.sql": {
+      "sha256": "fc88b2073f9ae443fd993b5ef762cb6b7a6f12c18af449e80ac04363136f4d33",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618002000_gov_repo_identity_and_ledger.sql": {
+      "sha256": "8dc134917f152e8643877e912ecdf5e1c792e9cc28141518eee9d7fed27fb917",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED: canonical ledger_append / ledger_verify live only in supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618003000_gov_repo_policies_risks_evidence.sql": {
+      "sha256": "dde3a0f362c53f252ecac2416e5f5161ea05df1c9b7d0ab3e24c14be5093bf8c",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618004000_gov_repo_workflows_assessments_views.sql": {
+      "sha256": "8d086f5dceec6a780a8086c94a7e169926390de9d1337fee3f21bc97fc121f4a",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618005000_agent_registry_graph.sql": {
+      "sha256": "4739a098a6cc19bcc099a270981946d0408aaad39c8c07f850d7636341f5a130",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618006000_regulatory_and_systems.sql": {
+      "sha256": "ccc94e3b5d31a632524dc2a75819a3e312c65ec81a45933c26883440f1b885f3",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618006500_ai_systems_complete.sql": {
+      "sha256": "83ffb73f31e86cfba804629dba9dc1ef88a82559e673c26136c3431588bd7ac5",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618006600_ict_incidents_complete.sql": {
+      "sha256": "290213e9839d24bcce4e4025bda58e84bc67a46bac2120199b76edacf999da2c",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "supabase/legacy-migrations/20260618-monolithic/20260618007000_cf000_constitutional_core.sql": {
+      "sha256": "5c8d174960b1fb94530f0112b859df3ed94e1a038ffb7efae74fdc40d4b7d510",
+      "root": "SUPERSEDED_LEGACY_MONOLITH",
+      "conflicts": [
+        "SUPERSEDED by the canonical 20260818* split migrations"
+      ]
+    },
+    "vibe-code-compliance/supabase/migrations/20260618005000_agent_registry_graph.sql": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "root": "SEPARATE_SUBSYSTEM_ROOT",
+      "conflicts": [
+        "Separate subsystem root; no gov_repo object"
+      ]
+    }
+  }
+}

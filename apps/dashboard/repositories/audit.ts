@@ -116,7 +116,7 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
         .eq("organisation_id", orgId)
         .gte("event_timestamp", new Date(Date.now() - 30 * 86400000).toISOString()),
 
-      db.read.rpc("ledger_verify", {
+      db.write.rpc("ledger_verify", {
         p_from_sequence: 1,
         p_to_sequence: null,
       }),
