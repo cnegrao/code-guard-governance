@@ -1,28 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  asCanonicalObjectId, asIsoTimestamp, asRelationshipId, asRelationshipStateId, runtimeKnown, type CrossSignalComparisonResult,
-} from '@council/canonical-contracts';
-import {
-  comparePrincipalIdentityDesignTimeVsRuntime, compareDependencyTargetIdentityDesignTimeVsRuntime, crossSignalComparisonIdentity,
-  validatePersistedRuntimeObservation,
-} from '@council/governance-review';
-import { runtimeFromRow, runtimeToRow } from '../../lib/governance/runtime-row';
-import { jsonLit, lit } from '../helpers/m16-governed-write-fixtures';
+import type { CrossSignalComparisonResult } from '@council/canonical-contracts';
 import {
   EXECUTORS, executionSnapshotKit, fullChainCluster, newAgent, newOrg, newUser, vectorLiteral,
 } from '../helpers/m16-definer-surface-fixtures';
-import { fixture, exact } from '../helpers/runtime-fixtures';
-import { seedGovernedSupport, binding } from '../helpers/runtime-governed-fixtures';
-import { org as runtimeOrg, foreign as runtimeForeign, literal, composite, config, admission } from '../helpers/runtime-database';
+import { jsonLit, lit } from '../helpers/m16-governed-write-fixtures';
+import { m15RuntimeKit } from '../helpers/m16-runtime-kit';
 
 /**
  * M16-S1B.2R1 functional regression: every re-owned routine still performs its real product behaviour as
  * service_role under its least-privilege technical owner, application roles other than service_role are
- * denied, and no technical owner can reach a policy-store row.
+ * denied, and no technical owner can reach a policy-store row. Executed on the R1 catalog and again with the
+ * S1B.2R2 runtime execution closure applied (identical expectations: R2 changes only search_path configuration).
  */
-test('M16 S1B.2R1 re-owned routine regression (disposable PG17, full primary chain + R1)', { timeout: 900_000 }, async t => {
-  const pg = await fullChainCluster(message => t.diagnostic(message));
+for (const r2 of [false, true]) test(`M16 S1B.2R1 re-owned routine regression (disposable PG17, full primary chain + R1${r2 ? ' + R2' : ''})`, { timeout: 900_000 }, async t => {
+  const pg = await fullChainCluster(message => t.diagnostic(message), { r2 });
   t.after(() => pg.stop());
   const { owner, svc, sql, bootstrapSql } = pg;
   const denied = async (query: string) => {
@@ -82,68 +74,27 @@ test('M16 S1B.2R1 re-owned routine regression (disposable PG17, full primary cha
   });
 
   await t.test('M15 runtime: admit_runtime_observation, read_runtime_observation_exact, record_cross_signal_comparison_result', async () => {
-    await owner(`insert into gov_repo.organisations(organisation_id,org_code,legal_name,display_name,country_code)
-      values('${runtimeOrg}','m15-a','M15 A','M15 A','BR'),('${runtimeForeign}','m15-b','M15 B','M15 B','BR');`);
-    await seedGovernedSupport(owner);
-    await owner(`insert into gov_repo.execution_field_decisions
-        (organisation_id,decision_id,canonical_object_id,snapshot_id,field_key,outcome,actor_reference,decided_at,content_digest)
-        values('${runtimeOrg}','m15-principal-decision','m142-version','m13-snapshot','PRINCIPAL','ACCEPT_PROPOSED','fixture-admin',now(),'fixture');
-      insert into gov_repo.execution_field_states(organisation_id,state_id,canonical_object_id,field_key,snapshot_id,decision_id,recorded_at)
-        values('${runtimeOrg}','m15-principal-state','m142-version','PRINCIPAL','m13-snapshot','m15-principal-decision',now());
-      insert into gov_repo.reconciliation_decisions(decision_id,organisation_id,family,outcome,candidate_kind,authority_kind,authority_reference,reason_code,decided_at,
-        subject_candidate_id,canonical_object_id,canonical_object_kind,contract_version,envelope,envelope_hash)
-        values('m15-model-decision','${runtimeOrg}','OBJECT','CREATE_NEW','MODEL','HUMAN','fixture-admin','MANUAL_APPROVAL',now(),'candidate:m15-model-2','m15-model-2','MODEL','1.0','{}',repeat('a',64));
-      insert into gov_repo.canonical_objects(canonical_object_id,organisation_id,kind,created_by_decision_id) values('m15-model-2','${runtimeOrg}','MODEL','m15-model-decision');`);
-    const observation = fixture('MODEL_CALL');
-    const subject = { organisationId: observation.organisationId, objectId: asCanonicalObjectId('m142-version'), kind: 'AGENT_VERSION' as const };
-    const principal = { kind: 'WORKLOAD_IDENTITY' as const, providerCode: 'provider', authorityReference: 'realm', principalReference: 'workload' };
-    const states = ['m142-model', 'm15-model-2'].map((target, i) => ({
-      relationshipId: asRelationshipId(`m15-rel-${i}`), relationshipStateId: asRelationshipStateId(`m15-state-${i}`), decisionId: `m15-rel-decision-${i}`,
-      source: subject, relationshipType: 'USES_MODEL' as const,
-      target: { organisationId: subject.organisationId, objectId: asCanonicalObjectId(target), kind: 'MODEL' as const },
-      validFrom: asIsoTimestamp('2026-09-01T00:00:00.000Z'),
-    }));
     // Owner-only fixture rows; the runtime owner only ever READS canonical_relationships.
-    for (const state of states) {
-      await owner(`insert into gov_repo.reconciliation_decisions(decision_id,organisation_id,family,outcome,candidate_kind,authority_kind,authority_reference,reason_code,decided_at,
-          relationship_candidate_id,relationship_type_code,contract_version,envelope,envelope_hash)
-          values('${state.decisionId}','${runtimeOrg}','RELATIONSHIP','CREATE_NEW','USES_MODEL','HUMAN','fixture-admin','MANUAL_APPROVAL',now(),'candidate:${state.relationshipId}','USES_MODEL','1.0','{}',repeat('a',64));
-        insert into gov_repo.canonical_relationships(organisation_id,relationship_id,relationship_state_id,relationship_type,source_canonical_object_id,source_kind,
-          target_canonical_object_id,target_kind,valid_from,recorded_at,created_by_decision_id)
-          values('${runtimeOrg}','${state.relationshipId}','${state.relationshipStateId}','USES_MODEL','m142-version','AGENT_VERSION','${state.target.objectId}','MODEL','${state.validFrom}',now(),'${state.decisionId}');`);
-    }
+    const m15 = await m15RuntimeKit(owner);
+    const { runtimeOrg, runtimeForeign } = m15;
     const relationshipsBefore = await owner(`select md5(jsonb_agg(to_jsonb(r) order by relationship_id)::text) from gov_repo.canonical_relationships r`);
-    const connection = observation.sourceConnection.connectionId;
-    await owner(`select gov_repo.register_runtime_source('${runtimeOrg}','${connection}','system','provider','producer','fixture-admin');
-      select gov_repo.configure_runtime_source('${runtimeOrg}','${connection}',${composite(config(), 'runtime_source_configurations')});
-      select gov_repo.activate_runtime_source('${runtimeOrg}','${connection}','1',true,'fixture-admin');
-      select gov_repo.register_runtime_binding('${runtimeOrg}','${connection}',${composite(binding(), 'runtime_deployment_bindings')});`);
-    const runtimeInput = { ...observation, binding: exact(), context: { ...observation.context,
-      principal: runtimeKnown({ value: principal, support: { evidence: observation.provenance.evidence,
-        method: { code: 'DIRECT_RUNTIME_MEASUREMENT' as const, version: '1.0.0' as const } } }) } };
-    const admitted = JSON.parse(await svc(admission(runtimeToRow(runtimeInput))));
+    const admitted = JSON.parse(await svc(m15.admissionSql));
     assert.equal(admitted.replay, false);
-    assert.equal(JSON.parse(await svc(admission(runtimeToRow(runtimeInput)))).replay, true);
-    const runtime = validatePersistedRuntimeObservation(runtimeFromRow(admitted.observation));
-    const read = await svc(`select observation from gov_repo.read_runtime_observation_exact('${runtimeOrg}',${literal(connection)},'${admitted.observation.observation_id}')`);
+    assert.equal(JSON.parse(await svc(m15.admissionSql)).replay, true);
+    const read = await svc(m15.readSql(runtimeOrg, admitted.observation.observation_id));
     assert.deepEqual(JSON.parse(read), admitted.observation);
-    assert.equal(await svc(`select count(*) from gov_repo.read_runtime_observation_exact('${runtimeForeign}',${literal(connection)},'${admitted.observation.observation_id}')`), '0');
-    const evaluatedAt = asIsoTimestamp('2026-09-23T12:00:00.000Z');
-    const principalResult = comparePrincipalIdentityDesignTimeVsRuntime({ organisationId: subject.organisationId, subject, runtime, evaluatedAt,
-      designTime: { canonicalObject: subject, field: 'PRINCIPAL', executionFieldStateId: 'm15-principal-state', decisionId: 'm15-principal-decision',
-        snapshotId: 'm13-snapshot', principal } });
-    const dependencyResult = compareDependencyTargetIdentityDesignTimeVsRuntime({ organisationId: subject.organisationId, subject, runtime, evaluatedAt, governedStates: states });
-    const record = async (result: CrossSignalComparisonResult) => JSON.parse(await svc(`select row_to_json(reply) from gov_repo.record_cross_signal_comparison_result('${runtimeOrg}',
-      ${literal(crossSignalComparisonIdentity(result))},${literal(JSON.stringify(result))}::jsonb) reply;`));
+    assert.equal(await svc(`select count(*) from (${m15.readSql(runtimeForeign, admitted.observation.observation_id)}) x`), '0');
+    const { principal: principalResult, dependency: dependencyResult } = m15.results(admitted.observation);
+    const record = async (result: CrossSignalComparisonResult) => JSON.parse(await svc(m15.recordSql(result)));
     assert.equal((await record(principalResult)).replay, false);
     assert.equal((await record(dependencyResult)).replay, false);
     assert.equal((await record(dependencyResult)).replay, true);
     assert.equal(await owner(`select (select count(*) from gov_repo.cross_signal_comparison_results)||':'||(select count(*) from gov_repo.cross_signal_comparison_left_relationship_states)`), '2:2');
     assert.equal(await owner(`select md5(jsonb_agg(to_jsonb(r) order by relationship_id)::text) from gov_repo.canonical_relationships r`), relationshipsBefore,
       'canonical_relationships is only read (F2)');
-    await denied(`select * from gov_repo.read_runtime_observation_exact('${runtimeOrg}',${literal(connection)},'${admitted.observation.observation_id}')`);
+    await denied(m15.readSql(runtimeOrg, admitted.observation.observation_id));
     await denied(`select * from gov_repo.record_cross_signal_comparison_result('${runtimeOrg}','x','{}'::jsonb)`);
-    await denied(admission(runtimeToRow(runtimeInput)));
+    await denied(m15.admissionSql);
   });
 
   const userA = await newUser(owner, orgA, 'Owner A');

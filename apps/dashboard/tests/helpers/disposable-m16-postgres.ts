@@ -44,18 +44,21 @@ export const l14PolicyStoreHardeningMigration = '20260930150000_m16_s1b2_policy_
 // M16-S1B.2R1 chain step: closed application SECURITY DEFINER surface (22) + least-privilege technical
 // owners. Applied only on the FULL primary chain (fullPrimaryChain), which is its canonical target.
 export const definerCapabilitySurfaceMigration = '20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql';
+// M16-S1B.2R2 chain step: pins the runtime routines' execution closure to search_path with pg_temp named last
+// (no body/owner/ACL change). Applied after definerCapabilitySurfaceMigration on the full primary chain only.
+export const runtimeExecutionClosureMigration = '20260930170000_m16_s1b2r2_runtime_execution_closure_v1.sql';
 // The only statement of the full chain that needs a real pgvector index access method.
 export const hnswIndexMigration = '20260818004053_agent_registry_graph_part_3.sql';
 const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url));
 /**
  * Every canonical migration under supabase/migrations (the ONLY Governance Core migration authority), in
- * timestamp order, ending before S1B.2R1. Noncanonical roots (apps/dashboard/supabase-setup-8.2.sql,
+ * timestamp order, ending before S1B.2R1 (S1B.2R1 and S1B.2R2 are applied on top by fullChainCluster). Noncanonical roots (apps/dashboard/supabase-setup-8.2.sql,
  * apps/extension/supabase/migrations, graphos-complete/supabase/migrations) are never composed here.
  */
 export function fullPrimaryChainMigrations(): readonly string[] {
   const names = readdirSync(migrationsDirectory).filter(name => /^\d{14}_[a-z0-9_]+\.sql$/.test(name)).sort();
-  assert.ok(names.includes(definerCapabilitySurfaceMigration) && names.at(-1) === definerCapabilitySurfaceMigration);
-  return names.filter(name => name !== definerCapabilitySurfaceMigration);
+  assert.deepEqual(names.slice(-2), [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration]);
+  return names.slice(0, -2);
 }
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.
@@ -112,7 +115,7 @@ export function m16PrerequisiteChain(policyStore = false): readonly string[] {
   return chain;
 }
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration].includes(name)
+  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration].includes(name)
     || fullPrimaryChainMigrations().includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }

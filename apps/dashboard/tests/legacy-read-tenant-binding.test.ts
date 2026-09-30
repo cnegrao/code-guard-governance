@@ -91,6 +91,24 @@ test('ledger_verify (audit integrity) and agent_compliance_gaps use the service 
     { client: 'write', name: 'agent_compliance_gaps', args: { p_organisation_id: ORG } }]);
 });
 
+test('audit integrity reads hash_chain_valid from the ledger_verify row set and event types from the tenant ledger', async () => {
+  const integrity = (verify: unknown[]) => {
+    reset();
+    rpcResult = call => (call.name === 'ledger_verify' ? { data: verify, error: null } : { data: [], error: null });
+    fromResult = call => (call.ops.some(op => op[0] === 'select' && op[1] === 'event_type')
+      ? { data: [{ event_type: 'B' }, { event_type: 'A' }, { event_type: 'B' }], error: null } : { data: [], count: 3, error: null });
+    return audit.getIntegrity(ORG);
+  };
+  const valid = await integrity([{ is_valid: true, entries_checked: 3, first_break_at: null, break_reason: null }]);
+  assert.equal(valid.hash_chain_valid, true);
+  assert.deepEqual(valid.events_by_type, [{ event_type: 'B', count: 2 }, { event_type: 'A', count: 1 }]);
+  const eventTypes = calls.find(call => call.kind === 'from' && call.ops.some(op => op[0] === 'select' && op[1] === 'event_type'));
+  assert.deepEqual(eventTypes && { client: eventTypes.client, ops: eventTypes.ops }, { client: 'read', ops: [['select', 'event_type'], ['eq', 'organisation_id', ORG]] });
+  const broken = await integrity([{ is_valid: false, entries_checked: 4, first_break_at: 4, break_reason: 'entry_hash tampered at sequence 4' }]);
+  assert.equal(broken.hash_chain_valid, false);
+  assert.equal((await integrity([])).hash_chain_valid, false, 'no verification row fails closed');
+});
+
 const source = (path: string) => readFileSync(fileURLToPath(new URL(`../${path}`, import.meta.url)), 'utf8');
 const SERVICE_ONLY_RPCS = ['ledger_verify', 'agent_compliance_gaps', 'agent_graph_traverse', 'agent_semantic_search', 'ledger_append', 'recompute_risk_propagation'];
 

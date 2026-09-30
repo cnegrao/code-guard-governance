@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   definerCapabilitySurfaceMigration, disposableM16Postgres, l14PolicyStoreHardeningMigration, migrationSource,
+  runtimeExecutionClosureMigration,
 } from './disposable-m16-postgres';
 import { hex32, jsonLit, lit } from './m16-governed-write-fixtures';
 
@@ -37,6 +38,29 @@ const blockOf = (name: string, tag: string) => {
   return block;
 };
 export const r1Postflight = () => blockOf(definerCapabilitySurfaceMigration, 'M16_S1B2R1_POSTFLIGHT');
+export const r2Postflight = () => blockOf(runtimeExecutionClosureMigration, 'M16_S1B2R2_POSTFLIGHT');
+/** The four runtime definers whose config S1B.2R2 moves from `pg_catalog` to `pg_catalog, pg_temp`. */
+export const RUNTIME_DEFINERS = [
+  'gov_repo.record_execution_snapshot(uuid,jsonb,text)', 'gov_repo.admit_runtime_observation(uuid,text,gov_repo.runtime_observations)',
+  'gov_repo.read_runtime_observation_exact(uuid,gov_repo.runtime_reference,uuid)', 'gov_repo.record_cross_signal_comparison_result(uuid,text,jsonb)',
+] as const;
+/**
+ * The S1B.2R1 postflight re-executed on the post-R2 catalog: byte-identical except that the four runtime definers'
+ * audited config is the R2 successor (`search_path=pg_catalog, pg_temp`). Every other R1 check runs verbatim.
+ */
+export function r1PostflightAfterR2(): string {
+  let block = r1Postflight();
+  for (const sig of RUNTIME_DEFINERS) {
+    const before = `('${sig}', 'govia_runtime_executor', `;
+    const at = block.indexOf(before);
+    assert.ok(at > 0 && block.indexOf(before, at + 1) < 0, `${sig} audited exactly once`);
+    const end = block.indexOf(')', block.indexOf("'search_path=pg_catalog'", at));
+    const entry = block.slice(at, end + 1);
+    assert.ok(entry.endsWith(", 'search_path=pg_catalog')"), entry);
+    block = block.slice(0, at) + entry.replace(", 'search_path=pg_catalog')", ", 'search_path=pg_catalog, pg_temp')") + block.slice(end + 1);
+  }
+  return block;
+}
 export const s1b2Postflight = () => blockOf(l14PolicyStoreHardeningMigration, 'M16_S1B2_POSTFLIGHT');
 
 /** Effective-capability inventory of every non-system SECURITY DEFINER routine (JSON rows). */
@@ -61,10 +85,12 @@ export interface InventoryRow {
   service_role: boolean; owner_store: boolean; config: string; sha256: string;
 }
 
-export async function fullChainCluster(diagnostic: (message: string) => void, options: { readonly r1?: boolean } = {}) {
+/** Full primary chain + S1B.2R1 (default) and, with `r2`, the S1B.2R2 runtime execution closure on top. */
+export async function fullChainCluster(diagnostic: (message: string) => void, options: { readonly r1?: boolean; readonly r2?: boolean } = {}) {
   const pg = await disposableM16Postgres(diagnostic, { fullPrimaryChain: true });
   try {
     if (options.r1 ?? true) await pg.migrate(definerCapabilitySurfaceMigration);
+    if (options.r2) await pg.migrate(runtimeExecutionClosureMigration);
   } catch (error) { pg.stop(); throw error; }
   const owner = (query: string) => pg.sql(query, 'postgres');
   const svc = (query: string) => pg.sql(query, 'service_role');

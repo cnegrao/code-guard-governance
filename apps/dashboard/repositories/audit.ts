@@ -96,7 +96,7 @@ export async function getEventById(
 }
 
 export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
-  const [{ count: total }, { data: latest }, { count: last30Days }, { data: byType }] =
+  const [{ count: total }, { data: latest }, { count: last30Days }, { data: byType }, { data: verifyRows }] =
     await Promise.all([
       db.read
         .from("governance_ledger")
@@ -116,6 +116,11 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
         .eq("organisation_id", orgId)
         .gte("event_timestamp", new Date(Date.now() - 30 * 86400000).toISOString()),
 
+      db.read
+        .from("governance_ledger")
+        .select("event_type")
+        .eq("organisation_id", orgId),
+
       db.write.rpc("ledger_verify", {
         p_from_sequence: 1,
         p_to_sequence: null,
@@ -134,7 +139,8 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  const verifyResult = byType as { is_valid: boolean; entries_checked: number; first_break_at: number | null; break_reason: string | null } | null;
+  // ledger_verify RETURNS TABLE: one row, delivered as an array.
+  const verifyResult = (verifyRows as Array<{ is_valid: boolean; entries_checked: number; first_break_at: number | null; break_reason: string | null }> | null)?.[0] ?? null;
 
   return {
     total_entries: total ?? 0,

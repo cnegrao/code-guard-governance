@@ -365,3 +365,32 @@ grants, inherited roles, public-schema executors, 23rd definer, wrong owner, fro
 EXECUTE, owner policy SELECT/DML/REFERENCES/BYPASSRLS/membership/escalation/extra grant/CREATE/extra policy, noncanonical
 drift); `l14-definer-surface-functional.test.ts` (ledger chain + tamper, execution snapshot, M15 admit/read/cross-signal,
 legacy reads, risk propagation, no owner reaches a policy-store row). Dashboard: `legacy-read-tenant-binding.test.ts`.
+
+## S1B.2R2 — runtime routine execution closure (full primary chain)
+
+Additive migration `20260930170000_m16_s1b2r2_runtime_execution_closure_v1.sql`; only `proconfig` changes (no body,
+signature, owner, ACL or return-shape change; the application surface stays exactly 22).
+
+**Root cause.** The four `govia_runtime_executor` routines were pinned to `search_path = pg_catalog`. When `pg_temp` is
+not named in `search_path`, PostgreSQL searches the caller's temporary schema FIRST for relations and types, so a caller
+`pg_temp.text` domain (CHECK calling a caller-written function) was resolved inside the routine and ran as the runtime
+owner (the reviewer's case persisted a forged cross-tenant `cross_signal_comparison_results` row). Pinning only the
+routine to `pg_catalog, pg_temp` still leaked: the non-inlined helpers, CHECK functions and trigger functions it executes
+carry their own `SET search_path` without `pg_temp` (e.g. `frame_identity`, statement 1).
+
+**Correction.** The measured execution closure (15: the four runtime definers; `execution_field_valid`,
+`frame_identity`, `normalized_object_identity`, `runtime_iso`, `runtime_lock`, `runtime_readback`, `runtime_round_cost`,
+`runtime_same_observation`, `runtime_valid_observation`; trigger functions `execution_immutable`, `runtime_immutable`,
+`cross_signal_immutable`) keeps its existing path with `pg_temp` named LAST. The runner takes SET (never INHERIT) on the
+runtime owner only for the four `ALTER FUNCTION` statements and revokes it. Postflight: exact closure (owner, definer
+flag, body hash, config), a generic rule that every routine the runtime owner owns and every trigger/CHECK function on a
+table it can write pins `pg_temp` last, service_role-only EXECUTE, runner ADMIN-only membership, surface = 22.
+
+`fullChainCluster(..., { r2: true })` applies R2 after R1. `r1PostflightAfterR2()` re-executes the R1 postflight
+verbatim except the four runtime definers' audited config (`search_path=pg_catalog, pg_temp`).
+
+Suites: `l14-runtime-execution-closure.test.ts` (BEFORE on the R1 catalog: shadow leaks in all four routines, the
+reviewer's persisted forgery, and the routine-only pin still leaking via `frame_identity`; R2 application; R2/R1/S1B.2
+postflights; R2 negative controls; AFTER under a full type-shadow prelude: snapshot persist/replay/stale head,
+observation replay + tenant-exact read, cross-signal record/replay/cross-tenant errors identical to R1, the reviewer's
+call forging nothing, canonical_relationships unchanged). `l14-definer-surface-functional.test.ts` runs on R1 and R1+R2.
