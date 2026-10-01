@@ -73,11 +73,15 @@ export async function getEvents(
     query = query.eq("actor_user_id", filters.actor_id);
   }
   if (filters?.search) {
-    // PostgREST quoted values keep commas/parentheses inside the ILIKE pattern.
-    // Escape backslashes and quotes; supabase-js performs URL encoding itself.
-    const pattern = `"%${filters.search.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}%"`;
+    // Operator layer: escape PostgreSQL regex metacharacters so user input is literal.
+    // imatch (~*) is case-insensitive and unanchored (substring); no .* wrapper is needed.
+    // Unlike ILIKE, imatch does not translate user '*' to '%'; '%' and '_' stay literal.
+    const literal = filters.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Grammar layer: quote the complete value and escape regex backslashes and quotes
+    // for PostgREST. Its decoder must recover `literal` exactly. Supabase URL-encodes it.
+    const pattern = `"${literal.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
     query = query.or(
-      `event_description.ilike.${pattern},event_type.ilike.${pattern}`
+      `event_description.imatch.${pattern},event_type.imatch.${pattern}`
     );
   }
   if (filters?.dateFrom) {

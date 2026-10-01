@@ -7,7 +7,7 @@ const lit = (value: unknown) => `'${String(value).replace(/'/g, "''")}'`;
 // Matches supabase/config.toml. Counts describe the entire filtered set, not the capped response.
 export const AUDIT_API_MAX_ROWS = 1000;
 
-/** Parse only the audit OR-of-ILIKE surface, including PostgREST quoted/escaped values.
+/** Parse only the audit OR-of-ILIKE/IMATCH surface, including PostgREST quoted/escaped values.
  * Mirrors v14.1 pLogicSingleVal/pQuotedValue for this subset: comma separates predicates;
  * ')' closes the logic tree early, while '(' inside an unquoted value is ordinary text.
  * https://github.com/PostgREST/postgrest/blob/v14.1/src/PostgREST/ApiRequest/QueryParams.hs
@@ -17,7 +17,7 @@ function searchAlternatives(expression: string): string[] {
   const alternatives: string[] = [];
   let rest = expression;
   while (rest) {
-    const field = /^(event_description|event_type)\.ilike\./.exec(rest);
+    const field = /^(event_description|event_type)\.(ilike|imatch)\./.exec(rest);
     assert.ok(field, `invalid PostgREST audit search: ${rest}`);
     rest = rest.slice(field[0].length);
     let value = '';
@@ -38,7 +38,13 @@ function searchAlternatives(expression: string): string[] {
       value = match[0];
       rest = rest.slice(value.length);
     }
-    alternatives.push(`${field[1]} ilike ${lit(value.replace(/\*/g, '%'))}`);
+    // Grammar decoding above is independent of operator interpretation below.
+    // v14.1 SqlFragment.hs (quantOperator/pgFmtFilter): only LIKE/ILIKE alias '*' to '%'.
+    // IMATCH passes the decoded value unchanged to PostgreSQL ~*. PostgreSQL itself
+    // interprets the pattern: this helper never escapes regex or evaluates a JS regex.
+    const operator = field[2] === 'imatch' ? '~*' : 'ilike';
+    const pattern = field[2] === 'imatch' ? value : value.replace(/\*/g, '%');
+    alternatives.push(`${field[1]} ${operator} ${lit(pattern)}`);
     if (!rest || rest.startsWith(')')) break;
     assert.ok(rest.startsWith(',') && rest.length > 1, `invalid PostgREST separator: ${rest}`);
     rest = rest.slice(1);

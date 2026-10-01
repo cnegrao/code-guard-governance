@@ -26,6 +26,7 @@
     "public.set_graphos_updated_at"
   ],
   "holds": {
+    "S1B2-H1": "DEPLOYMENT_INTEGRATION_HOLD — DATA_API_GOV_REPO_EXPOSURE_AND_MAX_ROWS_ACCEPTANCE: unresolved; before the first hosted dashboard deployment/demo, and no later than M16 closure, the target environment must prove (1) gov_repo is exposed through its Data API, (2) target max_rows is compatible with the canonical 1000-row audit chunk contract, (3) real HTTP/PostgREST acceptance succeeds for getEvents, getIntegrity and literal case-insensitive substring search, and (4) tenant binding is preserved. R6 registers this hold only; no hosted configuration change or resolution.",
     "S1B2-I1": "Policy controlled descriptor read (S1B.3)",
     "S1B2-I2": "policy_mandate_mappings write disposition",
     "S1B2-I3": "GraphOS gov_exec/gov_exec_dml consumers need controlled replacement APIs before merge/deploy where GraphOS is deployed",

@@ -467,10 +467,10 @@ never silently truncated or clamped. Existing routes retain their parsing and ex
 for example, their pre-existing `Number(value) || default` normalizes zero/NaN before the repository is called.
 Successful response shapes and all three exported TypeScript interfaces are unchanged.
 
-Search retains case-insensitive ILIKE containment over `event_description OR event_type`. Values are double-quoted
+R5 originally retained case-insensitive ILIKE containment over `event_description OR event_type`. Values were double-quoted
 with backslashes and quotes escaped using the [PostgREST reserved-character convention](https://postgrest.org/en/stable/references/api/url_grammar.html#reserved-characters);
-supabase-js performs URL encoding. Existing SQL ILIKE wildcard semantics are unchanged. The test transport implements
-only this OR/ILIKE subset, following the v14.1 `pLogicSingleVal`/`pQuotedValue` parser; it is not a general query language.
+supabase-js performs URL encoding. **R6 supersedes those wildcard semantics with the literal contract below.**
+The test transport follows the v14.1 `pLogicSingleVal`/`pQuotedValue` parser for the audit subset; it is not a general query language.
 
 The 1,250-row fixture contains HEAD_0..HEAD_9 with counts 145,135,125,115,105,95,85,75,65,55, then TAIL=250,
 with foreign-tenant rows interleaved. Exact expected top ten: TAIL=250 followed by HEAD_0..HEAD_8. Regression coverage
@@ -484,3 +484,28 @@ must retain total=1,250. The same suite failed on unchanged R4 before implementi
 `countAuditEvents30Days` and `getGovernanceQuestions` still use `db.read` for `governance_ledger`. R5 deliberately
 does not change them; track them for later M16 closure/demo-readiness. I1–I5 remain unchanged and unresolved;
 I6 remains corrected by R3. F2 is NOT TRIGGERED. The application routine surface remains 22.
+
+## S1B.2R6 — literal search semantics closure
+
+Audit search is **literal case-insensitive substring search** over description OR event type. Input is data.
+`imatch` maps to PostgreSQL `~*`; unanchored matching already finds substrings, so no `.*` wrapper is needed.
+The operator layer escapes regex metacharacters (`\ . * + ? ^ $ [ ] { } | ( )`) first. `%` and `_` are ordinary
+regex characters, and `imatch` has no PostgREST star alias. The grammar layer then quotes the whole pattern,
+doubling backslashes and escaping double quotes. Supabase performs URL encoding. PostgREST decoding recovers
+the regex literal, and PostgreSQL interprets that pattern. Neither layer can substitute for the other.
+
+`audit-literal-search.test.ts` exercises the real repository and installed Supabase URL encoder, with a simulated
+fetch/PostgREST transport forwarding decoded values to real disposable PostgreSQL 17 on the full canonical chain.
+Every case checks exact row identities and count, description/type matching, case folding, a negative control,
+foreign-tenant exclusion and hand-written expected database patterns. An independent raw-pattern transport control
+proves regex remains regex until PostgreSQL evaluates it and that only ILIKE translates stars. This is not real HTTP
+acceptance. Coverage includes all requested backslashes, wildcard/regex characters, punctuation, quotes and
+filter-like input, plus colon, combined quote/backslash, regex-option injection, repetition and newline controls.
+The R5 scale/pagination and R4 error/read contracts remain unchanged. No migration or RPC is added.
+
+**S1B2-H1 — DATA_API_GOV_REPO_EXPOSURE_AND_MAX_ROWS_ACCEPTANCE** is registered in the existing
+[architecture hold registry](../../../../docs/architecture/m16-noncanonical-migration-roots.manifest.json) as an
+unresolved `DEPLOYMENT_INTEGRATION_HOLD`. Before the first hosted dashboard deployment/demo, and no later
+than M16 closure, the target must prove `gov_repo` Data API exposure, compatibility with canonical 1,000-row chunks,
+real HTTP/PostgREST acceptance for `getEvents`, `getIntegrity` and literal search, and preserved tenant binding.
+R6 does not resolve H1 or change hosted configuration. I1–I5, I6 and unresolved I7 retain their prior dispositions.
