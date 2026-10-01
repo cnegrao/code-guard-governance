@@ -37,13 +37,25 @@ export interface LedgerIntegrity {
   events_by_type: Array<{ event_type: string; count: number }>;
 }
 
+// Keep both public pages and internal chunks within supabase/config.toml api.max_rows.
+const AUDIT_PAGE_SIZE = 1000;
+
 export async function getEvents(
   orgId: string,
   filters?: LedgerFilters
 ): Promise<{ events: LedgerEntry[]; total: number }> {
   const page = filters?.page ?? 1;
   const limit = filters?.limit ?? 50;
+  if (!Number.isSafeInteger(page) || page < 1) {
+    throw new RangeError("Audit page must be a positive safe integer");
+  }
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > AUDIT_PAGE_SIZE) {
+    throw new RangeError(`Audit limit must be an integer between 1 and ${AUDIT_PAGE_SIZE}`);
+  }
   const offset = (page - 1) * limit;
+  if (!Number.isSafeInteger(offset + limit - 1)) {
+    throw new RangeError("Audit page range exceeds safe integer bounds");
+  }
 
   // The anon client cannot read the canonical ledger; bind the tenant on the service client.
   let query = db.write
@@ -61,8 +73,11 @@ export async function getEvents(
     query = query.eq("actor_user_id", filters.actor_id);
   }
   if (filters?.search) {
+    // PostgREST quoted values keep commas/parentheses inside the ILIKE pattern.
+    // Escape backslashes and quotes; supabase-js performs URL encoding itself.
+    const pattern = `"%${filters.search.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}%"`;
     query = query.or(
-      `event_description.ilike.%${filters.search}%,event_type.ilike.%${filters.search}%`
+      `event_description.ilike.${pattern},event_type.ilike.${pattern}`
     );
   }
   if (filters?.dateFrom) {
@@ -100,6 +115,31 @@ export async function getEventById(
   return (data as LedgerEntry) ?? null;
 }
 
+async function getEventTypeCounts(orgId: string) {
+  const typeMap = new Map<string, number>();
+  for (let offset = 0; ; offset += AUDIT_PAGE_SIZE) {
+    const { data, error } = await db.write
+      .from("governance_ledger")
+      .select("event_type")
+      .eq("organisation_id", orgId)
+      .order("entry_sequence", { ascending: true })
+      .range(offset, offset + AUDIT_PAGE_SIZE - 1);
+    // Any chunk failure rejects the entire result, never a partial aggregate.
+    if (error) throw new Error(error.message);
+    const rows = (data as Array<{ event_type: string }>) ?? [];
+    for (const row of rows) {
+      typeMap.set(row.event_type, (typeMap.get(row.event_type) ?? 0) + 1);
+    }
+    if (rows.length < AUDIT_PAGE_SIZE) break;
+  }
+  return {
+    data: Array.from(typeMap, ([event_type, count]) => ({ event_type, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10),
+    error: null,
+  };
+}
+
 export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
   const results =
     await Promise.all([
@@ -121,11 +161,7 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
         .eq("organisation_id", orgId)
         .gte("event_timestamp", new Date(Date.now() - 30 * 86400000).toISOString()),
 
-      // governance_ledger is not readable by the anon role: tenant-bound read through the service client.
-      db.write
-        .from("governance_ledger")
-        .select("event_type")
-        .eq("organisation_id", orgId),
+      getEventTypeCounts(orgId),
 
       db.write.rpc("ledger_verify", {
         p_from_sequence: 1,
@@ -141,16 +177,6 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
 
   const latestSeq = (latest as Array<{ entry_sequence: number }>)?.[0]?.entry_sequence ?? 0;
 
-  const eventTypes = (byType as Array<LedgerEntry>) ?? [];
-  const typeMap = new Map<string, number>();
-  for (const e of eventTypes) {
-    typeMap.set(e.event_type, (typeMap.get(e.event_type) ?? 0) + 1);
-  }
-  const eventsByType = Array.from(typeMap.entries())
-    .map(([event_type, count]) => ({ event_type, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
   // ledger_verify RETURNS TABLE: one row, delivered as an array.
   const verifyResult = (verifyRows as Array<{ is_valid: boolean; entries_checked: number; first_break_at: number | null; break_reason: string | null }> | null)?.[0] ?? null;
 
@@ -160,6 +186,6 @@ export async function getIntegrity(orgId: string): Promise<LedgerIntegrity> {
     hash_chain_valid: verifyResult?.is_valid ?? false,
     last_verified_at: new Date().toISOString(),
     entries_last_30_days: last30Days ?? 0,
-    events_by_type: eventsByType,
+    events_by_type: byType,
   };
 }

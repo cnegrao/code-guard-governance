@@ -445,3 +445,42 @@ query failure rejects using the existing repository `Error(error.message)` conve
 and successful empty-result semantics are unchanged. `ledger_verify(1, null)` remains GLOBAL, as in R3: even an
 empty tenant sees false when another tenant's row breaks the shared chain. The top-ten aggregation and closed
 application routine surface of 22 remain intact.
+
+## S1B.2R5 — audit scale and query closure
+
+Repository-only correction, no migration. `audit-scale-query-closure.test.ts` runs the actual repository against
+disposable PG17 with the full primary chain + R1/R2/R3. The shared audit transport now simulates the configured
+PostgREST `max_rows = 1000` in SQL: every row query uses `LIMIT min(requested limit, 1000)`, including queries
+without an explicit range. Exact counts still cover the full filtered set. The R3 integrity suite uses this same
+capped transport. This is a transport simulation over real PostgreSQL, not a running PostgREST acceptance test.
+
+`events_by_type` aggregates successive 1,000-row ranges ordered by canonical `entry_sequence ASC`, with
+`organisation_id` on every service-client request. It stops on a short/empty chunk, aggregates counts before
+sorting descending and taking ten, and rejects the entire integrity request on any intermediate error. An exact
+multiple of the chunk size requires an empty terminal request. Memory stores counts by type, not all ledger rows.
+Like the existing independent integrity queries, this does not introduce a cross-request database snapshot.
+
+`getEvents` defaults remain page 1 / limit 50. The supported contract is now explicit: page is a positive safe
+integer; limit is an integer from 1 through 1,000 inclusive. Oversized, nonpositive, fractional, nonfinite or unsafe
+values, and unsafe computed range endpoints, throw `RangeError` before a database query. Limits are rejected,
+never silently truncated or clamped. Existing routes retain their parsing and exception response behavior (500);
+for example, their pre-existing `Number(value) || default` normalizes zero/NaN before the repository is called.
+Successful response shapes and all three exported TypeScript interfaces are unchanged.
+
+Search retains case-insensitive ILIKE containment over `event_description OR event_type`. Values are double-quoted
+with backslashes and quotes escaped using the [PostgREST reserved-character convention](https://postgrest.org/en/stable/references/api/url_grammar.html#reserved-characters);
+supabase-js performs URL encoding. Existing SQL ILIKE wildcard semantics are unchanged. The test transport implements
+only this OR/ILIKE subset, following the v14.1 `pLogicSingleVal`/`pQuotedValue` parser; it is not a general query language.
+
+The 1,250-row fixture contains HEAD_0..HEAD_9 with counts 145,135,125,115,105,95,85,75,65,55, then TAIL=250,
+with foreign-tenant rows interleaved. Exact expected top ten: TAIL=250 followed by HEAD_0..HEAD_8. Regression coverage
+includes the transport cap itself, second-chunk SQL permission denial, exact chunk multiple, limits 50/1,000 across
+every page plus exhaustion, rejection above 1,000, invalid pagination, tenant isolation, and all requested punctuation
+strings plus mixed-case substring, quotes and filter-like input. All 1,250 IDs must occur exactly once and every page
+must retain total=1,250. The same suite failed on unchanged R4 before implementing R5; see the
+[R5 evidence record](../../../../docs/codex/evidence/2026-09-30-m16-s1b2r5-audit-scale-query-closure.md).
+
+**Unresolved follow-up hold: I7 — DASHBOARD_LEDGER_CANONICAL_READ_PATH.** In `repositories/dashboard.ts`,
+`countAuditEvents30Days` and `getGovernanceQuestions` still use `db.read` for `governance_ledger`. R5 deliberately
+does not change them; track them for later M16 closure/demo-readiness. I1–I5 remain unchanged and unresolved;
+I6 remains corrected by R3. F2 is NOT TRIGGERED. The application routine surface remains 22.

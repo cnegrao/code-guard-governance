@@ -3,53 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { fullChainCluster } from '../helpers/m16-definer-surface-fixtures';
 
-type Role = 'anon' | 'service_role';
-type Sql = (query: string, role: Role) => Promise<string>;
+import { auditPostgresClient as bridge, type AuditSql as Sql } from '../helpers/audit-postgres-client';
 const lit = (value: unknown) => `'${String(value).replace(/'/g, "''")}'`;
-
-/**
- * Test-only stand-in for one supabase-js client: it runs the exact PostgREST request shapes getIntegrity() issues
- * (`from(..).select(..).eq/gte/order/limit` and `rpc('ledger_verify')`) as the database role that client's key maps to
- * (anon key -> anon, service-role key -> service_role), returning PostgREST's `{ data, count, error }` envelope.
- */
-function bridge(sql: Sql, role: Role) {
-  const run = async (query: string) => {
-    try {
-      return { data: JSON.parse(await sql(query, role)), error: null };
-    } catch (error) {
-      return { data: null, error: { message: (String(error).match(/ERROR: +([^\n]*)/) ?? ['', String(error)])[1].trim() } };
-    }
-  };
-  return {
-    from(table: string) {
-      let columns = '*', head = false, counted = false, limit: number | null = null, order = '';
-      const where: string[] = [];
-      const builder = {
-        select(cols: string, options?: { count?: string; head?: boolean }) { columns = cols; counted = options?.count === 'exact'; head = options?.head === true; return builder; },
-        eq(column: string, value: unknown) { where.push(`${column} = ${lit(value)}`); return builder; },
-        gte(column: string, value: unknown) { where.push(`${column} >= ${lit(value)}`); return builder; },
-        order(column: string, options?: { ascending?: boolean }) { order = ` order by ${column} ${options?.ascending === false ? 'desc' : 'asc'}`; return builder; },
-        limit(n: number) { limit = n; return builder; },
-        then(resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) {
-          const filter = `from gov_repo.${table}${where.length ? ` where ${where.join(' and ')}` : ''}`;
-          const rows = `select coalesce(json_agg(r), '[]') from (select ${columns} ${filter}${order}${limit === null ? '' : ` limit ${limit}`}) r`;
-          const query = head ? `select count(*) ${filter}` : counted ? `select json_build_object('rows', (${rows}), 'count', (select count(*) ${filter}))` : rows;
-          return run(query).then(result => {
-            if (result.error) return { data: null, count: null, error: result.error };
-            if (head) return { data: null, count: Number(result.data), error: null };
-            if (counted) return { data: result.data.rows, count: result.data.count, error: null };
-            return { data: result.data, count: null, error: null };
-          }).then(resolve, reject);
-        },
-      };
-      return builder;
-    },
-    rpc(name: string, args: { p_from_sequence: number; p_to_sequence: number | null }) {
-      assert.equal(name, 'ledger_verify');
-      return run(`select coalesce(json_agg(v), '[]') from gov_repo.ledger_verify(${args.p_from_sequence}, ${args.p_to_sequence ?? 'null'}) v`);
-    },
-  };
-}
 
 /**
  * M16-S1B.2R3 audit integrity read path (disposable PG17, canonical catalog: full primary chain + R1 + R2 + R3).
@@ -93,8 +48,8 @@ test('M16 S1B.2R3 audit integrity: events_by_type read path on the canonical cat
       await append(org, type);
     }
     const a = await getIntegrity(orgA);
-    assert.deepEqual(a.events_by_type, [{ event_type: 'POLICY_APPROVED', count: 2 }, { event_type: 'RISK_ACCEPTED', count: 1 }, { event_type: 'SEED', count: 1 }]
-      .sort((x, y) => y.count - x.count));
+    assert.deepEqual([...a.events_by_type].sort((x, y) => y.count - x.count || x.event_type.localeCompare(y.event_type)), [{ event_type: 'POLICY_APPROVED', count: 2 }, { event_type: 'RISK_ACCEPTED', count: 1 }, { event_type: 'SEED', count: 1 }]
+      .sort((x, y) => y.count - x.count || x.event_type.localeCompare(y.event_type)));
     assert.equal(a.events_by_type.reduce((sum, row) => sum + row.count, 0), JSON.parse(await sql(eventTypes(orgA), 'service_role')).length);
     assert.equal(a.hash_chain_valid, true);
     assert.deepEqual((await getIntegrity(orgB)).events_by_type, [{ event_type: 'FOREIGN', count: 3 }]);

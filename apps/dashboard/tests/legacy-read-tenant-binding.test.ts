@@ -105,7 +105,8 @@ test('audit integrity reads hash_chain_valid from the ledger_verify row set and 
   // governance_ledger is denied to the anon role (db.read): the event_type read is tenant-bound on the service client.
   const eventTypes = calls.filter(call => call.kind === 'from' && call.ops.some(op => op[0] === 'select' && op[1] === 'event_type'));
   assert.deepEqual(eventTypes.map(call => ({ client: call.client, name: call.name, ops: call.ops })),
-    [{ client: 'write', name: 'governance_ledger', ops: [['select', 'event_type'], ['eq', 'organisation_id', ORG]] }]);
+    [{ client: 'write', name: 'governance_ledger', ops: [['select', 'event_type'], ['eq', 'organisation_id', ORG],
+      ['order', 'entry_sequence', { ascending: true }], ['range', 0, 999]] }]);
   const broken = await integrity([{ is_valid: false, entries_checked: 4, first_break_at: 4, break_reason: 'entry_hash tampered at sequence 4' }]);
   assert.equal(broken.hash_chain_valid, false);
   assert.equal((await integrity([])).hash_chain_valid, false, 'no verification row fails closed');

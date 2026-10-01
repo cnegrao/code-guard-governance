@@ -30,7 +30,8 @@
     "S1B2-I2": "policy_mandate_mappings write disposition",
     "S1B2-I3": "GraphOS gov_exec/gov_exec_dml consumers need controlled replacement APIs before merge/deploy where GraphOS is deployed",
     "S1B2-I4": "Coding memory controlled server-side tenant-bound read contract",
-    "S1B2-I5": "Extension billing isolation / explicit billing topology before Governance Core deployment to an environment containing the credit RPCs"
+    "S1B2-I5": "Extension billing isolation / explicit billing topology before Governance Core deployment to an environment containing the credit RPCs",
+    "S1B2-I7": "DASHBOARD_LEDGER_CANONICAL_READ_PATH: unresolved follow-up for later M16 closure/demo-readiness; apps/dashboard/repositories/dashboard.ts countAuditEvents30Days and getGovernanceQuestions still read governance_ledger through db.read; explicitly out of R5 scope"
   },
   "files": {
     "apps/dashboard/supabase-setup-8.2.sql": {
