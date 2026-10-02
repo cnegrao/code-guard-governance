@@ -5,18 +5,17 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: "◉" },
-  { href: "/agents", label: "Agents", icon: "◆" },
-  { href: "/systems", label: "AI Systems", icon: "▣" },
-  { href: "/discovery", label: "Discovery", icon: "◎" },
-  { href: "/graph", label: "GraphOS", icon: "◈" },
+  { href: "/", label: "Dashboard", icon: "◉" },
+  { href: "/agents/canonical", label: "Agent Passports", icon: "◇" },
+  { href: "/agents", label: "Agent Inventory", icon: "◆" },
+  { href: "/systems", label: "System Inventory", icon: "▣" },
+  { href: "/discovery", label: "Repository Discovery", icon: "◎" },
+  { href: "/graph", label: "Governed Graph", icon: "◈" },
   { href: "/governance", label: "Governance", icon: "◆" },
   { href: "/governance/reviews", label: "Review Queue", icon: "▤" },
   { href: "/search", label: "Search", icon: "◇" },
-  { href: "/compliance", label: "Compliance", icon: "◷" },
   { href: "/audit", label: "Audit Trail", icon: "◎" },
   { href: "/reports", label: "Reports", icon: "▤" },
-  { href: "/settings", label: "Settings", icon: "⚙" },
 ];
 
 export function Sidebar() {
@@ -31,7 +30,7 @@ export function Sidebar() {
 
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+          const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href + "/") && !NAV_ITEMS.some(other => other.href !== item.href && other.href.startsWith(item.href + "/") && pathname?.startsWith(other.href)));
           return (
             <Link
               key={item.href}

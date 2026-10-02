@@ -14,7 +14,7 @@ interface SearchResult {
   subtitle: string;
   risk_level?: string;
   status?: string;
-  url: string;
+  url: string | null;
 }
 
 const typeIcon: Record<string, string> = {
@@ -28,10 +28,12 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
 
   async function doSearch(q: string) {
     setQuery(q);
+    setError("");
     if (q.length < 2) {
       setResults([]);
       setSearched(false);
@@ -46,6 +48,7 @@ export default function SearchPage() {
       setResults(data.results ?? []);
     } catch {
       setResults([]);
+      setError("ERROR: Search could not be read");
     } finally {
       setLoading(false);
     }
@@ -69,9 +72,10 @@ export default function SearchPage() {
         />
       </div>
 
+      {error && <p role="alert" className="text-danger">{error}</p>}
       {loading && <Spinner className="py-6" />}
 
-      {!loading && searched && results.length === 0 && (
+      {!loading && !error && searched && results.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-400">No results for &quot;{query}&quot;</p>
           <p className="text-sm text-gray-500 mt-1">Try a different search term</p>
@@ -84,13 +88,13 @@ export default function SearchPage() {
             {results.length} result{results.length !== 1 ? "s" : ""} for &quot;{query}&quot;
           </p>
           {results.map((r) => (
-            <Link key={`${r.type}-${r.id}`} href={r.url}>
+            <div key={`${r.type}-${r.id}`}>
               <Card className="hover:bg-white/5 transition-colors cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{typeIcon[r.type] ?? "○"}</span>
                     <div>
-                      <div className="text-sm text-white">{r.title}</div>
+                      <div className="text-sm text-white">{r.url ? <Link href={r.url}>{r.title}</Link> : r.title}</div>
                       <div className="text-xs text-gray-500">{r.subtitle}</div>
                     </div>
                   </div>
@@ -104,7 +108,7 @@ export default function SearchPage() {
                   </div>
                 </div>
               </Card>
-            </Link>
+            </div>
           ))}
         </div>
       )}

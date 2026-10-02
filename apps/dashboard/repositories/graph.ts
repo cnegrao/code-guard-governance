@@ -126,13 +126,13 @@ export async function getRiskPropagation(
   orgId: string,
   agentId: string
 ): Promise<PropagationPath[]> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("agent_risk_propagation")
     .select("*")
     .eq("organisation_id", orgId)
     .eq("risk_source_agent_id", agentId)
     .eq("is_active", true)
-    .order("impact_score", { ascending: false });
+    .order("impact_score", { ascending: false }).throwOnError();
 
   return (data as PropagationPath[]) ?? [];
 }

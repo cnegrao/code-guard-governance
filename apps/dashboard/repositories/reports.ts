@@ -5,7 +5,7 @@ export interface ReportData {
   org: { name: string; industry: string; date: string };
   agents: { total: number; byRisk: { critical: number; high: number; medium: number; low: number } };
   systems: { total: number; highRisk: number; byLifecycle: Array<{ lifecycle: string; count: number }> };
-  compliance: { rate: number; totalGaps: number; topGaps: Array<{ agent: string; gaps: number; risk: string }>; controlCoverage: number };
+  compliance: { rate: number | null; totalGaps: number; topGaps: Array<{ agent: string; gaps: number; risk: string }>; controlCoverage: number | null };
   findings: { open: number; bySeverity: Array<{ severity: string; count: number }>; criticalFindings: number };
   incidents: { open: number; doraOpen: number; recent: Array<{ code: string; title: string; severity: string; status: string; date: string }> };
   dora: { totalIncidents: number; majorIncidents: number; reportingStatus: string; thirdPartyConcentration: number };
@@ -30,36 +30,37 @@ export async function gatherReportData(orgId: string): Promise<ReportData> {
     oversightLevels,
     systemLifecycles,
     doraMajorIncidents,
+    graph,
   ] = await Promise.all([
-    db.read.from("organisations").select("name, external_refs").eq("organisation_id", orgId).single(),
+    db.write.from("organisations").select("name:legal_name").eq("organisation_id", orgId).throwOnError().maybeSingle(),
 
-    db.read.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned"),
+    db.write.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError(),
 
-    db.read.from("ai_systems").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned"),
+    db.write.from("ai_systems").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError(),
 
-    db.read.from("agents").select("risk_level").eq("organisation_id", orgId).neq("status", "decommissioned"),
+    db.write.from("agents").select("risk_level").eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError(),
 
-    db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId }),
+    db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId }).throwOnError(),
 
-    db.read.from("control_findings").select("finding_id, severity, status").not("status", "in", '("closed","accepted")'),
+    db.write.from("control_findings").select("finding_id, severity, status, control_assessments!inner(organisation_id)").eq("control_assessments.organisation_id", orgId).not("status", "in", '("closed","accepted")').throwOnError(),
 
-    db.read.from("control_findings").select("severity").not("status", "in", '("closed","accepted")'),
+    db.write.from("control_findings").select("severity, control_assessments!inner(organisation_id)").eq("control_assessments.organisation_id", orgId).not("status", "in", '("closed","accepted")').throwOnError(),
 
-    db.read.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).not("status", "in", '("resolved","closed")'),
+    db.write.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).not("status", "in", '("resolved","closed")').throwOnError(),
 
-    db.read.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).not("dora_criticality", "is", null).not("status", "in", '("resolved","closed")'),
+    db.write.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("reporting_phase", "not_required").not("status", "in", '("resolved","closed")').throwOnError(),
 
-    db.read.from("ict_incidents").select("incident_code, title, severity, status, occurred_at").eq("organisation_id", orgId).order("occurred_at", { ascending: false }).limit(5),
+    db.write.from("ict_incidents").select("incident_code, title, severity, status, occurred_at").eq("organisation_id", orgId).order("occurred_at", { ascending: false }).limit(5).throwOnError(),
 
-    db.read.from("ai_systems").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).in("risk_class", ["high", "unacceptable"]).neq("status", "decommissioned"),
+    db.write.from("ai_systems").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).in("risk_class", ["high", "unacceptable"]).neq("status", "decommissioned").throwOnError(),
 
-    db.read.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).is("ai_system_id", null).neq("status", "decommissioned"),
+    db.write.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).is("ai_system_id", null).neq("status", "decommissioned").throwOnError(),
 
-    db.read.from("agents").select("oversight_level").eq("organisation_id", orgId).neq("status", "decommissioned"),
+    db.write.from("agents").select("oversight_level").eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError(),
 
-    db.read.from("ai_systems").select("lifecycle").eq("organisation_id", orgId).neq("status", "decommissioned"),
+    db.write.from("ai_systems").select("lifecycle").eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError(),
 
-    db.read.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).eq("is_major_incident", true).not("status", "in", '("resolved","closed")'),
+    db.write.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).eq("is_major_incident", true).not("status", "in", '("resolved","closed")').throwOnError(),
 
     getUnifiedGraph(orgId),
   ]);
@@ -71,7 +72,7 @@ export async function gatherReportData(orgId: string): Promise<ReportData> {
   const gapsData = (gaps.data as Array<{ agent_name: string; total_gaps: number; risk_level: string }>) ?? [];
   const complianceTotal = agentCount.count ?? 0;
   const complianceWithGaps = gapsData.length;
-  const complianceRate = complianceTotal > 0 ? Math.round((1 - complianceWithGaps / complianceTotal) * 100) : 100;
+  const complianceRate = complianceTotal > 0 ? Math.round((1 - complianceWithGaps / complianceTotal) * 100) : null;
 
   const findingsData = (findingsBySev.data as Array<{ severity: string }>) ?? [];
   const sevMap = new Map<string, number>();
@@ -91,9 +92,8 @@ export async function gatherReportData(orgId: string): Promise<ReportData> {
     lifecycleMap.set(l.lifecycle, (lifecycleMap.get(l.lifecycle) ?? 0) + 1);
   }
 
-  const graph = doraMajorIncidents as unknown as Awaited<ReturnType<typeof getUnifiedGraph>>;
   const sysNodes = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "ai_system") as DiscoveryGraphNode[];
-  const sysScore = sysNodes.length > 0 ? Math.round(sysNodes.reduce((s, n) => s + ((n.metadata?.systemComplianceScore as number) ?? 0), 0) / sysNodes.length) : 100;
+  const sysScore = sysNodes.length > 0 ? Math.round(sysNodes.reduce((s, n) => s + ((n.metadata?.systemComplianceScore as number) ?? 0), 0) / sysNodes.length) : null;
   const findingNodes = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "finding") as DiscoveryGraphNode[];
   const critFindings = findingNodes.filter((f) => f.metadata?.severity === "critical").length;
   const annexIiiMap = new Map<string, number>();

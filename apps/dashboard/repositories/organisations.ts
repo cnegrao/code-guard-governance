@@ -6,11 +6,11 @@ export async function getOrg(orgId: string): Promise<{
   code: string;
   external_refs: Record<string, unknown>;
 } | null> {
-  const { data, error } = await db.read
+  const { data, error } = await db.write
     .from("organisations")
     .select("organisation_id, legal_name, org_code")
     .eq("organisation_id", orgId)
-    .maybeSingle();
+    .throwOnError().maybeSingle();
 
   if (error) throw new Error("Unable to load organisation");
   if (!data) return null;

@@ -13,8 +13,8 @@ import type { AISystem } from "@/types/systems";
 export default function SystemDetailPage() {
   const params = useParams();
   const [system, setSystem] = useState<(AISystem & { owner_name?: string; agent_count?: number }) | null>(null);
-  const [compliance, setCompliance] = useState<Record<string, boolean>>({});
-  const [score, setScore] = useState(0);
+  const [compliance, setCompliance] = useState<Record<string, import("@/types/agents").ControlState>>({});
+  const [score, setScore] = useState<number | null>(null);
   const [gaps, setGaps] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,7 +28,7 @@ export default function SystemDetailPage() {
       .then((data) => {
         setSystem(data.system ?? data);
         setCompliance(data.compliance ?? {});
-        setScore(data.compliance_score ?? 0);
+        setScore(data.compliance_score ?? null);
         setGaps(data.compliance_gaps ?? []);
       })
       .catch((err) => setError(err.message))

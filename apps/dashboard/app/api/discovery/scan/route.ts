@@ -22,7 +22,7 @@ async function logToLedger(orgId: string, userId: string, event: string, payload
       p_actor_user_id: userId,
       p_actor_ip: null,
       p_organisation_id: orgId,
-      p_payload: payload,
+      p_payload: { ...payload, authority: "OPERATIONAL_LEGACY", governedIngestion: "NOT_ACTIVE" },
     });
   } catch {}
 }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const repositoryName = `${owner}/${repo}`;
     const repositoryId = `repo_${owner}_${repo}`.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64);
 
-    await logToLedger(orgId, userId, "discovery.scan.started", {
+    await logToLedger(orgId, userId, "inventory.discovery.scan.started", {
       provider, repository: repositoryName, branch: branch ?? "main",
     });
 
@@ -133,6 +133,8 @@ export async function POST(request: Request) {
       systemsDiscovered: systems,
     };
 
+    let inventoryStored = 0;
+    let inventoryErrors = 0;
     for (const agent of enrichedAgents) {
       try {
         const enrichment = agent.enrichment;
@@ -210,9 +212,10 @@ export async function POST(request: Request) {
           external_refs: {
             discovery: externalRefsDiscovery,
           },
-        }).select("agent_id").single();
+        }).select("agent_id").throwOnError().single();
+        inventoryStored++;
 
-        await logToLedger(orgId, userId, "discovery.agent.detected", {
+        await logToLedger(orgId, userId, "inventory.discovery.agent.detected", {
           repository: repositoryName,
           agent_name: agent.name,
           framework: agent.framework,
@@ -220,10 +223,10 @@ export async function POST(request: Request) {
           risk_level: agent.suggestedRiskLevel,
           classification: agent.classification,
         });
-      } catch {}
+      } catch { inventoryErrors++; }
     }
 
-    await logToLedger(orgId, userId, "discovery.scan.completed", {
+    await logToLedger(orgId, userId, "inventory.discovery.scan.completed", {
       repository: repositoryName,
       filesScanned: files.length,
       agentsDiscovered: enrichedAgents.length,
@@ -235,7 +238,11 @@ export async function POST(request: Request) {
     return NextResponse.json({
       result,
       classified: enrichedAgents,
-      registered: enrichedAgents.length,
+      authority: "OPERATIONAL_LEGACY",
+      governedIngestion: "NOT_ACTIVE",
+      discovered: enrichedAgents.length,
+      inventoryStored,
+      inventoryErrors,
       repoIntelligence: {
         domains: repoIntel.domains,
         services: repoIntel.services,
@@ -249,7 +256,7 @@ export async function POST(request: Request) {
       knowledgeGraph,
       crossFileLineage,
       memoryIndexed: memoryChunksIndexed + codeChunksIndexed,
-      message: `${enrichedAgents.length} agents discovered, ${repoIntel.domains.length} domains identified, ${crossFileLineage.totalFlows} data flows traced, ${memoryChunksIndexed + codeChunksIndexed} memory chunks indexed.`,
+      message: `${enrichedAgents.length} agents discovered; ${inventoryStored} inventory rows stored, ${inventoryErrors} storage errors; ${repoIntel.domains.length} domains identified, ${crossFileLineage.totalFlows} data flows traced, ${memoryChunksIndexed + codeChunksIndexed} memory chunks indexed.`,
     });
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

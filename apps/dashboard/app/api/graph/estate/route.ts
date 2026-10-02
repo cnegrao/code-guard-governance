@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const data = await graphService.getEstate(orgId);
-    return NextResponse.json(data);
+    return NextResponse.json({ ...data, authority: "OPERATIONAL_LEGACY", canonical: false });
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(

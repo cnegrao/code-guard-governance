@@ -7,7 +7,7 @@ export interface SearchResult {
   subtitle: string;
   risk_level?: string;
   status?: string;
-  url: string;
+  url: string | null;
 }
 
 export async function searchAll(
@@ -17,28 +17,28 @@ export async function searchAll(
   const term = `%${query}%`;
 
   const [agents, systems, incidents] = await Promise.all([
-    db.read
+    db.write
       .from("agents")
       .select("agent_id, agent_code, name, description, risk_level, status")
       .eq("organisation_id", orgId)
       .neq("status", "decommissioned")
       .or(`name.ilike.${term},description.ilike.${term},agent_code.ilike.${term}`)
-      .limit(10),
+      .limit(10).throwOnError(),
 
-    db.read
+    db.write
       .from("ai_systems")
       .select("system_id, system_code, name, description, risk_class, status")
       .eq("organisation_id", orgId)
       .neq("status", "decommissioned")
       .or(`name.ilike.${term},description.ilike.${term},system_code.ilike.${term}`)
-      .limit(5),
+      .limit(5).throwOnError(),
 
-    db.read
+    db.write
       .from("ict_incidents")
       .select("incident_id, incident_code, title, description, severity, status")
       .eq("organisation_id", orgId)
       .or(`title.ilike.${term},description.ilike.${term},incident_code.ilike.${term}`)
-      .limit(5),
+      .limit(5).throwOnError(),
   ]);
 
   const results: SearchResult[] = [];
@@ -75,7 +75,7 @@ export async function searchAll(
       subtitle: `${i.incident_code} · ${i.status}`,
       risk_level: i.severity,
       status: i.status,
-      url: `/incidents/${i.incident_id}`,
+      url: null,
     });
   }
 

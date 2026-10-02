@@ -16,11 +16,11 @@ export async function GET(
 
     if (traversal.length > 0) {
       const ids = traversal.map((t) => t.agent_id);
-      const { count } = await db.read
+      const { count } = await db.write
         .from("agents")
         .select("*", { count: "exact", head: true })
         .eq("organisation_id", orgId)
-        .in("agent_id", ids);
+        .in("agent_id", ids).throwOnError();
 
       if ((count ?? 0) !== ids.length) {
         return NextResponse.json(

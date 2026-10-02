@@ -9,11 +9,11 @@ export async function getSystems(
   const limit = filters?.limit ?? 20;
   const offset = (page - 1) * limit;
 
-  let query = db.read
+  let query = db.write
     .from("ai_systems")
     .select("*", { count: "exact", head: false })
     .eq("organisation_id", orgId)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
 
   if (filters?.risk_class) query = query.eq("risk_class", filters.risk_class);
   if (filters?.status) query = query.eq("status", filters.status);
@@ -30,12 +30,12 @@ export async function getSystemById(
   orgId: string,
   systemId: string
 ): Promise<AISystem | null> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("ai_systems")
     .select("*")
     .eq("organisation_id", orgId)
     .eq("system_id", systemId)
-    .single();
+    .throwOnError().maybeSingle();
 
   return (data as AISystem) ?? null;
 }
@@ -47,17 +47,18 @@ export async function getSystemWithOwner(
   const system = await getSystemById(orgId, systemId);
   if (!system) return null;
 
-  const { data: owner } = await db.read
+  const { data: owner } = await db.write
     .from("governance_users")
     .select("full_name, email")
+    .eq("organisation_id", orgId)
     .eq("user_id", system.owner_user_id)
-    .single();
+    .throwOnError().maybeSingle();
 
-  const { count } = await db.read
+  const { count } = await db.write
     .from("agents")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
-    .eq("ai_system_id", systemId);
+    .eq("ai_system_id", systemId).throwOnError();
 
   return {
     system,
@@ -119,14 +120,14 @@ export async function getSystemCompliance(
   orgId: string,
   systemId: string
 ): Promise<Record<string, ControlState>> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("ai_systems")
     .select(
       "cg_sys_001_registered, cg_sys_002_owner, cg_sys_003_risk_classified, cg_sys_004_tech_doc, cg_sys_005_risk_mgmt, cg_sys_006_human_oversight, cg_sys_007_conformity, cg_sys_008_post_market, external_refs"
     )
     .eq("organisation_id", orgId)
     .eq("system_id", systemId)
-    .single();
+    .throwOnError().maybeSingle();
 
   if (!data) {
     return {
@@ -174,12 +175,12 @@ export async function updateSystemCompliance(
   systemId: string,
   states: Record<string, ControlState>
 ): Promise<void> {
-  const { data: current } = await db.read
+  const { data: current } = await db.write
     .from("ai_systems")
     .select("external_refs")
     .eq("organisation_id", orgId)
     .eq("system_id", systemId)
-    .single();
+    .throwOnError().maybeSingle();
 
   const existingRefs = (current?.external_refs as Record<string, unknown>) ?? {};
   const existingControlStates: Record<string, string> = (existingRefs.controlStates as Record<string, string>) ?? {};
@@ -194,7 +195,7 @@ export async function updateSystemCompliance(
     }
   }
 
-  const { error } = await db.read
+  const { error } = await db.write
     .from("ai_systems")
     .update({
       ...dbUpdates,

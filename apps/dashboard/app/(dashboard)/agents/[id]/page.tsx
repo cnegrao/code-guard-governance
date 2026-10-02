@@ -13,8 +13,8 @@ import type { Agent } from "@/types/agents";
 export default function AgentDetailPage() {
   const params = useParams();
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [compliance, setCompliance] = useState<Record<string, boolean>>({});
-  const [score, setScore] = useState(0);
+  const [compliance, setCompliance] = useState<Record<string, import("@/types/agents").ControlState>>({});
+  const [score, setScore] = useState<number | null>(null);
   const [gaps, setGaps] = useState<string[]>([]);
   const [ownerName, setOwnerName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,7 @@ export default function AgentDetailPage() {
       .then((data) => {
         setAgent(data.agent);
         setCompliance(data.compliance ?? {});
-        setScore(data.compliance_score ?? 0);
+        setScore(data.compliance_score ?? null);
         setGaps(data.compliance_gaps ?? []);
         setOwnerName(data.owner_name ?? "");
       })

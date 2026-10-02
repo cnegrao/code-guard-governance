@@ -76,7 +76,17 @@ export async function getEvents(
     // Operator layer: escape PostgreSQL regex metacharacters so user input is literal.
     // imatch (~*) is case-insensitive and unanchored (substring); no .* wrapper is needed.
     // Unlike ILIKE, imatch does not translate user '*' to '%'; '%' and '_' stay literal.
-    const literal = filters.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // C/POSIX locales need not fold non-ASCII letters with ~*. Encode simple
+    // one-codepoint case pairs explicitly, keeping input literal (including É/é).
+    const literal = Array.from(filters.search, character => {
+      const upper = character.toUpperCase(), lower = character.toLowerCase();
+      if (character.codePointAt(0)! > 127 && upper !== lower
+        && Array.from(upper).length === 1 && Array.from(lower).length === 1) {
+        return `(${escapeRegex(upper)}|${escapeRegex(lower)})`;
+      }
+      return escapeRegex(character);
+    }).join("");
     // Grammar layer: quote the complete value and escape regex backslashes and quotes
     // for PostgREST. Its decoder must recover `literal` exactly. Supabase URL-encodes it.
     const pattern = `"${literal.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;

@@ -10,9 +10,10 @@
     "lint": "next lint",
     "seed": "tsx seed.ts",
     "validate:repo": "tsx scripts/validate-repository.ts",
-    "test": "node --conditions=react-server --experimental-test-module-mocks --import tsx --test \"tests/!(passport-ui-route).test.ts\" && npm run test:passport-ui",
+    "test": "node --conditions=react-server --experimental-test-module-mocks --import tsx --test \"tests/!(passport-ui-route|pre-demo-ui).test.ts\" && npm run test:passport-ui && npm run test:pre-demo-ui",
     "test:passport": "node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/passport-query.test.ts && npm run test:passport-ui",
     "test:passport-ui": "node --experimental-test-module-mocks --import tsx --test tests/passport-ui-route.test.ts",
+    "test:pre-demo-ui": "node --experimental-test-module-mocks --import tsx --test tests/pre-demo-ui.test.ts",
     "test:postgres": "node --conditions=react-server --import tsx --test tests/postgres/*.test.ts"
   },
   "dependencies": {

@@ -4,7 +4,7 @@ import { getUnifiedGraph, isAgentNode, type DiscoveryGraphNode } from "@/service
 export interface DashboardSummary {
   totalAgents: number;
   totalSystems: number;
-  complianceRate: number;
+  complianceRate: number | null;
   openFindings: number;
   openIncidents: number;
   upcomingReviews: number;
@@ -43,8 +43,8 @@ export interface DashboardSummary {
   criticalFindings: number;
   aiActExposureCount: number;
   doraMajorIncidents: number;
-  cgSysComplianceRate: number;
-  evidenceCoverage: number;
+  cgSysComplianceRate: number | null;
+  evidenceCoverage: number | null;
 }
 
 export async function getDashboardData(orgId: string): Promise<DashboardSummary> {
@@ -135,46 +135,46 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
 }
 
 async function countAgents(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("agents")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
   return count ?? 0;
 }
 
 async function countSystems(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("ai_systems")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
   return count ?? 0;
 }
 
-async function computeCompliance(orgId: string): Promise<{ rate: number }> {
-  const { count: total } = await db.read
+async function computeCompliance(orgId: string): Promise<{ rate: number | null }> {
+  const { count: total } = await db.write
     .from("agents")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
 
   const { data: gaps } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
-  });
+  }).throwOnError();
 
   const gapCount = (gaps as Array<unknown>)?.length ?? 0;
   const totalCount = total ?? 0;
-  const rate = totalCount > 0 ? Math.round((1 - gapCount / totalCount) * 100) : 100;
+  const rate = totalCount > 0 ? Math.round((1 - gapCount / totalCount) * 100) : null;
 
   return { rate };
 }
 
 async function countOpenFindings(orgId: string): Promise<number> {
-  const { data: assessments } = await db.read
+  const { data: assessments } = await db.write
     .from("control_assessments")
     .select("assessment_id")
-    .eq("organisation_id", orgId);
+    .eq("organisation_id", orgId).throwOnError();
 
   if (!assessments || assessments.length === 0) return 0;
 
@@ -182,110 +182,110 @@ async function countOpenFindings(orgId: string): Promise<number> {
     (a) => a.assessment_id
   );
 
-  const { count } = await db.read
+  const { count } = await db.write
     .from("control_findings")
     .select("*", { count: "exact", head: true })
     .in("assessment_id", ids)
-    .not("status", "in", '("closed","accepted")');
+    .not("status", "in", '("closed","accepted")').throwOnError();
 
   return count ?? 0;
 }
 
 async function countOpenIncidents(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("ict_incidents")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
-    .not("status", "in", '("resolved","closed")');
+    .not("status", "in", '("resolved","closed")').throwOnError();
   return count ?? 0;
 }
 
 async function countUpcomingReviews(orgId: string): Promise<number> {
   const [{ count: agentCount }, { count: linkCount }] = await Promise.all([
-    db.read
+    db.write
       .from("agents")
       .select("*", { count: "exact", head: true })
       .eq("organisation_id", orgId)
       .not("status", "in", '("decommissioned","suspended")')
-      .lt("updated_at", new Date(Date.now() - 90 * 86400000).toISOString()),
+      .lt("updated_at", new Date(Date.now() - 90 * 86400000).toISOString()).throwOnError(),
 
-    db.read
+    db.write
       .from("agent_resource_links")
       .select("*", { count: "exact", head: true })
       .eq("organisation_id", orgId)
       .eq("is_active", true)
       .not("next_review_date", "is", null)
-      .lt("next_review_date", new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]),
+      .lt("next_review_date", new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]).throwOnError(),
   ]);
 
   return (agentCount ?? 0) + (linkCount ?? 0);
 }
 
 async function countHighRiskSystems(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("ai_systems")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
     .in("risk_class", ["high", "unacceptable"])
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
   return count ?? 0;
 }
 
 async function countHighRiskAgents(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("agents")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
     .in("risk_level", ["critical", "high"])
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
   return count ?? 0;
 }
 
 async function countOpenDoraIncidents(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("ict_incidents")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
-    .not("dora_criticality", "is", null)
-    .not("status", "in", '("resolved","closed")');
+    .neq("reporting_phase", "not_required")
+    .not("status", "in", '("resolved","closed")').throwOnError();
   return count ?? 0;
 }
 
 async function countTotalGovernanceGaps(orgId: string): Promise<number> {
   const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
-  });
+  }).throwOnError();
   const gaps = data as Array<{ total_gaps: number }> | null;
   return gaps?.reduce((sum, g) => sum + (g.total_gaps ?? 0), 0) ?? 0;
 }
 
 async function countAgentsWithoutSystem(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("agents")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
     .is("ai_system_id", null)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
   return count ?? 0;
 }
 
 async function countSystemsWithoutAgents(orgId: string): Promise<number> {
-  const { data: systems } = await db.read
+  const { data: systems } = await db.write
     .from("ai_systems")
     .select("system_id")
     .eq("organisation_id", orgId)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
 
   if (!systems || systems.length === 0) return 0;
 
   const systemIds = (systems as Array<{ system_id: string }>).map((s) => s.system_id);
 
-  const { data: linkedAgents } = await db.read
+  const { data: linkedAgents } = await db.write
     .from("agents")
     .select("ai_system_id")
     .eq("organisation_id", orgId)
     .in("ai_system_id", systemIds)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
 
   const linkedSystemIds = new Set(
     (linkedAgents as Array<{ ai_system_id: string }>)?.map((a) => a.ai_system_id) ?? []
@@ -297,11 +297,11 @@ async function countSystemsWithoutAgents(orgId: string): Promise<number> {
 async function getRiskDistribution(
   orgId: string
 ): Promise<{ critical: number; high: number; medium: number; low: number }> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("agents")
     .select("risk_level")
     .eq("organisation_id", orgId)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
 
   const agents = (data as Array<{ risk_level: string }>) ?? [];
   return {
@@ -315,12 +315,12 @@ async function getRiskDistribution(
 async function getRecentIncidents(
   orgId: string
 ): Promise<DashboardSummary["recentIncidents"]> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("ict_incidents")
     .select("incident_code, title, severity, status, occurred_at")
     .eq("organisation_id", orgId)
     .order("occurred_at", { ascending: false })
-    .limit(5);
+    .limit(5).throwOnError();
 
   return (data as DashboardSummary["recentIncidents"]) ?? [];
 }
@@ -330,7 +330,7 @@ async function getTopGaps(
 ): Promise<DashboardSummary["topGaps"]> {
   const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
-  });
+  }).throwOnError();
 
   const gaps = (data as Array<{
     agent_code: string;
@@ -344,22 +344,22 @@ async function getTopGaps(
 }
 
 async function countAuditEvents30Days(orgId: string): Promise<number> {
-  const { count } = await db.read
+  const { count } = await db.write
     .from("governance_ledger")
     .select("*", { count: "exact", head: true })
     .eq("organisation_id", orgId)
-    .gte("event_timestamp", new Date(Date.now() - 30 * 86400000).toISOString());
+    .gte("event_timestamp", new Date(Date.now() - 30 * 86400000).toISOString()).throwOnError();
   return count ?? 0;
 }
 
 async function getGovernanceQuestions(orgId: string): Promise<DashboardSummary["governanceQuestions"]> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("governance_ledger")
     .select("payload, event_timestamp")
     .eq("organisation_id", orgId)
     .eq("event_type", "talk_to_governance.query")
     .order("event_timestamp", { ascending: false })
-    .limit(8);
+    .limit(8).throwOnError();
 
   return ((data as Array<{ payload: { query?: string; intent?: string; confidence?: number }; event_timestamp: string }>) ?? []).map((e) => ({
     query: (e.payload?.query ?? "").slice(0, 80),
@@ -417,17 +417,18 @@ async function countDoraMajorIncidents(orgId: string): Promise<number> {
   return graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "incident" && (n as DiscoveryGraphNode).metadata?.is_major_incident === true).length;
 }
 
-async function computeCgSysComplianceRate(orgId: string): Promise<number> {
+async function computeCgSysComplianceRate(orgId: string): Promise<number | null> {
   const graph = await getUnifiedGraph(orgId);
   const sysNodes = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "ai_system") as DiscoveryGraphNode[];
-  if (sysNodes.length === 0) return 100;
+  if (sysNodes.length === 0) return null;
+  if (sysNodes.some(s => typeof s.metadata?.systemComplianceScore !== "number")) return null;
   const totalScore = sysNodes.reduce((sum, s) => sum + ((s.metadata?.systemComplianceScore as number) ?? 0), 0);
   return Math.round(totalScore / sysNodes.length);
 }
 
-async function computeEvidenceCoverage(orgId: string): Promise<number> {
+async function computeEvidenceCoverage(orgId: string): Promise<number | null> {
   const graph = await getUnifiedGraph(orgId);
   const evCount = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "evidence").length;
   const agCount = graph.agentCount;
-  return agCount > 0 ? Math.round((evCount / agCount) * 100) : 0;
+  return agCount > 0 ? Math.round((evCount / agCount) * 100) : null;
 }

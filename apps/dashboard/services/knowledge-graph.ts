@@ -270,53 +270,53 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
     { data: rawFindings },
     { data: rawOrgInfo },
   ] = await Promise.all([
-    db.read
+    db.write
       .from("agents")
       .select(
         "agent_id, agent_code, name, agent_type, risk_level, oversight_level, status, deployment_env, model_name, cg_ag_001_registered, cg_ag_002_owner, cg_ag_003_model_reg, cg_ag_007_oversight, cg_ag_008_audit_trail, cg_ag_010_classified, cg_ag_012_autonomous_governed, external_refs, business_domain, ai_system_id"
       )
       .eq("organisation_id", orgId)
-      .neq("status", "decommissioned"),
+      .neq("status", "decommissioned").throwOnError(),
 
-    db.read
+    db.write
       .from("agent_edges")
       .select(
         "source_agent_id, target_agent_id, relationship_type, is_active, weight, carries_pii, carries_phi, carries_financial"
       )
       .eq("organisation_id", orgId)
-      .eq("is_active", true),
+      .eq("is_active", true).throwOnError(),
 
-    db.read
+    db.write
       .from("ai_systems")
       .select(
-        "system_id, system_code, name, risk_class, lifecycle, status, owner_id, cg_sys_001_registered, cg_sys_002_owner, cg_sys_003_risk_classified, cg_sys_004_tech_doc, cg_sys_005_risk_mgmt, cg_sys_006_human_oversight, cg_sys_007_conformity, cg_sys_008_post_market, annex_iii_sector, annex_iii_exception_claimed, conformity_procedure, conformity_assessment_id, eu_ai_db_registered, eu_ai_db_system_uuid, eu_ai_db_ref, external_refs"
+        "system_id, system_code, name, risk_class, lifecycle, status, owner_id:owner_user_id, cg_sys_001_registered, cg_sys_002_owner, cg_sys_003_risk_classified, cg_sys_004_tech_doc, cg_sys_005_risk_mgmt, cg_sys_006_human_oversight, cg_sys_007_conformity, cg_sys_008_post_market, annex_iii_sector, annex_iii_exception_claimed, conformity_procedure, conformity_assessment_id, eu_ai_db_registered, eu_ai_db_system_uuid, eu_ai_db_ref, external_refs"
       )
       .eq("organisation_id", orgId)
-      .neq("status", "decommissioned"),
+      .neq("status", "decommissioned").throwOnError(),
 
-    db.read
+    db.write
       .from("ict_incidents")
-      .select("incident_code, title, severity, status, dora_criticality, is_major_incident, reporting_phase, occurred_at")
+      .select("incident_code, title, severity, status, is_major_incident, reporting_phase, occurred_at")
       .eq("organisation_id", orgId)
-      .not("status", "in", '("resolved","closed")'),
+      .not("status", "in", '("resolved","closed")').throwOnError(),
 
-    db.read
+    db.write
       .from("third_party_providers")
-      .select("provider_id, provider_name, dora_criticality, concentration_risk_score, service_type, status")
+      .select("provider_id, provider_name:name, dora_criticality, concentration_risk_score, service_type, status")
       .eq("organisation_id", orgId)
-      .eq("is_active", true),
+      .eq("status", "active").throwOnError(),
 
-    db.read
+    db.write
       .from("control_findings")
-      .select("finding_id, title, severity, status, assessment_id, created_at")
-      .eq("organisation_id", orgId)
-      .not("status", "in", '("closed","accepted")'),
+      .select("finding_id, title, severity, status, assessment_id, created_at, control_assessments!inner(organisation_id)")
+      .eq("control_assessments.organisation_id", orgId)
+      .not("status", "in", '("closed","accepted")').throwOnError(),
 
-    db.read
+    db.write
       .from("organisations")
-      .select("name, country_code, industry")
+      .select("name:legal_name, country_code")
       .eq("organisation_id", orgId)
-      .single(),
+      .throwOnError().maybeSingle(),
   ]);
 
   const orgInfo = rawOrgInfo as { name: string; country_code: string; industry: string } | null;
@@ -485,7 +485,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
         incident_code: inc.incident_code,
         severity: inc.severity,
         status: inc.status,
-        dora_criticality: inc.dora_criticality,
+        dora_criticality: null, // No incident-level criticality field exists in the canonical migration chain.
         is_major_incident: inc.is_major_incident,
         reporting_phase: inc.reporting_phase,
         occurred_at: inc.occurred_at,

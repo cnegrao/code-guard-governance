@@ -3,6 +3,14 @@ import { buildAnalyticalContext, projectCanonicalGraph } from '@council/graphos/
 import { intelligenceReader } from './intelligence-read-store';
 import { passportOrganisation } from './passport-session';
 
+/** Governed estate surface: reuse the canonical reader and projection, without
+ * Discovery, legacy topology, vector population or a fabricated seed object. */
+export async function getGovernedGraph() {
+  const organisationId = await passportOrganisation();
+  return projectCanonicalGraph({ organisationId, asOf: new Date().toISOString(),
+    source: 'CANONICAL_PERSISTENCE', ...await intelligenceReader(organisationId).graphRows() });
+}
+
 /** Authenticated server entry: tenant is resolved from the existing verified session only. */
 export async function getGovernedIntelligence(input: {
   readonly seedCanonicalObjectId: string;

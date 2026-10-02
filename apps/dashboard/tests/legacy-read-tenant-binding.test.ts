@@ -30,7 +30,8 @@ function client(which: 'read' | 'write') {
     rpc(name: string, args: unknown) {
       const call: Call = { client: which, kind: 'rpc', name, args, ops: [] };
       calls.push(call);
-      return Promise.resolve(rpcResult(call));
+      const result = Promise.resolve(rpcResult(call));
+      return Object.assign(result, { throwOnError: () => result });
     },
   };
 }

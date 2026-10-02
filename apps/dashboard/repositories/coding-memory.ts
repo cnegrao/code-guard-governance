@@ -77,14 +77,12 @@ export async function searchSimilar(
   threshold: number = 0.5
 ): Promise<CodingMemorySearchResult> {
   try {
-    const { data, error } = await db.read.rpc("coding_memory_search", {
+    const { data } = await db.write.rpc("coding_memory_search", {
       p_organisation_id: orgId,
       p_embedding: embedding,
       p_limit: limit,
       p_threshold: threshold,
-    });
-
-    if (error) throw new Error(error.message);
+    }).throwOnError();
 
     const chunks = (data as Array<Record<string, unknown>>) ?? [];
     return {
@@ -100,7 +98,7 @@ export async function searchSimilar(
       total: chunks.length,
     };
   } catch {
-    return { chunks: [], total: 0 };
+    throw new Error("Coding memory read failed");
   }
 }
 
@@ -109,13 +107,13 @@ export async function getRepositoryMemory(
   repositoryId: string
 ): Promise<CodingMemoryChunk[]> {
   try {
-    const { data } = await db.read
+    const { data } = await db.write
       .from("coding_memory")
       .select("memory_id, path, symbol_type, symbol_name, summary, metadata")
       .eq("organisation_id", orgId)
       .eq("repository_id", repositoryId)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(100).throwOnError();
 
     return ((data as Array<Record<string, unknown>>) ?? []).map((c) => ({
       memory_id: c.memory_id as string,
@@ -126,7 +124,7 @@ export async function getRepositoryMemory(
       metadata: (c.metadata as Record<string, unknown>) ?? {},
     }));
   } catch {
-    return [];
+    throw new Error("Coding memory read failed");
   }
 }
 
