@@ -60,8 +60,15 @@ const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migratio
  */
 export function fullPrimaryChainMigrations(): readonly string[] {
   const names = readdirSync(migrationsDirectory).filter(name => /^\d{14}_[a-z0-9_]+\.sql$/.test(name)).sort();
-  assert.deepEqual(names.slice(-3), [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration]);
-  return names.slice(0, -3);
+  return historicalPrimaryChainMigrations(names);
+}
+/** Explicit R3 horizon: later additive migrations belong to their own fixtures, never old suites. */
+export function historicalPrimaryChainMigrations(names: readonly string[]): readonly string[] {
+  assert.deepEqual([...names], [...names].sort(), 'canonical migration order');
+  assert.equal(new Set(names).size, names.length, 'unique migration identities');
+  const historical = names.filter(name => name <= s0ExecutionContextClosureMigration);
+  assert.deepEqual(historical.slice(-3), [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration]);
+  return historical.slice(0, -3);
 }
 // Real governance persistence chain (same order/content as the M15 profile, WITHOUT the M15
 // runtime/cross-signal tail) needed by the six real underlying authoritative write functions.

@@ -1,6 +1,7 @@
 export { isDiscoveryPathExcluded } from './path-policy';
 
 export type {
+  ProviderSourceIdentity,
   ReadArtifactOutcome,
   SourceAdapter,
   SourceArtifactContent,
@@ -8,8 +9,20 @@ export type {
   SourceDescriptor,
 } from './source-adapter';
 
+export type { GitHubRepositoryLocator, SourceIdentityErrorCode } from './source-identity';
+export {
+  GITHUB_PROVIDER_CODE,
+  SOURCE_IDENTITY_ERROR_CODE,
+  SourceIdentityError,
+  deriveSourceConnectionId,
+  parseGitHubLocatorString,
+  parseGitHubRepositoryLocator,
+  sameGitHubScope,
+  validateAuthorizedRef,
+} from './source-identity';
+
 export { LocalRepositoryAdapter } from './adapters/local-repository-adapter';
-export { GitHubSourceAdapter } from './adapters/github-source-adapter';
+export { GitHubRepositoryRedirectedError, GitHubSourceAdapter } from './adapters/github-source-adapter';
 export type { GitHubSourceAdapterInput, GitHubSourceAdapterOptions } from './adapters/github-source-adapter';
 
 export type { DetectionMatch, DetectionSpecification } from './detection-specification';
@@ -77,7 +90,7 @@ export type {
   DiscoveryRunResult,
   DiscoveryRunWarning,
 } from './pipeline';
-export { DiscoveryPipeline } from './pipeline';
+export { DiscoveryPipeline, DiscoveryPipelineFailure } from './pipeline';
 
 export type { ProvenanceClock } from './provenance';
 export {

@@ -4,11 +4,31 @@ import { SOURCE_FAMILY } from '@council/canonical-contracts';
 
 import { isDiscoveryPathExcluded } from '../path-policy';
 import type {
+  ProviderSourceIdentity,
   ReadArtifactOutcome,
   SourceAdapter,
   SourceArtifactRef,
   SourceDescriptor,
 } from '../source-adapter';
+import {
+  GITHUB_PROVIDER_CODE,
+  parseGitHubLocatorString,
+  parseGitHubRepositoryLocator,
+  validateAuthorizedRef,
+  type GitHubRepositoryLocator,
+} from '../source-identity';
+
+/**
+ * A renamed/transferred repository answers with an HTTP redirect. It is never
+ * followed: the configured locator no longer identifies the acquired source,
+ * so acquisition fails closed and trusted provisioning must rebind.
+ */
+export class GitHubRepositoryRedirectedError extends Error {
+  constructor() {
+    super('GitHub repository redirected - rebinding required');
+    this.name = 'GitHubRepositoryRedirectedError';
+  }
+}
 
 export interface GitHubSourceAdapterOptions {
   readonly owner: string;
@@ -100,13 +120,19 @@ export class GitHubSourceAdapter implements SourceAdapter {
   private readonly token?: string;
   private readonly apiBaseUrl: string;
   private readonly fetchImpl: typeof globalThis.fetch;
+  private readonly locator: GitHubRepositoryLocator;
   private resolvedSha: string | undefined;
   private resolutionPromise: Promise<string> | undefined;
+  private providerIdentityPromise: Promise<ProviderSourceIdentity> | undefined;
 
   constructor(options: GitHubSourceAdapterOptions) {
     if (!options.owner || !options.repo || !options.ref) {
       throw new TypeError('GitHub source adapter requires owner, repo, and ref');
     }
+    // Commercial V0 support constraint; valid input is kept verbatim, so the
+    // configured owner/repo spelling (and its connection identity) is unchanged.
+    this.locator = parseGitHubRepositoryLocator(options.owner, options.repo);
+    validateAuthorizedRef(options.ref);
 
     this.owner = options.owner;
     this.repo = options.repo;
@@ -146,6 +172,24 @@ export class GitHubSourceAdapter implements SourceAdapter {
     const sha = await this.resolutionPromise;
     this.resolvedSha = sha;
     return `commit:${sha}`;
+  }
+
+  /**
+   * Immutable GitHub repository id plus the provider-reported `full_name`,
+   * which must match the configured locator under normalized scope
+   * comparison. Memoized; a failed resolution is not cached.
+   */
+  resolveProviderSourceIdentity(): Promise<ProviderSourceIdentity> {
+    if (!this.providerIdentityPromise) {
+      const pending = this.fetchProviderSourceIdentity();
+      this.providerIdentityPromise = pending;
+      pending.catch(() => {
+        if (this.providerIdentityPromise === pending) {
+          this.providerIdentityPromise = undefined;
+        }
+      });
+    }
+    return this.providerIdentityPromise;
   }
 
   async listArtifacts(): Promise<readonly SourceArtifactRef[]> {
@@ -233,7 +277,10 @@ export class GitHubSourceAdapter implements SourceAdapter {
       response = await this.fetchJson(
         `/repos/${encodeURIComponent(this.owner)}/${encodeURIComponent(this.repo)}/contents/${path}?ref=${encodeURIComponent(sha)}`,
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof GitHubRepositoryRedirectedError) {
+        return { ok: false, locator: safeLocator, reason: error.message };
+      }
       return { ok: false, locator: safeLocator, reason: 'Artifact could not be read from GitHub' };
     }
 
@@ -282,6 +329,36 @@ export class GitHubSourceAdapter implements SourceAdapter {
     return normalizeResolvedSha(response.sha);
   }
 
+  private async fetchProviderSourceIdentity(): Promise<ProviderSourceIdentity> {
+    const response = await this.fetchJson(
+      `/repos/${encodeURIComponent(this.owner)}/${encodeURIComponent(this.repo)}`,
+    );
+    if (!isRecord(response)) {
+      throw new Error('GitHub returned an invalid repository response');
+    }
+    const { id, full_name: fullName } = response;
+    if (typeof id !== 'number' || !Number.isSafeInteger(id) || id <= 0) {
+      throw new Error('GitHub returned an invalid repository id');
+    }
+    if (typeof fullName !== 'string') {
+      throw new Error('GitHub returned an invalid repository full_name');
+    }
+    let observed: GitHubRepositoryLocator;
+    try {
+      observed = parseGitHubLocatorString(fullName);
+    } catch {
+      throw new Error('GitHub returned an invalid repository full_name');
+    }
+    if (observed.normalizedLocator !== this.locator.normalizedLocator) {
+      throw new Error('GitHub repository identity does not match the configured locator');
+    }
+    return Object.freeze({
+      providerCode: GITHUB_PROVIDER_CODE,
+      providerSourceId: String(id),
+      observedLocator: fullName,
+    });
+  }
+
   private async fetchJson(path: string): Promise<unknown> {
     const headers: Record<string, string> = {
       Accept: 'application/vnd.github+json',
@@ -296,9 +373,13 @@ export class GitHubSourceAdapter implements SourceAdapter {
       response = await this.fetchImpl(`${this.apiBaseUrl}${path}`, {
         method: 'GET',
         headers,
+        redirect: 'manual',
       });
     } catch {
       throw new Error('GitHub API request failed');
+    }
+    if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+      throw new GitHubRepositoryRedirectedError();
     }
     if (!response.ok) {
       throw new Error('GitHub API request failed');
