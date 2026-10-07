@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
     const graph = await getUnifiedGraph(orgId);
-    return NextResponse.json(graph);
+    return NextResponse.json({ ...graph, authority: "OPERATIONAL_LEGACY", canonical: false });
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(

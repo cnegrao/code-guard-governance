@@ -1,0 +1,19 @@
+{
+  "name": "@council/discovery-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx src/main.ts",
+    "test": "node --conditions=react-server --import tsx --test ../dashboard/tests/postgres-m16/discovery-machine-worker.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@council/canonical-contracts": "^0.1.0",
+    "@council/governance-review": "^0.1.0",
+    "@council/scanner": "^1.0.0",
+    "pg": "8.16.3",
+    "tsx": "4.19.3"
+  },
+  "devDependencies": { "@types/pg": "8.15.5", "typescript": "5.8.2" }
+}

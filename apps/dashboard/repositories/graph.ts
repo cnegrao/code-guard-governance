@@ -88,12 +88,31 @@ export async function getEstate(orgId: string): Promise<EstateData> {
   return getUnifiedGraph(orgId);
 }
 
+/** The root agent is not in the verified organisation; raised BEFORE any elevated traversal runs. */
+export class CrossTenantAgentError extends Error {
+  constructor() {
+    super("Agent not found in this organisation");
+    this.name = "CrossTenantAgentError";
+  }
+}
+
 export async function getTraversal(
   orgId: string,
   agentId: string,
   maxDepth: number = 5
 ): Promise<TraversalResult[]> {
-  const { data } = await db.read.rpc("agent_graph_traverse", {
+  // agent_graph_traverse takes no tenant argument and runs as a service-role-only definer:
+  // bind the root to the verified organisation first, and fail closed otherwise.
+  const { data: root, error } = await db.write
+    .from("agents")
+    .select("agent_id")
+    .eq("organisation_id", orgId)
+    .eq("agent_id", agentId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!root) throw new CrossTenantAgentError();
+
+  const { data } = await db.write.rpc("agent_graph_traverse", {
     p_root_agent_id: agentId,
     p_max_depth: maxDepth,
     p_edge_types: null,
@@ -107,13 +126,13 @@ export async function getRiskPropagation(
   orgId: string,
   agentId: string
 ): Promise<PropagationPath[]> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("agent_risk_propagation")
     .select("*")
     .eq("organisation_id", orgId)
     .eq("risk_source_agent_id", agentId)
     .eq("is_active", true)
-    .order("impact_score", { ascending: false });
+    .order("impact_score", { ascending: false }).throwOnError();
 
   return (data as PropagationPath[]) ?? [];
 }

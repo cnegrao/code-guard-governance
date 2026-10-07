@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 function getEnv(key: string): string {
@@ -11,6 +12,7 @@ const supabaseAnonKey = getEnv("SUPABASE_ANON_KEY");
 const supabaseServiceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
 const commonOptions = {
+  auth: { persistSession: false, autoRefreshToken: false },
   db: { schema: "gov_repo" },
   global: {
     headers: {
@@ -20,6 +22,8 @@ const commonOptions = {
 };
 
 export const db = {
+  // Anonymous compatibility client. Product server reads use the existing service
+  // boundary below, with organisation_id bound by a verified session at ingress.
   read: createClient(supabaseUrl, supabaseAnonKey, commonOptions),
   write: createClient(supabaseUrl, supabaseServiceRoleKey, commonOptions),
 };

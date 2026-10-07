@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -39,20 +39,22 @@ export default function DiscoveryPage() {
   const [pending, setPending] = useState<DiscoveredAgent[]>([]);
   const [approved, setApproved] = useState<DiscoveredAgent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reviewing, setReviewing] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   async function loadDiscovered() {
     setLoading(true);
+    setError("");
     try {
       const res = await fetch("/api/discovery/review");
+      if (!res.ok) throw new Error("Inventory read failed");
       const data = await res.json();
       setPending(data.pending ?? []);
-      setApproved(data.approved ?? []);
-    } catch {}
+      setApproved(data.inventory ?? []);
+    } catch { setError("ERROR: Inventory could not be read"); }
     setLoading(false);
   }
 
-  useState(() => { loadDiscovered(); });
+  useEffect(() => { void loadDiscovered(); }, []);
 
   async function startScan() {
     if (!owner || !repo) return;
@@ -77,24 +79,11 @@ export default function DiscoveryPage() {
     setScanning(false);
   }
 
-  async function reviewAgent(agentId: string, action: string) {
-    setReviewing(agentId);
-    try {
-      await fetch("/api/discovery/review", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId, action }),
-      });
-      loadDiscovered();
-    } catch {}
-    setReviewing(null);
-  }
-
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-white">Discovery Engine</h2>
-        <p className="text-sm text-gray-400 mt-1">Scan repositories to discover and govern AI agents</p>
+        <h2 className="text-xl font-bold text-white">Repository Discovery</h2>
+        <p className="text-sm text-gray-400 mt-1">Source intelligence writes operational inventory only. Automated governed ingestion is NOT ACTIVE; canonical decisions remain in human Governance Review.</p>
       </div>
 
       <Card className="mb-6">
@@ -119,29 +108,29 @@ export default function DiscoveryPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      {error && <p role="alert" className="text-danger">{error}</p>}
+      {!error && !loading && <div className="grid grid-cols-2 gap-4 mb-6">
         <Card>
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">Pending Review</h3>
+          <h3 className="text-sm font-semibold text-gray-300 mb-2">Detected inventory</h3>
           <div className="text-3xl font-bold text-warning">{pending.length}</div>
         </Card>
         <Card>
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">Approved</h3>
+          <h3 className="text-sm font-semibold text-gray-300 mb-2">Existing legacy inventory</h3>
           <div className="text-3xl font-bold text-success">{approved.length}</div>
         </Card>
-      </div>
-
+      </div>}
       {loading && <Spinner className="py-6" />}
 
-      {!loading && pending.length === 0 && approved.length === 0 && (
+      {!loading && !error && pending.length === 0 && approved.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500">No agents discovered yet.</p>
           <p className="text-sm text-gray-600 mt-1">Scan a repository to discover AI agents and systems.</p>
         </div>
       )}
 
-      {pending.length > 0 && (
+      {!error && !loading && pending.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Pending Review ({pending.length})</h3>
+          <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Detected inventory ({pending.length})</h3>
           <div className="space-y-2">
             {pending.map((a) => (
               <Card key={a.agent_id} className="flex items-center justify-between">
@@ -158,8 +147,6 @@ export default function DiscoveryPage() {
                 </div>
                 <div className="flex gap-2">
                   <Link href={`/agents/${a.agent_id}`}><Button size="sm" variant="ghost">View</Button></Link>
-                  <Button size="sm" onClick={() => reviewAgent(a.agent_id, "approve")} loading={reviewing === a.agent_id}>Approve</Button>
-                  <Button size="sm" variant="danger" onClick={() => reviewAgent(a.agent_id, "reject")}>Reject</Button>
                 </div>
               </Card>
             ))}
@@ -167,9 +154,9 @@ export default function DiscoveryPage() {
         </div>
       )}
 
-      {approved.length > 0 && (
+      {!error && !loading && approved.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Approved ({approved.length})</h3>
+          <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Existing legacy inventory ({approved.length})</h3>
           <div className="space-y-2">
             {approved.map((a) => (
               <Card key={a.agent_id} className="flex items-center justify-between">
@@ -180,7 +167,7 @@ export default function DiscoveryPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="active">{a.status}</Badge>
+                  <Badge variant="proposed">Legacy: {a.status}</Badge>
                   <Link href={`/agents/${a.agent_id}`}><Button size="sm" variant="ghost">View</Button></Link>
                 </div>
               </Card>

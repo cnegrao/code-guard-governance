@@ -191,3 +191,321 @@ start (GV011 `BACKDATED_REVOKE_WOULD_RESURRECT`), returns GV011 `EFFECTIVE_INSTA
 instead of raw 23505, and drops the obsolete helper. `l14-authority-policy-no-resurrection.test.ts`
 proves cases A-F, F-2, zero residue, command reuse, recorded-cutoff knowledge, and a concurrent
 cancellation/cut-over race. The S1A.2 successor suite's helper-EXECUTE probe now targets `_v2`.
+
+## S1B.0 — governed-registry framework + typed target-scope evidence
+
+Additive migration `20260930120000_m16_s1b0_l14_registry_framework_v1.sql` (no S0/S1A migration
+edited; the three public Authority Policy RPC bodies, the rule parser and the evaluator are
+byte-identical). FRAMEWORK ONLY: no registry subject is executable and no public RPC is added.
+
+**Migration horizons.** `l14Cluster(diagnostic, { horizon })` in `helpers/m16-l14-fixtures.ts`:
+`'S1A'` (default) ends at S1A.2R1 exactly, so every S1A suite keeps asserting the exact S1A catalog
+(13 relations, its own postflight) unchanged; `'S1B0'` additionally applies S1B.0. A suite may also
+start at `'S1A'` and apply S1B.0 itself (`l14-registry-framework.test.ts` does, to prove
+compatibility on real S1A history).
+
+- `l14-registry-framework.test.ts`: real S1A history (bootstrap, successor, durable DENY, DEFER/REJECT,
+  PRESENT support) written through the RPCs, THEN the migration: historical rows unchanged, every new
+  constraint VALID (except the deliberately NOT VALID D-14 CHECK), historical DENY replays its original
+  result, AP RPC/parser/evaluator bodies unchanged, successor lifecycle still works; D-14 (32 rejected
+  registry x non-ALL combinations, authorized = GV010 + nothing written, unauthorized = durable DENY +
+  no rule, owner stopped by the insertion guard and the CHECK backstop, fact permissions keep all five
+  scopes); typed request-target shapes (CANONICAL_KIND / RELATIONSHIP_TYPE rejected, cross-tenant
+  object rejected, no relationship-state FK/uniqueness); F-4 audit shapes; exact operand snapshot;
+  registry governance-decision matrix; the registry-state envelope (generic kind / lineage /
+  revocation / decision / basis shapes, generated derived columns, no JSON); immutability; command
+  result and support-link widening; replay-first syntactic support canonicalization; F2 untouched.
+- `l14-registry-framework-guards.test.ts`: SHARED Authority Policy guard on the SAME advisory key as the
+  S1A exclusive guard (both directions, including the REAL unchanged ADMIT RPC), registry subject
+  guard serialization and framing, fail-closed keys, owner-only EXECUTE.
+- `l14-registry-framework-acl.test.ts`: S1B-horizon real-catalog checker (14 relations, exactly the
+  three S1A service_role RPCs), per-class negative controls on S1B objects, each also rejected by a
+  re-execution of the S1B.0 postflight; disabled guards / JSON column also fail the postflight.
+
+D-14 is enforced at rule INSERTION (BEFORE INSERT guard + NOT VALID CHECK), not in the parser: the
+unchanged AP ADMIT RPC parses before replay arbitration, so a parser-level check would make a
+historical ADMIT (legal under S1A) fail GV010 on replay instead of returning its original result.
+
+## S1B.1 — GOVERNANCE_PARTY registry + PII boundary
+
+Additive migration `20260930130000_m16_s1b1_l14_governance_party_v1.sql` (no S0 / S1A / S1B.0 migration
+edited; no Authority Policy RPC, parser, evaluator or S1B.0 helper replaced). Horizons: `'S1A'` and
+`'S1B0'` are unchanged (their suites keep their exact historical catalog assertions); `'S1B1'` adds the
+Party migration. `helpers/m16-l14-party-fixtures.ts` bootstraps each organisation's Authority Policy
+through the real AP RPCs (registrar = `L14_PARTY_ADMIT`, steward = `L14_PARTY_VALIDATE` without flags,
+flex steward = self-validation + future/back dating, contributor = a CONTRIBUTING ADMIT rule) and drives
+every Party command through the three real Party RPCs as service_role.
+
+Identity: `organisation_id + governance_party_id`, the id minted by PostgreSQL (`DEFAULT gen_random_uuid()`),
+never an RPC input, never derived from user / email / name / external identity / profile. ADMIT pins the
+exact ALLOW / GOVERNANCE_PARTY / ADMIT authorization and creates the identity, ADMISSION support links and a
+technical head with no state — never a governance decision or a VALIDATED state. A durable DENY mints nothing.
+State detail over `l14_registry_states` is linear, same-Party and alternating (VALIDATED → REVOKED →
+VALIDATED …), so an overlapping second VALIDATED state is structurally impossible; a REVOKE falls strictly
+inside the target's validity and a re-validation begins at or after the tombstone (GV011 otherwise).
+`gov_repo.governance_party_directory_profiles` is the mutable, NON-authoritative, deliberately non-`l14`
+profile table — the only place Party PII can live — with no application privilege and no RPC.
+
+All three Party RPCs are replay-first: base session → syntactic shape → syntactic support → DB fingerprint →
+AP guard SHARED → registry subject guard (existing Party) → per-command guard → replay arbitration →
+tenant/reference/support resolution → current effective Authority Policy (exact hash) → rule evaluation →
+mutation → base-eligibility recheck. The per-command guard makes a concurrent duplicate command replay its
+original result instead of racing the unique command identity.
+
+- `l14-governance-party.test.ts`: ADMIT ALLOW (DB-minted v4 id, admission/authorization/snapshot evidence,
+  head without state), no caller id (catalog default + 42883), durable DENY variants incl. NO_EFFECTIVE_AUTHORITY
+  for a system admin, ALLOW/DENY replay after role and AP change, GV007/GV008, shape/eligibility failures
+  unconsumed, replay-first support ordering (vanished and foreign-tenant evidence), D-14 ordering, proposals,
+  VALIDATE lineage, no overlapping VALIDATED, decision DENY variants, REJECT/DEFER/correction, self-validation,
+  temporal dating, REVOKE + target immutability + double revoke, re-validation (exact instant, overlap GV011),
+  REVOKE interval rules, head CAS + head guard, bitemporal resolver matrix (recorded cutoff, backdated
+  revocation, no fallback, ambiguity fails closed), structural detail guard.
+- `l14-governance-party-pii.test.ts`: catalog proof that no L14 structure can represent PII (column names,
+  exact Party column sets, closed-vocabulary text only, no profile FK, only actor user FKs), no PII RPC
+  argument (42883) or result field, profile correction/pseudonymisation/erasure leave every L14 row
+  byte-identical, profile values never appear in L14 rows/fingerprints/replays, user deletion nulls only the
+  mapping, PERSON-only unique same-tenant mapping, erasure shapes, fixed binding, no app access / no profile RPC.
+- `l14-governance-party-concurrency.test.ts`: same-command ADMIT (one id), different commands in parallel,
+  different Parties in parallel, terminal-decision race, expected-none VALIDATE race, REVOKE vs VALIDATE /
+  re-VALIDATE / REVOKE races, role / credential / actor / organisation races, in-flight VALIDATE holding
+  roles, AP change races in both directions (shared vs exclusive guard), subject / command / AP guard 55P03.
+- `l14-governance-party-acl.test.ts`: S1B1-horizon real-catalog checker (18 l14 tables + the profile table,
+  exactly six service_role RPCs), per-class negative controls (incl. profile grants, profile view, profile
+  RPC), each also rejected by a re-execution of the S1B.1 postflight; disabled guards, PII/JSON columns,
+  profile references and a weakened mapping FK also fail the postflight.
+
+## S1B.1R1 — pending GovernanceParty validation cancellation (S1B1-F1)
+
+Additive migration `20260930140000_m16_s1b1r1_governance_party_pending_cancel_v1.sql` (S1B.1 migration not
+edited). A Party REVOKE is legal iff `revoke.effective_from >= target.effective_from`; only strictly-before
+fails (GV011 `REVOKE_BEFORE_TARGET_EFFECTIVE`). Both enforcement layers — the state guard trigger function and
+the decide RPC — are `CREATE OR REPLACE`d with identical signatures/ACLs and differ from S1B.1 only in that
+rule. Future vs past E is not special-cased: FUTURE_DATED / BACKDATED authorization already governs it.
+
+Horizons: `'S1B1'` ends at S1B.1 exactly (historical); `'S1B1R1'` adds the corrective and is the horizon of the
+four S1B.1 suites (their one equal-instant assertion now covers strictly-before only).
+`l14-governance-party-pending-cancel.test.ts` starts at `'S1B1'`, observes the old strict rule on real history,
+applies the corrective, and proves: additive surface (signatures, ACLs, other bodies, relations, both postflights),
+guard/RPC agreement (incl. a direct owner insert exercising the trigger alone), pending future cancellation at E
+with the full recorded-cutoff matrix, target byte-identity, head advance, replay, already-effective backdated
+equal-E REVOKE (allowed with `allow_backdating`, durable DENY without), equal-E re-validation with a unique
+resolver result, strictly-before GV011, and concurrent equal-E cancellations linearizing.
+
+## S1B.2 — reused policy-store hardening (hardening only)
+
+Additive migration `20260930150000_m16_s1b2_policy_store_hardening_v1.sql` (no historical migration edited; no L14
+object, no Policy lifecycle, no RPC, no application-callable routine, no TS surface). It hardens the REUSED
+`gov_repo.governance_policies` / `gov_repo.policy_versions` in place for S1B.3 (admission) and S1B.4 (validation).
+
+**Harness.** `policyStorePrerequisites` (helpers/disposable-m16-postgres.ts) are the existing, never-edited
+`20260818003755/003822/003836` (policies/risks/evidence parts 1-3: they create both stores, the historical CASCADE FK,
+the legacy RLS policies and `current_version_id` FK) and `20260901134812` (the reused parent key
+`governance_policies (organisation_id, policy_id)` and the invoker mapping triggers). They are merged
+chronologically, so parts 1-3 land BEFORE the hostile `20260818013113` blanket grant exactly as in production.
+Horizon `'S1B2'` = S1B1R1 + those prerequisites + S1B.2. `l14Cluster(..., { horizon: 'S1B1R1', policyStore: true })`
+gives the pre-S1B.2 state with the prerequisites (to seed legacy rows). `'S1A'`..`'S1B1R1'` are unchanged.
+
+- Tenancy: `policy_versions.organisation_id` backfilled only from the exact parent, proven, NOT NULL; the CASCADE
+  FK is replaced by `(organisation_id, policy_id) -> governance_policies ON UPDATE/DELETE RESTRICT`; tenant keys
+  `(organisation_id, policy_id, version_id)` and `(..., content_hash)`.
+- D-3: `content_hash = encode(sha256(convert_to(content_markdown,'UTF8')),'hex')`, no normalization; BEFORE INSERT
+  guard authors an omitted hash and rejects any differing caller hash (23514); NOT VALID CHECK backstop; legacy
+  hashes are not rewritten.
+- D-5: every `policy_versions` row is entirely immutable (UPDATE/DELETE/TRUNCATE raise 55000, ENABLE ALWAYS);
+  `governance_policies` identity/provenance immutable, DELETE/TRUNCATE raise. Legacy descriptive fields stay mutable
+  legacy data with no M16 authority; `owner_user_id` (D-4) and `current_version_id` (legacy/inert) untouched.
+- D-13: zero privilege (incl. SELECT) for PUBLIC/anon/authenticated/service_role; legacy RLS policies dropped;
+  views and SECURITY DEFINER routines reaching the stores lose every application-role privilege.
+
+Suites: `l14-policy-store-hardening.test.ts` (legacy rows + hostile grants + bridge view + definer score routine,
+atomic abort on an orphan version, backfill/byte-identity, no promotion, tenancy, delete semantics, hash matrix vs
+Node mirror and pgcrypto, full-column immutability, identity/provenance, D-4/current_version_id, D-13 closure);
+`l14-policy-store-acl.test.ts` (S1B2 horizon with a live Party flow: independent checker + per-class negative
+controls, each also rejected by the S1B.2 postflight; S1B.1/S1B.1R1 postflights still re-execute; exactly six RPCs).
+Consequence recorded: the 20260901134812 invoker mapping trigger reads `governance_policies`, so service_role can no
+longer write `policy_mandate_mappings` directly either.
+
+## S1B.2R1 — capability-based definer surface closure (full primary chain)
+
+Additive migration `20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql` (no historical migration edited, no
+routine body changed). `supabase/migrations` is the ONLY canonical Governance Core migration authority; the noncanonical
+roots are hash-pinned and classified in `docs/architecture/m16-noncanonical-migration-roots.manifest.json`
+(`tests/noncanonical-migration-roots-contract.test.ts`).
+
+**Harness.** `disposableM16Postgres(..., { fullPrimaryChain: true })` applies EVERY canonical migration in timestamp
+order (the S1B.2R1 target; the historical horizons are unchanged). `postgres` now mirrors the architecture-owner
+READ-ONLY measurement of hosted Supabase (NOSUPERUSER, CREATEROLE, CREATEDB, BYPASSRLS); CREATEROLE is what lets R1
+create its NOLOGIN technical owners, and R1 grants itself SET on them only for the ownership transfer. pgvector: CI
+installs `postgresql-17-pgvector`; where it is not installed the harness registers a labelled text-backed stand-in type
+and asserts that the single HNSW index statement of `20260818004053` is the only failing statement.
+
+**Authority boundary = effective capability, not source text.**
+- Control A (closed surface): every SECURITY DEFINER routine executable by PUBLIC/anon/authenticated/service_role
+  (effective privilege, incl. inherited roles and defaults; extension-member routines excluded) must be one of exactly
+  22 identities with exact owner class, body hash, config and service_role-only EXECUTE; no overload.
+- Control B (least-privilege owner): only the frozen 12 (six S0 `*_governed_v1` + six L14 RPCs, postgres-owned) may run
+  as an owner with any policy-store capability. The other 10 run as NOLOGIN/NOBYPASSRLS/NOINHERIT owners with exact
+  column/table/sequence grants and role-specific RLS policies (checked as an exact map):
+  `govia_ledger_executor` (ledger_append, ledger_verify; search_path pinned to pgcrypto's catalog schema),
+  `govia_runtime_executor` (record_execution_snapshot, admit_runtime_observation, read_runtime_observation_exact,
+  record_cross_signal_comparison_result; canonical_relationships SELECT only), `govia_legacy_read_executor`
+  (agent_compliance_gaps, agent_graph_traverse, agent_semantic_search), `govia_legacy_graph_executor`
+  (recompute_risk_propagation; may execute exactly agent_graph_traverse).
+- Forbidden / quarantined: `gov_exec` / `gov_exec_dml` (any overload) lose application EXECUTE; the five consumer-less
+  legacy definers and the GraphOS trigger functions lose application EXECUTE; the setup-8.2 `ledger_append(text,...)`
+  overload is dropped (no CASCADE); M008E objects -> `NONCANONICAL_GOVERNANCE_ROOT_CONFLICT`; `coding_memory_search`
+  -> `NONCANONICAL_TARGET_DRIFT` (S1B2-I4); extension credit definers fail the closed surface (S1B2-I5).
+- Default privileges: postgres-created routines default to neither PUBLIC (global) nor service_role (gov_repo).
+
+Suites (full chain): `l14-definer-surface-preflight.test.ts` (pre-R1 measured inventory, tracked GraphOS bridge
+replicas proving the gov_exec bypass, every fail-closed preflight control, real application, gov_exec/GraphOS trigger
+closure, default privileges); `l14-definer-surface-postflight.test.ts` (baseline 22, technical-owner shape, and every
+negative control re-executing the R1 postflight: dynamic SQL and helper chains that the S1B.2 detector misses, default
+grants, inherited roles, public-schema executors, 23rd definer, wrong owner, frozen body/config/overload, application
+EXECUTE, owner policy SELECT/DML/REFERENCES/BYPASSRLS/membership/escalation/extra grant/CREATE/extra policy, noncanonical
+drift); `l14-definer-surface-functional.test.ts` (ledger chain + tamper, execution snapshot, M15 admit/read/cross-signal,
+legacy reads, risk propagation, no owner reaches a policy-store row). Dashboard: `legacy-read-tenant-binding.test.ts`.
+
+## S1B.2R2 — runtime routine execution closure (full primary chain)
+
+Additive migration `20260930170000_m16_s1b2r2_runtime_execution_closure_v1.sql`; only `proconfig` changes (no body,
+signature, owner, ACL or return-shape change; the application surface stays exactly 22).
+
+**Root cause.** The four `govia_runtime_executor` routines were pinned to `search_path = pg_catalog`. When `pg_temp` is
+not named in `search_path`, PostgreSQL searches the caller's temporary schema FIRST for relations and types, so a caller
+`pg_temp.text` domain (CHECK calling a caller-written function) was resolved inside the routine and ran as the runtime
+owner (the reviewer's case persisted a forged cross-tenant `cross_signal_comparison_results` row). Pinning only the
+routine to `pg_catalog, pg_temp` still leaked: the non-inlined helpers, CHECK functions and trigger functions it executes
+carry their own `SET search_path` without `pg_temp` (e.g. `frame_identity`, statement 1).
+
+**Correction.** The measured execution closure (15: the four runtime definers; `execution_field_valid`,
+`frame_identity`, `normalized_object_identity`, `runtime_iso`, `runtime_lock`, `runtime_readback`, `runtime_round_cost`,
+`runtime_same_observation`, `runtime_valid_observation`; trigger functions `execution_immutable`, `runtime_immutable`,
+`cross_signal_immutable`) keeps its existing path with `pg_temp` named LAST. The runner takes SET (never INHERIT) on the
+runtime owner only for the four `ALTER FUNCTION` statements and revokes it. Postflight: exact closure (owner, definer
+flag, body hash, config), a generic rule that every routine the runtime owner owns and every trigger/CHECK function on a
+table it can write pins `pg_temp` last, service_role-only EXECUTE, runner ADMIN-only membership, surface = 22.
+
+`fullChainCluster(..., { r2: true })` applies R2 after R1. `r1PostflightAfterR2()` re-executes the R1 postflight
+verbatim except the four runtime definers' audited config (`search_path=pg_catalog, pg_temp`).
+
+Suites: `l14-runtime-execution-closure.test.ts` (BEFORE on the R1 catalog: shadow leaks in all four routines, the
+reviewer's persisted forgery, and the routine-only pin still leaking via `frame_identity`; R2 application; R2/R1/S1B.2
+postflights; R2 negative controls; AFTER under a full type-shadow prelude: snapshot persist/replay/stale head,
+observation replay + tenant-exact read, cross-signal record/replay/cross-tenant errors identical to R1, the reviewer's
+call forging nothing, canonical_relationships unchanged). `l14-definer-surface-functional.test.ts` runs on R1 and R1+R2.
+
+## S1B.2R3 — S0 governed-wrapper execution-context closure (full primary chain)
+
+Additive migration `20260930180000_m16_s1b2r3_s0_execution_context_closure_v1.sql`; only `proconfig` changes (no body,
+signature, owner, ACL or return-shape change; the frozen S0 wrappers are untouched; the application surface stays 22).
+
+**Root cause (I6).** The six frozen S0 `*_governed_v1` wrappers (and their guard / eligibility helper) pin
+`search_path = pg_catalog, pg_temp`, but ten inner routines they execute pin a path WITHOUT `pg_temp`
+(`gov_repo, pg_catalog` or `pg_catalog`). While one of them runs, PostgreSQL searches the caller's temporary schema FIRST
+for relations and types, so the same call resolves `text` / `jsonb` differently in the wrapper frame and the inner frame:
+a caller `pg_temp` domain CHECK runs as `postgres` inside every wrapper (a CREATEROLE-only action persisted through
+`apply_review_transition_governed_v1`), and an inert shadow alone breaks five wrappers with 42804.
+
+**Correction.** The measured closure's still-affected routines keep their existing path with `pg_temp` named LAST:
+`apply_review_transition`, `record_authorized_reconciliation`, `guard_final_review_decision` (trigger),
+`materialize_object_reconciliation`, `legacy_canonical_object_for_candidate`, `materialize_relationship_reconciliation`,
+`resolve_canonical_endpoint`, `record_technical_field_decision`, `record_execution_field_decision`, `technical_field_valid`
+(CHECK). Already correct: the eight frozen S0 definers, the R2 shared helpers (`frame_identity`,
+`normalized_object_identity`, `execution_field_valid`, `execution_immutable`); `set_updated_at` inherits its caller's
+path. Postflight: exact closure (owner, definer flag, body hash, config), a generic catalog rule (call graph from the six
+wrappers + trigger/CHECK functions of every table the closure writes must pin `pg_temp` last or inherit), wrapper
+service_role-only EXECUTE, guard owner-only, surface = 22.
+
+`fullChainCluster(..., { r3: true })` applies R2 then R3 after R1.
+
+Suites: `l14-s0-execution-context-closure.test.ts` (control on the R2 catalog; BEFORE: shadow executes as postgres in all
+six wrappers, 42804 inconsistency, persisted CREATEROLE escalation; R3 application; R3/R2/R1/S1B.2 postflights; proconfig-only
+catalog diff; negative controls; AFTER under a full type-shadow prelude: write/replay/deterministic ids identical to the
+control, GV006 with no partial writes, no escalation, canonical materialization identical). `audit-integrity-read-path.test.ts`
+(the real `getIntegrity()` with `db.read`/`db.write` bound to their database roles `anon`/`service_role`: anon is denied
+`governance_ledger`; events_by_type is aggregated from actual tenant rows; empty ledger; tampered chain -> false).
+
+## S1B.2R4 — audit repository canonical reads
+
+Repository-only correction; no migration or routine configuration change. All six direct `governance_ledger`
+reads now use the existing service client with `organisation_id` bound: `getEvents`, `getEventById`, and the
+four `getIntegrity` queries (total, latest sequence, last 30 days, event types). R3 had corrected only event types;
+the other five reads were denied to `db.read`/`anon` and silently became zero, empty, or null results.
+
+`audit-repository-read-closure.test.ts` runs the actual repository on the full primary chain + R1/R2/R3 through
+a test transport executing SQL as each client's database role. It proves all integrity metrics, empty tenants,
+foreign-row exclusion, default and explicit pagination, exact totals, descending sequence order, every filter,
+combined filters, and existing/missing/foreign lookup. Each integrity component is independently failed through
+a real database permission denial. Invalid UUID queries prove list/lookup errors reject instead of returning
+plausible empty data. `maybeSingle()` preserves null for a successful lookup with no matching row.
+
+The legacy test that accepted permission errors as empty event types is corrected: no-data remains valid, while
+query failure rejects using the existing repository `Error(error.message)` convention. Public TypeScript shapes
+and successful empty-result semantics are unchanged. `ledger_verify(1, null)` remains GLOBAL, as in R3: even an
+empty tenant sees false when another tenant's row breaks the shared chain. The top-ten aggregation and closed
+application routine surface of 22 remain intact.
+
+## S1B.2R5 — audit scale and query closure
+
+Repository-only correction, no migration. `audit-scale-query-closure.test.ts` runs the actual repository against
+disposable PG17 with the full primary chain + R1/R2/R3. The shared audit transport now simulates the configured
+PostgREST `max_rows = 1000` in SQL: every row query uses `LIMIT min(requested limit, 1000)`, including queries
+without an explicit range. Exact counts still cover the full filtered set. The R3 integrity suite uses this same
+capped transport. This is a transport simulation over real PostgreSQL, not a running PostgREST acceptance test.
+
+`events_by_type` aggregates successive 1,000-row ranges ordered by canonical `entry_sequence ASC`, with
+`organisation_id` on every service-client request. It stops on a short/empty chunk, aggregates counts before
+sorting descending and taking ten, and rejects the entire integrity request on any intermediate error. An exact
+multiple of the chunk size requires an empty terminal request. Memory stores counts by type, not all ledger rows.
+Like the existing independent integrity queries, this does not introduce a cross-request database snapshot.
+
+`getEvents` defaults remain page 1 / limit 50. The supported contract is now explicit: page is a positive safe
+integer; limit is an integer from 1 through 1,000 inclusive. Oversized, nonpositive, fractional, nonfinite or unsafe
+values, and unsafe computed range endpoints, throw `RangeError` before a database query. Limits are rejected,
+never silently truncated or clamped. Existing routes retain their parsing and exception response behavior (500);
+for example, their pre-existing `Number(value) || default` normalizes zero/NaN before the repository is called.
+Successful response shapes and all three exported TypeScript interfaces are unchanged.
+
+R5 originally retained case-insensitive ILIKE containment over `event_description OR event_type`. Values were double-quoted
+with backslashes and quotes escaped using the [PostgREST reserved-character convention](https://postgrest.org/en/stable/references/api/url_grammar.html#reserved-characters);
+supabase-js performs URL encoding. **R6 supersedes those wildcard semantics with the literal contract below.**
+The test transport follows the v14.1 `pLogicSingleVal`/`pQuotedValue` parser for the audit subset; it is not a general query language.
+
+The 1,250-row fixture contains HEAD_0..HEAD_9 with counts 145,135,125,115,105,95,85,75,65,55, then TAIL=250,
+with foreign-tenant rows interleaved. Exact expected top ten: TAIL=250 followed by HEAD_0..HEAD_8. Regression coverage
+includes the transport cap itself, second-chunk SQL permission denial, exact chunk multiple, limits 50/1,000 across
+every page plus exhaustion, rejection above 1,000, invalid pagination, tenant isolation, and all requested punctuation
+strings plus mixed-case substring, quotes and filter-like input. All 1,250 IDs must occur exactly once and every page
+must retain total=1,250. The same suite failed on unchanged R4 before implementing R5; see the
+[R5 evidence record](../../../../docs/codex/evidence/2026-09-30-m16-s1b2r5-audit-scale-query-closure.md).
+
+**Unresolved follow-up hold: I7 — DASHBOARD_LEDGER_CANONICAL_READ_PATH.** In `repositories/dashboard.ts`,
+`countAuditEvents30Days` and `getGovernanceQuestions` still use `db.read` for `governance_ledger`. R5 deliberately
+does not change them; track them for later M16 closure/demo-readiness. I1–I5 remain unchanged and unresolved;
+I6 remains corrected by R3. F2 is NOT TRIGGERED. The application routine surface remains 22.
+
+## S1B.2R6 — literal search semantics closure
+
+Audit search is **literal case-insensitive substring search** over description OR event type. Input is data.
+`imatch` maps to PostgreSQL `~*`; unanchored matching already finds substrings, so no `.*` wrapper is needed.
+The operator layer escapes regex metacharacters (`\ . * + ? ^ $ [ ] { } | ( )`) first. `%` and `_` are ordinary
+regex characters, and `imatch` has no PostgREST star alias. The grammar layer then quotes the whole pattern,
+doubling backslashes and escaping double quotes. Supabase performs URL encoding. PostgREST decoding recovers
+the regex literal, and PostgreSQL interprets that pattern. Neither layer can substitute for the other.
+
+`audit-literal-search.test.ts` exercises the real repository and installed Supabase URL encoder, with a simulated
+fetch/PostgREST transport forwarding decoded values to real disposable PostgreSQL 17 on the full canonical chain.
+Every case checks exact row identities and count, description/type matching, case folding, a negative control,
+foreign-tenant exclusion and hand-written expected database patterns. An independent raw-pattern transport control
+proves regex remains regex until PostgreSQL evaluates it and that only ILIKE translates stars. This is not real HTTP
+acceptance. Coverage includes all requested backslashes, wildcard/regex characters, punctuation, quotes and
+filter-like input, plus colon, combined quote/backslash, regex-option injection, repetition and newline controls.
+The R5 scale/pagination and R4 error/read contracts remain unchanged. No migration or RPC is added.
+
+**S1B2-H1 — DATA_API_GOV_REPO_EXPOSURE_AND_MAX_ROWS_ACCEPTANCE** is registered in the existing
+[architecture hold registry](../../../../docs/architecture/m16-noncanonical-migration-roots.manifest.json) as an
+unresolved `DEPLOYMENT_INTEGRATION_HOLD`. Before the first hosted dashboard deployment/demo, and no later
+than M16 closure, the target must prove `gov_repo` Data API exposure, compatibility with canonical 1,000-row chunks,
+real HTTP/PostgREST acceptance for `getEvents`, `getIntegrity` and literal search, and preserved tenant binding.
+R6 does not resolve H1 or change hosted configuration. I1–I5, I6 and unresolved I7 retain their prior dispositions.

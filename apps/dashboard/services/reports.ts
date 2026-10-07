@@ -52,7 +52,7 @@ export function generateExecutiveReport(data: ReportData): Uint8Array {
   heading("1. AI Estate Overview");
   row("Total AI Agents", String(data.agents.total));
   row("Total AI Systems", String(data.systems.total));
-  row("Compliance Rate", `${data.compliance.rate}%`);
+  row("Compliance Rate", `${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}`);
   y += 6;
 
   heading("Risk Distribution", 12);
@@ -177,7 +177,7 @@ export function generateAIActReport(data: ReportData): Uint8Array {
   y += 8;
 
   heading("3. Compliance Controls");
-  row("Compliance Rate", `${data.compliance.rate}%`);
+  row("Compliance Rate", `${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}`);
   row("Governance Gaps", String(data.compliance.totalGaps));
   y += 8;
 
@@ -193,7 +193,7 @@ export function generateAIActReport(data: ReportData): Uint8Array {
   if (data.aiAct.highRiskSystems > 0) recs.push(`${data.aiAct.highRiskSystems} high-risk systems require conformity assessment (Art. 43).`);
   if (data.agents.byRisk.high > 3) recs.push(`${data.agents.byRisk.high} agents classified as high risk. Review risk classification.`);
   if (data.aiAct.agentsWithoutSystem > 0) recs.push(`${data.aiAct.agentsWithoutSystem} agents not linked to an AI System. Link them per AI Act Art. 3.1.`);
-  if (data.compliance.rate < 85) recs.push(`Compliance rate is ${data.compliance.rate}%. Address outstanding governance gaps.`);
+  if (data.compliance.rate !== null && data.compliance.rate < 85) recs.push(`Compliance rate is ${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}. Address outstanding governance gaps.`);
   if (recs.length === 0) recs.push("No critical AI Act compliance issues detected. Continue monitoring.");
   for (const r of recs) {
     doc.fontSize(10).font("Helvetica").fillColor("#d1d5db").text(`· ${r}`, left, y);
@@ -236,7 +236,7 @@ export function generateDORAReport(data: ReportData): Uint8Array {
 
   heading("2. AI Agent Governance (DORA Art. 8)");
   row("Total Agents", String(data.agents.total));
-  row("Compliance Rate", `${data.compliance.rate}%`);
+  row("Compliance Rate", `${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}`);
   row("High-Risk Agents", String(data.agents.byRisk.high + data.agents.byRisk.critical));
   y += 8;
 
@@ -255,7 +255,7 @@ export function generateDORAReport(data: ReportData): Uint8Array {
   const recs: string[] = [];
   if (data.incidents.doraOpen > 0) recs.push(`${data.incidents.doraOpen} DORA incidents still open. Review DORA Art. 19 reporting deadlines.`);
   if (data.dora.majorIncidents > 0) recs.push(`${data.dora.majorIncidents} major incidents require immediate notification per DORA Art. 19(4).`);
-  if (data.compliance.rate < 85) recs.push(`Agent compliance rate at ${data.compliance.rate}%. DORA Art. 8 requires complete ICT asset inventory.`);
+  if (data.compliance.rate !== null && data.compliance.rate < 85) recs.push(`Agent compliance rate at ${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}. DORA Art. 8 requires complete ICT asset inventory.`);
   if (recs.length === 0) recs.push("No critical DORA issues detected. Continue monitoring.");
   for (const r of recs) {
     doc.fontSize(10).font("Helvetica").fillColor("#d1d5db").text(`· ${r}`, left, y);

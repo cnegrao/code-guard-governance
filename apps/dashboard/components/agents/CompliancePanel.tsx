@@ -3,8 +3,8 @@
 import { Badge } from "@/components/ui/Badge";
 
 interface CompliancePanelProps {
-  compliance: Record<string, boolean>;
-  score: number;
+  compliance: Record<string, import("@/types/agents").ControlState>;
+  score: number | null;
   gaps: string[];
 }
 
@@ -19,15 +19,15 @@ const CONTROL_LABELS: Record<string, string> = {
 };
 
 export function CompliancePanel({ compliance, score, gaps }: CompliancePanelProps) {
-  const color = score >= 85 ? "text-success" : score >= 50 ? "text-warning" : "text-danger";
+  const color = score === null ? "text-gray-400" : score >= 85 ? "text-success" : score >= 50 ? "text-warning" : "text-danger";
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div className={`text-3xl font-bold ${color}`}>{score}%</div>
+        <div className={`text-3xl font-bold ${color}`}>{score === null ? "NOT_ASSESSED" : `${score}%`}</div>
         <div className="text-sm text-gray-400">
           {gaps.length === 0
-            ? "All controls passing"
+            ? "No failed controls recorded; unassessed controls remain unknown"
             : `${gaps.length} gap${gaps.length > 1 ? "s" : ""} detected`}
         </div>
       </div>
@@ -41,8 +41,8 @@ export function CompliancePanel({ compliance, score, gaps }: CompliancePanelProp
             <span className="text-sm text-gray-300">
               {CONTROL_LABELS[key] ?? key}
             </span>
-            <Badge variant={value ? "passed" : "failed"}>
-              {value ? "PASS" : "FAIL"}
+            <Badge variant={value === "passed" ? "passed" : value === "failed" ? "failed" : "proposed"}>
+              {value === "passed" ? "PASS" : value === "failed" ? "FAIL" : value === "waived" ? "WAIVED" : "NOT_ASSESSED"}
             </Badge>
           </div>
         ))}

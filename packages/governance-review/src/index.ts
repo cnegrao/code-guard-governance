@@ -29,3 +29,6 @@ export * from './execution-context';
 export * from './runtime-observation.ts';
 export * from './cross-signal-comparison.ts';
 export * from './l14-authority-policy.ts';
+export * from './l14-registries.ts';
+export * from './l14-governance-party.ts';
+export * from './discovery-machine/index.ts';

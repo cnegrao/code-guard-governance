@@ -45,10 +45,10 @@ const HANDLERS: Array<{
     name: "high_risk_agents",
     patterns: [/high.risk.*agent|critical.*agent|most.*risk|riskiest/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("agents").select("agent_code, name, risk_level, oversight_level, status")
         .eq("organisation_id", orgId).in("risk_level", ["critical", "high"])
-        .neq("status", "decommissioned").order("risk_level");
+        .neq("status", "decommissioned").order("risk_level").throwOnError();
       const r = (data as Array<Record<string, string>>) ?? [];
       if (r.length === 0) return ans("No high-risk or critical agents found.", 95, [], r, "high_risk_agents", "Queried agents table for risk_level IN (critical, high). No matches.", 0);
       const list = r.map((a) => `${a.name} (${a.agent_code}) — ${a.risk_level}, ${a.oversight_level}`).join("\n");
@@ -59,12 +59,12 @@ const HANDLERS: Array<{
     name: "open_incidents",
     patterns: [/incident.*open|open.*incident|still.*open|unresolved/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("ict_incidents").select("incident_code, title, severity, status, occurred_at")
         .eq("organisation_id", orgId).not("status", "in", '("resolved","closed")')
-        .order("occurred_at", { ascending: false }).limit(10);
+        .order("occurred_at", { ascending: false }).limit(10).throwOnError();
       const r = (data as Array<Record<string, string>>) ?? [];
-      if (r.length === 0) return ans("All incidents are resolved.", 95, [], r, "open_incidents", "Queried ict_incidents. All incidents are in resolved/closed state.", 0);
+      if (r.length === 0) return ans("No open incident records returned; overall status is UNKNOWN.", 95, [], r, "open_incidents", "Queried ict_incidents. No open records returned; absence is not proof of resolution.", 0);
       const list = r.map((i) => `${i.incident_code}: ${i.title} (${i.severity}, ${i.status})`).join("\n");
       return ans(`${r.length} open incidents:\n${list}`, 95, r.map((i) => ({ source: "ict_incidents", record: i.incident_code, detail: `${i.severity}, ${i.status}` })), r, "open_incidents", `Matched ${r.length} incidents with status not resolved/closed.`, r.length);
     },
@@ -73,9 +73,9 @@ const HANDLERS: Array<{
     name: "compliance_gaps",
     patterns: [/compliance.*gap|governance.*gap|not.*compliant|why.*compliance|what.*missing|top.*gap/i],
     handler: async (orgId) => {
-      const { data } = await db.read.rpc("agent_compliance_gaps", { p_organisation_id: orgId });
+      const { data } = await db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId }).throwOnError();
       const r = (data as Array<Record<string, unknown>>) ?? [];
-      if (r.length === 0) return ans("All agents are fully compliant. No governance gaps.", 98, [], r, "compliance_gaps", "Ran agent_compliance_gaps(). Zero agents with gaps.", 0);
+      if (r.length === 0) return ans("No gap records returned. Compliance is NOT_ASSESSED.", 98, [], r, "compliance_gaps", "Ran agent_compliance_gaps(). Zero agents with gaps.", 0);
       const list = r.slice(0, 10).map((g) => `· ${g.agent_name} (${g.agent_code}) — ${g.total_gaps} gaps`).join("\n");
       return ans(`${r.length} agents with gaps. Top:\n${list}`, 90, r.slice(0, 10).map((g) => ({ source: "agent_compliance_gaps", record: g.agent_code as string, detail: `${g.total_gaps} gaps` })), r, "compliance_gaps", `agent_compliance_gaps() returned ${r.length} non-compliant agents.`, r.length);
     },
@@ -84,12 +84,12 @@ const HANDLERS: Array<{
     name: "ai_act_exposure",
     patterns: [/ai act|high.risk.*system|annex.*iii|regulatory.*exposure/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("ai_systems").select("system_code, name, risk_class, lifecycle, status")
         .eq("organisation_id", orgId).in("risk_class", ["high", "unacceptable"])
-        .neq("status", "decommissioned");
+        .neq("status", "decommissioned").throwOnError();
       const r = (data as Array<Record<string, string>>) ?? [];
-      const { count: wo } = await db.read.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).is("ai_system_id", null).neq("status", "decommissioned");
+      const { count: wo } = await db.write.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).is("ai_system_id", null).neq("status", "decommissioned").throwOnError();
       const answer = [`${r.length} high-risk AI systems (AI Act Annex III).`, `${wo ?? 0} agents not linked to any AI system.`, r.length > 0 ? `Systems: ${r.map((s) => s.name).join(", ")}` : ""].filter(Boolean).join("\n");
       return ans(answer, 92, r.map((s) => ({ source: "ai_systems", record: s.system_code, detail: s.risk_class })), r, "ai_act_exposure", `Queried ai_systems for risk_class IN (high, unacceptable). ${r.length} matched.`, r.length);
     },
@@ -98,12 +98,12 @@ const HANDLERS: Array<{
     name: "agents_without_owner",
     patterns: [/without.*owner|no.*owner|orphan.*agent|missing.*owner|unowned/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("agents").select("agent_code, name, risk_level, status, cg_ag_002_owner")
         .eq("organisation_id", orgId).eq("cg_ag_002_owner", false)
-        .neq("status", "decommissioned");
+        .neq("status", "decommissioned").throwOnError();
       const r = (data as Array<Record<string, string>>) ?? [];
-      if (r.length === 0) return ans("All agents have assigned owners.", 95, [], r, "agents_without_owner", "Queried agents where cg_ag_002_owner = false. Zero results.", 0);
+      if (r.length === 0) return ans("No missing-owner records returned. Ownership coverage is UNKNOWN.", 95, [], r, "agents_without_owner", "Queried agents where cg_ag_002_owner = false. Zero results.", 0);
       const list = r.map((a) => `${a.name} (${a.agent_code}) — ${a.risk_level}`).join("\n");
       return ans(`${r.length} agents without owner:\n${list}`, 90, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `Owner flag: false` })), r, "agents_without_owner", `Found ${r.length} agents with cg_ag_002_owner = false.`, r.length);
     },
@@ -112,10 +112,10 @@ const HANDLERS: Array<{
     name: "autonomous_agents",
     patterns: [/autonomous.*agent|self.*operating|without.*human/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("agents").select("agent_code, name, oversight_level, cg_ag_012_autonomous_governed, status")
         .eq("organisation_id", orgId).eq("agent_type", "autonomous")
-        .neq("status", "decommissioned");
+        .neq("status", "decommissioned").throwOnError();
       const r = (data as Array<Record<string, unknown>>) ?? [];
       if (r.length === 0) return ans("No autonomous agents registered.", 95, [], r, "autonomous_agents", "Queried agents with agent_type = autonomous. No results.", 0);
       const governed = r.filter((a) => a.cg_ag_012_autonomous_governed).length;
@@ -127,14 +127,14 @@ const HANDLERS: Array<{
     name: "discovery",
     patterns: [/discover|unregistered|scanned.*agent|agent.*discovered|which.*repositor/i],
     handler: async (orgId) => {
-      const { data: pending } = await db.read
+      const { data: pending } = await db.write
         .from("agents").select("agent_code, name, agent_type, risk_level, external_refs, created_at")
         .eq("organisation_id", orgId).eq("status", "pending_registration")
-        .not("external_refs", "is", null).order("created_at", { ascending: false });
+        .not("external_refs", "is", null).order("created_at", { ascending: false }).throwOnError();
       const p = (pending as Array<Record<string, unknown>>) ?? [];
-      const { count: total } = await db.read
+      const { count: total } = await db.write
         .from("agents").select("*", { count: "exact", head: true })
-        .eq("organisation_id", orgId).not("external_refs", "is", null);
+        .eq("organisation_id", orgId).not("external_refs", "is", null).throwOnError();
       if (p.length === 0) return ans("No discovered agents pending review.", 95, [], p, "discovery", "No agents with status pending_registration and external_refs set.", 0);
       const repos = new Set(p.map((a: Record<string, unknown>) => ((a.external_refs as Record<string, Record<string, unknown>>)?.discovery as Record<string, string>)?.repository).filter(Boolean));
       const list = p.slice(0, 8).map((a: Record<string, unknown>) => {
@@ -170,10 +170,10 @@ const HANDLERS: Array<{
     name: "credential_exposure",
     patterns: [/credential.*expos|expos.*credential|api.*key.*expos|hardcoded.*secret|agent.*secret/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("agents").select("agent_code, name, risk_level, external_refs, status")
         .eq("organisation_id", orgId).not("external_refs", "is", null)
-        .neq("status", "decommissioned").order("created_at", { ascending: false });
+        .neq("status", "decommissioned").order("created_at", { ascending: false }).throwOnError();
       const all = (data as Array<Record<string, unknown>>) ?? [];
       const creds = all.filter((a: Record<string, unknown>) => {
         const d = (a.external_refs as Record<string, Record<string, unknown>>)?.discovery as Record<string, unknown> | undefined;
@@ -189,10 +189,10 @@ const HANDLERS: Array<{
     name: "external_sinks",
     patterns: [/external.*sink|send.*data.*external|data.*leaving|outbound.*api|data.*egress|sink.*detected/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("agents").select("agent_code, name, risk_level, external_refs, status")
         .eq("organisation_id", orgId).not("external_refs", "is", null)
-        .neq("status", "decommissioned").order("created_at", { ascending: false });
+        .neq("status", "decommissioned").order("created_at", { ascending: false }).throwOnError();
       const all = (data as Array<Record<string, unknown>>) ?? [];
       const sinks = all.filter((a: Record<string, unknown>) => {
         const d = (a.external_refs as Record<string, Record<string, unknown>>)?.discovery as Record<string, unknown> | undefined;
@@ -214,10 +214,10 @@ const HANDLERS: Array<{
     name: "governance_findings",
     patterns: [/governance.*finding|finding.*governance|agent.*finding|compliance.*finding|LGPD.*finding|issue.*agent/i],
     handler: async (orgId) => {
-      const { data } = await db.read
+      const { data } = await db.write
         .from("agents").select("agent_code, name, risk_level, external_refs, status")
         .eq("organisation_id", orgId).not("external_refs", "is", null)
-        .neq("status", "decommissioned").order("created_at", { ascending: false });
+        .neq("status", "decommissioned").order("created_at", { ascending: false }).throwOnError();
       const all = (data as Array<Record<string, unknown>>) ?? [];
       const findings = all.filter((a: Record<string, unknown>) => {
         const d = (a.external_refs as Record<string, Record<string, unknown>>)?.discovery as Record<string, unknown> | undefined;
@@ -409,7 +409,7 @@ const HANDLERS: Array<{
       const controlEdges = graph.edges.filter((e) => e.type === "violates");
       const agentsWithViolations = new Set(controlEdges.map((e) => e.source));
       const agentList = graph.nodes.filter(isAgentNode).filter((a) => agentsWithViolations.has(a.agent_id));
-      if (agentList.length === 0) return ans("No agents currently violating governance controls.", 95, [], [], "violating_controls", "Scanned knowledge graph for violates edges. None found.", 0);
+      if (agentList.length === 0) return ans("No legacy violation records returned. Control effectiveness is NOT_ASSESSED.", 95, [], [], "violating_controls", "Scanned knowledge graph for violates edges. None found.", 0);
       const list = agentList.map((a) => {
         const violations = controlEdges.filter((e) => e.source === a.agent_id).length;
         return `· ${a.name} (${a.agent_code}) — ${violations} control violations`;
@@ -424,7 +424,7 @@ const HANDLERS: Array<{
       const graph = await getUnifiedGraph(orgId);
       const sysNodes = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "ai_system") as DiscoveryGraphNode[];
       const failing = sysNodes.filter((s) => s.metadata?.cg_sys_007_conformity === false || s.metadata?.conformity_procedure === null);
-      if (failing.length === 0) return ans("All AI systems meet conformity requirements.", 95, [], [], "systems_failing_conformity", "Checked ai_system nodes in graph for conformity flags. All pass.", 0);
+      if (failing.length === 0) return ans("No failing system records returned. Regulatory conformity is NOT_ASSESSED.", 95, [], [], "systems_failing_conformity", "Checked legacy system flags; this does not establish regulatory conformity.", 0);
       const list = failing.map((s) => `· ${s.label} — conformity: ${s.metadata?.conformity_procedure ?? "none"}, risk: ${s.metadata?.risk_class ?? "unknown"}`).join("\n");
       return ans(`${failing.length} AI systems failing conformity requirements:\n${list}`, 90, failing.map((s) => ({ source: "knowledge-graph", record: s.label, detail: "Failing conformity" })), failing as unknown as Record<string, unknown>[], "systems_failing_conformity", `Found ${failing.length} ai_system nodes with missing conformity.`, failing.length);
     },
@@ -498,9 +498,9 @@ const HANDLERS: Array<{
     patterns: [/overview|summary|estate|how many|total|count|status|which agent/i],
     handler: async (orgId) => {
       const [{ count: agents }, { count: systems }, { count: incidents }] = await Promise.all([
-        db.read.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned"),
-        db.read.from("ai_systems").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned"),
-        db.read.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).not("status", "in", '("resolved","closed")'),
+        db.write.from("agents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError(),
+        db.write.from("ai_systems").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError(),
+        db.write.from("ict_incidents").select("*", { count: "exact", head: true }).eq("organisation_id", orgId).not("status", "in", '("resolved","closed")').throwOnError(),
       ]);
       return ans(`AI Governance Estate: ${agents ?? 0} agents, ${systems ?? 0} systems, ${incidents ?? 0} open incidents.`, 85, [{ source: "agents+systems+incidents", record: "aggregate", detail: "Live counts" }], [{ agents: agents ?? 0, systems: systems ?? 0, incidents: incidents ?? 0 }], "overview", "Aggregated counts from agents, ai_systems, and ict_incidents tables.", 3);
     },
@@ -508,7 +508,7 @@ const HANDLERS: Array<{
 ];
 
 function ans(answer: string, confidence: number, citations: Array<{ source: string; record: string; detail: string }>, data: Record<string, unknown>[], intent: string, rationale: string, rowsUsed: number): GovernanceAnswer {
-  return { answer, confidence, citations, supportingData: data, intent, explanation: { source: "governance_core", intent_matched: intent, rows_used: rowsUsed, confidence_rationale: rationale }, evidence_count: citations.length };
+  return { answer, confidence, citations, supportingData: data, intent, explanation: { source: "operational_legacy", intent_matched: intent, rows_used: rowsUsed, confidence_rationale: rationale }, evidence_count: citations.length };
 }
 
 function matchIntent(query: string): { intent: string; confidence: number } {
@@ -550,10 +550,10 @@ export async function buildGovernanceContext(orgId: string): Promise<GovernanceE
   const evidence: GovernanceEvidence[] = [];
 
   const [{ data: agents }, { data: systems }, { data: gaps }, { data: incidents }] = await Promise.all([
-    db.read.from("agents").select("agent_code, name, risk_level, agent_type, oversight_level, status, cg_ag_002_owner, cg_ag_008_audit_trail").eq("organisation_id", orgId).neq("status", "decommissioned").limit(15),
-    db.read.from("ai_systems").select("system_code, name, risk_class, lifecycle, status").eq("organisation_id", orgId).neq("status", "decommissioned").limit(10),
-    db.read.rpc("agent_compliance_gaps", { p_organisation_id: orgId }),
-    db.read.from("ict_incidents").select("incident_code, title, severity, status, occurred_at").eq("organisation_id", orgId).not("status", "in", '("resolved","closed")').order("occurred_at", { ascending: false }).limit(5),
+    db.write.from("agents").select("agent_code, name, risk_level, agent_type, oversight_level, status, cg_ag_002_owner, cg_ag_008_audit_trail").eq("organisation_id", orgId).neq("status", "decommissioned").limit(15).throwOnError(),
+    db.write.from("ai_systems").select("system_code, name, risk_class, lifecycle, status").eq("organisation_id", orgId).neq("status", "decommissioned").limit(10).throwOnError(),
+    db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId }).throwOnError(),
+    db.write.from("ict_incidents").select("incident_code, title, severity, status, occurred_at").eq("organisation_id", orgId).not("status", "in", '("resolved","closed")').order("occurred_at", { ascending: false }).limit(5).throwOnError(),
   ]);
 
   for (const a of (agents as Array<Record<string, unknown>>) ?? []) {
@@ -573,12 +573,12 @@ export async function buildGovernanceContext(orgId: string): Promise<GovernanceE
 }
 
 export async function semanticSearch(orgId: string, embedding: number[], limit: number = 10): Promise<GovernanceEvidence[]> {
-  const { data } = await db.read.rpc("agent_semantic_search", {
+  const { data } = await db.write.rpc("agent_semantic_search", {
     p_query_embedding: embedding,
     p_organisation_id: orgId,
     p_limit: limit,
     p_similarity_threshold: 0.65,
-  });
+  }).throwOnError();
 
   const results = (data as Array<Record<string, unknown>>) ?? [];
   return results.map((r) => ({

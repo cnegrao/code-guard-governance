@@ -9,11 +9,11 @@ export async function getAgents(
   const limit = filters?.limit ?? 20;
   const offset = (page - 1) * limit;
 
-  let query = db.read
+  let query = db.write
     .from("agents")
     .select("*", { count: "exact", head: false })
     .eq("organisation_id", orgId)
-    .neq("status", "decommissioned");
+    .neq("status", "decommissioned").throwOnError();
 
   if (filters?.risk_level) query = query.eq("risk_level", filters.risk_level);
   if (filters?.status) query = query.eq("status", filters.status);
@@ -30,12 +30,12 @@ export async function getAgentById(
   orgId: string,
   agentId: string
 ): Promise<Agent | null> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("agents")
     .select("*")
     .eq("organisation_id", orgId)
     .eq("agent_id", agentId)
-    .single();
+    .throwOnError().maybeSingle();
 
   return (data as Agent) ?? null;
 }
@@ -44,18 +44,19 @@ export async function getAgentWithOwner(
   orgId: string,
   agentId: string
 ): Promise<Record<string, unknown> | null> {
-  const { data } = await db.read.rpc("agent_compliance_gaps", {
+  const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
-  });
+  }).throwOnError();
   const gaps = (data as Array<Record<string, unknown>>) ?? [];
   const agent = await getAgentById(orgId, agentId);
   if (!agent) return null;
 
-  const { data: owner } = await db.read
+  const { data: owner } = await db.write
     .from("governance_users")
     .select("full_name, email")
+    .eq("organisation_id", orgId)
     .eq("user_id", agent.owner_user_id)
-    .single();
+    .throwOnError().maybeSingle();
 
   const agentGap = gaps.find((g) => g.agent_id === agentId);
 
@@ -124,14 +125,14 @@ export async function getAgentCompliance(
   orgId: string,
   agentId: string
 ): Promise<ComplianceFlags> {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("agents")
     .select(
       "cg_ag_001_registered, cg_ag_002_owner, cg_ag_003_model_reg, cg_ag_007_oversight, cg_ag_008_audit_trail, cg_ag_010_classified, cg_ag_012_autonomous_governed, external_refs"
     )
     .eq("organisation_id", orgId)
     .eq("agent_id", agentId)
-    .single();
+    .throwOnError().maybeSingle();
 
   if (!data) {
     return {
@@ -187,12 +188,12 @@ export async function updateAgentCompliance(
   agentId: string,
   states: Partial<ComplianceFlags>
 ): Promise<void> {
-  const { data: current } = await db.read
+  const { data: current } = await db.write
     .from("agents")
     .select("external_refs")
     .eq("organisation_id", orgId)
     .eq("agent_id", agentId)
-    .single();
+    .throwOnError().maybeSingle();
 
   const existingRefs = (current?.external_refs as Record<string, unknown>) ?? {};
   const existingControlStates: Record<string, string> = (existingRefs.controlStates as Record<string, string>) ?? {};
@@ -207,7 +208,7 @@ export async function updateAgentCompliance(
     }
   }
 
-  const { error } = await db.read
+  const { error } = await db.write
     .from("agents")
     .update({
       ...dbUpdates,
@@ -232,14 +233,14 @@ export async function getAgentRiskPropagation(
     criticality: string;
   }>
 > {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("agent_risk_propagation")
     .select(
       "propagation_id, affected_agent_id, propagation_type, propagation_depth, impact_score, criticality"
     )
     .eq("organisation_id", orgId)
     .eq("risk_source_agent_id", agentId)
-    .eq("is_active", true);
+    .eq("is_active", true).throwOnError();
 
   return (data as unknown as Array<{
     propagation_id: string;
@@ -266,14 +267,14 @@ export async function getAgentResourceLinks(
     is_active: boolean;
   }>
 > {
-  const { data } = await db.read
+  const { data } = await db.write
     .from("agent_resource_links")
     .select(
       "link_id, resource_type, resource_name, resource_provider, access_type, data_classification, processes_pii, is_active"
     )
     .eq("organisation_id", orgId)
     .eq("agent_id", agentId)
-    .eq("is_active", true);
+    .eq("is_active", true).throwOnError();
 
   return (data as unknown as Array<{
     link_id: string;

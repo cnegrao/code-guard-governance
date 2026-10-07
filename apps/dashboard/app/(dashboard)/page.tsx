@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 interface DashboardData {
   totalAgents: number;
   totalSystems: number;
-  complianceRate: number;
+  complianceRate: number | null;
   openFindings: number;
   openIncidents: number;
   upcomingReviews: number;
@@ -43,14 +43,15 @@ interface DashboardData {
   governancePriorityCritical: number;
 }
 
-function cColor(rate: number): "green" | "yellow" | "red" {
+function cColor(rate: number | null): "green" | "yellow" | "red" | "blue" {
+  if (rate === null) return "blue";
   if (rate >= 85) return "green";
   if (rate >= 50) return "yellow";
   return "red";
 }
 
-function riskColor(v: number): "green" | "yellow" | "red" {
-  if (v === 0) return "green";
+function riskColor(v: number): "blue" | "yellow" | "red" {
+  if (v === 0) return "blue";
   if (v <= 5) return "yellow";
   return "red";
 }
@@ -77,7 +78,7 @@ export default function DashboardPage() {
     return (
       <div className="text-center py-12">
         <p className="text-danger mb-2">{error}</p>
-        <p className="text-gray-400 text-sm">Ensure agents and systems are registered.</p>
+        <p className="text-gray-400 text-sm">ERROR: Data could not be read. No governance conclusion is available.</p>
       </div>
     );
   }
@@ -90,7 +91,7 @@ export default function DashboardPage() {
       <div className="mb-6">
         <h2 className="text-xl font-bold text-white">Dashboard</h2>
         <p className="text-sm text-gray-400 mt-1">
-          {session?.org?.name} — AI Governance Executive Overview
+          {session?.org?.name} — Operational inventory overview — indicative legacy data
         </p>
       </div>
 
@@ -103,10 +104,10 @@ export default function DashboardPage() {
           <StatCard label="Total Agents" value={data.totalAgents} color="blue" />
           <StatCard label="Total AI Systems" value={data.totalSystems} color="blue" />
           <StatCard
-            label="Compliance Rate"
-            value={`${data.complianceRate}%`}
+            label="Legacy Control Coverage"
+            value={data.complianceRate === null ? "NO_DATA" : `${data.complianceRate}%`}
             color={cColor(data.complianceRate)}
-            subtitle={data.complianceRate < 85 ? "Review gaps" : "On track"}
+            subtitle={data.complianceRate === null ? "No agents to assess" : "Indicative legacy control coverage"}
           />
         </div>
       </div>
@@ -117,28 +118,28 @@ export default function DashboardPage() {
           Operations
         </h3>
         <div className="grid grid-cols-3 gap-4">
-          <Link href="/compliance">
+          <div>
             <StatCard
               label="Open Findings"
               value={data.openFindings}
               color={riskColor(data.openFindings)}
             />
-          </Link>
-          <Link href="/incidents">
+          </div>
+          <div>
             <StatCard
               label="Open Incidents"
               value={data.openIncidents}
               color={riskColor(data.openIncidents)}
             />
-          </Link>
-          <Link href="/compliance">
+          </div>
+          <div>
             <StatCard
               label="Upcoming Reviews"
               value={data.upcomingReviews}
               color={data.upcomingReviews > 5 ? "yellow" : "gray"}
               subtitle="Agents + resources due"
             />
-          </Link>
+          </div>
         </div>
       </div>
 
@@ -176,7 +177,7 @@ export default function DashboardPage() {
             <StatCard
               label="Critical Priority"
               value={data.governancePriorityCritical}
-              color={data.governancePriorityCritical > 0 ? "red" : "green"}
+              color={data.governancePriorityCritical > 0 ? "red" : "blue"}
               subtitle="Governance findings"
             />
           </Link>
@@ -197,18 +198,18 @@ export default function DashboardPage() {
               subtitle="Critical + High"
             />
           </Link>
-          <Link href="/compliance">
+          <div>
             <StatCard
               label="Agents Without AI System"
               value={data.agentsWithoutSystem}
               color={riskColor(data.agentsWithoutSystem)}
               subtitle="AI Act gap"
             />
-          </Link>
+          </div>
           <StatCard
             label="AI Systems Without Agents"
             value={data.systemsWithoutAgents}
-            color={data.systemsWithoutAgents > 0 ? "yellow" : "green"}
+            color={data.systemsWithoutAgents > 0 ? "yellow" : "blue"}
             subtitle="Orphan systems"
           />
         </div>
@@ -227,14 +228,14 @@ export default function DashboardPage() {
             subtitle="AI Act Annex III"
           />
           {isDora ? (
-            <Link href="/incidents">
+            <div>
               <StatCard
-                label="Open DORA Incidents"
+                label="Open DORA Reporting Records"
                 value={data.openDoraIncidents}
                 color={riskColor(data.openDoraIncidents)}
-                subtitle="DORA Art. 17-21"
+                subtitle="Recorded reporting activity"
               />
-            </Link>
+            </div>
           ) : (
             <StatCard
               label="Total Governance Gaps"
@@ -288,7 +289,7 @@ export default function DashboardPage() {
             Top Compliance Gaps
           </h3>
           {data.topGaps.length === 0 ? (
-            <p className="text-sm text-gray-500">No compliance gaps detected.</p>
+            <p className="text-sm text-gray-500">No gap records returned. This does not establish compliance.</p>
           ) : (
             <div className="space-y-2">
               {data.topGaps.map((gap) => (

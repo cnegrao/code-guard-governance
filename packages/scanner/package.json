@@ -6,6 +6,7 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./discovery": "./src/discovery/index.ts",
     "./semantic/similarity": "./src/semantic/similarity.ts"
   },
   "dependencies": {

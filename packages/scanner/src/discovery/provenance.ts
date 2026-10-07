@@ -1,11 +1,10 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import {
   ACQUISITION_MODE,
   ACQUISITION_STATUS,
   asAcquisitionRunId,
   asIsoTimestamp,
-  asSourceConnectionId,
   asSourceSystemId,
   providerReference,
   type AcquisitionRun,
@@ -15,6 +14,7 @@ import {
 } from '@council/canonical-contracts';
 
 import type { SourceAdapter, SourceDescriptor } from './source-adapter';
+import { deriveSourceConnectionId } from './source-identity';
 
 /** Injectable so tests can produce deterministic timestamps/run identity. */
 export interface ProvenanceClock {
@@ -24,13 +24,6 @@ export interface ProvenanceClock {
 export const systemClock: ProvenanceClock = {
   now: () => new Date().toISOString(),
 };
-
-function stableConnectionSeed(descriptor: SourceDescriptor): string {
-  return createHash('sha256')
-    .update(`${descriptor.providerCode}:${descriptor.displayName}`)
-    .digest('hex')
-    .slice(0, 32);
-}
 
 /** Deterministic given the same descriptor: repeated runs reuse the same identity. */
 export function createSourceSystem(descriptor: SourceDescriptor): SourceSystem {
@@ -47,9 +40,8 @@ export function createSourceConnection(
   descriptor: SourceDescriptor,
 ): SourceConnectionReference {
   return {
-    connectionId: asSourceConnectionId(
-      `source-connection:${stableConnectionSeed(descriptor)}`,
-    ),
+    // Existing deterministic identity, extracted unchanged (see source-identity.ts).
+    connectionId: deriveSourceConnectionId(descriptor),
     sourceSystemId: system.sourceSystemId,
   };
 }

@@ -265,7 +265,8 @@ test("machine producer boundary: record_authorization_decision (S0.3.3A: no acti
 test("machine producer boundary: neither dormant producer was quietly redirected through a HUMAN createGoverned* wrapper", () => {
   const discoveryIntake = readFileSync(join(ROOT, "lib/governance/discovery-intake.ts"), "utf8");
   assert.doesNotMatch(discoveryIntake, /createGoverned\w*\s*\(/, "discovery-intake.ts must not call any createGoverned* factory");
-  assert.match(discoveryIntake, /review:\s*governanceReviewPersistence/, "discovery-intake.ts must still bind the plain, ungoverned default port");
+  assert.doesNotMatch(discoveryIntake, /governanceReviewPersistence|privilegedDb/, "Discovery compatibility export must not initialize privileged persistence");
+  assert.match(discoveryIntake, /discovery-worker\/src\/discovery-intake/, "Discovery must reuse the isolated, persistence-neutral orchestration");
 
   const multivendorExchange = readFileSync(join(ROOT, "lib/governance/multivendor-exchange.ts"), "utf8");
   const importStart = multivendorExchange.indexOf("export async function importAzureSqlCatalog");

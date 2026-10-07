@@ -1,0 +1,174 @@
+{
+  "schema": "govia.discovery-machine.identity-vectors.v1",
+  "description": "Golden vectors for Governed Discovery machine boundary S1. Values were generated from the pre-S1 legacy formulas; later SQL implementations (S2-S4) must reproduce them byte for byte. sourceConnectionId always hashes the configured spelling; normalizedLocator is scope comparison only.",
+  "githubSourceConnections": [
+    {
+      "providerCode": "github",
+      "owner": "acme",
+      "repo": "policy-repo",
+      "configuredLocator": "acme/policy-repo",
+      "normalizedLocator": "acme/policy-repo",
+      "sourceConnectionId": "source-connection:91ca632693a88ba20fc85a0207de2f75"
+    },
+    {
+      "providerCode": "github",
+      "owner": "Acme",
+      "repo": "Policy-Repo",
+      "configuredLocator": "Acme/Policy-Repo",
+      "normalizedLocator": "acme/policy-repo",
+      "sourceConnectionId": "source-connection:c74d3c48efe5c285689807c50b44bafd"
+    },
+    {
+      "providerCode": "github",
+      "owner": "ACME",
+      "repo": "POLICY-REPO",
+      "configuredLocator": "ACME/POLICY-REPO",
+      "normalizedLocator": "acme/policy-repo",
+      "sourceConnectionId": "source-connection:cea8170820bc9ff9c149ebf4aa0e5b16"
+    },
+    {
+      "providerCode": "github",
+      "owner": "acme",
+      "repo": "agents",
+      "configuredLocator": "acme/agents",
+      "normalizedLocator": "acme/agents",
+      "sourceConnectionId": "source-connection:f043b462dc99aa4f0a059f39e424a7ab"
+    },
+    {
+      "providerCode": "github",
+      "owner": "Octo-Org",
+      "repo": "my.repo_name-1",
+      "configuredLocator": "Octo-Org/my.repo_name-1",
+      "normalizedLocator": "octo-org/my.repo_name-1",
+      "sourceConnectionId": "source-connection:4e2e48c785465b27a29bfba81d6914db"
+    },
+    {
+      "providerCode": "github",
+      "owner": "octo-org",
+      "repo": "my.repo_name-1",
+      "configuredLocator": "octo-org/my.repo_name-1",
+      "normalizedLocator": "octo-org/my.repo_name-1",
+      "sourceConnectionId": "source-connection:b49fa33e5905673fb2bbf6e784fe7f91"
+    },
+    {
+      "providerCode": "github",
+      "owner": "a",
+      "repo": "b",
+      "configuredLocator": "a/b",
+      "normalizedLocator": "a/b",
+      "sourceConnectionId": "source-connection:8e8fc2c1373081ae3c3cb194a4e83fa8"
+    }
+  ],
+  "otherDescriptors": [
+    {
+      "providerCode": "local-filesystem",
+      "displayName": "/srv/repos/agents",
+      "sourceConnectionId": "source-connection:f37ed6d6d4458ba39a8992400794fcba"
+    },
+    {
+      "providerCode": "local-filesystem",
+      "displayName": "C:\reposAgents",
+      "sourceConnectionId": "source-connection:adb1b105e1ef912022e2f0906db03c97"
+    },
+    {
+      "providerCode": "github",
+      "displayName": "legacy owner/with space",
+      "sourceConnectionId": "source-connection:5771bdd8f104860a9c2c5660a09adeb7"
+    },
+    {
+      "providerCode": "gitlab",
+      "displayName": "Group/Sub/Project",
+      "sourceConnectionId": "source-connection:b58c01a4fcbb6554aaf2b1a4037f4c1d"
+    },
+    {
+      "providerCode": "github",
+      "displayName": "ÉquipeÜ/répo",
+      "sourceConnectionId": "source-connection:df667f1a46897329fd11b82cd078eb09"
+    }
+  ],
+  "scopeComparisons": [
+    {
+      "a": "acme/policy-repo",
+      "b": "Acme/Policy-Repo",
+      "sameScope": true
+    },
+    {
+      "a": "acme/policy-repo",
+      "b": "ACME/POLICY-REPO",
+      "sameScope": true
+    },
+    {
+      "a": "Octo-Org/my.repo_name-1",
+      "b": "octo-org/MY.REPO_NAME-1",
+      "sameScope": true
+    },
+    {
+      "a": "acme/policy-repo",
+      "b": "acme/policy-repo2",
+      "sameScope": false
+    },
+    {
+      "a": "acme/agents",
+      "b": "acme2/agents",
+      "sameScope": false
+    }
+  ],
+  "reviewIdentities": [
+    {
+      "organisationId": "11111111-1111-4111-8111-111111111111",
+      "findingId": "discovery-finding:0123456789abcdef0123456789abcdef",
+      "reviewSubjectId": "review-subject:discovery:7dd4f6977795454de2ef5d872c068e5cd2449a3124044a8ed91035897d4b1550",
+      "commandId": "cmd:discovery-intake:propose:231e795a9a7879656c8755bf1b596efd1dc8be4c2b893debb2c7f6ca6709f9c0",
+      "eventId": "review-transition:87934ac23581532b53010a5345d12342"
+    },
+    {
+      "organisationId": "11111111-1111-4111-8111-111111111111",
+      "findingId": "discovery-finding:agent-version:fedcba9876543210fedcba9876543210",
+      "reviewSubjectId": "review-subject:discovery:3eed2e0f3e4ebfe0845be4120ec25d251467bc71566dfafdc8cdb90fcf174251",
+      "commandId": "cmd:discovery-intake:propose:3c46a55ba67274b1bcfbd50d5c583c96d48be20b8e97ef0cfa6d633e18e11254",
+      "eventId": "review-transition:cdeed6c0dbc643fad593aad0cf20f494"
+    },
+    {
+      "organisationId": "11111111-1111-4111-8111-111111111111",
+      "findingId": "discovery-finding:relationship:00112233445566778899aabbccddeeff",
+      "reviewSubjectId": "review-subject:discovery:3c1a6ec68f3239707a8dbbea578b2a78ae6fe89af3ba45fcc708400e43b2d30d",
+      "commandId": "cmd:discovery-intake:propose:f82d5af2f9c4f5968012364e2455421d56ffd3df2ff5bb2038582375aaa12a96",
+      "eventId": "review-transition:80ae47f66a8f7b931fcfeaed0f2d1dfc"
+    },
+    {
+      "organisationId": "11111111-1111-4111-8111-111111111111",
+      "findingId": "discovery-finding:lineage-observation:abababababababababababababababababababababababababababababababab",
+      "reviewSubjectId": "review-subject:discovery:ca3d1107aed0cf97e440b37b8d6d3e05c21f155522c9f700566ae58c5518d582",
+      "commandId": "cmd:discovery-intake:propose:b87b15e97b41f379a9657714b944bcda000cf9a2603ea79fb6b6ff9d4a3d8501",
+      "eventId": "review-transition:4c8ed53f863726054a9c9bc7871d8b93"
+    },
+    {
+      "organisationId": "22222222-2222-4222-8222-222222222222",
+      "findingId": "discovery-finding:0123456789abcdef0123456789abcdef",
+      "reviewSubjectId": "review-subject:discovery:4ea947fa98c249addc234c812aa169ae3213540c65c4be4d69a707f3646737f2",
+      "commandId": "cmd:discovery-intake:propose:b75f971b1851b48266b9b24e62e38cf5ab1875c7b2dadd5ab85f82b5aa291cd3",
+      "eventId": "review-transition:2a47107432f0221096608c152a9e2b7f"
+    },
+    {
+      "organisationId": "22222222-2222-4222-8222-222222222222",
+      "findingId": "discovery-finding:agent-version:fedcba9876543210fedcba9876543210",
+      "reviewSubjectId": "review-subject:discovery:827372166268dd72bed4853c9fc98f7fcc12f67ac6736f49abdeaeca6632832a",
+      "commandId": "cmd:discovery-intake:propose:5b76f864fea88d4725b108f403bafae52d607dc6889fe0c50ce43bf002ce55e3",
+      "eventId": "review-transition:d50a24766e215480edbb6e686ae6c707"
+    },
+    {
+      "organisationId": "22222222-2222-4222-8222-222222222222",
+      "findingId": "discovery-finding:relationship:00112233445566778899aabbccddeeff",
+      "reviewSubjectId": "review-subject:discovery:5f4d26b66cb63b24fd2d622fd5753728169941e10bcbd8b188bb52a8b1ce7452",
+      "commandId": "cmd:discovery-intake:propose:a36c2da7a8250aec17fdb8b7a883a5bff108c4017a110327c3dd448afef6425e",
+      "eventId": "review-transition:fa16ee0d407eb4c7091101861bcb3a56"
+    },
+    {
+      "organisationId": "22222222-2222-4222-8222-222222222222",
+      "findingId": "discovery-finding:lineage-observation:abababababababababababababababababababababababababababababababab",
+      "reviewSubjectId": "review-subject:discovery:f71ad44808175a629462670480dba10b76eddf03f7deafd8c7773c76fa3787e1",
+      "commandId": "cmd:discovery-intake:propose:359e43d0b6ac395d4c63f7b1656b9d6ee1324e78856978360ac551a9f42c4262",
+      "eventId": "review-transition:9bc6afdbc296f1027a1f68c530cb1d67"
+    }
+  ]
+}

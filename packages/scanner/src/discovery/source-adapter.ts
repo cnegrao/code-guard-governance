@@ -30,6 +30,21 @@ export interface SourceArtifactContent {
   readonly contentHash: string;
 }
 
+/**
+ * Provider-scoped source authenticity metadata (e.g. an immutable repository
+ * id). It never replaces the deterministic `source-connection:` identity,
+ * never forms a GOV IA canonical source namespace and is not a source
+ * registry. A value reported by an acquisition process is a consistency
+ * signal, not independent proof of origin.
+ */
+export interface ProviderSourceIdentity {
+  readonly providerCode: string;
+  /** Immutable identifier assigned by the provider, rendered as text. */
+  readonly providerSourceId: string;
+  /** Locator exactly as the provider reported it. */
+  readonly observedLocator: string;
+}
+
 export type ReadArtifactOutcome =
   | { readonly ok: true; readonly content: SourceArtifactContent }
   | { readonly ok: false; readonly locator: string; readonly reason: string };
@@ -49,6 +64,14 @@ export interface SourceAdapter {
   listArtifacts(): Promise<readonly SourceArtifactRef[]>;
 
   resolveSourceVersion?(): Promise<string | undefined>;
+
+  /**
+   * Optional capability. Resolves provider-immutable source identity and
+   * fails closed when it does not match the configured source. `undefined`
+   * means the provider exposes none; an adapter never fabricates one.
+   * Not consumed by DiscoveryPipeline.
+   */
+  resolveProviderSourceIdentity?(): Promise<ProviderSourceIdentity | undefined>;
 
   /** Never throws for missing/unreadable content; reports failure via the outcome. */
   readArtifact(locator: string): Promise<ReadArtifactOutcome>;

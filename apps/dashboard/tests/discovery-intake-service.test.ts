@@ -1128,7 +1128,7 @@ describe("Discovery Intake V1: real scan -> durable evidence -> governed review 
   });
 
   test("ADVERSARIAL (static): the service module's source never references confirm/certify/reject or any authorization/reconciliation/materialization write RPC name", () => {
-    const modulePath = join(dirname(fileURLToPath(import.meta.url)), "..", "lib", "governance", "discovery-intake.ts");
+    const modulePath = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "discovery-worker", "src", "discovery-intake.ts");
     const source = readFileSync(modulePath, "utf8");
 
     for (const forbidden of [

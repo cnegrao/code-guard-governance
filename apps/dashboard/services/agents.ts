@@ -27,13 +27,13 @@ export async function registerAgent(
 ): Promise<Agent> {
   const validated = createAgentSchema.parse(input);
 
-  const { data: owner } = await db.read
+  const { data: owner } = await db.write
     .from("governance_users")
     .select("user_id")
     .eq("user_id", validated.owner_user_id)
     .eq("organisation_id", orgId)
     .eq("status", "active")
-    .single();
+    .throwOnError().maybeSingle();
 
   if (!owner) {
     throw new Error("Owner not found, not active, or not in your organisation");
@@ -51,24 +51,24 @@ export async function updateAgent(
 
   // ── Lifecycle enforcement (CG-AG-001): status changes must follow the state machine ──
   if (validated.status) {
-    const { data: current } = await db.read
+    const { data: current } = await db.write
       .from("agents")
       .select("status")
       .eq("organisation_id", orgId)
       .eq("agent_id", agentId)
-      .single();
+      .throwOnError().maybeSingle();
     if (!current) throw new Error("Agent not found");
     assertTransition((current as { status: string }).status, validated.status);
   }
 
   if (validated.owner_user_id) {
-    const { data: owner } = await db.read
+    const { data: owner } = await db.write
       .from("governance_users")
       .select("user_id")
       .eq("user_id", validated.owner_user_id)
       .eq("organisation_id", orgId)
       .eq("status", "active")
-      .single();
+      .throwOnError().maybeSingle();
 
     if (!owner) {
       throw new Error("Owner not found, not active, or not in your organisation");
@@ -99,7 +99,7 @@ export async function assessCompliance(
   return agentRepo.updateAgentCompliance(orgId, agentId, states);
 }
 
-export function computeScore(flags: ComplianceFlags): number {
+export function computeScore(flags: ComplianceFlags): number | null {
   const passed: string[] = [];
   const failed: string[] = [];
   for (const [k, v] of Object.entries(flags)) {
@@ -108,7 +108,7 @@ export function computeScore(flags: ComplianceFlags): number {
     // not_assessed / waived are excluded from score
   }
   const total = passed.length + failed.length;
-  if (total === 0) return 100;
+  if (total === 0) return null;
   return Math.round((passed.length / total) * 100);
 }
 

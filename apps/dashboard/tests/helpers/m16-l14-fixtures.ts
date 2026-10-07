@@ -8,6 +8,7 @@ import {
 import {
   contractRawRpcRevocationMigration, credentialMigration, disposableM16Postgres, eligibilityMigration, epochBindingMigration,
   governedWriteWrapperMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, objectMaterializationCompatMigration,
+  l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -43,12 +44,45 @@ const rulesSql = (rules: readonly L14AuthorityPolicyRule[]) => `${lit(JSON.strin
 const idsSql = (ids: readonly string[]) => (ids.length ? `array[${ids.map(lit).join(',')}]::text[]` : `'{}'::text[]`);
 const uuidOrNull = (value: string | null) => (value === null ? 'null::uuid' : `'${value}'::uuid`);
 
-export async function l14Cluster(diagnostic: (message: string) => void) {
-  const pg = await disposableM16Postgres(diagnostic, { governanceWriteChain: true });
+/**
+ * Migration horizon of the disposable L14 cluster. 'S1A' (the default) ends at S1A.2R1 exactly, so
+ * the audited S1A suites keep asserting the exact S1A catalog; 'S1B0' ends at the S1B.0 registry
+ * framework exactly (its suites keep their exact S1B.0 assertions); 'S1B1' additionally applies the
+ * S1B.1 GOVERNANCE_PARTY registry exactly; 'S1B1R1' additionally applies the S1B.1R1 pending-cancellation
+ * corrective (the live Party behaviour); 'S1B2' is S1B1R1 on a chain that ALSO carries the existing
+ * policy-store prerequisites (policyStorePrerequisites, merged chronologically around the broad-grant
+ * migration) plus the S1B.2 policy-store hardening. A suite may also start earlier and apply later
+ * migrations itself; `policyStore: true` gives an older horizon the policy-store prerequisites (e.g.
+ * S1B1R1 + prerequisites, to seed legacy policy rows before applying S1B.2 itself).
+ */
+export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2';
+export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
+  S1A: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
+    governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
+    l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration],
+  S1B0: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
+    governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
+    l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration],
+  S1B1: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
+    governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
+    l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration,
+    l14GovernancePartyMigration],
+  S1B1R1: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
+    governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
+    l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration,
+    l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration],
+  S1B2: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
+    governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
+    l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration,
+    l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration],
+};
+
+export async function l14Cluster(diagnostic: (message: string) => void,
+  options: { readonly horizon?: L14Horizon; readonly policyStore?: boolean } = {}) {
+  const policyStorePrerequisites = options.horizon === 'S1B2' || options.policyStore === true;
+  const pg = await disposableM16Postgres(diagnostic, { governanceWriteChain: true, policyStorePrerequisites });
   try {
-    for (const migration of [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
-      governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
-      l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration]) await pg.migrate(migration);
+    for (const migration of L14_HORIZON_MIGRATIONS[options.horizon ?? 'S1A']) await pg.migrate(migration);
   } catch (error) { pg.stop(); throw error; }
   const { sql, bootstrapSql } = pg;
   const owner = (query: string) => sql(query, 'postgres');

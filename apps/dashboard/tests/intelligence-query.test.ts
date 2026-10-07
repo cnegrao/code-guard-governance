@@ -30,12 +30,26 @@ const db = { from(table: string) {
   return q;
 }, rpc() {throw Error('WRITE FORBIDDEN');}, insert(){throw Error('WRITE FORBIDDEN');} };
 let get: typeof import('@/lib/governance/intelligence-query').getGovernedIntelligence;
+let estate: typeof import('@/lib/governance/intelligence-query').getGovernedGraph;
 before(async()=>{
   mock.module('@/lib/governance/persistence',{namedExports:{privilegedDb:db}});
   mock.module('@/lib/governance/passport-session',{namedExports:{passportOrganisation:async()=>{
     if(!authenticated) throw Error('UNAUTHENTICATED'); return org;
   }}});
   get=(await import('@/lib/governance/intelligence-query')).getGovernedIntelligence;
+  estate=(await import('@/lib/governance/intelligence-query')).getGovernedGraph;
+});
+test('demo governed graph reuses only canonical rows, keeps empty state and fails closed', async () => {
+  tables = {}; calls = []; authenticated = true; errorTable = undefined; corruptTable = undefined; pageCap = 200;
+  assert.equal((await estate()).nodes.length, 0);
+  object('demo-canonical');
+  const graph = await estate();
+  assert.equal(graph.authority, 'CANONICAL_READ_PROJECTION');
+  assert.deepEqual(graph.nodes.map(n => n.canonicalObjectId), ['demo-canonical']);
+  assert.ok(calls.every(c => ['canonical_objects', 'canonical_relationships'].includes(c.table)));
+  errorTable = 'canonical_relationships'; await assert.rejects(estate, /M12_READ_FAILED/);
+  errorTable = undefined; corruptTable = 'canonical_objects'; await assert.rejects(estate, /M12_TENANT_MISMATCH/);
+  corruptTable = undefined; authenticated = false; await assert.rejects(estate, /UNAUTHENTICATED/);
 });
 function add(table: string, fields: Row) { (tables[table]??=[]).push({organisation_id:org,...fields}); }
 function object(id:string) { add('canonical_objects',{canonical_object_id:id,kind:'DATA_ELEMENT',created_by_decision_id:`decision:${id}`,created_at:at,revision:0}); }
