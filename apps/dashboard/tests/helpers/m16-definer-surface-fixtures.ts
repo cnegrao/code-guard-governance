@@ -200,3 +200,68 @@ export function executionSnapshotKit(org: string, label: string) {
   };
   return { sql, snapshot };
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// Closed-surface extension-member semantics (S1B.2R1 canonical boundary, re-asserted by the R2 / R3 postflights).
+// ---------------------------------------------------------------------------------------------------------
+const APP_EXECUTABLE = `(exists(select 1 from pg_catalog.aclexplode(coalesce(p.proacl, pg_catalog.acldefault('f', p.proowner))) a
+      where a.grantee = 0 and a.privilege_type = 'EXECUTE')
+    or pg_catalog.has_function_privilege('anon', p.oid, 'EXECUTE') or pg_catalog.has_function_privilege('authenticated', p.oid, 'EXECUTE')
+    or pg_catalog.has_function_privilege('service_role', p.oid, 'EXECUTE'))`;
+const EXTENSION_MEMBER = `exists(select 1 from pg_catalog.pg_depend d
+      where d.classid = 'pg_catalog.pg_proc'::pg_catalog.regclass and d.objid = p.oid and d.deptype = 'e')`;
+/** `governed|members`: application-executable non-system definers, split by genuine extension membership (deptype 'e'). */
+export const SURFACE_SPLIT_SQL = `select pg_catalog.count(*) filter (where not ${EXTENSION_MEMBER}) || '|' || pg_catalog.count(*) filter (where ${EXTENSION_MEMBER})
+  from pg_catalog.pg_proc p where p.prosecdef and p.pronamespace not in ('pg_catalog'::regnamespace, 'information_schema'::regnamespace)
+    and ${APP_EXECUTABLE};`;
+
+/**
+ * Real-catalog controls for the exact-22 closed surface of an R2 / R3 postflight, each inside a rolled-back transaction
+ * run by the bootstrap superuser:
+ *   A. baseline: 22 governed, 0 extension-member application definers; the postflight passes;
+ *   B. a real pgcrypto member (extensions.armor(bytea)) made SECURITY DEFINER and granted to every application role
+ *      is excluded (governed stays 22) and the postflight passes;
+ *   C. a non-extension-member application definer — in public, gov_repo or an unrelated schema, executable via PUBLIC,
+ *      anon, authenticated or service_role — fails the postflight;
+ *   D. exclusion follows pg_depend only: the same pgcrypto routine (same schema, same name) fails once DROPped from the
+ *      extension, and a public-schema definer passes only once ADDed to the extension.
+ */
+export async function extensionMemberSurfaceControls(bootstrapSql: (query: string) => Promise<string>, postflight: string, tag: string) {
+  const surface = new RegExp(`${tag}: application SECURITY DEFINER surface is not exactly 22`);
+  const inTxn = (setup: string, probe = '') => bootstrapSql(`begin;\n${setup}\n${postflight}\n${probe}\nrollback;`);
+  const member = 'extensions.armor(bytea)';
+  const memberDefiner = `alter function ${member} security definer;
+    grant execute on function ${member} to public, anon, authenticated, service_role;`;
+  const definer = (schema: string, grantee: string) => `create function ${schema}.surface_probe() returns integer language sql security definer
+      set search_path = pg_catalog, pg_temp as 'select 1';
+    revoke execute on function ${schema}.surface_probe() from public;
+    grant execute on function ${schema}.surface_probe() to ${grantee};`;
+
+  // A. Baseline.
+  assert.equal(await bootstrapSql(SURFACE_SPLIT_SQL), '22|0');
+  assert.equal(await inTxn('', SURFACE_SPLIT_SQL), '22|0');
+  assert.equal(await bootstrapSql(`select pg_catalog.count(*) from pg_catalog.pg_depend d join pg_catalog.pg_extension e on e.oid = d.refobjid
+      where d.classid = 'pg_catalog.pg_proc'::regclass and d.objid = '${member}'::regprocedure and d.deptype = 'e' and e.extname = 'pgcrypto';`), '1',
+    `${member} is a genuine pgcrypto member`);
+
+  // B. Extension-member positive control: counted by the generic predicate, excluded from the governed surface.
+  assert.equal(await inTxn(memberDefiner, `select prosecdef || '|' || pg_catalog.has_function_privilege('service_role', '${member}'::regprocedure, 'EXECUTE')
+      || '|' || (${SURFACE_SPLIT_SQL.replace(/;$/, '')}) from pg_catalog.pg_proc where oid = '${member}'::regprocedure;`), 'true|true|22|1');
+
+  // C. Non-extension-member negative controls: every application grantee, in public, gov_repo and an unrelated schema.
+  for (const grantee of ['public', 'anon', 'authenticated', 'service_role']) {
+    await assert.rejects(inTxn(definer('public', grantee)), surface, `public definer executable by ${grantee}`);
+  }
+  await assert.rejects(inTxn(definer('gov_repo', 'service_role')), surface, 'gov_repo definer');
+  await assert.rejects(inTxn(`create schema surface_probe_app; ${definer('surface_probe_app', 'authenticated')}`), surface, 'unrelated-schema definer');
+  await assert.rejects(inTxn(`${memberDefiner} ${definer('public', 'service_role')}`), surface, 'a member never masks a non-member');
+
+  // D. Membership, not schema or name, decides.
+  await assert.rejects(inTxn(`${memberDefiner} alter extension pgcrypto drop function ${member};`), surface, 'same routine once no longer a member');
+  assert.equal(await inTxn(`${definer('public', 'service_role')} alter extension pgcrypto add function public.surface_probe();`, SURFACE_SPLIT_SQL), '22|1');
+
+  // Every control rolled back.
+  assert.equal(await bootstrapSql(SURFACE_SPLIT_SQL), '22|0');
+  assert.equal(await bootstrapSql(`select prosecdef || '|' || (select pg_catalog.count(*) from pg_catalog.pg_proc where proname = 'surface_probe')
+      || '|' || (select pg_catalog.count(*) from pg_catalog.pg_namespace where nspname = 'surface_probe_app') from pg_catalog.pg_proc where oid = '${member}'::regprocedure;`), 'false|0|0');
+}

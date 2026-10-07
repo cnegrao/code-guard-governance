@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { s0ExecutionContextClosureMigration } from '../helpers/disposable-m16-postgres';
 import {
-  APPROVED_SURFACE, fullChainCluster, r1PostflightAfterR2, r2Postflight, r3Postflight, s1b2Postflight,
+  APPROVED_SURFACE, extensionMemberSurfaceControls, fullChainCluster, r1PostflightAfterR2, r2Postflight, r3Postflight, s1b2Postflight,
 } from '../helpers/m16-definer-surface-fixtures';
 import * as fx from '../helpers/m16-governed-write-fixtures';
 
@@ -230,6 +230,10 @@ test('M16 S1B.2R3 S0 execution-context closure (disposable PG17, full primary ch
       /M16_S1B2R3_POSTFLIGHT: S0 wrapper EXECUTE is not exactly service_role/);
     await assert.rejects(inTxn(`grant execute on function gov_repo.require_governed_write_eligibility_v1(uuid,uuid,bigint,bigint,timestamptz) to service_role;`),
       /M16_S1B2R3_POSTFLIGHT: governed-write guard is application-executable/);
+  });
+
+  await t.test('R3 closed surface: exactly 22 non-extension-member definers; only genuine extension members (deptype e) are excluded (rolled back)', async () => {
+    await extensionMemberSurfaceControls(bootstrapSql, r3Postflight(), 'M16_S1B2R3_POSTFLIGHT');
   });
 
   await t.test('AFTER: under the full shadow prelude every S0 wrapper writes, replays and returns exactly the control contract', async () => {

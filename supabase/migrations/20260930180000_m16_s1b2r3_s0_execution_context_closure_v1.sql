@@ -12,6 +12,10 @@
 -- Correction: every still-affected routine in the S0 wrappers' execution closure keeps its EXISTING path with pg_temp named
 -- explicitly LAST. Only proconfig changes: no body, signature, owner, ACL, return shape, replay, identity derivation,
 -- tenant or canonical write behaviour changes; the frozen S0 wrappers are not touched; the application surface stays 22.
+-- "Application surface" here is the S1B.2R1 closed surface: every SECURITY DEFINER routine outside pg_catalog /
+-- information_schema that PUBLIC, anon, authenticated or service_role can EXECUTE, EXCLUDING only PostgreSQL
+-- extension members (pg_depend classid = pg_proc, deptype = 'e'); i.e. exactly 22 GOV IA-controlled,
+-- non-extension-member identities, in any schema.
 -- Only postgres can CREATE in gov_repo, so the existing schema order is kept unchanged.
 --
 -- The closure, measured from the catalog (call graph + trigger / CHECK functions of every table the closure writes) and
@@ -189,7 +193,9 @@ BEGIN
   END LOOP;
 
   -- C3. Surface and grants untouched: the six wrappers stay service_role-only, the guard owner-only, and the application
-  --     SECURITY DEFINER surface is still exactly 22.
+  --     SECURITY DEFINER surface is still exactly 22 non-extension-member identities. As in S1B.2R1, only extension
+  --     members (pg_depend deptype = 'e', e.g. provider-managed extension routines) are excluded; every other
+  --     application-executable definer, in any schema, still counts.
   IF EXISTS (
     SELECT 1 FROM pg_catalog.pg_proc AS p
      WHERE p.pronamespace = 'gov_repo'::regnamespace AND p.proname OPERATOR(pg_catalog.~~) '%\_governed\_v1'
@@ -214,6 +220,8 @@ BEGIN
   END IF;
   IF (SELECT pg_catalog.count(*) FROM pg_catalog.pg_proc AS p
        WHERE p.prosecdef AND p.pronamespace NOT IN ('pg_catalog'::regnamespace, 'information_schema'::regnamespace)
+         AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_depend AS d
+                          WHERE d.classid = 'pg_catalog.pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
          AND (pg_catalog.has_function_privilege('service_role', p.oid, 'EXECUTE')
               OR pg_catalog.has_function_privilege('anon', p.oid, 'EXECUTE')
               OR pg_catalog.has_function_privilege('authenticated', p.oid, 'EXECUTE')

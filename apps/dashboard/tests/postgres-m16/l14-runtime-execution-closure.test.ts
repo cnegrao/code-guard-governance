@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { CrossSignalComparisonResult } from '@council/canonical-contracts';
 import { runtimeExecutionClosureMigration } from '../helpers/disposable-m16-postgres';
 import {
-  APPROVED_SURFACE, executionSnapshotKit, fullChainCluster, newOrg, r1Postflight, r1PostflightAfterR2, r2Postflight, s1b2Postflight,
+  APPROVED_SURFACE, executionSnapshotKit, extensionMemberSurfaceControls, fullChainCluster, newOrg, r1Postflight, r1PostflightAfterR2, r2Postflight, s1b2Postflight,
 } from '../helpers/m16-definer-surface-fixtures';
 import { jsonLit, lit } from '../helpers/m16-governed-write-fixtures';
 import { m15RuntimeKit } from '../helpers/m16-runtime-kit';
@@ -151,6 +151,10 @@ test('M16 S1B.2R2 runtime routine execution closure (disposable PG17, full prima
     await assert.rejects(inTxn(`grant execute on function gov_repo.read_runtime_observation_exact(uuid,gov_repo.runtime_reference,uuid) to authenticated;`),
       /M16_S1B2R2_POSTFLIGHT: runtime routine EXECUTE is not exactly service_role/);
     await assert.rejects(inTxn(`grant govia_runtime_executor to service_role;`), /M16_S1B2R2_POSTFLIGHT: govia_runtime_executor membership/);
+  });
+
+  await t.test('R2 closed surface: exactly 22 non-extension-member definers; only genuine extension members (deptype e) are excluded (rolled back)', async () => {
+    await extensionMemberSurfaceControls(bootstrapSql, r2Postflight(), 'M16_S1B2R2_POSTFLIGHT');
   });
 
   await t.test('AFTER: the shadow never executes; record_execution_snapshot persists, replays and rejects a stale head per contract', async () => {
