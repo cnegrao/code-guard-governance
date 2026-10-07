@@ -128,5 +128,47 @@ test('M16 S1B.2R1 capability postflight negative controls (disposable PG17, full
   await t.test('default-privilege reintroduction fails the postflight', async () => {
     await fails(`alter default privileges for role postgres in schema gov_repo grant execute on routines to service_role;`, /default privileges/);
     await fails(`alter default privileges for role postgres grant execute on routines to public;`, /default privileges/);
+    await fails(`alter default privileges for role postgres in schema gov_repo grant execute on routines to anon, authenticated;`, /default privileges/);
+    await fails(`alter default privileges for role postgres grant execute on routines to authenticated;`, /default privileges/);
+  });
+
+  // Hosted Supabase keeps postgres routine defaults scoped to its own platform schemas (public, storage, ...).
+  // Those rows never apply to routines created in gov_repo, so they must not trip the gov_repo invariant.
+  const UNRELATED_SCHEMA_DEFAULTS = `create schema if not exists storage; create schema if not exists extensions;
+    alter default privileges for role postgres in schema public grant execute on routines to anon, authenticated, service_role;
+    alter default privileges for role postgres in schema storage grant execute on routines to anon, authenticated, service_role;
+    alter default privileges for role postgres in schema extensions grant execute on routines to public;`;
+
+  await t.test('hosted compatibility: unrelated schema-specific default EXECUTE does NOT fail the postflight', async () => {
+    await inTxn(`${UNRELATED_SCHEMA_DEFAULTS}
+      do $$ begin
+        if (select count(*) from pg_default_acl d where d.defaclrole = 'postgres'::regrole and d.defaclobjtype = 'f'
+              and d.defaclnamespace in ('public'::regnamespace, 'storage'::regnamespace, 'extensions'::regnamespace)) <> 3 then
+          raise exception 'harness: unrelated schema defaults not installed';
+        end if;
+        if exists (select 1 from pg_default_acl d cross join lateral aclexplode(d.defaclacl) a
+              where d.defaclrole = 'postgres'::regrole and d.defaclobjtype = 'f' and d.defaclnamespace in (0, 'gov_repo'::regnamespace)
+                and a.privilege_type = 'EXECUTE' and (a.grantee = 0 or a.grantee in ('anon'::regrole, 'authenticated'::regrole, 'service_role'::regrole))) then
+          raise exception 'harness: effective gov_repo default unexpectedly grants application EXECUTE';
+        end if;
+      end $$;
+      set local role postgres;
+      create function gov_repo.r1_unrelated_default_probe_v1() returns integer language sql as 'select 1';
+      do $$ begin
+        if exists (select 1 from pg_proc p cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+              where p.oid = 'gov_repo.r1_unrelated_default_probe_v1()'::regprocedure and a.privilege_type = 'EXECUTE'
+                and (a.grantee = 0 or a.grantee in ('anon'::regrole, 'authenticated'::regrole, 'service_role'::regrole))) then
+          raise exception 'harness: unrelated schema default leaked EXECUTE onto a gov_repo routine';
+        end if;
+      end $$;
+      drop function gov_repo.r1_unrelated_default_probe_v1();
+      reset role;`);
+  });
+
+  await t.test('hosted compatibility: unrelated schema defaults do not mask a gov_repo or global reintroduction', async () => {
+    await fails(`${UNRELATED_SCHEMA_DEFAULTS}
+      alter default privileges for role postgres in schema gov_repo grant execute on routines to service_role;`, /default privileges/);
+    await fails(`${UNRELATED_SCHEMA_DEFAULTS}
+      alter default privileges for role postgres grant execute on routines to public;`, /default privileges/);
   });
 });

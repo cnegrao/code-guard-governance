@@ -671,11 +671,16 @@ BEGIN
     RAISE EXCEPTION 'M16_S1B2R1_POSTFLIGHT: pinned pgcrypto schema % is writable by a non-owner', v_crypto;
   END IF;
 
-  -- Default privileges: postgres-created routines default to neither PUBLIC nor any application role.
+  -- Default privileges: the EFFECTIVE default privileges of postgres-created gov_repo routines grant EXECUTE to
+  -- neither PUBLIC nor any application role. A routine created by postgres in gov_repo receives the union of the
+  -- GLOBAL postgres routine default (defaclnamespace = 0, which must exist so the PUBLIC revoke is recorded) and the
+  -- postgres routine default scoped to gov_repo. Default ACLs scoped to any other schema never apply to gov_repo
+  -- routines and are deliberately out of scope (hosted platforms keep their own schema-specific defaults).
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_default_acl AS d
                  WHERE d.defaclrole = 'postgres'::regrole AND d.defaclnamespace = 0 AND d.defaclobjtype = 'f')
      OR EXISTS (SELECT 1 FROM pg_catalog.pg_default_acl AS d CROSS JOIN LATERAL pg_catalog.aclexplode(d.defaclacl) AS a
                 WHERE d.defaclrole = 'postgres'::regrole AND d.defaclobjtype = 'f' AND a.privilege_type = 'EXECUTE'
+                  AND d.defaclnamespace IN (0, 'gov_repo'::regnamespace)
                   AND (a.grantee = 0 OR a.grantee IN (SELECT r.oid FROM pg_catalog.pg_roles AS r WHERE r.rolname = ANY (v_app)))) THEN
     RAISE EXCEPTION 'M16_S1B2R1_POSTFLIGHT: postgres routine default privileges still grant PUBLIC / application EXECUTE';
   END IF;
