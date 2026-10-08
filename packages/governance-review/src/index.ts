@@ -33,4 +33,5 @@ export * from './l14-registries.ts';
 export * from './l14-governance-party.ts';
 export * from './l14-policy-admission.ts';
 export * from './l14-policy-version-validation.ts';
+export * from './l14-domain-registry.ts';
 export * from './discovery-machine/index.ts';
