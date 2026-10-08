@@ -19,7 +19,8 @@ import { GovernedWriteError } from "./governed-write-errors";
  *   (GV010 CONTENT_HASH_MISMATCH / GV008 on mismatch).
  * - Every DB failure is rethrown as GovernedWriteError carrying the exact SQLSTATE. A DENY is a
  *   durable result returned with outcome DENIED, never an error.
- * - The descriptor read returns admitted descriptors only (never a content body), NOT_VALIDATED.
+ * - The descriptor read returns admitted descriptors only (never a content body) with the CURRENT governed
+ *   POLICY_VERSION validation condition (S1B.4: NOT_VALIDATED | VALIDATED | REVOKED).
  * - No HTTP route consumes this adapter in S1B.3.
  */
 
@@ -75,6 +76,9 @@ function toDescriptor(row: Row): L14PolicyDescriptor {
     versionAdmissionAuthorizationDecisionId: nullable<string>(row.version_admission_authorization_decision_id),
     versionRecordedAt: nullable<string>(row.version_recorded_at),
     validationState: row.validation_state as L14PolicyDescriptor["validationState"],
+    validationStateId: nullable<string>(row.validation_state_id),
+    validationEffectiveFrom: nullable<string>(row.validation_effective_from),
+    latestValidationStateId: nullable<string>(row.latest_validation_state_id),
   });
 }
 

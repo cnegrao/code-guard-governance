@@ -5,8 +5,9 @@ import type { L14ExpectationKind } from './l14-registries.ts';
  * M16-S1B.3 POLICY CONTENT ADMISSION contracts (ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1
  * §§4, 6-7, 13, 17 + the S1B.3 ACP rulings). Closed vocabularies only. PostgreSQL mints every policy_id,
  * version_id, version_number and version_label, computes every content hash and fingerprint, and is the sole
- * authority for every authorization. Admission is never validation: until S1B.4 every admitted version is
- * NOT_VALIDATED. The legacy owner, status, approval, QES and version-pointer fields are never M16 authority.
+ * authority for every authorization. Admission is never validation: only the S1B.4 POLICY_VERSION governance
+ * lifecycle validates an exact admitted version. The legacy owner, status, approval, QES and version-pointer fields
+ * are never M16 authority.
  */
 
 /** The legacy gov_repo.policy_type enum, closed. */
@@ -16,8 +17,11 @@ export type L14PolicyType = (typeof L14_POLICY_TYPES)[number];
 /** Legacy compatibility filler PostgreSQL writes into change_summary for every admitted version (never caller input). */
 export const L14_POLICY_VERSION_CHANGE_SUMMARY = 'M16_POLICY_VERSION_ADMISSION' as const;
 
-/** Validation marker of the controlled descriptor read. S1B.3 can only ever report NOT_VALIDATED. */
-export const L14_POLICY_VALIDATION_STATES = ['NOT_VALIDATED'] as const;
+/**
+ * CURRENT governed POLICY_VERSION validation condition projected by the controlled descriptor read (S1B.4; S1B.3
+ * could only report NOT_VALIDATED). Never inferred from legacy status / approval / version pointer.
+ */
+export const L14_POLICY_VALIDATION_STATES = ['NOT_VALIDATED', 'VALIDATED', 'REVOKED'] as const;
 export type L14PolicyValidationState = (typeof L14_POLICY_VALIDATION_STATES)[number];
 
 export type L14PolicyAdmissionCommandKind = 'ADMIT_GOVERNANCE_POLICY' | 'ADMIT_POLICY_VERSION';
@@ -71,6 +75,11 @@ export interface L14PolicyDescriptor {
   readonly versionAdmissionAuthorizationDecisionId: string | null;
   readonly versionRecordedAt: string | null;
   readonly validationState: L14PolicyValidationState;
+  /** The exact VALIDATED state (VALIDATED) or REVOKED tombstone (REVOKED) now effective; null when NOT_VALIDATED. */
+  readonly validationStateId: string | null;
+  readonly validationEffectiveFrom: string | null;
+  /** Lineage tail (technical expected-current for the next decision, possibly not yet effective); null if none. */
+  readonly latestValidationStateId: string | null;
 }
 
 /** Shape bounds shared by the PostgreSQL RPCs and the TypeScript mirror. */
