@@ -50,6 +50,15 @@ export const runtimeExecutionClosureMigration = '20260930170000_m16_s1b2r2_runti
 // M16-S1B.2R3 chain step: pins the frozen S0 governed wrappers' inner execution closure to search_path with pg_temp named
 // last (no body/owner/ACL change). Applied after runtimeExecutionClosureMigration on the full primary chain only.
 export const s0ExecutionContextClosureMigration = '20260930180000_m16_s1b2r3_s0_execution_context_closure_v1.sql';
+// Canonical migrations AFTER the R3 horizon, in timestamp order: the governed discovery machine S2 / S3 / S4 slices
+// (their own fixtures apply them with extra adversarial checks) and M16-S1B.3 policy content admission. Applied
+// verbatim after R1/R2/R3 only by the S1B3 L14 horizon; every historical horizon keeps its exact chain.
+export const postR3PrimaryChainMigrations = [
+  '20261002190148_discovery_machine_s2_control_plane_v1.sql',
+  '20261003011750_discovery_machine_s3_restricted_intake_v1.sql',
+  '20261006134858_discovery_machine_propose_worker_v1.sql',
+] as const;
+export const l14PolicyAdmissionMigration = '20261007120000_m16_s1b3_policy_admission_v1.sql';
 // The only statement of the full chain that needs a real pgvector index access method.
 export const hnswIndexMigration = '20260818004053_agent_registry_graph_part_3.sql';
 const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url));
@@ -125,7 +134,7 @@ export function m16PrerequisiteChain(policyStore = false): readonly string[] {
   return chain;
 }
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration].includes(name)
+  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration, ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration].includes(name)
     || fullPrimaryChainMigrations().includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
