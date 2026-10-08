@@ -12,8 +12,9 @@ plus the frozen S1B.3 ACP rulings (D-4, change_summary, definer surface 22 → 2
 |---|---|
 | PR #52 (`feat/m16-s1b-governed-registries`) | MERGED (`9875208`) |
 | `main` baseline for S1B.3 | `9875208d0fd60105a7508572d5058235ca0751de` |
-| S1B2-H1 (Data API / max_rows / real HTTP acceptance) | CLOSED ON EQUIVALENT HOSTED EVIDENCE (ACP ruling) |
-| `REAL_HTTP_H1_PASS` | NOT EMITTED — no real HTTP/PostgREST acceptance run was performed or retained |
+| S1B2-H1 (Data API / max_rows / real HTTP acceptance) | CLOSED ON EQUIVALENT HOSTED EVIDENCE (ACP ruling, on the real hosted manual HTTP acceptance) |
+| Hosted HTTP acceptance | Real hosted manual HTTP acceptance was performed: `B0_HTTP_MANUAL_ACCEPTANCE = PASS` |
+| `REAL_HTTP_H1_PASS` | NOT EMITTED — the frozen canonical runner was not literally executed |
 | S1B.3 | IMPLEMENTED ON BRANCH `feat/m16-s1b3-policy-admission`; NOT MERGED |
 | S1B2-I1 (controlled policy descriptor read) | Implemented on the branch as `gov_repo.l14_read_policy_descriptors_v1`; not merged |
 
@@ -116,7 +117,9 @@ canonical_relationships structure, ACL and rows byte-identical across the migrat
 
 ## Holds
 
-S1B2-H1 is recorded as CLOSED ON EQUIVALENT HOSTED EVIDENCE with `REAL_HTTP_H1_PASS` NOT EMITTED.
+S1B2-H1 was closed by the ACP on EQUIVALENT HOSTED EVIDENCE: real hosted manual HTTP acceptance was performed
+(`B0_HTTP_MANUAL_ACCEPTANCE = PASS`); the frozen canonical runner was not literally executed, so `REAL_HTTP_H1_PASS`
+is NOT EMITTED.
 S1B2-I1 is implemented on this branch (not merged). S1B2-I2 (policy_mandate_mappings write disposition,
 including its legacy CASCADE into `governance_policies`), I3, I4, I5 and I7 are unchanged.
 Out of scope and not started: S1B.4 (POLICY_VERSION proposal / validation), applicability, responsibility,

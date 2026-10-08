@@ -181,18 +181,22 @@ M14 close
 → M22
 ```
 
-## Current execution position (2026-09-24)
+## Current execution position (2026-10-07)
 
 - **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1: CLOSED / MERGED**, at
   canonical base `f431fa6901bfdb58cb1729553ea0193568fcc160`.
-- **M16 — OWNERSHIP / BUSINESS / POLICY / CONTROL ENRICHMENT V1:
-  ARCHITECTURE FREEZE ACCEPTED / FROZEN**. The
-  [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
-  is **ACCEPTED / FROZEN**, with owner approval granted on **2026-09-24**.
-- M16 implementation has **NOT started**. The Architecture Freeze PR is
-  **pending merge into main**; implementation must not start from this
-  documentation branch before that merge.
-- The first implementation gate after merge is **M16-S0 — Verified Governance
-  Principal**. No M17/M18/M19 work is started by this freeze.
-- This records architecture approval only; frozen CIA baseline semantics,
-  milestone definitions, and implementation coverage claims remain unchanged.
+- **M16 — OWNERSHIP / BUSINESS / POLICY / CONTROL ENRICHMENT V1: IN PROGRESS**.
+  The [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
+  remains **ACCEPTED / FROZEN** (owner approval granted on **2026-09-24**).
+- Implemented / merged: S0, S1A, S1A.2, S1A.2R1, S1B.0, S1B.1, S1B.1R1, S1B.2,
+  S1B.2R1, S1B.2R2 and S1B.2R3. The governed discovery machine boundary was merged
+  through PR #52.
+- **PR #52: MERGED** into main at `9875208d0fd60105a7508572d5058235ca0751de`.
+- **S1B.3 — Policy Content Admission: IMPLEMENTED ON BRANCH**
+  `feat/m16-s1b3-policy-admission`; **NOT MERGED**.
+- **S1B.4: NOT STARTED.** **M17+: NOT STARTED.**
+- **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
+  `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
+  literally executed.
+- Frozen CIA baseline semantics, milestone definitions, and implementation
+  coverage claims remain unchanged.
