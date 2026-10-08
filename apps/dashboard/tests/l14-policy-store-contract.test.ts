@@ -62,11 +62,14 @@ test("the only data change is the parent-derived tenant backfill; owner_user_id 
   assert.ok(!/(postgres(ql)?:\/\/|supabase\.co|api\.openai\.com)/i.test(migration), "no hosted database / OpenAI reference");
 });
 
-test("no Policy lifecycle TypeScript contract / adapter is introduced in S1B.2 and no TS consumes current_version_id", () => {
+// S1B.2 introduced no Policy TypeScript. The only Policy TS since is the S1B.3 admission contract / mirror / RPC-only
+// adapter (l14-policy-admission*), which reaches the reused stores exclusively through the three S1B.3 RPCs.
+test("no Policy lifecycle TypeScript beyond the S1B.3 admission contract/adapter, and no TS touches the reused stores or current_version_id", () => {
   const list = (dir: string) => readdirSync(join(root, dir)).filter(name => /^l14-/.test(name)).sort();
-  assert.deepEqual(list("packages/canonical-contracts/src"), ["l14-authority-policy.ts", "l14-governance-party.ts", "l14-registries.ts"]);
-  assert.deepEqual(list("packages/governance-review/src"), ["l14-authority-policy.ts", "l14-governance-party.ts", "l14-registries.ts"]);
-  assert.deepEqual(list("apps/dashboard/lib/governance"), ["l14-authority-policy-persistence.ts", "l14-governance-party-persistence.ts"]);
+  assert.deepEqual(list("packages/canonical-contracts/src"), ["l14-authority-policy.ts", "l14-governance-party.ts", "l14-policy-admission.ts", "l14-registries.ts"]);
+  assert.deepEqual(list("packages/governance-review/src"), ["l14-authority-policy.ts", "l14-governance-party.ts", "l14-policy-admission.ts", "l14-registries.ts"]);
+  assert.deepEqual(list("apps/dashboard/lib/governance"), ["l14-authority-policy-persistence.ts", "l14-governance-party-persistence.ts",
+    "l14-policy-admission-persistence.ts"]);
   const files: string[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
