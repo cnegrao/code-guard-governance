@@ -147,4 +147,12 @@ privilege closure; and 36 postflight negative controls (each must fail the S1B.5
 
 ## CI
 
-{{CI}}
+| Workflow | Run | HEAD | Result |
+|---|---|---|---|
+| M16 PostgreSQL 17 security suite | [37795472527](https://github.com/cnegrao/code-guard-governance/actions/runs/37795472527) | `8ed8451` | success (PGDG PostgreSQL 17, real pgvector) |
+| M15 PostgreSQL regression | [37795472522](https://github.com/cnegrao/code-guard-governance/actions/runs/37795472522) | `8ed8451` | success |
+| M16 PostgreSQL 17 security suite | [37796448378](https://github.com/cnegrao/code-guard-governance/actions/runs/37796448378) | `2fca7fa` | success (final migration name `20261008180000`) |
+| M15 PostgreSQL regression | [37796448634](https://github.com/cnegrao/code-guard-governance/actions/runs/37796448634) | `2fca7fa` | success |
+
+`8ed8451` is the implementation commit (migration first named `20261009120000`); `2fca7fa` only renames it to
+`20261008180000` and updates references. This docs-only commit re-runs both workflows on the branch head.
