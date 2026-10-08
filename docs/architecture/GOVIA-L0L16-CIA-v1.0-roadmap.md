@@ -189,7 +189,7 @@ M14 close
   The [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
   remains **ACCEPTED / FROZEN** (owner approval granted on **2026-09-24**).
 - Implemented / merged: S0, S1A, S1A.2, S1A.2R1, S1B.0, S1B.1, S1B.1R1, S1B.2,
-  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3 and S1B.4. The governed discovery machine boundary was
+  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3, S1B.4 and S1B.5. The governed discovery machine boundary was
   merged through PR #52.
 - **PR #52: MERGED** into main at `9875208d0fd60105a7508572d5058235ca0751de`.
 - **PR #53: MERGED** — **S1B.3 — Policy Content Admission: MERGED**. Canonical main
@@ -197,9 +197,13 @@ M14 close
 - **PR #54: MERGED** — **S1B.4 — POLICY_VERSION Governance Validation: MERGED**
   ([evidence](../codex/evidence/2026-10-08-m16-s1b4-policy-version-validation.md)). Canonical
   main baseline at the start of S1B.5: `3200b02042a6ed91e792cbc6da89e40fbf793d51`.
-- **S1B.5 — BUSINESS_DOMAIN / INFORMATION_DOMAIN Governed Registries: IMPLEMENTED ON BRANCH**
-  `feat/m16-s1b-governed-registries`; **NOT MERGED**. LOCAL / CI evidence only; no hosted
-  claim ([evidence](../codex/evidence/2026-10-08-m16-s1b5-domain-registries.md)).
+- **PR #55: MERGED** — **S1B.5 — BUSINESS_DOMAIN / INFORMATION_DOMAIN Governed Registries: MERGED**
+  ([evidence](../codex/evidence/2026-10-08-m16-s1b5-domain-registries.md)). Canonical main
+  baseline at the start of S1B.6: `5ac5d8072353001ee533a1019fbbdd43485a8d62`.
+- **S1B.6 — CONTROL_DEFINITION Registry + Immutable Versions: IMPLEMENTED ON BRANCH**
+  `feat/m16-s1b6-control-definition-registry`; **NOT MERGED**. LOCAL / CI evidence only; no
+  hosted claim ([evidence](../codex/evidence/2026-10-08-m16-s1b6-control-definition-registry.md)).
+  No CONTROL_APPLICABILITY / assessment; CG-AG 001..012 are not admitted or validated.
 - **M17+: NOT STARTED.**
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
