@@ -9,6 +9,8 @@ import {
   contractRawRpcRevocationMigration, credentialMigration, disposableM16Postgres, eligibilityMigration, epochBindingMigration,
   governedWriteWrapperMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, objectMaterializationCompatMigration,
   l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration,
+  definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration, postR3PrimaryChainMigrations,
+  l14PolicyAdmissionMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -53,10 +55,15 @@ const uuidOrNull = (value: string | null) => (value === null ? 'null::uuid' : `'
  * policy-store prerequisites (policyStorePrerequisites, merged chronologically around the broad-grant
  * migration) plus the S1B.2 policy-store hardening. A suite may also start earlier and apply later
  * migrations itself; `policyStore: true` gives an older horizon the policy-store prerequisites (e.g.
- * S1B1R1 + prerequisites, to seed legacy policy rows before applying S1B.2 itself).
+ * S1B1R1 + prerequisites, to seed legacy policy rows before applying S1B.2 itself). 'S1B3' is the FULL canonical
+ * primary chain (fullPrimaryChain) + S1B.2R1/R2/R3 + the post-R3 discovery slices + S1B.3 policy content admission,
+ * exactly the production order; `stopBefore` ends a horizon before a named migration (S1B.3 suites seed legacy policy
+ * rows / probe the preflight before applying it themselves).
  */
-export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2';
+export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2' | 'S1B3';
 export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
+  S1B3: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
+    ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration],
   S1A: [credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration,
     governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration,
     l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration],
@@ -78,11 +85,17 @@ export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
 };
 
 export async function l14Cluster(diagnostic: (message: string) => void,
-  options: { readonly horizon?: L14Horizon; readonly policyStore?: boolean } = {}) {
+  options: { readonly horizon?: L14Horizon; readonly policyStore?: boolean; readonly stopBefore?: string } = {}) {
   const policyStorePrerequisites = options.horizon === 'S1B2' || options.policyStore === true;
-  const pg = await disposableM16Postgres(diagnostic, { governanceWriteChain: true, policyStorePrerequisites });
+  const pg = await disposableM16Postgres(diagnostic, options.horizon === 'S1B3'
+    ? { fullPrimaryChain: true } : { governanceWriteChain: true, policyStorePrerequisites });
   try {
-    for (const migration of L14_HORIZON_MIGRATIONS[options.horizon ?? 'S1A']) await pg.migrate(migration);
+    const chain = L14_HORIZON_MIGRATIONS[options.horizon ?? 'S1A'];
+    assert.ok(options.stopBefore === undefined || chain.includes(options.stopBefore), 'stopBefore names a horizon migration');
+    for (const migration of chain) {
+      if (migration === options.stopBefore) break;
+      await pg.migrate(migration);
+    }
   } catch (error) { pg.stop(); throw error; }
   const { sql, bootstrapSql } = pg;
   const owner = (query: string) => sql(query, 'postgres');
