@@ -37,7 +37,8 @@ test("closed vocabularies are exactly the frozen sets and match the migration", 
   assert.deepEqual([...L14_POLICY_TYPES], ["operational", "risk", "security", "data", "ethics", "compliance"]);
   assert.ok(code.includes("p_policy_type NOT IN ('operational','risk','security','data','ethics','compliance')"));
   assert.equal(L14_POLICY_VERSION_CHANGE_SUMMARY, "M16_POLICY_VERSION_ADMISSION");
-  assert.deepEqual([...L14_POLICY_VALIDATION_STATES], ["NOT_VALIDATED"], "S1B.3 can only ever report NOT_VALIDATED");
+  // S1B.3 could only ever report NOT_VALIDATED; the frozen S1B.4 contract supersedes the shared vocabulary (still exact).
+  assert.deepEqual([...L14_POLICY_VALIDATION_STATES], ["NOT_VALIDATED", "VALIDATED", "REVOKED"], "exact closed descriptor vocabulary");
   assert.deepEqual([L14_REGISTRY_ADMIT_COMMAND_SUBJECTS.ADMIT_GOVERNANCE_POLICY, L14_REGISTRY_ADMIT_COMMAND_SUBJECTS.ADMIT_POLICY_VERSION],
     ["POLICY_VERSION", "POLICY_VERSION"]);
   for (const value of ["L14_POLICY_CONTENT_ADMIT", "ADMIT_GOVERNANCE_POLICY", "ADMIT_POLICY_VERSION", "L14_GOVERNANCE_POLICY_CONTENT_V1",
@@ -222,10 +223,12 @@ test("adapter: a DENY is a durable result; typed SQLSTATEs (GV001-GV011, 55P03) 
   nextError = null;
   nextBody = [{ policy_id: POLICY, policy_code: "POL-1", title: "T", policy_type: "risk", policy_admission_authorization_decision_id: "a",
     policy_recorded_at: "t", version_id: VERSION, version_number: 1, version_label: "v1", content_hash: "c".repeat(64),
-    version_admission_authorization_decision_id: "b", version_recorded_at: "t2", validation_state: "NOT_VALIDATED" }];
+    version_admission_authorization_decision_id: "b", version_recorded_at: "t2", validation_state: "NOT_VALIDATED",
+    validation_state_id: null, validation_effective_from: null, latest_validation_state_id: null }];
   const [descriptor] = await adapter.readPolicyDescriptors(PRINCIPAL, { policyId: POLICY });
   assert.deepEqual(Object.keys(descriptor!).sort(), ["contentHash", "policyAdmissionAuthorizationDecisionId", "policyCode", "policyId", "policyRecordedAt",
-    "policyType", "title", "validationState", "versionAdmissionAuthorizationDecisionId", "versionId", "versionLabel", "versionNumber", "versionRecordedAt"]);
+    "policyType", "title", "validationEffectiveFrom", "validationState", "validationStateId", "versionAdmissionAuthorizationDecisionId", "versionId",
+    "versionLabel", "versionNumber", "versionRecordedAt"].concat(["latestValidationStateId"]).sort(), "exact S1B.4 descriptor shape (S1B.3 keys + validation traceability)");
   assert.equal(descriptor!.validationState, "NOT_VALIDATED");
   // The TS mirror refuses to send a shape PostgreSQL would reject (fails before any network call).
   calls = [];
