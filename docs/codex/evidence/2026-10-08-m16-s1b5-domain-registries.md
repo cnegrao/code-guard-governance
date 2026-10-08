@@ -108,7 +108,7 @@ postflight and asserted against the live catalog). None reaches a policy store (
 | New S1B.5 PG17 functional, `tests/postgres-m16/l14-domain-registry.test.ts` | 13 | 0 | 0 |
 | New S1B.5 PG17 concurrency, `tests/postgres-m16/l14-domain-registry-concurrency.test.ts` | 16 | 0 | 0 |
 | New S1B.5 PG17 ACL / preflight / postflight controls, `tests/postgres-m16/l14-domain-registry-acl.test.ts` | 9 | 0 | 0 |
-| Complete M16 PG17 suite, `node --conditions=react-server --import tsx --test tests/postgres-m16/*.test.ts` (52 files) | {{M16_PASS}} | {{M16_FAIL}} | {{M16_SKIP}} |
+| Complete M16 PG17 suite, `node --conditions=react-server --import tsx --test tests/postgres-m16/*.test.ts` (52 files) | 883 | 0 | 0 |
 | M15 PostgreSQL regression, `npm run test:postgres --workspace codeguard-os` (local PG16) | 8 | 0 | 0 |
 | Dashboard TS suite, `npm test` (apps/dashboard; incl. the new S1B.5 contract test) | 1182 + 15 + 8 | 0 | 5 (pre-existing) |
 | `@council/governance-review` tests (`tsx --test test/*.test.ts`) | 412 | 0 | 0 |

@@ -64,7 +64,7 @@ export const l14PolicyAdmissionMigration = '20261007120000_m16_s1b3_policy_admis
 export const l14PolicyVersionValidationMigration = '20261008120000_m16_s1b4_policy_version_validation_v1.sql';
 // M16-S1B.5 chain step: BUSINESS_DOMAIN / INFORMATION_DOMAIN governed registries on top of S1B.4. Applied only by the S1B5
 // L14 horizon; the S1B4 horizon (and every older one) keeps its exact chain and its exact historical postflight expectations.
-export const l14DomainRegistryMigration = '20261009120000_m16_s1b5_domain_registries_v1.sql';
+export const l14DomainRegistryMigration = '20261008180000_m16_s1b5_domain_registries_v1.sql';
 // The only statement of the full chain that needs a real pgvector index access method.
 export const hnswIndexMigration = '20260818004053_agent_registry_graph_part_3.sql';
 const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url));

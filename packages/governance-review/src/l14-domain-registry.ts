@@ -9,7 +9,7 @@ import { L14ContractError, canonicalUuid, supportParts } from './l14-authority-p
 
 /**
  * M16-S1B.5 BUSINESS_DOMAIN / INFORMATION_DOMAIN canonical framing — a byte-for-byte MIRROR of the PostgreSQL RPCs in
- * 20261009120000_m16_s1b5_domain_registries_v1.sql. PostgreSQL recomputes every fingerprint itself (a mismatch is
+ * 20261008180000_m16_s1b5_domain_registries_v1.sql. PostgreSQL recomputes every fingerprint itself (a mismatch is
  * GV008) and re-validates every shape; nothing here grants authority. The domain id is the L6 identity verbatim.
  */
 

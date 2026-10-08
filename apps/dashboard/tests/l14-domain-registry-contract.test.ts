@@ -16,7 +16,7 @@ import {
  * adapter + migration-text invariants, without a database. The PG17 suites (tests/postgres-m16/l14-domain-registry*.test.ts)
  * prove PostgreSQL computes identical fingerprints (a mismatch would be GV008) and enforces the same rules.
  */
-const MIGRATION = "20261009120000_m16_s1b5_domain_registries_v1.sql";
+const MIGRATION = "20261008180000_m16_s1b5_domain_registries_v1.sql";
 const migration = readFileSync(fileURLToPath(new URL(`../../../supabase/migrations/${MIGRATION}`, import.meta.url)), "utf8");
 const code = migration.replace(/--.*$/gm, "");
 const noStrings = code.replace(/'[^']*'/g, "");
