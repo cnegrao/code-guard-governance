@@ -306,6 +306,22 @@ test("adapter: a DENY is a durable result; typed SQLSTATEs (GV001-GV011, 55P03) 
   assert.equal(calls.length, 0);
 });
 
+test("adapter (S1B.6 hardening, Test 2): NFC / NFD content is forwarded byte-for-byte with its own byte-exact hash; never normalized", async () => {
+  calls = []; nextError = null; nextBody = null;
+  const nfc = "Caf\u00e9", nfd = "Cafe\u0301";
+  for (const word of [nfc, nfd]) {
+    const content = { controlCode: `CTRL-${word}`, title: `${word} title`, description: `${word} description.` };
+    await adapter.admitControlDefinitionVersion(PRINCIPAL, { commandId: `n-${word}`, controlDefinitionId: CDID, controlDefinitionVersionId: VID,
+      expectation: { kind: "EXPECTED_NONE" }, content, sourceClass: "LOCAL_HUMAN", support: NONE });
+    const args = calls.at(-1)!.args;
+    for (const [key, value] of [["p_control_code", content.controlCode], ["p_title", content.title], ["p_description", content.description]] as const) {
+      assert.equal(Buffer.from(String(args[key]), "utf8").toString("hex"), Buffer.from(value, "utf8").toString("hex"), `${key} bytes unchanged`);
+    }
+    assert.equal(args.p_content_hash, controlDefinitionContentHash(content));
+  }
+  assert.notEqual(calls[0]!.args.p_content_hash, calls[1]!.args.p_content_hash, "NFC and NFD never share a hash");
+});
+
 test("server-only adapter; no HTTP route, UI or other module consumes it in S1B.6", () => {
   const adapterSource = readFileSync(fileURLToPath(new URL("../lib/governance/l14-control-definition-persistence.ts", import.meta.url)), "utf8");
   assert.match(adapterSource, /^import "server-only";/);

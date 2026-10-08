@@ -588,4 +588,124 @@ test('M16 S1B.6 control definition registry lifecycle (disposable PG17)', { time
     assert.equal(await one(`select count(*) from pg_constraint where contype='f' and conrelid::regclass::text like 'gov_repo.l14\\_control%'
       and confrelid in ('gov_repo.agents'::regclass, 'gov_repo.agent_resource_links'::regclass, 'gov_repo.ai_systems'::regclass)`), '0');
   });
+
+  // ---------------------------------------------------------------------------------------
+  // S1B.6 surgical hardening (test-only).
+  await t.test('identical content, distinct version ids: a successor may repeat byte-identical content; each exact tuple is validated and resolved on its own', async () => {
+    const x = await k.setup();
+    const content = k.content('same-bytes');
+    const { r: r1, version: v1 } = await k.admitFirst(x, 'same-bytes-v1', content);
+    const { r: r2, version: v2 } = await k.admitNext(x, 'same-bytes-v2', v1, { ...content });
+    assert.equal(r1.outcome, 'ADMITTED');
+    assert.deepEqual([r2.outcome, r2.control_definition_id, r2.predecessor_version_id, r2.content_hash],
+      ['ADMITTED', v1.controlDefinitionId, v1.controlDefinitionVersionId, r1.content_hash]);
+    assert.notEqual(v2.controlDefinitionVersionId, v1.controlDefinitionVersionId);
+    assert.equal(v2.contentHash, v1.contentHash, 'the same content has the same DB content hash');
+    const rows = JSON.parse(await one(`select json_agg(json_build_object('vid', control_definition_version_id, 'pred', predecessor_version_id,
+        'hash', content_hash, 'bytes', encode(convert_to(control_code||'|'||title||'|'||description, 'UTF8'), 'hex')) order by recorded_at)
+      from gov_repo.l14_control_definition_versions where organisation_id='${x.org}' and control_definition_id='${v1.controlDefinitionId}'`));
+    assert.equal(rows.length, 2, 'exactly two version rows');
+    assert.deepEqual(rows.map((row: any) => [row.vid, row.pred, row.hash]),
+      [[v1.controlDefinitionVersionId, null, v1.contentHash], [v2.controlDefinitionVersionId, v1.controlDefinitionVersionId, v1.contentHash]]);
+    const expectedBytes = Buffer.from(`${content.controlCode}|${content.title}|${content.description}`, 'utf8').toString('hex');
+    assert.deepEqual(rows.map((row: any) => row.bytes), [expectedBytes, expectedBytes], 'content stays byte-identical');
+    const s1 = (await k.validate(x, 'same-bytes-v1', v1)).decided;
+    const s2 = (await k.validate(x, 'same-bytes-v2', v2)).decided;
+    assert.deepEqual([s1.outcome, s2.outcome], ['VALIDATED', 'VALIDATED']);
+    assert.notEqual(s1.registry_state_id, s2.registry_state_id, 'each exact tuple gets its own governed state');
+    assert.deepEqual([s1.control_definition_version_id, s2.control_definition_version_id], [v1.controlDefinitionVersionId, v2.controlDefinitionVersionId]);
+    assert.equal(await k.resolve(x.org, v1, 'clock_timestamp()', 'clock_timestamp()'), s1.registry_state_id, 'v1 resolves only to the v1 state');
+    assert.equal(await k.resolve(x.org, v2, 'clock_timestamp()', 'clock_timestamp()'), s2.registry_state_id, 'v2 resolves only to the v2 state');
+    assert.deepEqual([(await k.head(x.org, v1))!.latest_state_id, (await k.head(x.org, v2))!.latest_state_id], [s1.registry_state_id, s2.registry_state_id]);
+    assert.equal(await one(`select count(*) from gov_repo.l14_control_definition_states where organisation_id='${x.org}'
+      and control_definition_id='${v1.controlDefinitionId}' and content_hash='${v1.contentHash}'`), '2', 'the shared hash never collapses the two versions');
+    assert.equal(await one(`select count(*) from gov_repo.l14_control_definition_heads where organisation_id='${x.org}'
+      and control_definition_id='${v1.controlDefinitionId}'`), '2', 'one technical head per exact version tuple, none per identity');
+    assert.equal(await one(`select count(*) from information_schema.columns where table_schema='gov_repo' and table_name like 'l14\\_control%'
+      and column_name ~ '(current|latest_version|effective_version)'`), '0', 'no implicit current governed version');
+    // Revoking one tuple leaves the other (same content, same hash) untouched.
+    await k.revoke(x, 'same-bytes-v1-revoke', v1, s1.registry_state_id);
+    assert.equal(await k.resolve(x.org, v1, 'clock_timestamp()', 'clock_timestamp()'), null);
+    assert.equal(await k.resolve(x.org, v2, 'clock_timestamp()', 'clock_timestamp()'), s2.registry_state_id);
+  });
+
+  await t.test('byte-exact content hash: NFC "Café" and NFD "Cafe\\u0301" hash differently in TypeScript and PostgreSQL; stored bytes are never normalized', async () => {
+    const x = await k.setup();
+    const nfc = 'Café', nfd = 'Café';
+    assert.equal(nfc.normalize('NFC'), nfd.normalize('NFC'), 'the two strings are canonically equivalent');
+    assert.notEqual(Buffer.from(nfc, 'utf8').toString('hex'), Buffer.from(nfd, 'utf8').toString('hex'));
+    const build = (word: string) => ({ controlCode: `CTRL-${word}`, title: `${word} title`, description: `${word} description.` });
+    const [cNfc, cNfd] = [build(nfc), build(nfd)];
+    const [tsNfc, tsNfd] = [controlDefinitionContentHash(cNfc), controlDefinitionContentHash(cNfd)];
+    assert.notEqual(tsNfc, tsNfd, 'TypeScript: NFC != NFD');
+    const pgHash = (cv: typeof cNfc) => one(`select gov_repo.l14_control_definition_content_hash_v1(${[cv.controlCode, cv.title, cv.description]
+      .map(v => `convert_from(decode('${Buffer.from(v, 'utf8').toString('hex')}', 'hex'), 'UTF8')`).join(', ')})`);
+    const [pgNfc, pgNfd] = [await pgHash(cNfc), await pgHash(cNfd)];
+    assert.notEqual(pgNfc, pgNfd, 'PostgreSQL: NFC != NFD');
+    assert.deepEqual([pgNfc, pgNfd], [tsNfc, tsNfd], 'each PostgreSQL hash equals its TypeScript mirror');
+    // Admitted through the real RPC (the caller hash is the mirror's; PostgreSQL recomputes and accepts it).
+    const a = await k.admitFirst(x, 'nfc', cNfc);
+    const b = await k.admitFirst(x, 'nfd', cNfd);
+    assert.deepEqual([a.r.outcome, a.r.content_hash, b.r.outcome, b.r.content_hash], ['ADMITTED', tsNfc, 'ADMITTED', tsNfd]);
+    for (const [v, cv] of [[a.version, cNfc], [b.version, cNfd]] as const) {
+      const stored = JSON.parse(await one(`select json_build_object('code', encode(convert_to(control_code,'UTF8'),'hex'),
+        'title', encode(convert_to(title,'UTF8'),'hex'), 'description', encode(convert_to(description,'UTF8'),'hex'),
+        'nfc', (title is nfc normalized), 'nfd', (title is nfd normalized))
+        from gov_repo.l14_control_definition_versions where control_definition_version_id='${v.controlDefinitionVersionId}'`));
+      assert.deepEqual([stored.code, stored.title, stored.description], [cv.controlCode, cv.title, cv.description]
+        .map(value => Buffer.from(value, 'utf8').toString('hex')), 'stored bytes are exactly the submitted bytes');
+      assert.deepEqual([stored.nfc, stored.nfd], cv === cNfc ? [true, false] : [false, true], 'no NFC / NFD normalization on store');
+    }
+    // A caller that normalizes the content but keeps the other form's hash is rejected: the hash is byte-exact.
+    await rejects(c.svc(k.admitSql(x.registrar, { commandId: x.cmd('nfc-mixed'), controlDefinitionId: randomUUID(), versionId: randomUUID(),
+      content: cNfc, contentHash: tsNfd })), 'GV010', /CONTENT_HASH_MISMATCH/);
+  });
+
+  await t.test('first-admission atomicity: an induced failure at the identity INSERT (after the root version INSERT) rolls the whole command back', async () => {
+    const x = await k.setup();
+    await c.evidence(x.org, 'atom-ev-1');
+    const cdid = randomUUID(), vid = randomUUID(), commandId = x.cmd('atom');
+    const before = await k.counts(x.org);
+    const history = await k.historyDigest(x.org);
+    const sql = k.admitSql(x.registrar, { commandId, controlDefinitionId: cdid, versionId: vid, content: k.content('atom'),
+      support: { status: 'PRESENT', evidenceIds: ['atom-ev-1'] } });
+    // Disposable-cluster-only failure injection: a temporary trigger that raises on the identity INSERT, which the RPC reaches
+    // only after the authorization, the root version and its lineage have been written. Production FKs / guards stay intact.
+    await c.bootstrapSql(`create function public.s1b6_induced_identity_failure() returns trigger language plpgsql
+        set search_path = pg_catalog, pg_temp as $f$
+        begin
+          if not exists (select 1 from gov_repo.l14_control_definition_versions v
+                         where v.organisation_id = new.organisation_id and v.control_definition_id = new.control_definition_id
+                           and v.predecessor_version_id is null and v.admission_authorization_decision_id = new.admission_authorization_decision_id) then
+            raise exception 'S1B6_INDUCED_FAILURE_WITHOUT_ROOT_VERSION';
+          end if;
+          raise exception 'S1B6_INDUCED_IDENTITY_FAILURE' using errcode = 'P0001';
+        end $f$;
+      create trigger zz_s1b6_induced_identity_failure before insert on gov_repo.l14_control_definitions
+        for each row execute function public.s1b6_induced_identity_failure();
+      alter table gov_repo.l14_control_definitions enable always trigger zz_s1b6_induced_identity_failure;`);
+    try {
+      await assert.rejects(c.svc(sql), (error: Error) => {
+        assert.match(error.message, /S1B6_INDUCED_IDENTITY_FAILURE/, 'the failure fired after the root version was written in the same transaction');
+        assert.doesNotMatch(error.message, /WITHOUT_ROOT_VERSION/);
+        return true;
+      });
+    } finally {
+      await c.bootstrapSql(`drop trigger if exists zz_s1b6_induced_identity_failure on gov_repo.l14_control_definitions;
+        drop function if exists public.s1b6_induced_identity_failure();`);
+    }
+    assert.equal(await one(`select count(*) from pg_trigger where tgname='zz_s1b6_induced_identity_failure'`), '0', 'failure injection removed');
+    assert.equal(await one(`select count(*) from gov_repo.l14_control_definitions where control_definition_id='${cdid}'`), '0', 'no identity');
+    assert.equal(await one(`select count(*) from gov_repo.l14_control_definition_versions where control_definition_version_id='${vid}'`), '0', 'no version');
+    assert.equal(await one(`select count(*) from gov_repo.l14_authorization_decisions where organisation_id='${x.org}' and command_id='${commandId}'`), '0',
+      'no authorization decision');
+    assert.equal(await one(`select count(*) from gov_repo.l14_command_results where organisation_id='${x.org}' and command_id='${commandId}'`), '0',
+      'no command result');
+    assert.equal(await one(`select count(*) from gov_repo.l14_support_links where evidence_id='atom-ev-1'`), '0', 'no support link');
+    assert.deepEqual(await k.counts(x.org), before, 'no proposal, decision, state, head or any other L14 row');
+    assert.equal(await k.historyDigest(x.org), history);
+    // Nothing was consumed: the very same command now admits normally (not a replay).
+    const r = await exec(sql);
+    assert.deepEqual([r.outcome, r.replay, r.control_definition_id, r.control_definition_version_id], ['ADMITTED', false, cdid, vid]);
+  });
 });
