@@ -20,3 +20,4 @@ export * from "./l14-domain-registry.ts";
 export * from "./l14-control-definition.ts";
 export * from "./l14-responsibility-assignment.ts";
 export * from "./l14-business-context-assignment.ts";
+export * from "./l14-policy-applicability.ts";

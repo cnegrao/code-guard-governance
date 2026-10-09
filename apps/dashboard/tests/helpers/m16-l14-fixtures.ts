@@ -11,7 +11,7 @@ import {
   l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration,
   definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration, postR3PrimaryChainMigrations,
   l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration, l14ControlDefinitionRegistryMigration,
-  l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration,
+  l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -66,9 +66,14 @@ const uuidOrNull = (value: string | null) => (value === null ? 'null::uuid' : `'
  * 'S1C1' is 'S1B6' + the S1C.1 RESPONSIBILITY_ASSIGNMENT fact family; the S1B6 horizon stays exactly the merged S1B.6 catalog.
  * 'S1C2' is 'S1C1' + the S1C.2 BUSINESS_CONTEXT_ASSIGNMENT fact family; the S1C1 horizon stays exactly the merged S1C.1 catalog.
  * 'S1C1R1' is 'S1C2' + the S1C.1R1 Party dependency commit-boundary closure; the S1C2 horizon stays exactly the S1C.2 catalog.
+ * 'S1C3' is 'S1C1R1' + the S1C.3 POLICY_APPLICABILITY fact family; the S1C1R1 horizon stays exactly the post-S1C.1R1 catalog.
  */
-export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2' | 'S1B3' | 'S1B4' | 'S1B5' | 'S1B6' | 'S1C1' | 'S1C2' | 'S1C1R1';
+export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2' | 'S1B3' | 'S1B4' | 'S1B5' | 'S1B6' | 'S1C1' | 'S1C2' | 'S1C1R1' | 'S1C3';
 export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
+  S1C3: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
+    ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
+    l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,
+    l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration],
   S1C1R1: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
     ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
     l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,
@@ -112,7 +117,7 @@ export async function l14Cluster(diagnostic: (message: string) => void,
   options: { readonly horizon?: L14Horizon; readonly policyStore?: boolean; readonly stopBefore?: string } = {}) {
   const policyStorePrerequisites = options.horizon === 'S1B2' || options.policyStore === true;
   const pg = await disposableM16Postgres(diagnostic, options.horizon === 'S1B3' || options.horizon === 'S1B4' || options.horizon === 'S1B5' || options.horizon === 'S1B6'
-    || options.horizon === 'S1C1' || options.horizon === 'S1C2' || options.horizon === 'S1C1R1'
+    || options.horizon === 'S1C1' || options.horizon === 'S1C2' || options.horizon === 'S1C1R1' || options.horizon === 'S1C3'
     ? { fullPrimaryChain: true } : { governanceWriteChain: true, policyStorePrerequisites });
   try {
     const chain = L14_HORIZON_MIGRATIONS[options.horizon ?? 'S1A'];
