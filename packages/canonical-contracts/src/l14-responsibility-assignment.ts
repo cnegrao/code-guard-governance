@@ -25,8 +25,14 @@ import type { L14ExpectationKind, L14RegistryStateKind } from './l14-registries.
 
 export const L14_RESPONSIBILITY_ASSIGNMENT_SUBJECT_KIND = 'RESPONSIBILITY_ASSIGNMENT' as const satisfies L14ProposalSubjectKind;
 
-/** The five M16 fact families share the l14_fact_states envelope; only RESPONSIBILITY_ASSIGNMENT is executable (S1C.1). */
-export const L14_EXECUTABLE_FACT_SUBJECT_KINDS = ['RESPONSIBILITY_ASSIGNMENT'] as const satisfies readonly L14ProposalSubjectKind[];
+/**
+ * The five M16 fact families share the l14_fact_states envelope; exactly RESPONSIBILITY_ASSIGNMENT (S1C.1) and
+ * BUSINESS_CONTEXT_ASSIGNMENT (S1C.2) are executable. POLICY_APPLICABILITY, CONTROL_APPLICABILITY and CONTROL_ASSESSMENT
+ * stay unimplemented.
+ */
+export const L14_EXECUTABLE_FACT_SUBJECT_KINDS = [
+  'RESPONSIBILITY_ASSIGNMENT', 'BUSINESS_CONTEXT_ASSIGNMENT',
+] as const satisfies readonly L14ProposalSubjectKind[];
 export type L14ExecutableFactSubjectKind = (typeof L14_EXECUTABLE_FACT_SUBJECT_KINDS)[number];
 
 /** The closed support-link owner of fact support (never REGISTRY_STATE). */
