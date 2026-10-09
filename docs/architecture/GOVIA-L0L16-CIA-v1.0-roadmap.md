@@ -212,6 +212,9 @@ M14 close
   **NOT TOUCHED** ([evidence](../codex/evidence/2026-10-09-m16-s1c2-business-context-assignment.md)).
   POLICY_APPLICABILITY, CONTROL_APPLICABILITY and CONTROL_ASSESSMENT remain unimplemented; F2
   untouched.
+- **S1C.1R1 — S1C.1 Party dependency commit-boundary closure: CORRECTIVE CLOSURE ON THE S1C.2 BRANCH;
+  NOT MERGED** (additive migration `20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql`; recorded in
+  the S1C.2 evidence). Not a new milestone.
 - **M17+: NOT STARTED.**
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not

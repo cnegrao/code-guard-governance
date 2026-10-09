@@ -5,14 +5,14 @@ import { l14Cluster, lastLine } from '../helpers/m16-l14-fixtures';
 import { responsibilityKit } from '../helpers/m16-l14-responsibility-fixtures';
 
 /**
- * M16-S1C.2 — S1C.1 RESPONSIBILITY_ASSIGNMENT regression on the S1C.2 catalog (S1C2 horizon). S1C.2 widens the shared fact
+ * M16-S1C.2 — S1C.1 RESPONSIBILITY_ASSIGNMENT regression on the S1C.2 catalog (S1C1R1 horizon: S1C.2 + the S1C.1R1 Party dependency closure). S1C.2 widens the shared fact
  * framework (l14_fact_states subject vocabulary, the command-result fact branch, the fact guard): the first family must keep
  * its exact behaviour — legal / illegal matrix, single-owner cardinality under real concurrency, O45 steward coexistence,
  * O49 Party invalidation, explicit effective_to — and the two families never mix. The S1C.1 suites themselves keep their own
  * S1C1 horizon unchanged.
  */
 test('M16 S1C.2 keeps S1C.1 responsibility assignment green on the widened fact framework (disposable PG17)', { timeout: 1_800_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1C2' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'S1C1R1' });
   t.after(() => c.stop());
   const { owner, rejects } = c;
   const k = await responsibilityKit(c);

@@ -147,6 +147,61 @@ role per cluster so two fixture kits can share a cluster.
 - CanonicalObjectKind = 11; GovernedRelationshipType = 12.
 - Not implemented: POLICY_APPLICABILITY, CONTROL_APPLICABILITY, CONTROL_ASSESSMENT, machine intake, routes, UI, M17.
 
+## S1C.1R1 — Party dependency commit-boundary closure
+
+- **Discovered**: during S1C.2 implementation / the single S1C.2 delta review (reported as P2).
+- **Exact cause**: the merged S1C.1 `l14_decide_responsibility_assignment_proposal_v1` validated the pinned Party state
+  through `l14_governance_party_valid_state_v1` but never took the GovernanceParty registry subject guard, which the
+  S1B.1 / S1B.1R1 Party RPCs take EXCLUSIVELY (`l14_lock_registry_subject_guard_v1(org, 'GOVERNANCE_PARTY', party::text)`).
+  A Party REVOKE could therefore commit between the dependency check and the responsibility fact's commit. The resolver
+  failed closed afterwards (UNKNOWN), but §17 commit-boundary dependency validity was not guaranteed.
+- **Fix (one additive migration after S1C.2)**: `supabase/migrations/20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql`.
+  The merged S1C.1 migration is untouched.
+  - `gov_repo.l14_lock_party_dependency_guard_shared_v1(org, party)`: owner-only SECURITY INVOKER, pinned search_path, no
+    application EXECUTE; `pg_advisory_xact_lock_shared` on the EXACT S1B.1 key
+    `frame_identity([org, 'l14-registry-subject-guard-v1', 'GOVERNANCE_PARTY', party])` (no new namespace); transaction-scoped,
+    held to commit.
+  - `CREATE OR REPLACE` of the RESPONSIBILITY decide RPC only (same signature, SECURITY DEFINER, owner `postgres`, ACL,
+    search_path, lock_timeout). The body is the merged S1C.1 body plus, for VALIDATE only, the shared guard (proven
+    textually by the targeted test). REVOKE / REJECT / DEFER unchanged: a dependency-invalid assignment can still be ended.
+  - Lock order (VALIDATE): AP SHARED → Party dependency SHARED → CARDINALITY (single-owner roles) → fact KEY → command.
+    Party RPCs: AP SHARED → Party registry subject EXCLUSIVE → command. Shared vs exclusive on the same key: Party decisions
+    and assignments pinning that Party serialize; assignments pinning the same Party do not. No cycle.
+  - Preflight (exact S1C.2 catalog, 37 approved definers incl. the merged S1C.1 decide body) and an effective-catalog
+    postflight (the S1C.2 postflight with the new decide hash `5c506338…` pinned, plus the guard key / shared mode / lock
+    order contract). Surface stays **37**; canonical-owner class stays **27**; one approved definer changed in place.
+- **Race order 1** (Party REVOKE holds the exclusive guard; VALIDATE observed blocked on the shared guard): VALIDATE fails
+  `GV010 PARTY_DEPENDENCY_NOT_VALID`; no authorization, governance decision, fact envelope, responsibility state, head,
+  support link or command result for it.
+- **Race order 2** (VALIDATE holds the shared guard; Party REVOKE observed blocked): the fact commits VALIDATED, then the
+  revocation commits; the current resolver returns UNKNOWN, the row is byte-identical, its own coordinates stay
+  resolvable, and the assignment can still be explicitly revoked.
+- **Parallelism**: two VALIDATEs pinning the same Party on different keys complete concurrently (shared, not exclusive).
+- **Negative controls**: restored S1C.1 body (no guard), guard made SECURITY DEFINER / service_role-executable / search_path
+  drift / EXCLUSIVE / another namespace — each fails `M16_S1C1R1_POSTFLIGHT`.
+- **S1C.1 ACL source-scan repair**: `l14-responsibility-assignment-acl.test.ts` used `string_agg(prosrc, newline)` through the
+  `lastLine` helper, so only the tail of the corpus was scanned. It now fetches one single-line `json_object_agg` value,
+  asserts every targeted routine was collected, asserts known content of six distinct routines and > 300 lines, and runs the
+  UNCHANGED forbidden-pattern list over the full corpus (it passes). The new targeted test scans the helper + new decide
+  body; it permits only the shared lock key and the existing Party resolver and forbids Party registry mutation and direct
+  Party table / profile reads.
+- **Regressions**: the complete S1C.1 functional (17) and concurrency (10) suites also pass unmodified on the corrected
+  catalog (run locally with only the horizon switched to `S1C1R1`); every historical horizon and postflight is unchanged; the
+  S1C.1-on-S1C.2 regression file now runs on the final `S1C1R1` horizon.
+
+| S1C.1R1 suite (LOCAL) | Pass | Fail |
+|---|---|---|
+| New targeted `l14-party-dependency-guard.test.ts` (preflight, in-place apply, controls, race ×2, parallelism, regression) | 7 (+1) | 0 |
+| S1C.1 functional suite on the corrected catalog (horizon `S1C1R1`, local run) | 17 (+1) | 0 |
+| S1C.1 concurrency suite on the corrected catalog (horizon `S1C1R1`, local run) | 10 (+1) | 0 |
+| S1C.1 ACL suite with the repaired full-corpus source scan (its own `S1C1` horizon) | 8 (+1) | 0 |
+| Complete M16 PG17 suite (63 files) | 1021 | 0 |
+| M15 regression (local PG16) | 8 | 0 |
+| Dashboard TS / governance-review / canonical-contracts | 1205 + 15 + 8 / 412 / 230 (5 pre-existing skips) | 0 |
+| Typecheck (3 projects), `git diff --check`, secret scan | clean | |
+
+CI evidence for this closure is the final branch HEAD that carries it (both required workflows).
+
 ## CI
 
 | Workflow | Run | HEAD | Result |
