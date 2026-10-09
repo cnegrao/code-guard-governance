@@ -71,6 +71,12 @@ export const l14ControlDefinitionRegistryMigration = '20261008200000_m16_s1b6_co
 // M16-S1C.1 chain step: RESPONSIBILITY_ASSIGNMENT (the first authoritative M16 fact family) on top of S1B.6. Applied only by the
 // S1C1 L14 horizon; the S1B6 horizon (and every older one) keeps its exact chain and its exact historical postflight expectations.
 export const l14ResponsibilityAssignmentMigration = '20261008220000_m16_s1c1_responsibility_assignment_v1.sql';
+// M16-S1C.2 chain step: BUSINESS_CONTEXT_ASSIGNMENT (the second authoritative M16 fact family) on top of S1C.1. Applied only by the
+// S1C2 L14 horizon; the S1C1 horizon (and every older one) keeps its exact chain and its exact historical postflight expectations.
+export const l14BusinessContextAssignmentMigration = '20261009120000_m16_s1c2_business_context_assignment_v1.sql';
+// M16-S1C.1R1 chain step: S1C.1 Party dependency commit-boundary closure on top of S1C.2. Applied only by the S1C1R1 L14 horizon;
+// the S1C2 horizon (and every older one) keeps its exact chain and its exact historical postflight expectations.
+export const l14PartyDependencyGuardMigration = '20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql';
 // The only statement of the full chain that needs a real pgvector index access method.
 export const hnswIndexMigration = '20260818004053_agent_registry_graph_part_3.sql';
 const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url));
@@ -146,7 +152,7 @@ export function m16PrerequisiteChain(policyStore = false): readonly string[] {
   return chain;
 }
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration, ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration, l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration].includes(name)
+  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration, ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration, l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration].includes(name)
     || fullPrimaryChainMigrations().includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }

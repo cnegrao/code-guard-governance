@@ -55,7 +55,8 @@ test("closed vocabularies: the first fact family; exact role matrix; single-owne
   assert.equal(L14_RESPONSIBILITY_ASSIGNMENT_SUBJECT_KIND, "RESPONSIBILITY_ASSIGNMENT");
   assert.ok((L14_PROPOSAL_SUBJECT_KINDS as readonly string[]).includes("RESPONSIBILITY_ASSIGNMENT"));
   assert.ok(!(L14_REGISTRY_SUBJECT_KINDS as readonly string[]).includes("RESPONSIBILITY_ASSIGNMENT"), "a fact family, not a registry subject");
-  assert.deepEqual([...L14_EXECUTABLE_FACT_SUBJECT_KINDS], ["RESPONSIBILITY_ASSIGNMENT"], "future fact families stay unimplemented");
+  // S1C.2 adds BUSINESS_CONTEXT_ASSIGNMENT; the remaining three fact families stay unimplemented.
+  assert.deepEqual([...L14_EXECUTABLE_FACT_SUBJECT_KINDS], ["RESPONSIBILITY_ASSIGNMENT", "BUSINESS_CONTEXT_ASSIGNMENT"], "future fact families stay unimplemented");
   assert.equal(L14_FACT_STATE_SUPPORT_OWNER_KIND, "FACT_STATE");
   assert.deepEqual([...L14_RESPONSIBILITY_ROLES], ["BUSINESS_OWNER", "TECHNICAL_OWNER", "DATA_OWNER", "DATA_STEWARD"]);
   assert.deepEqual([...L14_RESPONSIBILITY_TARGET_KINDS], ["AGENT", "DATA_ASSET", "DATA_ELEMENT"]);

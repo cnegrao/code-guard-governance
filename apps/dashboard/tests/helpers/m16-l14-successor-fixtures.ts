@@ -13,9 +13,10 @@ export interface Flags { readonly validate?: Partial<L14AuthorityPolicyRule>; re
 
 export async function successorKit(c: L14Cluster) {
   const { owner, exec, admitSql, submitSql, decideSql, adminRole, memberRole } = c;
-  const opsRole = randomUUID();
+  // One AP-ops role per cluster: a second kit on the same cluster (e.g. party + domain fixtures) reuses it.
+  const opsRole = (await owner(`select role_id from gov_repo.governance_roles where role_code='L14_POLICY_OPS'`)).trim() || randomUUID();
   await owner(`insert into gov_repo.governance_roles(role_id,role_code,role_name,role_tier,is_system_role)
-    values('${opsRole}','L14_POLICY_OPS','Policy ops','organisation',false)`);
+    values('${opsRole}','L14_POLICY_OPS','Policy ops','organisation',false) on conflict (role_id) do nothing`);
 
   /** Full Authority Policy administration for opsRole (+ ADMIT for the system admin). variant varies content. */
   const opsRules = (variant = 0, flags: Flags = {}): L14AuthorityPolicyRule[] => [

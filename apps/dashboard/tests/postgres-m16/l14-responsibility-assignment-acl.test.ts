@@ -443,8 +443,19 @@ test('M16 S1C.1 privilege closure, preflight, postflight negative controls (disp
   });
 
   await t.test('the new SQL never reaches policy / registry stores, Party PII, legacy owner fields, canonical relationships or other fact families', async () => {
-    const sources = await one(`select string_agg(prosrc, E'\\n----\\n') from pg_proc where oid = any(array[${[...NEW_RPCS, ...NEW_HELPERS]
-      .map(s => `'${s}'::regprocedure`).join(',')}]::oid[])`);
+    // The bodies come back as ONE single-line JSON value (never a multi-line text result through lastLine), so the scan
+    // provably covers every targeted routine body in full.
+    const bodies = JSON.parse(await one(`select json_object_agg(oid::regprocedure::text, prosrc) from pg_proc where oid = any(array[${[...NEW_RPCS, ...NEW_HELPERS]
+      .map(s => `'${s}'::regprocedure`).join(',')}]::oid[])`)) as Record<string, string>;
+    assert.deepEqual(Object.keys(bodies).sort(), [...NEW_RPCS, ...NEW_HELPERS].sort(),
+      'every targeted routine body was collected');
+    const sources = Object.values(bodies).join('\n----\n');
+    // Positive sanity: known content of several distinct targeted routines is present in the scanned corpus.
+    for (const known of ['RESPONSIBILITY_SINGLE_OWNER_CONFLICT', 'RESPONSIBILITY_PROPOSAL_SOURCE_INVALID', 'l14-fact-subject-guard-v1',
+      'NO_MATCHING_AUTHORITY_RULE', 'l14_governance_party_valid_state_v1', 'l14_responsibility_assignment_heads:LINEAGE']) {
+      assert.ok(sources.includes(known), `scanned corpus contains ${known}`);
+    }
+    assert.ok(sources.split('\n').length > 300, 'the full multi-line corpus is scanned, not a tail');
     for (const forbidden of [/governance_policies/, /policy_versions/, /l14_policy_/, /l14_control_definition/, /l14_domain_/, /current_version_id/,
       /directory_profile/, /display_name/, /\bemail\b/i, /\bphone\b/i, /profile_text/, /governance_users/, /owner_user_id/, /owner_email/,
       /canonical_relationships/, /semantic_representation/, /APPLICABILITY/, /BUSINESS_CONTEXT/, /ASSESSMENT/, /\bcg_/i, /CG-AG/i,
