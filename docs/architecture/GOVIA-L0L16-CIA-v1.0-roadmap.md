@@ -181,7 +181,7 @@ M14 close
 → M22
 ```
 
-## Current execution position (2026-10-08)
+## Current execution position (2026-10-09)
 
 - **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1: CLOSED / MERGED**, at
   canonical base `f431fa6901bfdb58cb1729553ea0193568fcc160`.
@@ -189,7 +189,7 @@ M14 close
   The [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
   remains **ACCEPTED / FROZEN** (owner approval granted on **2026-09-24**).
 - Implemented / merged: S0, S1A, S1A.2, S1A.2R1, S1B.0, S1B.1, S1B.1R1, S1B.2,
-  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3, S1B.4, S1B.5 and S1B.6. The governed discovery machine boundary was
+  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3, S1B.4, S1B.5, S1B.6 and S1C.1. The governed discovery machine boundary was
   merged through PR #52.
 - **PR #52: MERGED** into main at `9875208d0fd60105a7508572d5058235ca0751de`.
 - **PR #53: MERGED** — **S1B.3 — Policy Content Admission: MERGED**. Canonical main
@@ -204,11 +204,14 @@ M14 close
   ([evidence](../codex/evidence/2026-10-08-m16-s1b6-control-definition-registry.md)). Canonical
   main baseline at the start of S1C.1: `4f877b6aa2c1fdfac967f1bf6ce003da06c164a7`.
   No CONTROL_APPLICABILITY / assessment; CG-AG 001..012 are not admitted or validated.
-- **S1C.1 — RESPONSIBILITY_ASSIGNMENT (first authoritative M16 fact family): IMPLEMENTED ON BRANCH**
-  `feat/m16-s1c1-responsibility-assignment`; **NOT MERGED**. LOCAL / CI evidence only; no hosted
-  claim ([evidence](../codex/evidence/2026-10-08-m16-s1c1-responsibility-assignment.md)).
-  BUSINESS_CONTEXT_ASSIGNMENT, POLICY_APPLICABILITY, CONTROL_APPLICABILITY and CONTROL_ASSESSMENT
-  remain unimplemented; F2 untouched.
+- **PR #57: MERGED** — **S1C.1 — RESPONSIBILITY_ASSIGNMENT (first authoritative M16 fact family): MERGED**
+  ([evidence](../codex/evidence/2026-10-08-m16-s1c1-responsibility-assignment.md)). Canonical
+  main baseline at the start of S1C.2: `6fe5c57bd1ea7f92e2804292de3ab6de931ec4a1`.
+- **S1C.2 — BUSINESS_CONTEXT_ASSIGNMENT (second authoritative M16 fact family): IMPLEMENTED ON BRANCH**
+  `feat/m16-s1c2-business-context-assignment`; **NOT MERGED**. LOCAL / CI evidence only; hosted
+  **NOT TOUCHED** ([evidence](../codex/evidence/2026-10-09-m16-s1c2-business-context-assignment.md)).
+  POLICY_APPLICABILITY, CONTROL_APPLICABILITY and CONTROL_ASSESSMENT remain unimplemented; F2
+  untouched.
 - **M17+: NOT STARTED.**
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
