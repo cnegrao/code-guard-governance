@@ -189,7 +189,7 @@ M14 close
   The [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
   remains **ACCEPTED / FROZEN** (owner approval granted on **2026-09-24**).
 - Implemented / merged: S0, S1A, S1A.2, S1A.2R1, S1B.0, S1B.1, S1B.1R1, S1B.2,
-  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3, S1B.4, S1B.5, S1B.6 and S1C.1. The governed discovery machine boundary was
+  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3, S1B.4, S1B.5, S1B.6, S1C.1, S1C.1R1 and S1C.2. The governed discovery machine boundary was
   merged through PR #52.
 - **PR #52: MERGED** into main at `9875208d0fd60105a7508572d5058235ca0751de`.
 - **PR #53: MERGED** — **S1B.3 — Policy Content Admission: MERGED**. Canonical main
@@ -207,14 +207,15 @@ M14 close
 - **PR #57: MERGED** — **S1C.1 — RESPONSIBILITY_ASSIGNMENT (first authoritative M16 fact family): MERGED**
   ([evidence](../codex/evidence/2026-10-08-m16-s1c1-responsibility-assignment.md)). Canonical
   main baseline at the start of S1C.2: `6fe5c57bd1ea7f92e2804292de3ab6de931ec4a1`.
-- **S1C.2 — BUSINESS_CONTEXT_ASSIGNMENT (second authoritative M16 fact family): IMPLEMENTED ON BRANCH**
-  `feat/m16-s1c2-business-context-assignment`; **NOT MERGED**. LOCAL / CI evidence only; hosted
-  **NOT TOUCHED** ([evidence](../codex/evidence/2026-10-09-m16-s1c2-business-context-assignment.md)).
-  POLICY_APPLICABILITY, CONTROL_APPLICABILITY and CONTROL_ASSESSMENT remain unimplemented; F2
-  untouched.
-- **S1C.1R1 — S1C.1 Party dependency commit-boundary closure: CORRECTIVE CLOSURE ON THE S1C.2 BRANCH;
-  NOT MERGED** (additive migration `20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql`; recorded in
-  the S1C.2 evidence). Not a new milestone.
+- **PR #58: MERGED** — **S1C.2 — BUSINESS_CONTEXT_ASSIGNMENT (second authoritative M16 fact family): MERGED**
+  ([evidence](../codex/evidence/2026-10-09-m16-s1c2-business-context-assignment.md)), together with
+  **S1C.1R1 — S1C.1 Party dependency commit-boundary closure: MERGED** (additive migration
+  `20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql`; recorded in the S1C.2 evidence). Canonical main
+  baseline at the start of S1C.3: `10bd95426241229bb423a0bf2c06c126118bea72`.
+- **S1C.3 — POLICY_APPLICABILITY (third authoritative M16 fact family): IMPLEMENTED ON BRANCH**
+  `feat/m16-s1c3-policy-applicability`; **NOT MERGED**. LOCAL / CI evidence only; hosted
+  **NOT TOUCHED** ([evidence](../codex/evidence/2026-10-09-m16-s1c3-policy-applicability.md)).
+  Remaining M16 fact families: **CONTROL_APPLICABILITY** and **CONTROL_ASSESSMENT** (unimplemented); F2 untouched.
 - **M17+: NOT STARTED.**
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
