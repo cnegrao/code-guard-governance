@@ -55,8 +55,9 @@ test("closed vocabularies: the second fact family; exact semantic-kind matrix; L
   assert.equal(L14_BUSINESS_CONTEXT_ASSIGNMENT_SUBJECT_KIND, "BUSINESS_CONTEXT_ASSIGNMENT");
   assert.ok((L14_PROPOSAL_SUBJECT_KINDS as readonly string[]).includes("BUSINESS_CONTEXT_ASSIGNMENT"));
   assert.ok(!(L14_REGISTRY_SUBJECT_KINDS as readonly string[]).includes("BUSINESS_CONTEXT_ASSIGNMENT"), "a fact family, not a registry subject");
-  assert.deepEqual([...L14_EXECUTABLE_FACT_SUBJECT_KINDS], ["RESPONSIBILITY_ASSIGNMENT", "BUSINESS_CONTEXT_ASSIGNMENT", "POLICY_APPLICABILITY"],
-    "exactly the implemented families (S1C.3 adds POLICY_APPLICABILITY); CONTROL_APPLICABILITY / CONTROL_ASSESSMENT stay unimplemented");
+  assert.deepEqual([...L14_EXECUTABLE_FACT_SUBJECT_KINDS],
+    ["RESPONSIBILITY_ASSIGNMENT", "BUSINESS_CONTEXT_ASSIGNMENT", "POLICY_APPLICABILITY", "CONTROL_APPLICABILITY"],
+    "exactly the implemented families (S1C.3 adds POLICY_APPLICABILITY, S1C.4 CONTROL_APPLICABILITY); CONTROL_ASSESSMENT stays unimplemented");
   assert.equal(L14_FACT_STATE_SUPPORT_OWNER_KIND, "FACT_STATE");
   assert.deepEqual([...L14_BUSINESS_CONTEXT_TARGET_KINDS], ["AGENT", "DATA_ASSET", "DATA_ELEMENT"]);
   assert.deepEqual([...L14_BUSINESS_CONTEXT_SEMANTIC_KINDS], [...L14_DOMAIN_SUBJECT_KINDS], "the existing L6 / S1B.5 semantic identity kinds, no parallel namespace");
