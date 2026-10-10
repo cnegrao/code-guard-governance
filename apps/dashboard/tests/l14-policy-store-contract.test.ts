@@ -67,19 +67,22 @@ test("the only data change is the parent-derived tenant backfill; owner_user_id 
 // (l14-policy-version-validation*); both reach the reused stores exclusively through their RPCs. The S1B.5 domain
 // registry contract / mirror / adapter (l14-domain-registry*) and the S1B.6 control definition contract / mirror / adapter
 // (l14-control-definition*), the S1C.1 responsibility assignment contract / mirror / adapter (l14-responsibility-assignment*) and the
-// S1C.2 business context assignment contract / mirror / adapter (l14-business-context-assignment*) and the S1C.3 policy applicability
-// contract / mirror / adapter (l14-policy-applicability*, which reach the S1B.3 / S1B.4 lineage only through the RPCs) are not Policy
-// lifecycle TypeScript and never name a policy store.
+// S1C.2 business context assignment contract / mirror / adapter (l14-business-context-assignment*), the S1C.3 policy applicability
+// contract / mirror / adapter (l14-policy-applicability*, which reach the S1B.3 / S1B.4 lineage only through the RPCs) and the S1C.4
+// control applicability contract / mirror / adapter (l14-control-applicability*, which reach the S1B.6 lineage only through the RPCs)
+// are not Policy lifecycle TypeScript and never name a policy store.
 test("no Policy lifecycle TypeScript beyond the S1B.3 admission and S1B.4 validation contracts/adapters, and no TS touches the reused stores or current_version_id", () => {
   const list = (dir: string) => readdirSync(join(root, dir)).filter(name => /^l14-/.test(name)).sort();
-  assert.deepEqual(list("packages/canonical-contracts/src"), ["l14-authority-policy.ts", "l14-business-context-assignment.ts", "l14-control-definition.ts", "l14-domain-registry.ts",
+  assert.deepEqual(list("packages/canonical-contracts/src"), ["l14-authority-policy.ts", "l14-business-context-assignment.ts", "l14-control-applicability.ts", "l14-control-definition.ts",
+    "l14-domain-registry.ts",
     "l14-governance-party.ts", "l14-policy-admission.ts", "l14-policy-applicability.ts", "l14-policy-version-validation.ts", "l14-registries.ts",
     "l14-responsibility-assignment.ts"]);
-  assert.deepEqual(list("packages/governance-review/src"), ["l14-authority-policy.ts", "l14-business-context-assignment.ts", "l14-control-definition.ts", "l14-domain-registry.ts",
+  assert.deepEqual(list("packages/governance-review/src"), ["l14-authority-policy.ts", "l14-business-context-assignment.ts", "l14-control-applicability.ts", "l14-control-definition.ts",
+    "l14-domain-registry.ts",
     "l14-governance-party.ts", "l14-policy-admission.ts", "l14-policy-applicability.ts", "l14-policy-version-validation.ts", "l14-registries.ts",
     "l14-responsibility-assignment.ts"]);
   assert.deepEqual(list("apps/dashboard/lib/governance"), ["l14-authority-policy-persistence.ts", "l14-business-context-assignment-persistence.ts",
-    "l14-control-definition-persistence.ts",
+    "l14-control-applicability-persistence.ts", "l14-control-definition-persistence.ts",
     "l14-domain-registry-persistence.ts", "l14-governance-party-persistence.ts", "l14-policy-admission-persistence.ts",
     "l14-policy-applicability-persistence.ts", "l14-policy-version-validation-persistence.ts", "l14-responsibility-assignment-persistence.ts"]);
   const files: string[] = [];
