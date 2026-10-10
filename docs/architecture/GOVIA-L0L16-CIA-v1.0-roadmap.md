@@ -181,7 +181,7 @@ M14 close
 → M22
 ```
 
-## Current execution position (2026-10-09)
+## Current execution position (2026-10-10)
 
 - **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1: CLOSED / MERGED**, at
   canonical base `f431fa6901bfdb58cb1729553ea0193568fcc160`.
@@ -189,7 +189,7 @@ M14 close
   The [M16 ADR](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md)
   remains **ACCEPTED / FROZEN** (owner approval granted on **2026-09-24**).
 - Implemented / merged: S0, S1A, S1A.2, S1A.2R1, S1B.0, S1B.1, S1B.1R1, S1B.2,
-  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3, S1B.4, S1B.5, S1B.6, S1C.1, S1C.1R1 and S1C.2. The governed discovery machine boundary was
+  S1B.2R1, S1B.2R2, S1B.2R3, S1B.3, S1B.4, S1B.5, S1B.6, S1C.1, S1C.1R1, S1C.2 and S1C.3. The governed discovery machine boundary was
   merged through PR #52.
 - **PR #52: MERGED** into main at `9875208d0fd60105a7508572d5058235ca0751de`.
 - **PR #53: MERGED** — **S1B.3 — Policy Content Admission: MERGED**. Canonical main
@@ -212,10 +212,13 @@ M14 close
   **S1C.1R1 — S1C.1 Party dependency commit-boundary closure: MERGED** (additive migration
   `20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql`; recorded in the S1C.2 evidence). Canonical main
   baseline at the start of S1C.3: `10bd95426241229bb423a0bf2c06c126118bea72`.
-- **S1C.3 — POLICY_APPLICABILITY (third authoritative M16 fact family): IMPLEMENTED ON BRANCH**
-  `feat/m16-s1c3-policy-applicability`; **NOT MERGED**. LOCAL / CI evidence only; hosted
-  **NOT TOUCHED** ([evidence](../codex/evidence/2026-10-09-m16-s1c3-policy-applicability.md)).
-  Remaining M16 fact families: **CONTROL_APPLICABILITY** and **CONTROL_ASSESSMENT** (unimplemented); F2 untouched.
+- **PR #59: MERGED** — **S1C.3 — POLICY_APPLICABILITY (third authoritative M16 fact family): MERGED**
+  ([evidence](../codex/evidence/2026-10-09-m16-s1c3-policy-applicability.md)). Canonical main
+  baseline at the start of S1C.4: `a29bec2fd38e2f15670379f5af7588a9aba44151`.
+- **S1C.4 — CONTROL_APPLICABILITY (fourth authoritative M16 fact family): IMPLEMENTED ON BRANCH**
+  `feat/m16-s1c4-control-applicability`; **NOT MERGED**. LOCAL / CI evidence only; hosted
+  **NOT TOUCHED** ([evidence](../codex/evidence/2026-10-09-m16-s1c4-control-applicability.md)).
+  Remaining M16 authoritative fact family: **CONTROL_ASSESSMENT** (unimplemented); F2 untouched.
 - **M17+: NOT STARTED.**
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
