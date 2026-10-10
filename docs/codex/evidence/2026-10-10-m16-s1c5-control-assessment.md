@@ -138,7 +138,7 @@ changes documentation only.
 | `postgres-m16/l14-control-assessment-concurrency.test.ts` (first-state race, successor race, applicability race orders 1 / 1b / 2, shared S1C.4 key in `pg_locks`, CD race, REVOKE not blocked, same command id, terminal race) | 11 / 11 |
 | `postgres-m16/l14-control-assessment-acl.test.ts` (preflight break classes + history, apply-once + byte-identical digests + replays, surface 41 → 43 / 31 → 33, privilege closure, history immutability, structural, 94 postflight negative controls, source scan) | 9 / 9 |
 | `postgres-m16/l14-control-assessment-regression.test.ts` (S1C.1 / S1C.1R1 / S1C.2 / S1C.3 / S1B.6 / S1C.4 lifecycles + race orders on the S1C.5 catalog, assessments never touch applicability rows, five-family isolation) | 10 / 10 |
-| Full M16 PostgreSQL 17 suite (`tests/postgres-m16/*.test.ts`, 76 files, Node 24.21.0, wall 9m01s) | 1165 / 1165 (baseline 1119 + 46) |
+| Full M16 PostgreSQL 17 suite (`tests/postgres-m16/*.test.ts`, 75 files, Node 24.21.0, wall 9m01s) | 1165 / 1165 (baseline 1119 + 46) |
 | M15 PostgreSQL regression (`npm run test:postgres`, PostgreSQL 16) | 8 / 8 |
 | Dashboard `npm test` (incl. `l14-control-assessment-contract.test.ts` and the updated exact-list contract tests) | 1228 tests: 1223 pass / 0 fail / 5 skipped (pre-existing); passport-ui 15 / 15; pre-demo-ui 8 / 8 |
 | `@council/canonical-contracts` tests | 230 / 230 |
