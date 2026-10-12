@@ -5,7 +5,10 @@ Repository `cnegrao/code-guard-governance`. Canonical `main` inspected:
 Branch `docs/m17-risk-intelligence-architecture` created from exactly that commit.
 
 This is a **documentation-only** inventory supporting
-[`ADR-GOVIA-RISK-INTELLIGENCE-v1.md`](../../architecture/ADR-GOVIA-RISK-INTELLIGENCE-v1.md) (status **DRAFT**). No runtime,
+[`ADR-GOVIA-RISK-INTELLIGENCE-v1.md`](../../architecture/ADR-GOVIA-RISK-INTELLIGENCE-v1.md) (status **ACCEPTED / FROZEN**
+after the final architecture revision) and the additive
+[`ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md`](../../architecture/ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md)
+(ACCEPTED / FROZEN; owner-approved D-01, 2026-10-12). No runtime,
 application, migration, test or hosted change is made. M17 implementation is **NOT STARTED**. Hosted (Supabase / Vercel /
 deployment) is **NOT TOUCHED**.
 
@@ -79,7 +82,7 @@ No M16 migration altered any of these objects. `rg` finds **no application (Type
 | S05 | FinOps enrichment pattern flags (`nPlusOneDetected`, `missingTimeout`, `missingRateLimit`, `missingCircuitBreaker`, `expensiveScans`, `costHotspots`) | Regex detections over source text. | **INPUT / SIGNAL ONLY** |
 | S06 | FinOps `monthlyCostEstimate`, `breakdown[].estimatedMonthly`, `costRisk` | Computed from **assumed** `expectedDailyCalls` and fixed unit prices — an estimate, not an observation (finding F-03). | **QUARANTINED AS AUTHORITY** |
 | S07 | Codeguard heuristics `suggestedRiskLevel`, `classification.aiActRiskClass`, `crossFileLineage.riskLevel`, enrichment `complianceExposure` | Unversioned heuristic labels. | **INPUT / SIGNAL ONLY** (only through a versioned adapter that supplies method/evidence; the labels themselves are never a risk level) |
-| S08 | `apps/dashboard/app/api/discovery/scan/route.ts` insert into legacy `agents.risk_level` / `ai_act_risk_class` | Persists S07 heuristics directly into a legacy register column read by dashboards (finding F-02). | **QUARANTINED AS AUTHORITY** |
+| S08 | `apps/dashboard/app/api/discovery/scan/route.ts` insert into legacy `agents.risk_level` / `ai_act_risk_class` (incl. `?? "limited"` fallback) and ledger payload `risk_level` | Persists S07 heuristics directly into a legacy register column read by dashboards (findings F-02, F-10). | **QUARANTINED AS AUTHORITY** (new writes stopped in M17-S0, D-12) |
 | S09 | Governed discovery machine (`DiscoveryFinding`, PROPOSE worker, `discovery_evidence`, `source_assertions`, `acquisition_runs`) | Tenant-scoped immutable L0 evidence and provenance; machine ceiling = PROPOSED. | **REUSE** (evidence / provenance anchor) |
 
 ## 5. Graph / GraphOS / API / UI
@@ -96,6 +99,7 @@ No M16 migration altered any of these objects. `rg` finds **no application (Type
 | G08 | Dashboard/report aggregates: `repositories/dashboard.ts` (`highRiskAgents`, `highRiskSystems`, `riskDistribution`), `repositories/reports.ts` (`byRisk`, `highRisk`), agent detail "Risk Level" badge, search `risk_level`, agents API `?risk=` filter | Present legacy L15/L16 values as risk. | **COMPATIBILITY ONLY** (MUST be labeled non-authoritative per M16 §19) |
 | G09 | `lib/governance/agent-passport.ts` (16 families; no risk family) + M16 `l14_read_passport_governance_v1` | Passport families 3/4/12/14 consume M16 facts for AGENT (and AGENT_VERSION for 12). | **REUSE + HARDEN** (M17 risk overlay, no 17th family) |
 | G10 | `packages/canonical-contracts` AgentVersion rule ("owner, status, **risk**, controls, waivers … MUST NOT create a version") | Confirms governed risk never creates an AgentVersion. | **REUSE** |
+| G12 | Human legacy registry writes: `components/agents/AgentForm.tsx` (defaults `risk_level: "medium"`, `ai_act_risk_class: "minimal"`), `repositories/agents.ts` create/update, `lib/validation.ts` enums | Human entry into the legacy register; not a scanner/discovery write. | **COMPATIBILITY ONLY** (labeled `LEGACY / NON-AUTHORITATIVE`; never consumed by M17) |
 | G11 | `apps/extension` scanners (`owasp.ts`, `gdpr.ts`, `ai_act_preview.ts`, `intelligence/ril.ts`) | IDE-local analysis; no governed intake path. | **DEFERRED** |
 
 ## 6. Controls / traceability
@@ -116,7 +120,7 @@ No M16 migration altered any of these objects. `rg` finds **no application (Type
 | U05 | M16 `CONTROL_ASSESSMENT` (`l14_control_assessment_states`, `_valid_state_v1(uuid,uuid,ts,ts)`) | Exactly SATISFIED / PARTIALLY_SATISFIED / NOT_SATISFIED / NOT_ASSESSED / INSUFFICIENT_EVIDENCE; mandatory `valid_until`; never transfers across applicability states; WAIVED rejected. | **REUSE** |
 | U06 | M16 registries: GovernanceParty, BusinessDomain, InformationDomain, ControlDefinition + versions, PolicyVersion validation | Governed, immutable, dependency-checked. | **REUSE** |
 | U07 | M16 read projections `l14_read_passport_governance_v1`, `l14_read_fact_conflict_v1` | Read-only tenant-scoped SECURITY DEFINER; conflict outcomes RESOLVED / CONFLICT / INSUFFICIENT_EVIDENCE. | **REUSE** (data + pattern) |
-| U08 | M16 Authority Policy + `l14_authorization_decisions` / `l14_governance_decisions` / `l14_command_results` machinery | Single org-local policy; permission column CHECK is the **closed L14 list** (`l14_authority_policy_rules.permission`, `l14_authorization_decision_rules.permission`). | **REUSE + HARDEN** (additive L15 permission namespace — ADR decision D-01) |
+| U08 | M16 Authority Policy + shared governance envelope (`l14_authority_policy_rules`, `l14_authorization_decisions` + `l14_authorization_decision_rules`, `l14_proposals`, `l14_governance_decisions`, `l14_command_results`) | Single org-local policy; closed CHECKs: 15 `L14_*` permissions; 11 subject kinds on the four envelope tables; reason code = one per subject × outcome (44 codes); 3 shared + 6 registry command kinds. `l14_fact_states` admits exactly the five M16 families. | **REUSE + HARDEN** (owner-approved D-01 additive amendment; `l14_fact_states` NOT widened) |
 | U09 | M16 `l14_support_links` | Evidence FK **only** to `gov_repo.discovery_evidence`. | **REUSE** (pattern only; M17 needs its own closed evidence-reference union — D-03) |
 | U10 | M16-S0 verified governance principal + `l14_session_basis_v1` transactional eligibility | Verified claims, 8 h max age, credential epoch, same-transaction revalidation. | **REUSE** |
 | U11 | M15 `cross_signal_comparison_results` + `cross_signal_comparison_left_relationship_states` | Immutable; V1 reachable outcomes CONSISTENT / CONFLICT_CANDIDATE / INSUFFICIENT_EVIDENCE; **DRIFT_CANDIDATE is never emitted in V1**; M15 ADR §16 names M17 as a consumer of CONFLICT_CANDIDATE as one risk-hypothesis input. | **INPUT / SIGNAL ONLY** |
@@ -138,13 +142,16 @@ No M16 migration altered any of these objects. `rg` finds **no application (Type
 | F-06 | M15 V1 emits no `DRIFT_CANDIDATE`. | L16 "risk-impacting change" input to M17 V1 is limited to `CONFLICT_CANDIDATE` / `INSUFFICIENT_EVIDENCE` references. |
 | F-07 | The M16 Passport projection resolves AGENT (families 3, 4, 12) and AGENT_VERSION (family 12) only. | The M17 Passport risk overlay needs its own read projection; it MUST NOT widen the M16 projection. |
 | F-08 | `DetectedRisk` carries no evidence id / detector version and many rules are absence heuristics. | Signal adapter MUST require snapshot + evidence + detector version, and MUST label absence-of-detected-artifact signals as such (`UNKNOWN != FALSE`). |
-| F-09 | The Authority Policy permission vocabulary is a closed CHECK of 15 `L14_*` tags (M16 ADR §6, O44). | Any governed L15 decision under the single Authority Policy requires an explicit, additive amendment of that closed list (D-01). This is an approval gate, not a contradiction: M16 ADR permits architecture change through explicit ADR treatment. |
+| F-09 | The Authority Policy permission vocabulary is a closed CHECK of 15 `L14_*` tags (M16 ADR §6, O44), and the shared envelope subject vocabularies are closed to 11 M16 subjects. | Resolved: owner-approved D-01 additive amendment (`ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1`) widens permissions (+8), envelope subject kinds (+6), envelope reason codes (+24 by the unchanged rule) and command kinds (+2); `l14_fact_states` unchanged. Implementation in M17-S0. |
+| F-10 | `agents.risk_level` and `agents.ai_act_risk_class` are `NOT NULL` with defaults `'medium'` / `'minimal'`; the scan route also falls back to `"limited"`; `AgentForm` pre-fills `"medium"` / `"minimal"`. | Omitting the fields would still persist a default that reads as a risk value. D-12 (S0) therefore stops the scan route's legacy risk-bearing `agents` insert and heuristic ledger payload, without changing columns, defaults or existing rows. |
+| F-11 | The shared governance-decision `reason_code` is constrained to exactly one code per subject × outcome (`<SUBJECT>_<OUTCOME>`); no free reasons. | The initial draft's risk-closure reason codes could not live in the shared envelope. Final ADR: envelope codes follow the unchanged rule; `closure_reason` / `treatment_revocation_reason` are closed typed L15 fields. |
 
 ## 9. Contradiction check
 
 No contradiction was found between the frozen baseline (`GOVIA-L0L16-CIA-v1.0`), the merged M16 semantics, and the
-M17 decisions drafted in the ADR. The items that require owner approval (D-01 … D-12 in ADR §27) are recorded as open
-decisions, not resolved by changing the baseline or M16 history. **No STOP condition is raised.**
+M17 decisions in the ADR. D-01 … D-12 are resolved (ADR §27): D-01 by explicit owner approval recorded as a separate
+additive M16 amendment (the historical M16 ADR text is not rewritten); D-09 and D-10 deferred; the rest approved. No
+decision was resolved by changing the baseline or M16 history. **No STOP condition is raised.**
 
 ## 10. Recorded state
 
@@ -152,6 +159,7 @@ decisions, not resolved by changing the baseline or M16 history. **No STOP condi
 |---|---|
 | Canonical main | `5aec0b500cb16b0e3ce67376629ffa68cf2e6186` |
 | M16 | CLOSED / MERGED (O01–O55 55 / 55 PASS) |
-| M17 architecture | DRAFT on branch `docs/m17-risk-intelligence-architecture` |
+| M17 architecture | ACCEPTED / FROZEN on branch `docs/m17-risk-intelligence-architecture` (pending architecture PR merge) |
+| Next implementation slice | M17-S0 (not started) |
 | M17 implementation | NOT STARTED |
 | Hosted | NOT TOUCHED |

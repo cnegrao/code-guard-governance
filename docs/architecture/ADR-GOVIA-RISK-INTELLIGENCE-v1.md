@@ -1,6 +1,15 @@
 # ADR — M17 Risk Intelligence V1
 
-**Status:** DRAFT — pending ACP / owner review. NOT ACCEPTED. NOT FROZEN.
+**Status:** ACCEPTED / FROZEN
+
+**ACP architecture review:** completed 2026-10-12 (initial draft `99f3902`; final revision incorporating the D-01
+authority amendment, the D-03 support matrix, the D-12 compatibility hardening, and resolution of D-01 … D-12).
+
+**Owner approval:** D-01 explicitly approved by the owner on 2026-10-12 and recorded in the separate additive
+amendment [ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1](./ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md).
+All decisions D-01 … D-12 are resolved (§27).
+
+**Implementation:** M17 implementation NOT STARTED. First implementation gate: M17-S0.
 
 **Architecture:** `GOVIA-L0L16-CIA-v1.0` — FROZEN (unchanged by this ADR)
 
@@ -16,13 +25,15 @@
 [Runtime observation ADR](./ADR-GOVIA-RUNTIME-OBSERVATION-AND-OTEL-INGESTION-v1.md),
 [Execution context ADR](./ADR-GOVIA-EXECUTION-CONTEXT-IDENTITY-CONNECTIVITY-AUTHZ-v1.md).
 
+**Additive amendment adopted with this ADR:**
+[ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1](./ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md) (ACCEPTED / FROZEN).
+
 **Current-state inventory:** [`2026-10-12-m17-current-state-inventory.md`](../codex/evidence/2026-10-12-m17-current-state-inventory.md)
 
-This document makes M17 implementation-ready under baseline §9 **once accepted**. While it is DRAFT, MUST / MUST NOT
-/ REQUIRED express the proposed contract; they bind implementation only after ACP / owner approval. No M17
-implementation, migration, runtime change, hosted operation or M18/M19 work is part of this documentation slice.
-Decisions that require owner approval are listed in §27 and are never resolved by silently changing the baseline or
-M16 history.
+This accepted / frozen contract makes M17 implementation-ready under baseline §9. MUST, MUST NOT and REQUIRED bind all
+M17 implementation; any architectural change requires explicit ADR treatment. No M17 implementation, migration,
+runtime change, hosted operation or M18/M19 work is part of this documentation delivery. Every decision in §27 is
+resolved; none was resolved by changing the baseline or M16 history.
 
 ---
 
@@ -73,7 +84,7 @@ All baseline §2 invariants hold verbatim. Their L15 reading:
 
 ## 3. Current-state disposition summary
 
-The [inventory](../codex/evidence/2026-10-12-m17-current-state-inventory.md) classifies 60 surfaces. Summary:
+The [inventory](../codex/evidence/2026-10-12-m17-current-state-inventory.md) classifies 61 surfaces. Summary:
 
 - **No legacy risk surface is authoritative.** `risk_entries`, `risk_treatments`, score columns, array relations,
   legacy owner identities, `evidence.risk_refs`, `agents.risk_level`, `ai_systems.residual_risk_level`,
@@ -81,7 +92,8 @@ The [inventory](../codex/evidence/2026-10-12-m17-current-state-inventory.md) cla
 - Scanner `DetectedRisk`, FinOps pattern flags, M15 comparison results, L11/L12/L3 facts are INPUT / SIGNAL ONLY.
 - M12 governed traversal and hybrid retrieval are PROJECTION ONLY.
 - M16 facts, registries, read projections, verified principal and evidence anchors are REUSE; the Authority Policy
-  machinery is REUSE + HARDEN subject to decision D-01; Passport is REUSE + HARDEN for a risk overlay.
+  and shared governance envelope are REUSE + HARDEN under the approved D-01 amendment; Passport is REUSE + HARDEN for a
+  risk overlay; the legacy scan-route risk writer is stopped in S0 (D-12).
 
 Full legacy disposition is in §23.
 
@@ -109,7 +121,7 @@ exact references.
 | `source_class` | `SYSTEM_DETECTOR`, `SOURCE_CONNECTION`, `RUNTIME_SOURCE`, `GOVERNED_FACT_REFERENCE`, `LOCAL_HUMAN`. |
 | `trust_state` | Exactly one of `INFERRED`, `DECLARED`, `IMPORTED`, `OBSERVED` per the M16 §8 origin rules; **never `VALIDATED`**. A `GOVERNED_FACT_REFERENCE` signal carries no trust of its own: it points at the referenced state's own trust. LOCAL_HUMAN signals carry no trust classification (absent, not a sixth value). |
 | `method_id`, `method_version` | REQUIRED for every non-human signal. An unversioned detector cannot emit a persisted signal. |
-| `evidence_refs` | ≥ 1 entry of the closed evidence-reference union (§9) for every non-human signal; LOCAL_HUMAN signals MAY carry zero, and then `support_status = NONE` is explicit. |
+| `evidence_refs` | ≥ 1 rank-0 upstream entry of the closed evidence-reference union (§9.1–9.2) for every non-human signal; LOCAL_HUMAN signals MAY carry zero, and then `support_status = NONE` is explicit. |
 | `source_hint` | Optional, typed, explicitly non-authoritative source labels (e.g. scanner `severity`, `confidence`). Stored under the `hint_` prefix; never read by any authority, rating, or lifecycle logic. |
 | `observed_at` / `recorded_at` | Source observation time when evidenced (else absent, never defaulted); DB-authored recording time. |
 
@@ -186,7 +198,7 @@ object or relationship.
 | States | `state_kind ∈ {VALIDATED, REVOKED}`; append-only with predecessor and decision lineage (M16 §17 pattern). |
 | Domain | Derived from the pinned scenario definition version (exactly one, §7.1); never supplied by the caller. |
 | Lineage | Proposal id, cited hypothesis ids (0..n), cited signal ids (0..n), normalized evidence refs (§9), authorization decision, governance decision, Authority Policy version + hash. |
-| Free text | No free-text title/description/rationale in immutable records (M16 §10). Narrative lives only in a separate mutable, redactable, non-authoritative annotation surface. |
+| Free text | No free-text title/description/rationale in immutable records (M16 §10). Narrative lives only in a separate mutable, redactable, non-authoritative annotation surface. Unknown `closure_reason` values are rejected. |
 | Score | A GOVERNED_RISK state contains **no** likelihood, impact, rating or score. Assessment is a separate family (§10). "Score-only truth" is impossible by construction. |
 
 ### 6.2. Creation
@@ -199,9 +211,11 @@ guard; self-validation fail-closed unless the policy permits it. Proposals MAY b
 
 ### 6.3. Closure
 
-A governed risk is closed **only** by an explicit `REVOKE` decision on its exact current state with a closed
-`reason_code` ∈ {`RISK_NO_LONGER_APPLICABLE`, `SUBJECT_RETIRED`, `DUPLICATE_OF_GOVERNED_RISK`, `RISK_ELIMINATED_BY_AVOIDANCE`,
-`RECORDED_IN_ERROR`}. No rating, treatment status, acceptance, expiry, or graph/LLM output closes a risk. A closed risk
+A governed risk is closed **only** by an explicit `REVOKE` decision on its exact current state. The shared governance
+decision carries the unchanged envelope reason code `GOVERNED_RISK_REVOKED` (one code per subject × outcome, M16
+amendment §7); the typed REVOKE proposal and the resulting L15 tombstone state carry the closed L15 field
+`closure_reason` ∈ {`RISK_NO_LONGER_APPLICABLE`, `SUBJECT_RETIRED`, `DUPLICATE_OF_GOVERNED_RISK`,
+`RISK_ELIMINATED_BY_AVOIDANCE`, `RECORDED_IN_ERROR`}. No rating, treatment status, acceptance, expiry, or graph/LLM output closes a risk. A closed risk
 remains in historical as-of readback.
 
 ---
@@ -243,7 +257,8 @@ A stable, tenant-scoped assessment methodology. Each immutable, DB-hashed versio
 - the methodology's **assessment validity maximum** (an interval bounding `valid_until − effective_from`).
 
 The matrix is a lookup table, not arithmetic. A methodology version MUST be validated before any assessment may pin it.
-Gov IA MAY ship one default methodology only as a `SYSTEM_SEED` proposal (D-11).
+Gov IA MAY ship one default methodology only as a `SYSTEM_SEED` proposal requiring normal human validation (D-11,
+approved as optional); it is not required for M17 acceptance and receives no bootstrap privilege.
 
 ---
 
@@ -282,8 +297,8 @@ relationship state, where behavior binding lives (baseline §5).
 | FINOPS | AGENT_VERSION, MODEL, API, REL:USES_MODEL, REL:INVOKES |
 
 Logical `AGENT` is legal only for OPERATIONAL (service continuity / accountability of the stable identity). Behavior-
-dependent risk targets AGENT_VERSION. The matrix is proposed for owner approval (D-07); once accepted it is closed and
-every other pairing MUST be rejected.
+dependent risk targets AGENT_VERSION. This is the **closed V1 matrix** (D-07 approved); every other pairing MUST be
+rejected.
 
 ### 8.3. Exact resolution and no inheritance
 
@@ -301,8 +316,9 @@ every other pairing MUST be rejected.
 ### 9.1. Closed evidence-reference union
 
 M16 `l14_support_links` references only `discovery_evidence` (inventory F-05). L15 MUST use its own normalized,
-tenant-scoped support link table whose target is a **closed tagged union with a composite same-tenant foreign key per
-tag** (decision D-03):
+tenant-scoped support link table (`l15_support_links`) whose target is a **closed tagged union with a composite
+same-tenant foreign key per tag** (decision D-03, approved). Exactly one typed target column is non-null per row, enforced
+by a shape CHECK; there is no generic JSON / EAV / free-text reference:
 
 | Tag | Target (exact) |
 |---|---|
@@ -320,7 +336,35 @@ tag** (decision D-03):
 Links MUST NOT copy content, resolve by mutable label, or cross tenants. Legacy `gov_repo.evidence` and LLM text are not
 admissible targets. Missing evidence stays explicit (`support_status = NONE`); a human decision is never a substitute.
 
-### 9.2. Provenance
+### 9.2. Closed owner → target admissibility matrix (acyclic)
+
+Every support link has exactly one typed **owner** and one typed **target**. Admissibility is the closed matrix below;
+every other pair MUST be rejected by a DB CHECK.
+
+| Owner (rank) | Admissible targets | Forbidden |
+|---|---|---|
+| `RISK_SIGNAL` (rank 1) | Upstream evidence only (rank 0): `DISCOVERY_EVIDENCE`, `SOURCE_ASSERTION`, `RUNTIME_OBSERVATION`, `CROSS_SIGNAL_RESULT`, `EXECUTION_FIELD_STATE`, `TECHNICAL_FIELD_STATE`, `LINEAGE_OBSERVATION`, `L14_FACT_STATE` | `RISK_SIGNAL`, `RISK_HYPOTHESIS` |
+| `RISK_HYPOTHESIS` (rank 2) | `RISK_SIGNAL` only, ≥ 1 link REQUIRED | `RISK_HYPOTHESIS`, any rank-0 tag directly, any L15 governed artifact |
+| L15 registry proposal / decision / state (`RISK_SCENARIO_DEFINITION`, `RISK_METHODOLOGY`) (rank 3) | `DISCOVERY_EVIDENCE`, `SOURCE_ASSERTION` | `RISK_SIGNAL`, `RISK_HYPOTHESIS`, all other tags |
+| `GOVERNED_RISK` proposal / decision / state (rank 3) | `RISK_HYPOTHESIS`, `RISK_SIGNAL`, all rank-0 tags | Any L15 governed artifact |
+| `RISK_ASSESSMENT`, `RISK_TREATMENT`, `RISK_ACCEPTANCE` proposal / decision / state (rank 3) | `RISK_HYPOTHESIS`, `RISK_SIGNAL`, all rank-0 tags | Any L15 governed artifact |
+
+Structural guarantees:
+
+- **Acyclic by construction.** A link is legal only from a strictly higher rank to a strictly lower rank
+  (3 → 2/1/0, 2 → 1, 1 → 0). L15 governed artifacts (rank 3) are never support targets, so no reverse or cyclic link can
+  exist; no recursive check is required.
+- **No self-reference.** Same-rank links are illegal, which forbids signal → signal (including a signal to itself) and
+  hypothesis → hypothesis (including itself).
+- **Same tenant, typed.** Every target FK is composite on `organisation_id`; cross-tenant targets fail the FK.
+- **Immutable.** Support links are insert-only together with their owner; no UPDATE/DELETE/TRUNCATE.
+- **Support is not a dependency pin.** Support links record evidence lineage only. Authoritative dependencies (§§10, 14,
+  15, 18 — governed risk state, methodology version, inherent assessment, treatments, control assessments, control
+  definition versions, party, residual assessment) are modeled as separate typed pin columns with their own exact
+  validation. A support link to a state MUST NOT satisfy, replace, or imply a required pin; a missing pin is rejected
+  even when an equivalent support link exists.
+
+### 9.3. Provenance
 
 Source class, method/version, trust, observed/recorded times and L0 source identity are preserved on signals,
 hypotheses, proposals and states. There is no duplicate L0 source registry. M19 later populates `SOURCE_CONNECTION`
@@ -407,28 +451,41 @@ lifecycle or governed-state vocabulary. No vocabulary extends the five trust sta
 | Accept residual risk | `L15_RISK_ACCEPTANCE_VALIDATE` | Effective Authority Policy |
 | Close risk | `L15_GOVERNED_RISK_VALIDATE` with action REVOKE | Effective Authority Policy |
 
-### 12.2. Reuse of the M16 root of authority (decision D-01)
+### 12.2. Single root of authority and shared governance envelope (D-01 — APPROVED)
 
-**Recommended (A):** extend the **single** organisation-local `L14AuthorityPolicy` with an additive, closed `L15_*`
-permission namespace (the eight tags above) evaluated over the same `source class + typed target scope + Authority
-Policy version` conjunction and the same closed actions. L15 permissions enter an organisation only through a normal
-Authority Policy successor version validated under the currently effective policy (`L14_AUTHORITY_POLICY_ADMIN`).
-There is **no L15 bootstrap** and bootstrap never reopens. The M16 `L14_*` tags, their semantics and every M16 fact
-are unchanged.
+Owner-approved on 2026-10-12 and recorded as the separate additive amendment
+[ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1](./ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md). The frozen M16
+ADR is not rewritten.
 
-This requires an explicit additive amendment of M16 ADR §6's closed permission list (and the corresponding DB CHECKs
-on the rules/snapshot tables), recorded by an approved ADR amendment before M17-S0. It is not a baseline change.
+- The **single** organisation-local `L14AuthorityPolicy` is the only root of governance authority for L14 **and** L15.
+- Its closed permission vocabulary is widened additively by exactly the eight `L15_*` tags of §12.1
+  (`l14_authority_policy_rules.permission`, `l14_authorization_decision_rules.permission`).
+- The shared governance envelope is widened additively by exactly six L15 governance subject kinds —
+  `RISK_SCENARIO_DEFINITION`, `RISK_METHODOLOGY`, `GOVERNED_RISK`, `RISK_ASSESSMENT`, `RISK_TREATMENT`,
+  `RISK_ACCEPTANCE` — on `l14_authorization_decisions.subject_kind` (+ per-subject request-target shape CHECKs),
+  `l14_proposals.subject_kind`, `l14_governance_decisions.subject_kind`, `l14_command_results.subject_kind` (+ shape
+  branches), with the 24 envelope reason codes produced by the **unchanged** subject × outcome rule, and two new
+  command kinds `ADMIT_RISK_SCENARIO_DEFINITION_VERSION`, `ADMIT_RISK_METHODOLOGY_VERSION`.
+- `RISK_SIGNAL` and `RISK_HYPOTHESIS` are **not** governance subject kinds.
+- **`l14_fact_states` is NOT widened.** M16 remains exactly five fact families. L15 typed proposals, admissions,
+  registry states, fact states, heads and support links live in **L15 stores**; the shared envelope only carries the
+  authorization, decision, proposal-envelope and command-result records that bind to them.
+- **No L15 bootstrap; M16 bootstrap never reopens and never authorizes an L15 permission or subject.** L15 rules enter
+  an organisation only through a normal Authority Policy successor version validated under the effective policy
+  (`L14_AUTHORITY_POLICY_ADMIN`).
+- Requested actions, source classes/dispositions, typed scope grammar, the five trust states, the governance
+  reason-code rule, existing `L14_*` permission semantics and all M16 history are unchanged.
 
-Rejected alternatives: **(B)** a separate L15 Authority Policy root with its own bootstrap — creates a second root of
-authority and a second bootstrap; **(C)** deriving L15 authority from existing `L14_*` permissions — prohibited by M16 §6
-("a permission name alone MUST NOT imply …").
+Rejected alternatives: a separate L15 Authority Policy root (second root and second bootstrap); deriving L15 authority
+from `L14_*` permissions (prohibited by M16 §6).
 
 ### 12.3. Typed scope
 
 L15 permissions reuse the closed scope grammar (`ALL_ALLOWED_TARGETS`, `CANONICAL_KIND`, `CANONICAL_OBJECT`,
 `RELATIONSHIP_TYPE`, `RELATIONSHIP_STATE`), evaluated against the governed risk's **subject**; for assessment,
 treatment and acceptance, against the subject of the pinned governed risk state, without changing the exact pin.
-V1 has **no** domain- or rating-conditioned scope (e.g. "CRITICAL acceptance needs a higher role"); that is D-09.
+V1 has **no** domain- or rating-conditioned scope (e.g. "CRITICAL acceptance needs a higher role"); that capability is
+DEFERRED (D-09).
 
 ### 12.4. Non-authority
 
@@ -450,7 +507,7 @@ V1 has **no** domain- or rating-conditioned scope (e.g. "CRITICAL acceptance nee
 
 | M16 fact | M17 use | Dependency behavior |
 |---|---|---|
-| `RESPONSIBILITY_ASSIGNMENT` | **Accountable-party projection** for a governed risk = current M16 owner of the *exact* risk subject (no inheritance). AGENT_VERSION / MODEL / TOOL / MCP_SERVER / API / relationship subjects have no M16 owner role → UNKNOWN. Treatment responsible party is a GovernanceParty reference (U06) whose validity is a pinned dependency. | Read-time only; never copied. A dedicated risk-owner role is D-04. |
+| `RESPONSIBILITY_ASSIGNMENT` | **Accountable-party projection** for a governed risk = current M16 owner of the *exact* risk subject (no inheritance). AGENT_VERSION / MODEL / TOOL / MCP_SERVER / API / relationship subjects have no M16 owner role → UNKNOWN. Treatment responsible party is a GovernanceParty reference (U06) whose validity is a pinned dependency. | Read-time only; never copied. No dedicated risk-owner role in V1 (D-04 approved); any other subject → UNKNOWN. |
 | `BUSINESS_CONTEXT_ASSIGNMENT` | Impact context in read projections (domain of the exact subject). | Read-time only; never pinned; never inherited. |
 | `POLICY_APPLICABILITY` | Regulatory/mandate metadata over a risk (§7.1). | Read-time only; DOES_NOT_APPLY and UNKNOWN are shown as such; never creates or closes risk. |
 | `CONTROL_APPLICABILITY` | Control-coverage projection for the risk subject; treatment may name stable `control_definition_id`s. | Read-time; named control definition **version validity** is a treatment dependency. |
@@ -520,7 +577,7 @@ any history** and without selecting a replacement.
 | Treatment effectiveness | **Not a field.** Expressed only through a governed RESIDUAL assessment pinning the treatment and control assessments (§14). |
 | Mitigation | `treatment_option = MITIGATE`; MAY name 0..n validated control definition versions intended to mitigate. Naming a control asserts nothing about its applicability or satisfaction. |
 | Transfer | `treatment_option = TRANSFER`; counterparty identity registry deferred (D-10); contract evidence via refs. |
-| Avoidance | `treatment_option = AVOID`; on completion the risk is closed by an explicit REVOKE with `RISK_ELIMINATED_BY_AVOIDANCE` — never automatically. |
+| Avoidance | `treatment_option = AVOID`; on completion the risk is closed by an explicit REVOKE with `closure_reason = RISK_ELIMINATED_BY_AVOIDANCE` — never automatically. |
 | Risk acceptance | Separate `RISK_ACCEPTANCE` family (§15.3), not a treatment option. |
 
 ### 15.2. RISK_TREATMENT family
@@ -529,7 +586,8 @@ Logical key: `governed_risk_state_id + treatment_option + treatment_ordinal_key`
 mitigations can coexist). Pins: exact governed risk state; named control definition versions; responsible
 GovernanceParty id (opaque, M16 registry). Optional `target_implementation_date` is a planning attribute, not an
 effective end; "overdue" is a projection. A treatment never transfers to a successor risk state. A failed treatment is
-REVOKEd with a closed reason code; there is no `verified` / `failed` status.
+REVOKEd with the closed L15 field `treatment_revocation_reason` ∈ {`TREATMENT_FAILED`, `TREATMENT_WITHDRAWN`,
+`RECORDED_IN_ERROR`}; there is no `verified` / `failed` status.
 
 ### 15.3. RISK_ACCEPTANCE family (D-08)
 
@@ -573,6 +631,11 @@ RISK_ACCEPTANCE accepts a residual *risk*; it is not a control waiver, and reads
 
 Exactly **four** L15 authoritative fact families. RISK_SIGNAL and RISK_HYPOTHESIS are non-authoritative stores;
 scenario and methodology are supporting registries. A fifth L15 family requires a future ADR.
+
+**Storage boundary (D-01).** All four families, both registries, signals, hypotheses and `l15_support_links` live in
+L15 stores (typed proposals, admissions, states, heads). Only the shared governance envelope (authorization decisions
+and rule snapshots, proposal envelope, governance decisions, command results) is shared with M16. `l14_fact_states`,
+`l14_registry_states`, `l14_support_links` and M16 typed tables never hold an L15 row.
 
 ---
 
@@ -719,11 +782,11 @@ MUST NOT create ownership or control truth; accountable party comes only from th
 ## 23. Legacy disposition
 
 No historical surface is deleted by M17. "Write-freeze" means revoking application write privileges without altering
-or deleting rows (D-05).
+or deleting rows (D-05 approved, implemented in S0).
 
 | Surface | Disposition | Required treatment |
 |---|---|---|
-| `gov_repo.risk_entries` | QUARANTINED AS AUTHORITY | No M17 read as input; no promotion; recommended S0 write-freeze; consumers labeled non-authoritative. A human MAY re-propose a risk with fresh support through §6. |
+| `gov_repo.risk_entries` | QUARANTINED AS AUTHORITY | No M17 read as input; no promotion; S0 application write-freeze (REQUIRED); consumers labeled non-authoritative. A human MAY re-propose a risk with fresh support through §6. |
 | `gov_repo.risk_treatments` | QUARANTINED AS AUTHORITY | Same; the `ON DELETE CASCADE` path is neutralized by the write-freeze, not by DDL on history. |
 | Enums `risk_status`, `risk_category`, `risk_treatment_type` | COMPATIBILITY ONLY | Never mapped to L15 vocabularies; no automatic conversion. |
 | Score columns (`likelihood`, `impact`, `inherent_risk_score`, `residual_risk_score`, `risk_appetite`) | QUARANTINED AS AUTHORITY | Never converted to methodology levels or bands; `v_risk_heatmap` labeled legacy. |
@@ -732,12 +795,34 @@ or deleting rows (D-05).
 | `gov_repo.evidence.risk_refs` | QUARANTINED AS AUTHORITY | Not an L15 evidence target (§9.1). |
 | Scanner `DetectedRisk` | INPUT / SIGNAL ONLY | Versioned adapter → `DETECTED_PATTERN` / `DETECTED_ABSENCE` signals with snapshot, evidence and detector version; `severity` → `hint_severity`; `category` never → domain automatically; `cgagControl` informational. |
 | FinOps flags / cost estimate | Flags INPUT / SIGNAL ONLY; estimate QUARANTINED | Estimated amounts never stored as cost; observed cost only from L12. |
-| `agents.risk_level`, `ai_act_risk_class`, `ai_systems.*risk*` | QUARANTINED AS AUTHORITY | Never an input (no method/evidence provenance); displays labeled legacy. |
+| `agents.risk_level`, `ai_act_risk_class`, `ai_systems.*risk*` | QUARANTINED AS AUTHORITY | Never an input (no method/evidence provenance); remaining displays labeled `LEGACY / NON-AUTHORITATIVE`; new scanner/discovery writes stopped in S0 (§23.1). |
+| Legacy scan-route writer (`/api/discovery/scan` → `agents.risk_level`, `agents.ai_act_risk_class`, ledger payload `risk_level`) | QUARANTINED AS AUTHORITY | S0 COMPATIBILITY HARDENING (§23.1, D-12). |
 | `/api/graph/risk/[agentId]` + `agent_risk_propagation` | COMPATIBILITY ONLY (route) / QUARANTINED AS AUTHORITY (table) | Labeled legacy; replaced for M17 purposes by §21.1 exposure projection; not deleted. |
 | GraphOS `propagateRisk`, `RiskNode`, `compat.ts` seeds | COMPATIBILITY ONLY | Never M17 input; demo seeds never shown as governed. |
 | `exceptions`, `approval_requests` risk subjects | QUARANTINED AS AUTHORITY | Not acceptance, not treatment approval. |
 | `compute_governance_score`, `getCGAGScore`, `certifySystem` | QUARANTINED AS AUTHORITY | No score feeds L15. |
 | CG-AG / TRACEABILITY_MATRIX | COMPATIBILITY ONLY | May seed scenario/control-definition proposals with provenance only. |
+
+### 23.1. D-12 — S0 compatibility hardening of the legacy scanner risk writer
+
+Purpose: prevent two competing product-level definitions of "risk". Requirements for M17-S0:
+
+1. The governed discovery scan route (`apps/dashboard/app/api/discovery/scan/route.ts`) and every other scanner /
+   discovery path MUST stop **new** writes that persist heuristic values into `gov_repo.agents.risk_level` and
+   `gov_repo.agents.ai_act_risk_class`. This includes the current `complianceExposure` / `suggestedRiskLevel` mapping and
+   the `?? "limited"` fallback.
+2. Because both columns are `NOT NULL` with defaults (`'medium'`, `'minimal'`), merely omitting them would persist a
+   default that reads as a risk value — itself a fabrication. S0 therefore MUST NOT create new scanner/discovery rows
+   whose `risk_level` / `ai_act_risk_class` is populated by a heuristic **or by those defaults**; the compliant mechanism
+   is to stop the scan route's legacy risk-bearing `agents` insert. No placeholder value may be written instead.
+3. New scanner/discovery ledger payloads (`inventory.discovery.agent.detected`) MUST NOT carry a heuristic `risk_level`.
+4. Existing persisted values and ledger history are preserved: no UPDATE, DELETE, column drop, default change or row
+   deletion in S0. Values are not migrated into M17.
+5. Every remaining consumer that displays these fields (agents list/detail, dashboard aggregates, reports, search,
+   knowledge-graph overlays, agents API filter) MUST label them `LEGACY / NON-AUTHORITATIVE`.
+6. M17 never consumes these fields. Scanner integration into M17 occurs only through `RISK_SIGNAL` adapters in S1.
+7. Human legacy registry writes (`AgentForm` / agents API) are not scanner/discovery writes; they remain COMPATIBILITY
+   ONLY, labeled, and never consumed by M17.
 
 ---
 
@@ -751,10 +836,14 @@ or deleting rows (D-05).
 - Raising immutability triggers on all L15 history; no cascade; no maintenance-privilege erasure path.
 - ACL postflight after all grants including the broad `20260818013113` defaults; per-class negative controls (table DML,
   TRUNCATE, REFERENCES/TRIGGER/MAINTAIN, sequences, routine EXECUTE, writable views, inherited/default grants).
-- Additive only: no change to canonical tables, no F2 DDL, no M16 history change. The only M16-object change permitted
-  is the D-01 additive permission-vocabulary widening, if approved.
+- Additive only: no change to canonical tables, no F2 DDL, no M16 history change. The only M16-object changes
+  permitted are the D-01 additive widenings enumerated in the
+  [M16 amendment](./ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md) §4; `l14_fact_states`, `l14_registry_states`,
+  `l14_support_links` and all M16 typed tables are not widened.
+- Legacy writes: S0 revokes application DML on `risk_entries` / `risk_treatments` (D-05) and stops the scan-route risk
+  writer (D-12); no legacy row, column or default is changed.
 - Acceptance on the PG17 security profile; M15 regression and the full M16 PG17 suite remain unchanged and green
-  (except vocabulary-assertion lines explicitly amended by D-01).
+  (except the vocabulary-assertion lines enumerating the lists widened by the M16 amendment §4).
 
 ---
 
@@ -763,22 +852,22 @@ or deleting rows (D-05).
 | ID | Dimension | M17 obligation |
 |---|---|---|
 | A | CIA baseline compatibility | `GOVIA-L0L16-CIA-v1.0` unchanged; all §2 invariants preserved (§2); L15 transversal, no L17, no Passport family 17; trust vocabulary unchanged. |
-| B | L0–L16 impact | **Primary:** L15. **Consumed (read-only):** L0 evidence/provenance; L3/L9 lineage; L9 canonical identity; L11 execution context; L12 runtime; L13/L16 M15 results; L14 M16 facts, registries, Authority Policy (D-01 additive). **Analytical use, no new capability:** L7/L8 vector, M12 graph. **Unaffected:** L1, L2, L4, L5, L6, L10 discovery/acquisition behavior. No upstream layer gains or loses authority. |
+| B | L0–L16 impact | **Primary:** L15. **Consumed (read-only):** L0 evidence/provenance; L3/L9 lineage; L9 canonical identity; L11 execution context; L12 runtime; L13/L16 M15 results; L14 M16 facts and registries; L14 Authority Policy and shared governance envelope (additive D-01 amendment; `l14_fact_states` not widened). **Analytical use, no new capability:** L7/L8 vector, M12 graph. **Unaffected:** L1, L2, L4, L5, L6, L10 discovery/acquisition behavior. No upstream layer gains or loses authority. |
 | C | Passport impact | No 17th family; read-only overlay on families 6–10, 12–16 per §22; family coverage status unchanged; absence = UNKNOWN. |
 | D | Canonical impact | 11 kinds, 12 types unchanged; four L15 families keyed on existing identities; registries and signals/hypotheses are not canonical; F2 untouched (§§8, 16). |
 | E | Lineage impact | Risk propagation lineage = exact signal → hypothesis → proposal → authz → decision → state → assessment → treatment → acceptance chain plus §9 evidence links; exposure lineage is an ANALYTICAL witness path; no new canonical edges, no inferred successors. |
 | F | Evidence / provenance | Closed evidence-reference union with composite same-tenant FKs (§9); method/version on every machine output; missing evidence explicit. |
-| G | Trust / authority | Five trust states unchanged; signals/hypotheses never VALIDATED; governed states only by authorized human decisions under the single Authority Policy (§12); machine ceiling PROPOSED = hypothesis. |
+| G | Trust / authority | Five trust states unchanged; signals/hypotheses never VALIDATED and never governance subjects; governed states only by authorized human decisions under the single Authority Policy and shared envelope (§12.2); no L15 bootstrap; machine ceiling PROPOSED = hypothesis; service_role capability ≠ authority. |
 | H | Vector impact | Retrieval/similarity only; no merge, dedupe, classification or authority (§21.2). |
 | I | Graph impact | Versioned governed traversal projection only; legacy propagation quarantined (§21.1). |
 | J | LLM authority boundary | Explain / correlate / hypothesize / recommend only (§21.3). |
 | K | Tenancy / security | M16-S0 verified principal; same-transaction eligibility; cross-tenant rejection for subjects, evidence, dependencies; §24 ACLs. |
-| L | Migration impact | Future additive L15 migrations; optional legacy write-freeze; D-01 additive vocabulary widening; no deletion, no F2, no canonical/M16 history change (§24). |
+| L | Migration impact | Future additive L15 migrations; S0 D-01 envelope widening (amendment §4); S0 legacy `risk_entries`/`risk_treatments` write-freeze (D-05); S0 scan-route risk-writer stop (D-12); no deletion, no column/default change, no F2, no canonical/M16 history change (§§23.1, 24). |
 | M | Downstream continuity | M15/M16 regressions green; M18 projects the same L15 facts (no M18-local risk truth); M19 imports enter as IMPORTED signals / SOURCE_CONNECTION proposals; M20 only real consumers. |
 | N | Non-fabrication | No default levels, owners, evidence, cost amounts, residual reductions, inherited risks, legacy promotion, or "no risk" for absence (§§2, 10, 14, 23). |
-| O | Acceptance / quality | O01–O72 below pass on application tests and the PG17 security harness where applicable. |
+| O | Acceptance / quality | O01–O91 below pass on application tests and the PG17 security harness where applicable. |
 
-## 26. Measurable acceptance criteria (O01–O72)
+## 26. Measurable acceptance criteria (O01–O91)
 
 Each criterion names an observable test outcome. "Rejected" means the RPC raises a stable error code and no row is
 written in any L15 or M16 table.
@@ -849,7 +938,7 @@ written in any L15 or M16 table.
 
 | ID | Required result |
 |---|---|
-| O38 | L15 code reads M16 only through the existing owner-only resolvers/current reads; static scan finds no L15 INSERT/UPDATE/DELETE on any `l14_*` table other than D-01 authorization-ledger use, and service_role still has no L14 table privilege. |
+| O38 | L15 code reads M16 only through the existing owner-only resolvers/current reads; static scan finds no L15 INSERT/UPDATE/DELETE on any `l14_*` table other than the shared-envelope tables widened by the M16 amendment §4 (authorization decisions + rule snapshots, proposals envelope, governance decisions, command results), and service_role still has no L14 table privilege. |
 | O39 | A RESIDUAL assessment missing the INHERENT pin, or pinning a non-current inherent assessment, a treatment of another risk, or a CONTROL_ASSESSMENT not current at `effective_from`, is rejected. |
 | O40 | Revoking, expiring, or superseding each pinned dependency type (risk state, inherent assessment, treatment, control assessment, control applicability, methodology version) flips residual eligibility to `DEPENDENCY_INVALID`/`EXPIRED` at both coordinates, names the failing pin, and mutates no row. |
 | O41 | Historical as-of readback at a recorded cutoff before the invalidation still returns `CURRENT` for the same residual assessment. |
@@ -903,49 +992,111 @@ written in any L15 or M16 table.
 | O69 | Exposure projection uses only versioned governed traversal policies; every contribution carries `authority = ANALYTICAL`; running it writes zero rows anywhere; legacy `agent_risk_propagation` is never read by L15 code (static scan). |
 | O70 | Vector retrieval over risks/hypotheses writes zero L15 rows and never changes subject, scenario, state or link. |
 | O71 | An LLM stub returning "validated"/"accepted"/"closed" text causes zero L15 state changes; LLM output cannot be stored as an evidence target. |
-| O72 | Passport overlay for a subject without a governed risk renders UNKNOWN; hypotheses appear only in the labeled non-authoritative section; legacy `risk_level`/`risk_entries` values never appear in the overlay. M15 PostgreSQL regression and the full M16 PG17 suite pass unchanged (except D-01-amended vocabulary assertions). |
+| O72 | Passport overlay for a subject without a governed risk renders UNKNOWN; hypotheses appear only in the labeled non-authoritative section; legacy `risk_level`/`risk_entries` values never appear in the overlay. |
+
+### D-01 — single Authority Policy and shared envelope
+
+| ID | Required result |
+|---|---|
+| O73 | `l14_authority_policy_rules.permission` and `l14_authorization_decision_rules.permission` CHECKs equal exactly the 23 tags (15 `L14_*` + 8 `L15_*`); `subject_kind` CHECKs on `l14_authorization_decisions`, `l14_proposals`, `l14_governance_decisions`, `l14_command_results` equal exactly the 17 subjects (11 M16 + 6 L15); `RISK_SIGNAL` and `RISK_HYPOTHESIS` are rejected as subject kinds on all four. |
+| O74 | `l14_fact_states.subject_kind` CHECK equals exactly the five M16 families; `pg_get_constraintdef` of every `l14_registry_states`, `l14_support_links` and M16 typed proposal/state/head constraint is byte-identical to `5aec0b5`. |
+| O75 | Every L15 governance decision's `reason_code` equals the unchanged subject × outcome rule (exactly 24 L15 codes); `closure_reason` and `treatment_revocation_reason` are closed L15 fields; unknown values are rejected. |
+| O76 | Requested-action, source-class, source-disposition, scope-tag and trust vocabularies are byte-identical to `5aec0b5`; the first-policy bootstrap path rejects every L15 subject and every `L15_*` permission; no L15 bootstrap routine exists (catalog scan). |
+| O77 | Every pre-existing row of the Authority Policy, rule, authorization-decision, proposal, governance-decision, command-result and fact-state tables is byte-identical after the S0 widening (row-hash comparison); existing `L14_*` permissions evaluate identically on the M16 regression fixtures. |
+| O78 | Each organisation has exactly one Authority Policy identity after M17 migrations, and every L15 authorization decision snapshots that same policy id and an effective version of it. |
+
+### D-03 — support matrix
+
+| ID | Required result |
+|---|---|
+| O79 | Exhaustive owner × target test over §9.2: every admissible pair accepted, every other pair rejected by the DB. |
+| O80 | Self-reference rejected: signal → itself, signal → another signal, hypothesis → itself, hypothesis → another hypothesis. |
+| O81 | Cycle attempts rejected: any L15 governed proposal/decision/state as a target, signal → hypothesis, hypothesis → rank-0 evidence directly. |
+| O82 | Cross-tenant support rejected for each of the 10 target tags. |
+| O83 | A support link never satisfies a dependency pin: a RESIDUAL assessment / treatment / acceptance missing a required pin is rejected even when a support link to the same state exists. |
+| O84 | `l15_support_links` has no json/jsonb/array/free-text reference column; exactly one typed target column is non-null per row (shape CHECK, negative cases for zero and two). |
+
+### D-05 / D-12 — legacy compatibility hardening
+
+| ID | Required result |
+|---|---|
+| O85 | The discovery scan route (static source scan + integration run on a fixture repository) writes no `agents.risk_level` / `agents.ai_act_risk_class` value — neither heuristic nor column default — creates zero new scanner-originated `agents` rows carrying them, and emits no `risk_level` in new ledger payloads. |
+| O86 | Pre-existing `agents.risk_level` / `ai_act_risk_class` values and ledger rows are byte-identical before and after S0 (row hash); no column, default or NOT NULL DDL on `agents`. |
+| O87 | Every remaining consumer of the legacy fields (agents list/detail, dashboard aggregates, reports, search, knowledge-graph overlay, agents API filter) renders the label `LEGACY / NON-AUTHORITATIVE` (one test per consumer). |
+| O88 | Seeding legacy values (`agents.risk_level = 'critical'`, `risk_entries`, `risk_treatments`, `agent_risk_propagation`, `evidence.risk_refs`, `ai_systems.residual_risk_level`) yields zero L15 signals, hypotheses, states and overlay entries; static scan finds no L15 code reading these objects. |
+| O89 | After S0, application roles (`service_role`, `authenticated`, `anon`) hold no INSERT/UPDATE/DELETE/TRUNCATE on `risk_entries` / `risk_treatments`; existing rows byte-identical. |
+
+### Technical capability and regression
+
+| ID | Required result |
+|---|---|
+| O90 | A call made with `service_role` credentials but without a verified ACTIVE human governance principal produces no L15 authorization ALLOW, governance decision or state (durable DENY or stable rejection). |
+| O91 | The M15 PostgreSQL regression and the full M16 PG17 suite pass, with the only edits being the vocabulary-assertion lines that enumerate the lists widened by the M16 amendment §4. |
+
+### Critical-check index
+
+| Critical property | Criteria |
+|---|---|
+| 11 canonical object kinds / 12 relationship types unchanged | O01 |
+| F2 untouched | O02, O26 |
+| M16 exactly five fact families | O07, O74 |
+| M17 exactly four authoritative fact families | O05 |
+| No L15 bootstrap | O55, O76 |
+| Shared Authority Policy only | O53, O73, O78 |
+| Signal / hypothesis cannot govern | O13, O14, O24, O73 |
+| service_role technical capability ≠ authority | O59, O90 |
+| Scanner legacy risk fields receive no new heuristic writes | O85, O86 |
+| Legacy risk values never become governed risk | O88, O89, O72 |
+| No Passport family 17 | O03, O72 |
+| Graph / Vector / LLM non-authoritative | O69, O70, O71 |
 
 ---
 
-## 27. Open decisions (owner / ACP)
+## 27. Decisions (all resolved)
 
-| ID | Decision | Recommendation | Blocks |
-|---|---|---|---|
-| D-01 | Authority root for L15 | Additive `L15_*` permission namespace on the single L14 Authority Policy + reuse of authorization/decision/command ledgers; explicit amendment of M16 ADR §6 closed list (§12.2). | S0 |
-| D-02 | Residual risk semantics | Governed RESIDUAL assessment + deterministic eligibility projection (§14). | S6 |
-| D-03 | Evidence reference model | L15-owned closed tagged union with composite same-tenant FKs (§9.1); M16 `l14_support_links` unchanged. | S1 |
-| D-04 | Risk owner | V1: accountable-party projection from exact M16 responsibility; no new role (would amend M16 §11 matrix). Revisit post-V1. | S7 |
-| D-05 | Legacy risk tables | S0 write-freeze (revoke application DML; keep rows, no DDL on history); label legacy consumers. | S0 |
-| D-06 | Domain cardinality / regulatory | Exactly one domain per scenario; regulatory as M16 policy-applicability metadata only; no auto-mapping of legacy categories. | S2 |
-| D-07 | Domain × subject matrix | Approve §8.2 as the closed V1 matrix. | S3 |
-| D-08 | RISK_ACCEPTANCE in V1 | Include, bounded and time-boxed, not a waiver (§15.3). Alternative: defer with waiver/exception. | S6 |
-| D-09 | Rating-conditioned authority | Deferred; V1 scope grammar unchanged. | — |
-| D-10 | TRANSFER counterparty identity | Deferred; evidence refs only in V1. | — |
-| D-11 | Default methodology | Optional `SYSTEM_SEED` 5 × 5 ordinal proposal requiring human validation. | S2 |
-| D-12 | Legacy scan-route `risk_level` writer (inventory F-02) | Out of M17 implementation scope unless ACP assigns it; M17 requires only labeling + non-consumption (O72). | — |
+| ID | Decision | Resolution |
+|---|---|---|
+| D-01 | Authority root | **APPROVED** (owner, 2026-10-12): single Authority Policy + additive shared governance-envelope extension; `l14_fact_states` not widened; no L15 bootstrap; recorded in [ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1](./ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md) (§12.2). |
+| D-02 | Residual risk | **APPROVED**: RESIDUAL is a governed assessment with a deterministic current-eligibility projection (§14). |
+| D-03 | Evidence / support | **APPROVED**: L15 closed evidence/support tagged union + closed acyclic owner → target matrix (§§9.1–9.2). |
+| D-04 | Risk owner | **APPROVED**: no dedicated risk-owner role in V1; accountable party projected from exact M16 responsibility only; otherwise UNKNOWN (§13.1). |
+| D-05 | Legacy risk tables | **APPROVED**: `risk_entries` / `risk_treatments` application write-freeze in S0; history preserved (§23). |
+| D-06 | Domain cardinality / regulatory | **APPROVED**: exactly one risk domain per scenario; regulatory/compliance remains metadata, not a risk domain (§7.1). |
+| D-07 | Domain × subject matrix | **APPROVED**: §8.2 is the closed V1 matrix. |
+| D-08 | RISK_ACCEPTANCE | **APPROVED**: included in V1; bounded, time-limited, pinned to the exact current residual assessment; not a waiver (§15.3). |
+| D-09 | Rating-conditioned authority | **DEFERRED** (post-V1; scope grammar unchanged). |
+| D-10 | TRANSFER counterparty identity registry | **DEFERRED** (evidence refs only in V1). |
+| D-11 | Default methodology | **APPROVED AS OPTIONAL**: a default methodology MAY exist only as a `SYSTEM_SEED` proposal requiring normal human validation; not required for M17 acceptance; no bootstrap privilege (§7.3). |
+| D-12 | Legacy scanner risk writer | **APPROVED**: S0 compatibility hardening (§23.1). |
 
-No decision above contradicts the frozen baseline. D-01 amends a frozen M16 closed vocabulary additively and therefore
-requires explicit owner approval before S0; it does not change any M16 fact, history, or semantics.
+No unresolved architecture decision remains. No decision contradicts the frozen baseline or merged M16 semantics.
 
-## 28. Implementation slicing (proposal; not implemented)
+## 28. Implementation slicing (dependency-ordered; not implemented)
 
 | Slice | Content | Depends on | Closes |
 |---|---|---|---|
-| **S0 — Authority / security / root contracts** | D-01 ADR amendment + additive `L15_*` permission vocabulary; L15 subject kinds in authorization/decision ledgers; closed L15 vocabularies in `canonical-contracts` (types only); L15 privilege/ACL harness profile + negative controls; legacy risk write-freeze and non-authoritative labeling (D-05). | ADR acceptance, D-01, D-05 | O01–O07, O53–O62 (framework) |
-| **S1 — Signals + hypotheses** | Closed evidence-reference union (D-03); signal and hypothesis stores + intake RPCs; adapters: scanner DetectedRisk, FinOps flags, M15 result, L12 runtime, L11 execution, M16 control-assessment / governance-gap references; disposition projection. | S0 | O08–O18 |
-| **S2 — Scenario + methodology registries** | RISK_SCENARIO_DEFINITION and RISK_METHODOLOGY with immutable DB-hashed versions, ADMIT/VALIDATE/REVOKE; optional seeds (D-11). | S0 | O19–O21 |
-| **S3 — GOVERNED_RISK** | Proposal → authz → decision → state → head; domain × subject matrix; exact subject resolution; REVOKE closure; support-currency projection. | S1, S2 | O22–O30, O44 |
-| **S4 — INHERENT assessment** | RISK_ASSESSMENT family with basis INHERENT; methodology pin; DB-derived band; expiry. | S3 | O31–O37 |
-| **S5 — Treatment** | RISK_TREATMENT family (MITIGATE/AVOID/TRANSFER, PLANNED/IMPLEMENTED), control-definition and party dependencies. | S3 | O46–O48 |
-| **S6 — Residual + acceptance** | RESIDUAL basis with §14.2 pins and eligibility projection; RISK_ACCEPTANCE (D-08). | S4, S5 | O38–O43, O49–O52 |
-| **S7 — Read projections** | Lifecycle, conflict, control-coverage, accountable party, exposure (M12 traversal), vector retrieval boundary, LLM boundary stubs, Passport overlay. | S3–S6 | O45, O63–O72 |
-| **Closure** | Formal O01–O72 verification on merged main. | S0–S7 | All |
+| **S0 — Authority / security / root contracts + legacy compatibility hardening** | M16 Authority Policy M17 extension (amendment §4: permission and shared-envelope subject/reason/command vocabularies, per-subject target CHECKs, shared routine acceptance, definer-surface re-registration); L15 closed vocabularies in `canonical-contracts` (types only); L15 privilege/ACL harness profile + negative controls; `risk_entries` / `risk_treatments` write-freeze (D-05); scan-route legacy risk writer stop (D-12); legacy-consumer `LEGACY / NON-AUTHORITATIVE` labeling. | Architecture PR merged | O01–O07, O53–O62, O73–O78, O85–O91 |
+| **S1 — Signals + hypotheses + support/evidence model and adapters** | `l15_support_links` union and §9.2 matrix; signal and hypothesis stores + intake; adapters: scanner `DetectedRisk`, FinOps flags, M15 result, L12 runtime, L11 execution, M16 control-assessment / governance-gap references; disposition projection. | S0 | O08–O18, O79–O82, O84 |
+| **S2 — Scenario + methodology registries** | RISK_SCENARIO_DEFINITION and RISK_METHODOLOGY with immutable DB-hashed versions, ADMIT / VALIDATE / REVOKE; optional seed (D-11). | S0 | O19–O21 |
+| **S3 — GOVERNED_RISK** | Proposal → authz → decision → state → head; §8.2 matrix; exact subject resolution; REVOKE closure with `closure_reason`; support-currency projection. | S1, S2 | O22–O30, O44 |
+| **S4 — INHERENT assessment** | RISK_ASSESSMENT with basis INHERENT; methodology pin; DB-derived band; expiry. | S3 | O31–O37 |
+| **S5 — Treatment** | RISK_TREATMENT (MITIGATE / AVOID / TRANSFER; PLANNED / IMPLEMENTED); control-definition and party pins. | S3 | O46–O48 |
+| **S6 — RESIDUAL + RISK_ACCEPTANCE** | RESIDUAL basis with §14.2 pins and eligibility projection; RISK_ACCEPTANCE. | S4, S5 | O38–O43, O49–O52, O83 |
+| **S7 — Read projections / conflict / exposure / Passport overlay** | Lifecycle, conflict, control coverage, accountable party, exposure (M12 traversal), vector/LLM boundaries, Passport overlay. | S3–S6 | O45, O63–O72 |
+| **Closure** | Formal O01–O91 verification on merged main. | S0–S7 | All |
 
-S4 and S5 are independent after S3 and may proceed in either order. No slice introduces a canonical kind, relationship
-type, Passport family, M16 fact change, or F2 change. M18 and M19 are not started by any slice.
+S4 and S5 are independent after S3. No further slices are required by a real dependency. No slice introduces a
+canonical kind, relationship type, Passport family, M16 fact family, M16 history change, or F2 change. M18 and M19 are
+not started by any slice. Temporal / replay / concurrency criteria (O63–O66) are exercised in every family slice and
+formally closed in S7.
 
 ## 29. Approval boundary
 
-This ADR is **DRAFT**. It does not authorize implementation, does not amend the frozen baseline, does not amend the M16
-ADR (D-01 only *proposes* an amendment), and creates or runs no migration. Implementation MUST NOT start before ACP /
-owner acceptance of this ADR and of the decisions it blocks on. Hosted environments are not touched.
+This ADR is **ACCEPTED / FROZEN**. ACP architecture review is complete; D-01 carries explicit owner approval
+(2026-10-12) and is recorded in the separate additive M16 amendment; D-01 … D-12 are resolved. The frozen baseline
+`GOVIA-L0L16-CIA-v1.0` and the historical M16 ADR text are unchanged. This documentation delivery creates or runs no
+migration and changes no code, test or hosted environment.
+
+Implementation MUST conform to this ADR, the M16 amendment and O01–O91. **M17 implementation has NOT started.**
+Implementation MUST NOT start from this documentation branch before the M17 architecture PR is merged into main.
+After merge, the first implementation gate is **M17-S0**.
