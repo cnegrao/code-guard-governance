@@ -1,4 +1,6 @@
-import type { CanonicalObjectKind, GovernedRelationshipType, TechnicalFact, TrustState } from '@council/canonical-contracts';
+import type {
+  CanonicalObjectKind, GovernedRelationshipType, L14GovernedFactLineage, L14PassportGovernedValue, L14PassportTargetKind, TechnicalFact, TrustState,
+} from '@council/canonical-contracts';
 
 /** Presentation coverage only. These values are not canonical TrustState. */
 export type PassportCoverage = 'KNOWN' | 'PARTIAL' | 'UNKNOWN';
@@ -28,8 +30,10 @@ export interface PassportSource {
 }
 export interface PassportProvenance {
   storage: 'canonical_objects' | 'canonical_normalized_object_mappings' | 'canonical_object_source_mappings'
-    | 'agent_version_technical_profiles' | 'canonical_relationships' | 'technical_field_states' | 'execution_field_states';
-  authority: 'GOVERNED_IDENTITY' | 'GOVERNED_MAPPING' | 'GOVERNED_PROFILE' | 'GOVERNED_RELATIONSHIP' | 'GOVERNED_FIELD_STATE';
+    | 'agent_version_technical_profiles' | 'canonical_relationships' | 'technical_field_states' | 'execution_field_states'
+    | 'l14_fact_states';
+  authority: 'GOVERNED_IDENTITY' | 'GOVERNED_MAPPING' | 'GOVERNED_PROFILE' | 'GOVERNED_RELATIONSHIP' | 'GOVERNED_FIELD_STATE'
+    | 'GOVERNED_L14_FACT';
   sources: readonly PassportSource[];
   evidence: readonly { evidenceId: string; handling: string; capturedAt: string }[];
   decisionId?: string;
@@ -43,6 +47,8 @@ export interface PassportProvenance {
   policy?: { policyId: string; acceptedVersion: string; activeVersion?: string };
   snapshotId?: string;
   observedAt?: string;
+  /** M16 (O32, family 14): exact proposal → authorization → governance decision → state lineage of an L14 governed fact. */
+  l14?: L14GovernedFactLineage;
 }
 interface FactBase { id: string; provenance: PassportProvenance }
 export interface IdentityFact extends FactBase {
@@ -71,12 +77,19 @@ export interface ExecutionPassportFact extends FactBase {
   type: 'execution'; versionId: string; fact: import('@council/canonical-contracts').DirectExecutionFact;
   sourceSnapshotId: string; authorizationState: 'UNKNOWN';
 }
-export type PassportFact = IdentityFact | MappingFact | ProfileFact | RelationshipFact | DataFieldFact | ExecutionPassportFact;
+/**
+ * M16 governed fact (families 3 / 4 / 12): a CURRENT VALID L14 fact of exactly this AGENT or exactly the selected
+ * AGENT_VERSION, from the read-only governed projection. Never a legacy owner / business_domain / cg_* value, never inherited.
+ */
+export interface GovernedL14Fact extends FactBase {
+  type: 'governed-l14'; targetKind: L14PassportTargetKind; targetId: string; value: L14PassportGovernedValue;
+}
+export type PassportFact = IdentityFact | MappingFact | ProfileFact | RelationshipFact | DataFieldFact | ExecutionPassportFact | GovernedL14Fact;
 interface FamilyItems {
-  identity: IdentityFact; discovery: MappingFact; ownership: never; business: never;
+  identity: IdentityFact; discovery: MappingFact; ownership: GovernedL14Fact; business: GovernedL14Fact;
   technology: ProfileFact; model: RelationshipFact; behavior: ProfileFact | RelationshipFact;
   tools: RelationshipFact; data: RelationshipFact | DataFieldFact; privacy: never;
-  relationships: RelationshipFact; controls: IdentityFact; runtime: never;
+  relationships: RelationshipFact; controls: GovernedL14Fact; runtime: never;
   provenance: PassportFact; authorization: ExecutionPassportFact; connectivity: ExecutionPassportFact;
 }
 export type PassportFamily = { [K in PassportFamilyId]: {

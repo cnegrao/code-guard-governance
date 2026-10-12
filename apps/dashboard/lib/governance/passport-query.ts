@@ -1,14 +1,20 @@
 import 'server-only';
-import { TRUST_STATE, type OrganisationId } from '@council/canonical-contracts';
+import { TRUST_STATE, asOrganisationId } from '@council/canonical-contracts';
+import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
 import { getCanonicalObjectForMatch } from './canonical-object-lookup';
-import { family, type AgentPassport360, type IdentityFact, type MappingFact, type PassportProvenance,
+import { family, type AgentPassport360, type GovernedL14Fact, type IdentityFact, type MappingFact, type PassportProvenance,
   type PassportVersionContext, type ProfileFact, type ProfileField, type RelationshipFact } from './agent-passport';
 import { passportReader, type ObjectRow, type RelationshipRow } from './passport-read-store';
 import { readPassportDataFields } from './passport-field-query';
 import { readPassportExecution } from './passport-execution-query';
+import { readPassportGovernedFacts } from './passport-governance-read';
 
-/** Server-only CQRS read composition. No command port, RPC, provider or generated facts. */
-export async function getAgentPassport(org: OrganisationId, canonicalObjectId: string, selectedVersionId?: string): Promise<AgentPassport360 | undefined> {
+/**
+ * Server-only CQRS read composition. No command port, write RPC, provider or generated facts. Families 3 / 4 / 12 / 14 consume
+ * ONLY the read-only M16 governed projection (current valid L14 facts + exact lineage), never legacy values or identity.
+ */
+export async function getAgentPassport(principal: GovernanceWritePrincipal, canonicalObjectId: string, selectedVersionId?: string): Promise<AgentPassport360 | undefined> {
+  const org = asOrganisationId(principal.organisationId);
   if (selectedVersionId !== undefined && !selectedVersionId.trim()) return undefined;
   const readAt = Date.now();
   function effectiveNow(validFrom: string, validTo?: string | null) {
@@ -168,13 +174,33 @@ export async function getAgentPassport(org: OrganisationId, canonicalObjectId: s
   const technology = profileFacts.filter(f => f.field !== 'behaviorFingerprint');
   const execution = selected ? await readPassportExecution(org, selected, support, readAt) : [];
   const versionGap = selected ? [] : ['Selected AgentVersion: UNKNOWN. Select an exactly associated version to inspect version-specific facts.'];
-  const allFacts = [...identityFacts, ...discovery, ...profileFacts, ...relationships, ...dataFields, ...execution];
+  // M16 governed facts (O32): exactly this AGENT and exactly the selected AGENT_VERSION, current valid at one DB instant.
+  const governed: GovernedL14Fact[] = [];
+  for (const g of await readPassportGovernedFacts(principal, canonicalObjectId, selected)) {
+    const l = g.lineage;
+    // Family 14: only evidence the normalized support links name; never a source assertion or trust that was not recorded.
+    const linked = await support([], [...l.factSupportEvidenceIds, ...l.decisionSupportEvidenceIds, ...l.proposalSupportEvidenceIds]);
+    governed.push({ type: 'governed-l14', id: `${g.value.family}:${l.factStateId}`, targetKind: g.targetKind, targetId: g.targetCanonicalObjectId,
+      value: g.value, provenance: { storage: 'l14_fact_states', authority: 'GOVERNED_L14_FACT', sources: linked.sources, evidence: linked.evidence,
+        decisionId: l.governanceDecisionId, decidedAt: l.decidedAt, recordedAt: l.recordedAt, validFrom: l.effectiveFrom,
+        validTo: l.effectiveTo ?? undefined, l14: l } });
+  }
+  const ownership = governed.filter(f => f.value.family === 'RESPONSIBILITY_ASSIGNMENT' && f.targetKind === 'AGENT');
+  const business = governed.filter(f => f.value.family === 'BUSINESS_CONTEXT_ASSIGNMENT' && f.targetKind === 'AGENT');
+  const controls = governed.filter(f => ['POLICY_APPLICABILITY', 'CONTROL_APPLICABILITY', 'CONTROL_ASSESSMENT'].includes(f.value.family));
+  const roleOf = (f: GovernedL14Fact) => (f.value.family === 'RESPONSIBILITY_ASSIGNMENT' ? f.value.responsibilityRole : undefined);
+  const assessmentGaps = controls.flatMap(f => f.value.family === 'CONTROL_APPLICABILITY' && f.value.applicability === 'APPLIES'
+    && !controls.some(a => a.value.family === 'CONTROL_ASSESSMENT' && a.targetKind === f.targetKind && a.value.controlApplicabilityStateId === f.provenance.l14!.factStateId)
+    ? [`Control ${f.value.controlDefinitionId} on ${f.targetKind} ${f.targetId}: assessment UNKNOWN (no current valid assessment of this exact applicability state).`] : []);
+  const allFacts = [...identityFacts, ...discovery, ...profileFacts, ...relationships, ...dataFields, ...execution, ...governed];
   const families: AgentPassport360['families'] = [
     // V1 required Identity scope is the exact canonical tenant/kind/ID, not a friendly name.
     family('identity', identityFacts, []),
     family('discovery', discovery, discovery.every(f => f.provenance.sources.length && f.provenance.evidence.length) ? [] : ['Discovery support: UNKNOWN for some mappings.']),
-    family('ownership', [], ['Owner and responsibility: UNKNOWN.']),
-    family('business', [], ['Business domain, purpose and description: UNKNOWN.']),
+    family('ownership', ownership, (['BUSINESS_OWNER', 'TECHNICAL_OWNER'] as const).filter(role => !ownership.some(f => roleOf(f) === role))
+      .map(role => `${role}: UNKNOWN. No current valid governed responsibility assignment of this AGENT.`)),
+    family('business', business, [...(business.length ? [] : ['BUSINESS_DOMAIN: UNKNOWN. No current valid governed business context of this AGENT.']),
+      'Purpose and description: UNKNOWN (not governed in M16 V1).']),
     family('technology', technology, [...versionGap, ...(['buildReference','runtimeFrameworkReference','entrypointReference','configurationReference'] as const)
       .filter(field => !technology.some(f => f.field === field)).map(field => `${field}: UNKNOWN.`)]),
     family('model', model, [...versionGap, 'Inference configuration and model coverage: UNKNOWN.']),
@@ -185,7 +211,8 @@ export async function getAgentPassport(org: OrganisationId, canonicalObjectId: s
       .filter(type => !access.some(a => a.relationshipType === type)).map(type => `${type}: UNKNOWN. Absence does not establish no access.`), 'Data field coverage: UNKNOWN beyond displayed governed state.']),
     family('privacy', [], ['Privacy and sensitive-data classification: UNKNOWN.']),
     family('relationships', relationships, ['Relationship coverage: UNKNOWN. Column lineage does not establish Agent access.']),
-    family('controls', [canonicalAgent], ['Canonical identity decision is available; control compliance and coverage: UNKNOWN.']),
+    family('controls', controls, ['Policy and control applicability: UNKNOWN for every policy / control without a current valid governed fact. Canonical identity alone implies no control coverage.',
+      ...(selected ? [] : ['Selected AgentVersion: UNKNOWN. AgentVersion policy / control facts are never inherited from the AGENT.']), ...assessmentGaps]),
     family('runtime', [], ['Executions and runtime observations: UNKNOWN.']),
     family('provenance', allFacts, allFacts.every(f => f.provenance.sources.length && f.provenance.evidence.length) ? [] : ['Source trust / evidence: UNKNOWN where no support is available.']),
     family('authorization', execution.filter(f=>f.fact.field!=='DECLARED_CONNECTIVITY'), ['Permissions and authorization: UNKNOWN. Tool capability and requested scopes do not establish authorization. Runtime identity: UNKNOWN.']),

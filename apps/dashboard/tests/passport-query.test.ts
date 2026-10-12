@@ -32,7 +32,41 @@ const db = { from(table: string) {
     },
   };
   return query;
-}, rpc() { throw new Error('WRITE / RPC FORBIDDEN'); } };
+}, rpc(name: string, args: Record<string, unknown>) {
+  rpcCalls.push({ name, args });
+  // The ONLY permitted RPC is the read-only M16 governed projection; every write / other RPC stays forbidden.
+  if (name !== 'l14_read_passport_governance_v1') throw new Error('WRITE / RPC FORBIDDEN');
+  if (rpcError) return Promise.resolve({ data: null, error: { message: 'fixture failure', code: 'GV003' } });
+  // Simulates the DB contract: the verified tenant only; the exact AGENT and the exact selected AGENT_VERSION only.
+  const rows = governance.filter(r => r.organisation_id === args.p_verified_organisation_id && (leakAll
+    || (r.target_kind === 'AGENT' && r.target_canonical_object_id === args.p_agent_canonical_object_id)
+    || (r.target_kind === 'AGENT_VERSION' && args.p_agent_version_canonical_object_id !== null
+      && r.target_canonical_object_id === args.p_agent_version_canonical_object_id)))
+    .map(({ organisation_id: _tenant, ...rest }) => rest);
+  return Promise.resolve({ data: rows, error: null });
+} };
+let governance: Row[];
+let rpcCalls: { name: string; args: Record<string, unknown> }[];
+let rpcError: boolean;
+let leakAll: boolean;
+/** A verified principal (the only identity the governed projection accepts). */
+const viewer = (tenant: string) => ({ organisationId: tenant, actorUserId: 'user:1', issuedAtSeconds: 1_758_000_000,
+  expiresAtSeconds: 1_758_003_600, credentialEpoch: '2026-09-25T00:00:00.000001+00:00' });
+/** One projection row exactly as l14_read_passport_governance_v1 returns it (lineage defaults + per-family value). */
+function governedRow(family: string, target: string, targetKind: string, values: Row, n: number, tenant: string = org): Row {
+  return { organisation_id: tenant, fact_family: family, target_kind: targetKind, target_canonical_object_id: target,
+    responsibility_role: null, governance_party_id: null, party_validated_state_id: null, semantic_kind: null, domain_id: null,
+    domain_validated_state_id: null, policy_id: null, policy_version_id: null, policy_content_hash: null, policy_version_validated_state_id: null,
+    control_definition_id: null, control_definition_version_id: null, control_content_hash: null, control_definition_validated_state_id: null,
+    applicability: null, control_applicability_state_id: null, assessment_outcome: null,
+    fact_state_id: `fact:${n}`, predecessor_state_id: null, effective_from: at, effective_to: null, recorded_at: at, trust_state: 'VALIDATED',
+    source_class: 'LOCAL_HUMAN', support_status: 'PRESENT', proposal_id: `proposal:${n}`, proposal_submitted_at: at,
+    governance_decision_id: `gdecision:${n}`, decision_outcome: 'VALIDATE', decision_reason_code: `${family}_VALIDATED`, decided_at: at,
+    authorization_decision_id: `authz:${n}`, authorization_result: 'ALLOW', authorization_evaluated_at: at, authority_policy_id: 'ap',
+    authority_policy_version_id: 'ap:v1', authority_policy_content_hash: 'd'.repeat(64), fact_support_evidence_ids: [],
+    decision_support_evidence_ids: [`evidence:l14:${n}`], proposal_support_evidence_ids: [], read_effective_at: at, read_recorded_cutoff: at,
+    ...values };
+}
 let getPassport: typeof import('@/lib/governance/passport-query').getAgentPassport;
 before(async () => {
   mock.method(Date, 'now', () => Date.parse('2026-09-15T00:00:00.000Z'));
@@ -100,7 +134,7 @@ function addData() {
   add('technical_fact_observation_assertions', { observation_id: 'obs:accepted', assertion_id: 'assert:field' });
   add('technical_fact_observation_evidence', { observation_id: 'obs:accepted', evidence_id: 'evidence:field' });
 }
-beforeEach(() => { tables = {}; calls = []; dbError = undefined; addObject('agent','AGENT'); });
+beforeEach(() => { tables = {}; calls = []; dbError = undefined; governance = []; rpcCalls = []; rpcError = false; leakAll = false; addObject('agent','AGENT'); });
 const section = (p: NonNullable<Awaited<ReturnType<typeof getPassport>>>, id: string) => p.families.find(f => f.id === id)!;
 
 function addExecution(accepted = true) {
@@ -140,7 +174,7 @@ function addExecution(accepted = true) {
 }
 
 test('M13 accepted fields populate families 15/16 with UNKNOWN authorization and declared provenance',async()=>{
-  addExecution();const p=(await getPassport(org,'agent','version:1'))!;
+  addExecution();const p=(await getPassport(viewer(org),'agent','version:1'))!;
   assert.equal(section(p,'authorization').facts.length,3);assert.equal(section(p,'connectivity').facts.length,1);
   for(const id of ['authorization','connectivity']){
     const family=section(p,id);assert.equal(family.status,'PARTIAL');
@@ -151,13 +185,13 @@ test('M13 accepted fields populate families 15/16 with UNKNOWN authorization and
   assert.ok(calls.every(c=>!c.selection.split(',').includes('envelope')));
 });
 test('M13 proposal alone cannot become Passport governed truth',async()=>{
-  addExecution(false);const p=(await getPassport(org,'agent','version:1'))!;
+  addExecution(false);const p=(await getPassport(viewer(org),'agent','version:1'))!;
   assert.equal(section(p,'authorization').status,'UNKNOWN');assert.equal(section(p,'connectivity').status,'UNKNOWN');
 });
 test('M13 governed fields require explicit selected version and never leak to another version',async()=>{
   addExecution();addVersion('version:2');
-  for(const selected of [undefined,'version:2'])assert.equal(section((await getPassport(org,'agent',selected))!,'authorization').status,'UNKNOWN');
-  assert.equal(await getPassport(otherOrg,'agent','version:1'),undefined);
+  for(const selected of [undefined,'version:2'])assert.equal(section((await getPassport(viewer(org),'agent',selected))!,'authorization').status,'UNKNOWN');
+  assert.equal(await getPassport(viewer(otherOrg),'agent','version:1'),undefined);
 });
 for(const [name,table,change] of [
   ['foreign snapshot','execution_source_snapshots',{organisation_id:otherOrg}],
@@ -171,104 +205,104 @@ for(const [name,table,change] of [
   ['wrong assertion method','source_assertions',{method_code:'copresence'}],
 ] as const)test(`M13 ${name} fails closed`,async()=>{
   addExecution();Object.assign(tables[table][0],change);
-  await assert.rejects(getPassport(org,'agent','version:1'),/EXECUTION_/);
+  await assert.rejects(getPassport(viewer(org),'agent','version:1'),/EXECUTION_/);
 });
 test('M13 foreign state cannot materialize local Passport facts',async()=>{
   addExecution();for(const state of tables.execution_field_states)state.organisation_id=otherOrg;
-  assert.equal(section((await getPassport(org,'agent','version:1'))!,'authorization').status,'UNKNOWN');
+  assert.equal(section((await getPassport(viewer(org),'agent','version:1'))!,'authorization').status,'UNKNOWN');
 });
 test('M13 immutable historical acceptance survives policy head evolution',async()=>{
   addExecution();tables.execution_field_policy_heads=[];
-  assert.equal(section((await getPassport(org,'agent','version:1'))!,'authorization').facts.length,3);
+  assert.equal(section((await getPassport(viewer(org),'agent','version:1'))!,'authorization').facts.length,3);
 });
 
 test('canonical root has exact tenant/kind/ID and exactly 16 ordered families', async () => {
-  const p = (await getPassport(org, 'agent'))!;
+  const p = (await getPassport(viewer(org), 'agent'))!;
   assert.equal(p.canonicalAgent.objectId, 'agent'); assert.equal(p.canonicalAgent.organisationId, org);
   assert.deepEqual(p.families.map(f => f.id), PASSPORT_FAMILIES.map(f => f[0])); assert.equal(p.families.length, 16);
   assert.ok(p.families.every(f => ['KNOWN','PARTIAL','UNKNOWN'].includes(f.status))); assert.equal(section(p,'identity').status,'KNOWN');
   assert.ok(!p.families.some(f => /risk/i.test(f.id))); assert.equal(p.displayName, null);
 });
 for (const kind of ['MODEL','TOOL','AGENT_VERSION']) test(`${kind} fails closed as Passport root`, async () => {
-  addObject('wrong',kind); assert.equal(await getPassport(org,'wrong'),undefined);
+  addObject('wrong',kind); assert.equal(await getPassport(viewer(org),'wrong'),undefined);
 });
 test('unknown and legacy-only identifiers never resolve, even with matching name/code', async () => {
   add('agents',{agent_id:'legacy',agent_code:'agent',name:'Synthetic Name',owner_user_id:'owner',business_domain:'Finance',model_name:'legacy-model'});
-  assert.equal(await getPassport(org,'missing'),undefined); assert.equal(await getPassport(org,'legacy'),undefined);
+  assert.equal(await getPassport(viewer(org),'missing'),undefined); assert.equal(await getPassport(viewer(org),'legacy'),undefined);
   assert.ok(!calls.some(c => c.table === 'agents'));
 });
-test('another tenant cannot read the canonical root', async () => { assert.equal(await getPassport(otherOrg,'agent'),undefined); });
+test('another tenant cannot read the canonical root', async () => { assert.equal(await getPassport(viewer(otherOrg),'agent'),undefined); });
 test('all queries, including exact lookup, scope organisation', async () => {
-  addData(); await getPassport(org,'agent','version:1');
+  addData(); await getPassport(viewer(org),'agent','version:1');
   assert.ok(calls.length > 10); assert.ok(calls.every(c => c.filters.some(([k,v]) => k === 'organisation_id' && v === org)));
 });
 test('missing owner/business/privacy/runtime/authz/connectivity remain UNKNOWN despite legacy values', async () => {
   add('agents',{ agent_id:'agent',owner_user_id:'owner',business_domain:'Finance',status:'active',approved_for_production:true });
-  const p = (await getPassport(org,'agent'))!;
+  const p = (await getPassport(viewer(org),'agent'))!;
   for (const id of ['ownership','business','privacy','runtime','authorization','connectivity']) {
     assert.equal(section(p,id).status,'UNKNOWN'); assert.deepEqual(section(p,id).facts,[]);
   }
   assert.ok(!JSON.stringify(p).includes('Finance')); assert.ok(!JSON.stringify(p).includes('approved_for_production'));
 });
 test('multiple versions are listed separately; neither latest nor single version is selected implicitly', async () => {
-  addVersion('version:1'); assert.equal((await getPassport(org,'agent'))!.selectedVersionId,null);
+  addVersion('version:1'); assert.equal((await getPassport(viewer(org),'agent'))!.selectedVersionId,null);
   addVersion('version:2'); addProfile();
-  const p = (await getPassport(org,'agent'))!;
+  const p = (await getPassport(viewer(org),'agent'))!;
   assert.deepEqual(p.versionContexts.map(v => v.objectId),['version:1','version:2']);
   assert.equal(p.currentVersionId,null); assert.equal(p.selectedVersionId,null); assert.equal(section(p,'technology').status,'UNKNOWN');
   assert.ok(p.versionContexts.every(v => v.versionCode === null));
 });
 test('selected profile facts remain version-scoped, partial and INFERRED', async () => {
   addVersion('version:1'); addVersion('version:2'); addProfile();
-  const p = (await getPassport(org,'agent','version:1'))!;
+  const p = (await getPassport(viewer(org),'agent','version:1'))!;
   const tech = section(p,'technology'); assert.equal(tech.status,'PARTIAL');
   assert.equal(tech.facts[0].type,'profile');
   assert.ok(tech.facts.every(f => f.type === 'profile' && f.versionId === 'version:1'));
   assert.equal(tech.facts[0].provenance.sources[0].trust,'INFERRED');
-  assert.equal(section((await getPassport(org,'agent','version:2'))!,'technology').status,'UNKNOWN');
+  assert.equal(section((await getPassport(viewer(org),'agent','version:2'))!,'technology').status,'UNKNOWN');
 });
 test('ambiguous or missing parent association is excluded without blocking root', async () => {
   addVersion('v'); add('canonical_normalized_object_mappings',{...tables.canonical_normalized_object_mappings[0],mapping_id:'m:other',parent_canonical_object_id:'other-agent'});
-  assert.deepEqual((await getPassport(org,'agent'))!.versionContexts,[]); assert.equal(await getPassport(org,'agent','v'),undefined);
-  tables.canonical_normalized_object_mappings=[]; assert.deepEqual((await getPassport(org,'agent'))!.versionContexts,[]);
+  assert.deepEqual((await getPassport(viewer(org),'agent'))!.versionContexts,[]); assert.equal(await getPassport(viewer(org),'agent','v'),undefined);
+  tables.canonical_normalized_object_mappings=[]; assert.deepEqual((await getPassport(viewer(org),'agent'))!.versionContexts,[]);
 });
 test('foreign version and mapping cannot enter local version contexts', async () => {
   addVersion('foreign-version'); tables.canonical_objects.find(r => r.canonical_object_id === 'foreign-version')!.organisation_id=otherOrg;
-  assert.deepEqual((await getPassport(org,'agent'))!.versionContexts,[]);
+  assert.deepEqual((await getPassport(viewer(org),'agent'))!.versionContexts,[]);
 });
 test('governed MODEL and TOOL edges populate the selected version', async () => {
   addVersion('version:1'); addObject('model','MODEL'); addObject('tool','TOOL'); addEdge(); addEdge('USES_TOOL','tool','TOOL');
-  const p = (await getPassport(org,'agent','version:1'))!;
+  const p = (await getPassport(viewer(org),'agent','version:1'))!;
   assert.equal(section(p,'model').facts.length,1); assert.equal(section(p,'tools').facts.length,1);
   assert.equal(section(p,'authorization').status,'UNKNOWN'); assert.equal(section(p,'connectivity').status,'UNKNOWN');
 });
 test('foreign canonical target is not surfaced through a local edge', async () => {
   addVersion('version:1'); addObject('foreign-model','MODEL',otherOrg); addEdge('USES_MODEL','foreign-model');
-  assert.equal(section((await getPassport(org,'agent','version:1'))!,'model').facts.length,0);
+  assert.equal(section((await getPassport(viewer(org),'agent','version:1'))!,'model').facts.length,0);
 });
 test('foreign relationship itself is excluded', async () => {
   addVersion('version:1'); addObject('model','MODEL'); addEdge(); tables.canonical_relationships[0].organisation_id=otherOrg;
-  assert.equal(section((await getPassport(org,'agent','version:1'))!,'model').status,'UNKNOWN');
+  assert.equal(section((await getPassport(viewer(org),'agent','version:1'))!,'model').status,'UNKNOWN');
 });
 test('ended relationships are not presented as active access', async () => {
   addData(); tables.canonical_relationships[0].valid_to=at;
-  const p = (await getPassport(org,'agent','version:1'))!; assert.equal(section(p,'data').status,'UNKNOWN');
+  const p = (await getPassport(viewer(org),'agent','version:1'))!; assert.equal(section(p,'data').status,'UNKNOWN');
 });
 test('DERIVED_FROM alone never establishes Agent access or imports unrelated data', async () => {
   addVersion('version:1'); addObject('left','DATA_ELEMENT'); addObject('right','DATA_ELEMENT'); addEdge('DERIVED_FROM','right','DATA_ELEMENT','left','DATA_ELEMENT');
-  const p = (await getPassport(org,'agent','version:1'))!;
+  const p = (await getPassport(viewer(org),'agent','version:1'))!;
   assert.equal(section(p,'data').status,'UNKNOWN'); assert.equal(section(p,'relationships').facts.length,0);
   assert.ok(section(p,'data').unknowns.some(g => g.startsWith('READS_FROM: UNKNOWN')));
   assert.ok(section(p,'data').unknowns.some(g => g.startsWith('WRITES_TO: UNKNOWN')));
 });
 test('governed access permits one-hop data lineage without creating a second access claim', async () => {
   addData(); addObject('upstream','DATA_ELEMENT'); addEdge('DERIVED_FROM','upstream','DATA_ELEMENT','column','DATA_ELEMENT');
-  const p = (await getPassport(org,'agent','version:1'))!;
+  const p = (await getPassport(viewer(org),'agent','version:1'))!;
   assert.ok(section(p,'relationships').facts.some(f => f.type === 'relationship' && f.relationshipType === 'DERIVED_FROM'));
   assert.ok(!section(p,'data').facts.some(f => f.type === 'relationship' && f.targetId === 'upstream'));
 });
 test('M10 linear head wins over newer timestamps and competing imported observations', async () => {
-  addData(); const p = (await getPassport(org,'agent','version:1'))!;
+  addData(); const p = (await getPassport(viewer(org),'agent','version:1'))!;
   const fact=section(p,'data').facts.find(f => f.type === 'data-field')!;
   assert.equal(fact.type,'data-field'); if(fact.type !== 'data-field') return;
   assert.equal(fact.fact.value,'varchar(100)'); assert.equal(fact.stateId,'s:current'); assert.equal(fact.source.trust,'IMPORTED');
@@ -278,56 +312,56 @@ test('M10 linear head wins over newer timestamps and competing imported observat
 });
 test('raw imported proposals alone never populate accepted fields', async () => {
   addData(); tables.technical_field_states=[];
-  const p = (await getPassport(org,'agent','version:1'))!;
+  const p = (await getPassport(viewer(org),'agent','version:1'))!;
   assert.ok(!section(p,'data').facts.some(f => f.type === 'data-field')); assert.ok(!JSON.stringify(p).includes('varchar(100)'));
 });
 test('M10 fields without an Agent access binding stay out of Passport', async () => {
   addData(); tables.canonical_relationships=[];
-  assert.equal(section((await getPassport(org,'agent','version:1'))!,'data').status,'UNKNOWN');
+  assert.equal(section((await getPassport(viewer(org),'agent','version:1'))!,'data').status,'UNKNOWN');
   assert.ok(!calls.some(c => c.table === 'technical_fact_proposals'));
 });
 test('foreign M10 state is excluded', async () => {
   addData(); tables.technical_field_states.forEach(s => s.organisation_id=otherOrg);
-  assert.ok(!section((await getPassport(org,'agent','version:1'))!,'data').facts.some(f=>f.type==='data-field'));
+  assert.ok(!section((await getPassport(viewer(org),'agent','version:1'))!,'data').facts.some(f=>f.type==='data-field'));
 });
 test('invalid accepted-state decision fails closed', async () => {
-  addData(); tables.technical_field_decisions[0].outcome='DEFER'; await assert.rejects(getPassport(org,'agent','version:1'),/FIELD_STATE_INVALID/);
+  addData(); tables.technical_field_decisions[0].outcome='DEFER'; await assert.rejects(getPassport(viewer(org),'agent','version:1'),/FIELD_STATE_INVALID/);
 });
 test('foreign accepted evidence cannot hydrate a governed field', async () => {
   addData(); tables.discovery_evidence.find(e => e.evidence_id === 'evidence:field')!.organisation_id=otherOrg;
-  await assert.rejects(getPassport(org,'agent','version:1'),/SUPPORT_MISSING/);
+  await assert.rejects(getPassport(viewer(org),'agent','version:1'),/SUPPORT_MISSING/);
 });
 test('field source snapshot must match the accepted decision', async () => {
-  addData(); tables.technical_fact_observations[0].snapshot_id='unreviewed'; await assert.rejects(getPassport(org,'agent','version:1'),/OBSERVATION_INVALID/);
+  addData(); tables.technical_fact_observations[0].snapshot_id='unreviewed'; await assert.rejects(getPassport(viewer(org),'agent','version:1'),/OBSERVATION_INVALID/);
 });
 for (const trust of ['INFERRED','DECLARED','IMPORTED','OBSERVED','VALIDATED']) test(`source trust ${trust} is preserved independently of coverage`, async () => {
-  addSupport('d:agent',trust); const p = (await getPassport(org,'agent'))!;
+  addSupport('d:agent',trust); const p = (await getPassport(viewer(org),'agent'))!;
   assert.equal(p.canonicalAgent.provenance.sources[0].trust,trust); assert.equal(section(p,'identity').status,'KNOWN');
 });
 test('unknown trust vocabulary is rejected regardless of confidence', async () => {
-  addSupport('d:agent','VERIFIED'); await assert.rejects(getPassport(org,'agent'),/TRUST_INVALID/);
+  addSupport('d:agent','VERIFIED'); await assert.rejects(getPassport(viewer(org),'agent'),/TRUST_INVALID/);
 });
 test('foreign assertion/evidence do not leak and protected Prompt envelopes are never selected', async () => {
   addSupport(); tables.discovery_evidence[0].organisation_id=otherOrg; tables.source_assertions[0].organisation_id=otherOrg;
-  const p = (await getPassport(org,'agent'))!;
+  const p = (await getPassport(viewer(org),'agent'))!;
   assert.deepEqual(p.canonicalAgent.provenance.sources,[]); assert.deepEqual(p.canonicalAgent.provenance.evidence,[]);
   assert.ok(!JSON.stringify(p).includes('PROTECTED_PROMPT')); assert.ok(calls.every(c => !c.selection.includes('envelope')));
 });
 test('discovery mappings preserve source, method, evidence and decision times', async () => {
   addVersion('version:1'); addSupport('d:version:1');
-  const p = (await getPassport(org,'agent','version:1'))!;
+  const p = (await getPassport(viewer(org),'agent','version:1'))!;
   const discovery=section(p,'discovery'); assert.equal(discovery.facts.length,1);
   assert.equal(discovery.facts[0].provenance.sources[0].method,'explicit-declaration'); assert.equal(discovery.facts[0].provenance.decidedAt,at);
 });
 test('canonical objects and versions page past 200 rows without choosing a latest version', async () => {
   for(let i=0;i<201;i++) addVersion(`v:${String(i).padStart(3,'0')}`);
-  const p=(await getPassport(org,'agent'))!; assert.equal(p.versionContexts.length,201); assert.equal(p.currentVersionId,null);
+  const p=(await getPassport(viewer(org),'agent'))!; assert.equal(p.versionContexts.length,201); assert.equal(p.currentVersionId,null);
 });
 test('storage failure is an error, not false UNKNOWN success', async () => {
-  dbError='canonical_normalized_object_mappings'; await assert.rejects(getPassport(org,'agent'),/PASSPORT_READ_FAILED/);
+  dbError='canonical_normalized_object_mappings'; await assert.rejects(getPassport(viewer(org),'agent'),/PASSPORT_READ_FAILED/);
 });
 test('read composition completes against a store with no writes, command methods, providers or LLM', async () => {
-  addData(); addProfile(); const p=(await getPassport(org,'agent','version:1'))!; assert.equal(p.families.length,16);
+  addData(); addProfile(); const p=(await getPassport(viewer(org),'agent','version:1'))!; assert.equal(p.families.length,16);
   assert.ok(calls.every(c => !['agents','outbox_events','reconciliation_command_locks'].includes(c.table)));
 });
 test('current-state selection rejects forks, cycles and disconnected histories', () => {
@@ -344,8 +378,8 @@ test('switching version changes only the view and preserves relationship directi
   addVersion('version:1'); addVersion('version:2'); addObject('model:1','MODEL'); addObject('model:2','MODEL');
   addEdge('USES_MODEL','model:1','MODEL','version:1'); addEdge('USES_MODEL','model:2','MODEL','version:2');
   const before = structuredClone(tables);
-  const first = (await getPassport(org,'agent','version:1'))!;
-  const second = (await getPassport(org,'agent','version:2'))!;
+  const first = (await getPassport(viewer(org),'agent','version:1'))!;
+  const second = (await getPassport(viewer(org),'agent','version:2'))!;
   assert.equal(first.canonicalAgent.objectId, second.canonicalAgent.objectId);
   for (const [p, version, model] of [[first,'version:1','model:1'],[second,'version:2','model:2']] as const) {
     const facts = section(p,'model').facts;
@@ -357,38 +391,38 @@ test('switching version changes only the view and preserves relationship directi
 
 test('empty, unknown and foreign selected versions fail closed', async () => {
   addVersion('version:1');
-  for (const version of ['', ' ', 'missing']) assert.equal(await getPassport(org,'agent',version),undefined);
+  for (const version of ['', ' ', 'missing']) assert.equal(await getPassport(viewer(org),'agent',version),undefined);
   tables.canonical_normalized_object_mappings[0].organisation_id=otherOrg;
-  assert.equal(await getPassport(org,'agent','version:1'),undefined);
+  assert.equal(await getPassport(viewer(org),'agent','version:1'),undefined);
 });
 
 test('future relationship start cannot establish active access', async () => {
   addData(); tables.canonical_relationships[0].valid_from='2099-01-01T00:00:00Z';
-  const p=(await getPassport(org,'agent','version:1'))!;
+  const p=(await getPassport(viewer(org),'agent','version:1'))!;
   assert.equal(section(p,'data').status,'UNKNOWN');
   assert.ok(!calls.some(c=>c.table==='technical_fact_proposals'));
 });
 
 test('scheduled relationship end retains active fact and explicit validity end', async () => {
   addData(); tables.canonical_relationships[0].valid_to='2099-01-01T00:00:00Z';
-  const p=(await getPassport(org,'agent','version:1'))!;
+  const p=(await getPassport(viewer(org),'agent','version:1'))!;
   assert.equal(section(p,'data').facts[0].provenance.validTo,'2099-01-01T00:00:00Z');
 });
 
 test('invalid relationship temporal state fails closed', async () => {
   addData(); tables.canonical_relationships[0].valid_from='invalid';
-  await assert.rejects(getPassport(org,'agent','version:1'),/TEMPORAL_STATE_INVALID/);
+  await assert.rejects(getPassport(viewer(org),'agent','version:1'),/TEMPORAL_STATE_INVALID/);
 });
 
 test('future governed mapping does not establish an available AgentVersion', async () => {
   addVersion('version:1'); tables.canonical_normalized_object_mappings[0].valid_from='2099-01-01T00:00:00Z';
-  assert.deepEqual((await getPassport(org,'agent'))!.versionContexts,[]);
-  assert.equal(await getPassport(org,'agent','version:1'),undefined);
+  assert.deepEqual((await getPassport(viewer(org),'agent'))!.versionContexts,[]);
+  assert.equal(await getPassport(viewer(org),'agent','version:1'),undefined);
 });
 
 test('missing field policy head preserves historical acceptance without claiming current authority', async () => {
   addData(); tables.technical_field_policy_heads=[];
-  const fact=section((await getPassport(org,'agent','version:1'))!,'data').facts.find(f=>f.type==='data-field')!;
+  const fact=section((await getPassport(viewer(org),'agent','version:1'))!,'data').facts.find(f=>f.type==='data-field')!;
   assert.equal(fact.provenance.policy?.acceptedVersion,'v1');
   assert.equal(fact.provenance.policy?.activeVersion,undefined);
   assert.equal(fact.type==='data-field' && fact.source.trust,'IMPORTED');
@@ -396,24 +430,140 @@ test('missing field policy head preserves historical acceptance without claiming
 
 test('foreign accepted field decision and source mapping fail closed', async () => {
   addData(); tables.technical_field_decisions[0].organisation_id=otherOrg;
-  await assert.rejects(getPassport(org,'agent','version:1'),/FIELD_STATE_INVALID/);
+  await assert.rejects(getPassport(viewer(org),'agent','version:1'),/FIELD_STATE_INVALID/);
   tables.technical_field_decisions[0].organisation_id=org;
   tables.canonical_normalized_object_mappings.find(m=>m.canonical_object_id==='column')!.organisation_id=otherOrg;
-  await assert.rejects(getPassport(org,'agent','version:1'),/FIELD_MAPPING_INVALID/);
+  await assert.rejects(getPassport(viewer(org),'agent','version:1'),/FIELD_MAPPING_INVALID/);
 });
 
 test('unreviewed object identity cannot surface VALIDATED source support', async () => {
   addSupport('d:agent','VALIDATED'); tables.reconciliation_decisions[0].outcome='DEFER';
-  await assert.rejects(getPassport(org,'agent'),/GOVERNANCE_SUPPORT_MISSING/);
+  await assert.rejects(getPassport(viewer(org),'agent'),/GOVERNANCE_SUPPORT_MISSING/);
 });
 
 test('persisted runtime observation is labeled source OBSERVED without inventing Agent runtime facts', async () => {
   addSupport('d:agent','OBSERVED');
   tables.source_assertions[0].method_code='runtime-observation-fixture';
   tables.source_assertions[0].source_external_type='runtime-trace';
-  const p=(await getPassport(org,'agent'))!;
+  const p=(await getPassport(viewer(org),'agent'))!;
   assert.equal(p.canonicalAgent.provenance.sources[0].trust,'OBSERVED');
   assert.equal(p.canonicalAgent.provenance.sources[0].method,'runtime-observation-fixture');
   assert.equal(p.canonicalAgent.provenance.evidence.length,1);
   assert.equal(section(p,'runtime').status,'UNKNOWN');
+});
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// M16 read-projection closure (O32 / ADR §22): families 3 / 4 / 12 / 14 consume ONLY the governed projection.
+// ---------------------------------------------------------------------------------------------------------------------------
+function addGovernedAgentFacts() {
+  governance.push(
+    governedRow('RESPONSIBILITY_ASSIGNMENT', 'agent', 'AGENT', { responsibility_role: 'BUSINESS_OWNER', governance_party_id: 'party:1',
+      party_validated_state_id: 'party-state:1' }, 1),
+    governedRow('BUSINESS_CONTEXT_ASSIGNMENT', 'agent', 'AGENT', { semantic_kind: 'BUSINESS_DOMAIN', domain_id: 'domain:payments',
+      domain_validated_state_id: 'domain-state:1' }, 2),
+    governedRow('POLICY_APPLICABILITY', 'agent', 'AGENT', { policy_id: 'policy:1', policy_version_id: 'pv:1', policy_content_hash: 'a'.repeat(64),
+      policy_version_validated_state_id: 'pv-state:1', applicability: 'APPLIES' }, 3),
+    governedRow('POLICY_APPLICABILITY', 'agent', 'AGENT', { policy_id: 'policy:2', policy_version_id: 'pv:2', policy_content_hash: 'b'.repeat(64),
+      policy_version_validated_state_id: 'pv-state:2', applicability: 'DOES_NOT_APPLY' }, 4),
+    governedRow('CONTROL_APPLICABILITY', 'agent', 'AGENT', { control_definition_id: 'control:1', control_definition_version_id: 'cv:1',
+      control_content_hash: 'c'.repeat(64), control_definition_validated_state_id: 'cd-state:1', applicability: 'APPLIES' }, 5),
+    governedRow('CONTROL_ASSESSMENT', 'agent', 'AGENT', { control_definition_id: 'control:1', control_definition_version_id: 'cv:1',
+      control_content_hash: 'c'.repeat(64), applicability: 'APPLIES', control_applicability_state_id: 'fact:5', assessment_outcome: 'NOT_ASSESSED',
+      effective_to: '2026-12-31T00:00:00.000Z' }, 6),
+  );
+  for (const n of [1, 2, 3, 4, 5, 6]) add('discovery_evidence', { evidence_id: `evidence:l14:${n}`, handling: 'HASH_ONLY', captured_at: at, envelope: { secret: 'L14_ENVELOPE_NEVER_READ' } });
+}
+const governedFacts = (p: NonNullable<Awaited<ReturnType<typeof getPassport>>>, id: string) =>
+  section(p, id).facts.filter(f => f.type === 'governed-l14') as import('@/lib/governance/agent-passport').GovernedL14Fact[];
+
+test('O32: canonical identity alone implies no control coverage; families 3 / 4 / 12 stay UNKNOWN without governed facts', async () => {
+  const p = (await getPassport(viewer(org), 'agent'))!;
+  for (const id of ['ownership', 'business', 'controls']) { assert.equal(section(p, id).status, 'UNKNOWN'); assert.deepEqual(section(p, id).facts, []); }
+  assert.ok(section(p, 'controls').unknowns.some(u => /Canonical identity alone implies no control coverage/.test(u)));
+  assert.equal(section(p, 'identity').status, 'KNOWN', 'identity is still the canonical identity family only');
+  assert.deepEqual(rpcCalls.map(r => r.name), ['l14_read_passport_governance_v1']);
+});
+
+test('O32: governed facts populate families 3 / 4 / 12 with exact lineage (family 14); DOES_NOT_APPLY stays explicit', async () => {
+  addGovernedAgentFacts();
+  const p = (await getPassport(viewer(org), 'agent'))!;
+  const [owner] = governedFacts(p, 'ownership');
+  assert.deepEqual(owner.value, { family: 'RESPONSIBILITY_ASSIGNMENT', responsibilityRole: 'BUSINESS_OWNER', governancePartyId: 'party:1', partyValidatedStateId: 'party-state:1' });
+  assert.equal(section(p, 'ownership').status, 'PARTIAL');
+  assert.deepEqual(section(p, 'ownership').unknowns, ['TECHNICAL_OWNER: UNKNOWN. No current valid governed responsibility assignment of this AGENT.']);
+  assert.deepEqual(governedFacts(p, 'business').map(f => f.value), [{ family: 'BUSINESS_CONTEXT_ASSIGNMENT', semanticKind: 'BUSINESS_DOMAIN',
+    domainId: 'domain:payments', domainValidatedStateId: 'domain-state:1' }]);
+  const controls = governedFacts(p, 'controls');
+  assert.deepEqual(controls.map(f => `${f.value.family}:${'applicability' in f.value ? f.value.applicability : ''}:${'assessmentOutcome' in f.value ? f.value.assessmentOutcome : ''}`), [
+    'POLICY_APPLICABILITY:APPLIES:', 'POLICY_APPLICABILITY:DOES_NOT_APPLY:', 'CONTROL_APPLICABILITY:APPLIES:', 'CONTROL_ASSESSMENT::NOT_ASSESSED']);
+  assert.ok(!section(p, 'controls').unknowns.some(u => /assessment UNKNOWN/.test(u)), 'the exact applicability state is assessed');
+  // Family 14: exact lineage; only linked evidence metadata; no invented source assertion or trust.
+  const l = owner.provenance.l14!;
+  assert.deepEqual([l.factStateId, l.proposalId, l.governanceDecisionId, l.authorizationDecisionId, l.trustState, l.decisionOutcome, l.authorizationResult],
+    ['fact:1', 'proposal:1', 'gdecision:1', 'authz:1', 'VALIDATED', 'VALIDATE', 'ALLOW']);
+  assert.deepEqual([owner.provenance.storage, owner.provenance.authority, owner.provenance.decisionId], ['l14_fact_states', 'GOVERNED_L14_FACT', 'gdecision:1']);
+  assert.deepEqual(owner.provenance.evidence.map(e => e.evidenceId), ['evidence:l14:1']);
+  assert.deepEqual(owner.provenance.sources, []);
+  assert.ok(section(p, 'provenance').facts.some(f => f.id === owner.id));
+  assert.ok(!JSON.stringify(p).includes('L14_ENVELOPE_NEVER_READ'));
+  assert.equal(controls.find(f => f.value.family === 'CONTROL_ASSESSMENT')!.provenance.validTo, '2026-12-31T00:00:00.000Z', 'valid_until');
+});
+
+test('O32: an APPLIES control without an assessment of EXACTLY its applicability state is assessment UNKNOWN', async () => {
+  addGovernedAgentFacts();
+  governance[5].control_applicability_state_id = 'fact:superseded';
+  const p = (await getPassport(viewer(org), 'agent'))!;
+  assert.ok(section(p, 'controls').unknowns.some(u => /Control control:1 on AGENT agent: assessment UNKNOWN/.test(u)));
+});
+
+test('O32: AGENT_VERSION facts only for the exact selected version, never on the AGENT; illegal version families fail closed', async () => {
+  addVersion('version:1');
+  governance.push(governedRow('CONTROL_APPLICABILITY', 'version:1', 'AGENT_VERSION', { control_definition_id: 'control:v', control_definition_version_id: 'cv:v',
+    control_content_hash: 'e'.repeat(64), control_definition_validated_state_id: 'cd-state:v', applicability: 'APPLIES' }, 7));
+  assert.deepEqual(governedFacts((await getPassport(viewer(org), 'agent'))!, 'controls'), [], 'no implicit inheritance version -> AGENT');
+  const selected = (await getPassport(viewer(org), 'agent', 'version:1'))!;
+  assert.deepEqual(governedFacts(selected, 'controls').map(f => `${f.targetKind}:${f.targetId}`), ['AGENT_VERSION:version:1']);
+  assert.equal(rpcCalls.at(-1)!.args.p_agent_version_canonical_object_id, 'version:1');
+  governance.push(governedRow('RESPONSIBILITY_ASSIGNMENT', 'version:1', 'AGENT_VERSION', { responsibility_role: 'BUSINESS_OWNER',
+    governance_party_id: 'party:1', party_validated_state_id: 'party-state:1' }, 8));
+  await assert.rejects(getPassport(viewer(org), 'agent', 'version:1'), /PASSPORT_GOVERNANCE_ROW_INVALID/);
+});
+
+test('O32: rows for another target or outside the closed vocabularies fail closed; projection failure is never UNKNOWN', async () => {
+  governance.push(governedRow('POLICY_APPLICABILITY', 'agent:other', 'AGENT', { policy_id: 'p', policy_version_id: 'v', policy_content_hash: 'a'.repeat(64),
+    policy_version_validated_state_id: 's', applicability: 'APPLIES' }, 9));
+  leakAll = true;
+  await assert.rejects(getPassport(viewer(org), 'agent'), /PASSPORT_GOVERNANCE_ROW_INVALID/);
+  leakAll = false; governance = [];
+  for (const change of [{ trust_state: 'INFERRED' }, { decision_outcome: 'DEFER' }, { authorization_result: 'DENY' }, { applicability: 'UNKNOWN' },
+    { fact_family: 'CONTROL_FINDING' }, { source_class: 'LLM' }]) {
+    governance = [governedRow('POLICY_APPLICABILITY', 'agent', 'AGENT', { policy_id: 'p', policy_version_id: 'v', policy_content_hash: 'a'.repeat(64),
+      policy_version_validated_state_id: 's', applicability: 'APPLIES', ...change }, 10)];
+    await assert.rejects(getPassport(viewer(org), 'agent'), /PASSPORT_GOVERNANCE_ROW_INVALID/, JSON.stringify(change));
+  }
+  governance = [governedRow('CONTROL_ASSESSMENT', 'agent', 'AGENT', { control_definition_id: 'c', control_definition_version_id: 'v',
+    control_content_hash: 'c'.repeat(64), control_applicability_state_id: 'a', assessment_outcome: 'WAIVED' }, 11)];
+  await assert.rejects(getPassport(viewer(org), 'agent'), /PASSPORT_GOVERNANCE_ROW_INVALID/);
+  governance = []; rpcError = true;
+  await assert.rejects(getPassport(viewer(org), 'agent'), /PASSPORT_GOVERNANCE_READ_FAILED/);
+});
+
+test('O32: foreign-tenant facts never surface; the RPC receives exactly the verified principal and no coordinates', async () => {
+  governance.push(governedRow('RESPONSIBILITY_ASSIGNMENT', 'agent', 'AGENT', { responsibility_role: 'BUSINESS_OWNER', governance_party_id: 'party:x',
+    party_validated_state_id: 'party-state:x' }, 12, otherOrg));
+  const p = (await getPassport(viewer(org), 'agent'))!;
+  assert.equal(section(p, 'ownership').status, 'UNKNOWN');
+  assert.deepEqual(rpcCalls[0].args, { p_verified_organisation_id: org, p_verified_actor_user_id: 'user:1', p_verified_session_iat: 1_758_000_000,
+    p_verified_session_exp: 1_758_003_600, p_verified_credential_epoch: '2026-09-25T00:00:00.000001+00:00', p_agent_canonical_object_id: 'agent',
+    p_agent_version_canonical_object_id: null, p_effective_at: null, p_recorded_cutoff: null });
+});
+
+test('O32: legacy owner / business_domain / cg_* values never populate families 3 / 4 / 12', async () => {
+  add('agents', { agent_id: 'agent', owner_user_id: 'owner', technical_owner_id: 'tech', business_domain: 'Finance', cg_ag_002_owner: true,
+    cg_ag_007_oversight: true, cg_ag_009_compliant: true });
+  add('control_assessments', { agent_id: 'agent', status: 'compliant' });
+  const p = (await getPassport(viewer(org), 'agent'))!;
+  for (const id of ['ownership', 'business', 'controls']) assert.deepEqual(section(p, id).facts, []);
+  assert.ok(!calls.some(c => ['agents', 'control_assessments', 'governance_policies', 'policy_versions'].includes(c.table)));
+  assert.ok(!JSON.stringify(p).includes('Finance') && !JSON.stringify(p).includes('cg_ag'));
 });
