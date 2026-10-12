@@ -236,7 +236,13 @@ M14 close
   SECURITY DEFINER surface 45 (35 canonical-owner / policy-store-capable); service_role has no direct L14 table read.
   Documentation-only closure on branch `chore/m16-final-closure`; hosted **NOT TOUCHED**.
 - **M16: CLOSED / READY FOR DOWNSTREAM.**
-- **M17: NOT STARTED.** M18+: NOT STARTED.
+- **PR #63: MERGED** — **M16 formal closure: CLOSED / MERGED.** Canonical main after PR #63:
+  `5aec0b500cb16b0e3ce67376629ffa68cf2e6186`.
+- **M17 — RISK INTELLIGENCE V1: ARCHITECTURE DRAFT ON BRANCH** `docs/m17-risk-intelligence-architecture`
+  ([draft ADR](./ADR-GOVIA-RISK-INTELLIGENCE-v1.md), status **DRAFT** — pending ACP / owner review; not accepted,
+  not frozen; [current-state inventory](../codex/evidence/2026-10-12-m17-current-state-inventory.md)).
+- **M17 IMPLEMENTATION: NOT STARTED.** M18+: NOT STARTED.
+- Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by the M17 architecture draft.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
   literally executed.
