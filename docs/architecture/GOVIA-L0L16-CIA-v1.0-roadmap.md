@@ -238,14 +238,22 @@ M14 close
 - **M16: CLOSED / READY FOR DOWNSTREAM.**
 - **PR #63: MERGED** — **M16 formal closure: CLOSED / MERGED.** Canonical main after PR #63:
   `5aec0b500cb16b0e3ce67376629ffa68cf2e6186`.
-- **M17 — RISK INTELLIGENCE V1 ARCHITECTURE: ACCEPTED / FROZEN** on branch `docs/m17-risk-intelligence-architecture`
-  (architecture PR pending merge into main): [M17 ADR](./ADR-GOVIA-RISK-INTELLIGENCE-v1.md); ACP architecture review
+- **PR #64: MERGED** — **M17 — RISK INTELLIGENCE V1 ARCHITECTURE: ACCEPTED / FROZEN** (canonical main after PR #64:
+  `931d2d523992b98921b01f071f49997fe4bce678`): [M17 ADR](./ADR-GOVIA-RISK-INTELLIGENCE-v1.md); ACP architecture review
   completed; D-01 explicit owner approval on 2026-10-12, recorded in the additive
   [M16 Authority Policy M17 extension](./ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md) (ACCEPTED / FROZEN; the
   historical M16 ADR text is unchanged); D-01 … D-12 resolved; acceptance criteria O01–O91;
   [current-state inventory](../codex/evidence/2026-10-12-m17-current-state-inventory.md).
-- **M17 IMPLEMENTATION: NOT STARTED.** Next implementation slice: **M17-S0** (not started). M18+: NOT STARTED.
-- Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by the M17 architecture.
+- **M17-S0 — Authority / Security / Root Contracts + Legacy Compatibility Hardening: IMPLEMENTED ON BRANCH
+  `feat/m17-s0-authority-security-root-contracts`, NOT MERGED** (base main `931d2d5`;
+  [evidence](../codex/evidence/2026-10-12-m17-s0-authority-security-root-contracts.md)). Additive migration
+  `20261012200000_m17_s0_authority_policy_l15_extension_v1.sql`: D-01 single Authority Policy extension (23 permissions,
+  17 shared-envelope subjects, +24 reason codes, +2 ADMIT command kinds; `l14_fact_states` not widened; no L15 bootstrap),
+  L14 ↔ L15 isolation guards, D-05 `risk_entries` / `risk_treatments` application write-freeze; D-12 scan-route legacy risk
+  writer stopped; legacy consumers labelled `LEGACY / NON-AUTHORITATIVE`; L15 root contracts in `canonical-contracts`.
+  Application SECURITY DEFINER surface unchanged (45). Criteria needing L15 stores are dependency-deferred to S1–S7.
+- **M17-S1 … S7: NOT STARTED.** M18+: NOT STARTED.
+- Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
   literally executed.

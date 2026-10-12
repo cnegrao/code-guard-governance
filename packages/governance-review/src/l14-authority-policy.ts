@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import {
-  CANONICAL_OBJECT_KIND, GOVERNED_RELATIONSHIP_TYPE, L14_AUTHORITY_POLICY_REASON_CODES, L14_PERMISSIONS,
+  AUTHORITY_POLICY_PERMISSIONS, CANONICAL_OBJECT_KIND, GOVERNED_RELATIONSHIP_TYPE, L14_AUTHORITY_POLICY_REASON_CODES,
   L14_PROPOSAL_INTENTS, L14_PROPOSAL_SUBJECT_KINDS, L14_REQUESTED_ACTIONS, L14_SCOPE_TAGS, L14_SOURCE_CLASSES,
-  L14_SOURCE_DISPOSITIONS, L14_SUPPORT_STATUSES,
+  L14_SOURCE_DISPOSITIONS, L14_SUPPORT_STATUSES, L15_REGISTRY_PERMISSIONS,
   type L14AuthorityPolicyReasonCode, type L14AuthorityPolicyRule, type L14GovernanceOutcome, type L14ProposalIntent,
   type L14ProposalSubjectKind, type L14SourceClass, type L14Support,
 } from '@council/canonical-contracts';
@@ -53,7 +53,7 @@ function operand(value: unknown): string | null {
 
 /** Closed-contract validation mirroring the database rule constraints (tenant resolution is DB-only). */
 export function validateAuthorityPolicyRule(rule: L14AuthorityPolicyRule): void {
-  if (!within(L14_PERMISSIONS, rule.permission) || !within(L14_REQUESTED_ACTIONS, rule.requestedAction)
+  if (!within(AUTHORITY_POLICY_PERMISSIONS, rule.permission) || !within(L14_REQUESTED_ACTIONS, rule.requestedAction)
     || !within(L14_SOURCE_CLASSES, rule.sourceClass) || !within(L14_SOURCE_DISPOSITIONS, rule.sourceDisposition)
     || !within(L14_SCOPE_TAGS, rule.scopeTag)
     || (rule.scopeCanonicalKind !== null && !within(KINDS, rule.scopeCanonicalKind))
@@ -85,6 +85,10 @@ export function validateAuthorityPolicyRule(rule: L14AuthorityPolicyRule): void 
   if ((rule.permission === 'L14_AUTHORITY_POLICY_ADMIT' || rule.permission === 'L14_AUTHORITY_POLICY_ADMIN')
     && rule.scopeTag !== 'ALL_ALLOWED_TARGETS') {
     throw new L14ContractError('RULE_AUTHORITY_SCOPE_INVALID');
+  }
+  // M17-S0 (D-01): L15 registry administration is organisation-local only (mirror of the database parser).
+  if ((L15_REGISTRY_PERMISSIONS as readonly string[]).includes(rule.permission) && rule.scopeTag !== 'ALL_ALLOWED_TARGETS') {
+    throw new L14ContractError('RULE_REGISTRY_SCOPE_INVALID');
   }
   if (rule.requestedAction === 'ADMIT' && (rule.allowSelfValidation || rule.allowFutureDating || rule.allowBackdating)) {
     throw new L14ContractError('RULE_ADMIT_FLAGS_INVALID');

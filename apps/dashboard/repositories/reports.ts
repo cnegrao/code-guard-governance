@@ -1,10 +1,12 @@
 import { db } from "@/lib/db";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 import { getUnifiedGraph, isAgentNode, type DiscoveryGraphNode } from "@/services/knowledge-graph";
 
 export interface ReportData {
   org: { name: string; industry: string; date: string };
-  agents: { total: number; byRisk: { critical: number; high: number; medium: number; low: number } };
-  systems: { total: number; highRisk: number; byLifecycle: Array<{ lifecycle: string; count: number }> };
+  /** byRisk counts LEGACY agents.risk_level labels (M17-S0): never governed risk, never an L15 input. */
+  agents: { total: number; byRisk: { critical: number; high: number; medium: number; low: number }; legacyRiskAuthority: typeof LEGACY_RISK_LABEL };
+  systems: { total: number; highRisk: number; legacyRiskAuthority: typeof LEGACY_RISK_LABEL; byLifecycle: Array<{ lifecycle: string; count: number }> };
   compliance: { rate: number | null; totalGaps: number; topGaps: Array<{ agent: string; gaps: number; risk: string }>; controlCoverage: number | null };
   findings: { open: number; bySeverity: Array<{ severity: string; count: number }>; criticalFindings: number };
   incidents: { open: number; doraOpen: number; recent: Array<{ code: string; title: string; severity: string; status: string; date: string }> };
@@ -119,10 +121,12 @@ export async function gatherReportData(orgId: string): Promise<ReportData> {
         medium: agents.filter((a) => a.risk_level === "medium").length,
         low: agents.filter((a) => a.risk_level === "low").length,
       },
+      legacyRiskAuthority: LEGACY_RISK_LABEL,
     },
     systems: {
       total: systemCount.count ?? 0,
       highRisk: highRiskSystems.count ?? 0,
+      legacyRiskAuthority: LEGACY_RISK_LABEL,
       byLifecycle: Array.from(lifecycleMap.entries()).map(([lifecycle, count]) => ({ lifecycle, count })),
     },
     compliance: {

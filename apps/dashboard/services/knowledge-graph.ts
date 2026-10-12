@@ -1,11 +1,14 @@
 import { db } from "@/lib/db";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 
 export interface AgentGraphNode {
   agent_id: string;
   agent_code: string;
   name: string;
   agent_type: string;
+  /** LEGACY agents.risk_level label (M17-S0): never governed risk, never an L15 input. */
   risk_level: string;
+  risk_level_authority: typeof LEGACY_RISK_LABEL;
   oversight_level: string;
   status: string;
   deployment_env: string;
@@ -343,6 +346,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
       name: a.name as string,
       agent_type: a.agent_type as string,
       risk_level: a.risk_level as string,
+      risk_level_authority: LEGACY_RISK_LABEL,
       oversight_level: a.oversight_level as string,
       status: a.status as string,
       deployment_env: a.deployment_env as string,
@@ -499,7 +503,8 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
           source: incId,
           target: a.agent_id,
           type: "affects",
-          metadata: {},
+          // Legacy overlay inferred from a legacy risk label only (M17-S0): not a governed relationship, not governed risk.
+          metadata: { basis: "LEGACY_RISK_LABEL", authority: LEGACY_RISK_LABEL },
         });
       }
     }
@@ -568,7 +573,8 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
           source: fId,
           target: a.agent_id,
           type: "relates_to",
-          metadata: {},
+          // Legacy overlay inferred from a legacy risk label only (M17-S0): not a governed relationship, not governed risk.
+          metadata: { basis: "LEGACY_RISK_LABEL", authority: LEGACY_RISK_LABEL },
         });
       }
     }

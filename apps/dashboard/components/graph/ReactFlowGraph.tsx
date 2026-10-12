@@ -9,6 +9,7 @@ import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -353,7 +354,7 @@ function GraphCanvas() {
             <div className="space-y-2 text-xs">
               <div className="flex justify-between"><span className="text-gray-500">Code</span><span className="text-white">{selectedNode.agent_code}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="text-white">{selectedNode.agent_type}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Risk</span><Badge variant={selectedNode.risk_level as "critical"|"high"|"medium"|"low"}>{selectedNode.risk_level}</Badge></div>
+              <div className="flex justify-between"><span className="text-gray-500">Legacy risk label</span><LegacyRiskBadge value={selectedNode.risk_level} /></div>
               <div className="flex justify-between"><span className="text-gray-500">Oversight</span><span className="text-white">{selectedNode.oversight_level}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="text-white">{selectedNode.status}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Model</span><span className="text-white">{selectedNode.model_name ?? "—"}</span></div>

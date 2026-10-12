@@ -1,4 +1,5 @@
 import type { CanonicalObjectKind, GovernedRelationshipType } from './contracts.ts';
+import type { AuthorityPolicyPermission } from './l15-risk-intelligence.ts';
 
 /**
  * M16-S1A L14 Authority Policy contracts (ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1
@@ -79,11 +80,12 @@ export type L14CommandOutcome = 'ADMITTED' | 'SUBMITTED' | 'VALIDATED' | 'REJECT
 
 /**
  * One typed Authority Policy rule. Every operand is present; absence is an explicit null.
- * roleId is a persisted governance_roles.role_id (lower-case canonical UUID).
+ * roleId is a persisted governance_roles.role_id (lower-case canonical UUID). The permission is one of the 23 tags of the
+ * single Authority Policy (M17-S0 / D-01: 15 L14_* + 8 L15_*); an L15 rule can only enter a successor version.
  */
 export interface L14AuthorityPolicyRule {
   readonly roleId: string;
-  readonly permission: L14Permission;
+  readonly permission: AuthorityPolicyPermission;
   readonly requestedAction: L14RequestedAction;
   readonly sourceClass: L14SourceClass;
   readonly sourceDisposition: L14SourceDisposition;

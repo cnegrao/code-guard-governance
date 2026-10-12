@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 import { getUnifiedGraph, isAgentNode } from "@/services/knowledge-graph";
 import type {
   UnifiedGraphNode,
@@ -50,9 +51,9 @@ const HANDLERS: Array<{
         .eq("organisation_id", orgId).in("risk_level", ["critical", "high"])
         .neq("status", "decommissioned").order("risk_level").throwOnError();
       const r = (data as Array<Record<string, string>>) ?? [];
-      if (r.length === 0) return ans("No high-risk or critical agents found.", 95, [], r, "high_risk_agents", "Queried agents table for risk_level IN (critical, high). No matches.", 0);
-      const list = r.map((a) => `${a.name} (${a.agent_code}) — ${a.risk_level}, ${a.oversight_level}`).join("\n");
-      return ans(`${r.length} high-risk agents:\n${list}`, 95, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `${a.risk_level} risk, ${a.oversight_level} oversight` })), r, "high_risk_agents", `Matched ${r.length} agents with risk_level critical or high from agents table.`, r.length);
+      if (r.length === 0) return ans(`No agents carry a legacy high/critical risk label (${LEGACY_RISK_LABEL}). This does not establish absence of risk: governed risk is UNKNOWN.`, 95, [], r, "high_risk_agents", "Queried agents table for risk_level IN (critical, high). No matches.", 0);
+      const list = r.map((a) => `${a.name} (${a.agent_code}) — legacy risk label ${a.risk_level}, ${a.oversight_level}`).join("\n");
+      return ans(`${r.length} agents carry a legacy high/critical risk label (${LEGACY_RISK_LABEL}; not governed risk):\n${list}`, 95, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `legacy risk label ${a.risk_level} (${LEGACY_RISK_LABEL}), ${a.oversight_level} oversight` })), r, "high_risk_agents", `Matched ${r.length} agents with risk_level critical or high from agents table.`, r.length);
     },
   },
   {
@@ -104,7 +105,7 @@ const HANDLERS: Array<{
         .neq("status", "decommissioned").throwOnError();
       const r = (data as Array<Record<string, string>>) ?? [];
       if (r.length === 0) return ans("No missing-owner records returned. Ownership coverage is UNKNOWN.", 95, [], r, "agents_without_owner", "Queried agents where cg_ag_002_owner = false. Zero results.", 0);
-      const list = r.map((a) => `${a.name} (${a.agent_code}) — ${a.risk_level}`).join("\n");
+      const list = r.map((a) => `${a.name} (${a.agent_code}) — legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL})`).join("\n");
       return ans(`${r.length} agents without owner:\n${list}`, 90, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `Owner flag: false` })), r, "agents_without_owner", `Found ${r.length} agents with cg_ag_002_owner = false.`, r.length);
     },
   },
@@ -151,7 +152,7 @@ const HANDLERS: Array<{
       const graph = await getUnifiedGraph(orgId);
       const pii = graph.nodes.filter((n): n is AgentGraphNode => isAgentNode(n) && !!n.enrichment?.containsPii);
       if (pii.length === 0) return ans("No agents processing personal data detected.", 95, [], pii as unknown as Record<string, unknown>[], "personal_data_agents", "Scanned knowledge graph enrichment.containsPii. No matches.", 0);
-      const list = pii.map((a) => `· ${a.name} (${a.agent_code}) — risk: ${a.risk_level}`).join("\n");
+      const list = pii.map((a) => `· ${a.name} (${a.agent_code}) — legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL})`).join("\n");
       return ans(`${pii.length} agents process personal data (PII).\n${list}`, 90, pii.map((a) => ({ source: "knowledge-graph", record: a.agent_code, detail: "Contains PII" })), pii as unknown as Record<string, unknown>[], "personal_data_agents", `Scanned ${graph.agentCount} agents via knowledge graph. ${pii.length} matched.`, pii.length);
     },
   },
@@ -162,7 +163,7 @@ const HANDLERS: Array<{
       const graph = await getUnifiedGraph(orgId);
       const fin = graph.nodes.filter((n): n is AgentGraphNode => isAgentNode(n) && !!n.enrichment?.containsFinancial);
       if (fin.length === 0) return ans("No agents processing financial data detected.", 95, [], fin as unknown as Record<string, unknown>[], "financial_data_agents", "Scanned knowledge graph enrichment.containsFinancial. No matches.", 0);
-      const list = fin.map((a) => `· ${a.name} (${a.agent_code}) — risk: ${a.risk_level}`).join("\n");
+      const list = fin.map((a) => `· ${a.name} (${a.agent_code}) — legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL})`).join("\n");
       return ans(`${fin.length} agents process financial data.\n${list}`, 90, fin.map((a) => ({ source: "knowledge-graph", record: a.agent_code, detail: "Financial data" })), fin as unknown as Record<string, unknown>[], "financial_data_agents", `Scanned ${graph.agentCount} agents via knowledge graph. ${fin.length} matched.`, fin.length);
     },
   },
@@ -181,7 +182,7 @@ const HANDLERS: Array<{
         return lgpd?.credentialExposure === true || ((d?.lineage as Record<string, unknown>)?.containsCredentials === true);
       });
       if (creds.length === 0) return ans("No credential exposure detected in agent code.", 95, [], creds, "credential_exposure", "Scanned external_refs.discovery.lgpd.credentialExposure and lineage. No matches.", 0);
-      const list = creds.map((a: Record<string, unknown>) => `· ${a.name} (${a.agent_code}) — risk: ${a.risk_level}`).join("\n");
+      const list = creds.map((a: Record<string, unknown>) => `· ${a.name} (${a.agent_code}) — legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL})`).join("\n");
       return ans(`${creds.length} agents have credential exposure risks.\n${list}`, 90, creds.map((a) => ({ source: "agents", record: a.agent_code as string, detail: "Credential exposure" })), creds, "credential_exposure", `Scanned ${all.length} agents for credential exposure. ${creds.length} matched.`, creds.length);
     },
   },
@@ -254,7 +255,7 @@ const HANDLERS: Array<{
       const graph = await getUnifiedGraph(orgId);
       const dora = graph.nodes.filter((n): n is AgentGraphNode => isAgentNode(n) && !!n.enrichment?.doraExposure);
       if (dora.length === 0) return ans("No agents with DORA exposure detected.", 95, [], dora as unknown as Record<string, unknown>[], "dora_exposure", "Scanned knowledge graph enrichment.doraExposure. No matches.", 0);
-      const list = dora.map((a) => `· ${a.name} (${a.agent_code}) — risk: ${a.risk_level}`).join("\n");
+      const list = dora.map((a) => `· ${a.name} (${a.agent_code}) — legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL})`).join("\n");
       return ans(`${dora.length} agents have DORA exposure (Digital Operational Resilience Act).\n${list}`, 90, dora.map((a) => ({ source: "knowledge-graph", record: a.agent_code, detail: "DORA exposure" })), dora as unknown as Record<string, unknown>[], "dora_exposure", `Scanned ${graph.agentCount} agents via knowledge graph. ${dora.length} matched.`, dora.length);
     },
   },
@@ -487,7 +488,7 @@ const HANDLERS: Array<{
         const evidenceItems = graph.edges.filter((e) => e.target === a.agent_id && e.type === "supports").length;
         const findings = graph.edges.filter((e) => e.source.startsWith("finding") && e.target === a.agent_id && e.type === "relates_to").length;
         return `· ${a.name} (${a.agent_code})
-  Risk: ${a.risk_level} | Compliance: ${a.enrichment?.complianceExposure ?? "none"} | Governance: ${a.enrichment?.governancePriority ?? "none"}
+  Legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL}) | Compliance: ${a.enrichment?.complianceExposure ?? "none"} | Governance: ${a.enrichment?.governancePriority ?? "none"}
   Violations: ${violations} controls | Regulations: ${regulations} | Evidence: ${evidenceItems} | Findings: ${findings}`;
       }).join("\n");
       return ans(`${criticalAgents.length} agents with critical compliance exposure.\n${details}`, 90, criticalAgents.map((a) => ({ source: "knowledge-graph", record: a.agent_code, detail: `critical: violations=${graph.edges.filter((e) => e.source === a.agent_id && e.type === "violates").length}` })), criticalAgents as unknown as Record<string, unknown>[], "why_agent_critical", `Traced ${criticalAgents.length} critical agents through graph edges.`, criticalAgents.length);

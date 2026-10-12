@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 import { Spinner } from "@/components/ui/Spinner";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -192,10 +194,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-4">
           <Link href="/agents?risk=critical">
             <StatCard
-              label="High Risk Agents"
+              label="Legacy High-Risk Agent Labels"
               value={data.highRiskAgents}
               color={riskColor(data.highRiskAgents)}
-              subtitle="Critical + High"
+              subtitle={`Critical + High · ${LEGACY_RISK_LABEL}`}
             />
           </Link>
           <div>
@@ -222,10 +224,10 @@ export default function DashboardPage() {
         </h3>
         <div className="grid grid-cols-3 gap-4">
           <StatCard
-            label="High-Risk AI Systems"
+            label="Legacy High-Risk AI System Labels"
             value={data.highRiskSystems}
             color={riskColor(data.highRiskSystems)}
-            subtitle="AI Act Annex III"
+            subtitle={`AI Act Annex III · ${LEGACY_RISK_LABEL}`}
           />
           {isDora ? (
             <div>
@@ -259,8 +261,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-6 mb-6">
         <Card>
           <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
-            Risk Distribution
+            Legacy Risk Label Distribution
           </h3>
+          <p className="text-[10px] uppercase tracking-wide text-gray-500 -mt-3 mb-3">
+            {LEGACY_RISK_LABEL} — not governed risk; absence of a governed risk is UNKNOWN
+          </p>
           <div className="space-y-3">
             {[
               { label: "Critical", value: data.riskDistribution.critical, color: "bg-danger" },
@@ -302,9 +307,7 @@ export default function DashboardPage() {
                     <span className="text-xs text-gray-500 ml-2">{gap.owner_name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={gap.risk_level as "critical" | "high" | "medium" | "low"}>
-                      {gap.risk_level}
-                    </Badge>
+                    <LegacyRiskBadge value={gap.risk_level} />
                     <span className="text-xs text-danger">{gap.total_gaps} gaps</span>
                   </div>
                 </div>

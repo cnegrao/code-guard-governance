@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { before, mock, test } from 'node:test';
 let failStorage = false;
+const tableWrites: string[] = [];
 const events: Array<Record<string, any>> = [];
 let post: typeof import('../app/api/discovery/scan/route').POST;
 before(async () => {
@@ -17,15 +18,15 @@ before(async () => {
   mock.module('../lib/db', { namedExports: { db: { write: {
     rpc: async (name: string, args: Record<string, any>) => { assert.equal(name, 'ledger_append'); events.push(args); return { error: null }; },
     from: (table: string) => {
-      assert.equal(table, 'agents', 'only operational inventory can be written');
-      const q = { insert: (row: Record<string, unknown>) => { assert.equal(row.organisation_id, 'org'); assert.equal(row.status, 'pending_registration'); return q; },
-        select: () => q, throwOnError: () => q, single: async () => { if (failStorage) throw Error('denied'); return { data: { agent_id: 'inventory' } }; } };
-      return q;
+      // M17-S0 / D-12: the scan route writes no table at all (the legacy risk-bearing agents insert is stopped).
+      tableWrites.push(table);
+      if (failStorage) throw Error('denied');
+      throw Error(`unexpected table access: ${table}`);
     },
   } } } });
   post = (await import('../app/api/discovery/scan/route')).POST;
 });
-test('Discovery reports stored inventory honestly, including storage failure, without canonical authority', async () => {
+test('Discovery reports inventory honestly (no legacy risk-bearing write, M17-S0 D-12), without canonical authority', async () => {
   for (failStorage of [false, true]) {
     events.length = 0;
     const response = await post(new Request('http://fixture/api/discovery/scan', { method: 'POST', body: JSON.stringify({ provider: 'github', owner: 'fixture', repo: 'test' }) }));
@@ -33,7 +34,8 @@ test('Discovery reports stored inventory honestly, including storage failure, wi
     const body = await response.json();
     assert.equal(body.authority, 'OPERATIONAL_LEGACY'); assert.equal(body.governedIngestion, 'NOT_ACTIVE');
     assert.equal(body.registered, undefined); assert.equal(body.discovered, 1);
-    assert.equal(body.inventoryStored, failStorage ? 0 : 1); assert.equal(body.inventoryErrors, failStorage ? 1 : 0);
+    assert.equal(body.inventoryStored, 0); assert.equal(body.inventoryErrors, 0); assert.deepEqual(tableWrites, []);
+    assert.equal(body.legacyInventoryWrite, 'STOPPED_M17_S0_D12');
     assert.ok(events.every(e => e.p_payload.authority === 'OPERATIONAL_LEGACY'));
     assert.ok(events.every(e => !/approved|activated|materialized/.test(e.p_event_type)));
   }

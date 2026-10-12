@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { createAgentSchema } from "@/lib/validation";
 import * as agentService from "@/services/agents";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 
 export async function GET(request: Request) {
   try {
@@ -16,7 +17,9 @@ export async function GET(request: Request) {
       limit: Number(searchParams.get("limit")) || 20,
     });
 
-    return NextResponse.json(agents);
+    // agents[].risk_level / ai_act_risk_class and the ?risk= filter are LEGACY labels (M17-S0): never governed risk.
+    return NextResponse.json({ ...agents, legacyRiskAuthority: LEGACY_RISK_LABEL,
+      legacyRiskFields: ["risk_level", "ai_act_risk_class"], legacyRiskFilter: searchParams.get("risk") ?? null });
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(

@@ -1,11 +1,15 @@
 import { db } from "@/lib/db";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 
 export interface SearchResult {
   id: string;
   type: "agent" | "system" | "incident" | "finding";
   title: string;
   subtitle: string;
+  /** agents.risk_level / ai_systems.risk_class are LEGACY labels; incidents carry their own severity. */
   risk_level?: string;
+  /** Present whenever risk_level is a legacy risk label (agent / system results). */
+  risk_level_authority?: typeof LEGACY_RISK_LABEL;
   status?: string;
   url: string | null;
 }
@@ -50,6 +54,7 @@ export async function searchAll(
       title: a.name,
       subtitle: `${a.agent_code} · ${a.status}`,
       risk_level: a.risk_level,
+      risk_level_authority: LEGACY_RISK_LABEL,
       status: a.status,
       url: `/agents/${a.agent_id}`,
     });
@@ -62,6 +67,7 @@ export async function searchAll(
       title: s.name,
       subtitle: `${s.system_code} · ${s.status}`,
       risk_level: s.risk_class,
+      risk_level_authority: LEGACY_RISK_LABEL,
       status: s.status,
       url: `/systems/${s.system_id}`,
     });

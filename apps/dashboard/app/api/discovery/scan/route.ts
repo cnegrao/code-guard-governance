@@ -11,6 +11,15 @@ import { indexRepoIntelligence, indexAgentCode } from "@/services/coding-memory"
 import { db } from "@/lib/db";
 import { traceCrossFileLineage } from "@council/scanner/codeguard/enrichment/cross-file-lineage";
 import type { DiscoveryResult } from "@council/scanner/codeguard/types";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
+
+/** D-12: heuristic risk labels never enter a new discovery ledger payload. */
+function withoutHeuristicRisk(classification: unknown): Record<string, unknown> | undefined {
+  if (!classification || typeof classification !== "object") return undefined;
+  const { riskLevel: _riskLevel, aiActRiskClass: _aiActRiskClass, ...rest } = classification as Record<string, unknown>;
+  void _riskLevel; void _aiActRiskClass;
+  return rest;
+}
 
 async function logToLedger(orgId: string, userId: string, event: string, payload: Record<string, unknown>) {
   try {
@@ -133,97 +142,18 @@ export async function POST(request: Request) {
       systemsDiscovered: systems,
     };
 
-    let inventoryStored = 0;
-    let inventoryErrors = 0;
+    // M17-S0 / D-12 (ADR-GOVIA-RISK-INTELLIGENCE-v1 §23.1): the legacy risk-bearing gov_repo.agents insert is STOPPED.
+    // gov_repo.agents.risk_level / ai_act_risk_class are NOT NULL with defaults, so omitting them would still fabricate a
+    // legacy risk value; no scanner/discovery row is created at all and no placeholder is written. Existing rows, values
+    // and ledger history are untouched. Scanner -> M17 integration happens only through RISK_SIGNAL adapters (S1).
     for (const agent of enrichedAgents) {
-      try {
-        const enrichment = agent.enrichment;
-        const externalRefsDiscovery: Record<string, unknown> = {
-          provider,
-          repository: result.repository,
-          filePath: agent.filePath,
-          framework: agent.framework,
-          confidence: agent.confidence,
-          evidence: agent.evidence.slice(0, 5),
-          scannedAt: result.scannedAt,
-        };
-
-        if (enrichment) {
-          externalRefsDiscovery.lineage = enrichment.lineage;
-          externalRefsDiscovery.finops = enrichment.finops;
-          externalRefsDiscovery.lgpd = enrichment.lgpd;
-          externalRefsDiscovery.fapi = enrichment.fapi;
-          externalRefsDiscovery.trust_zone = enrichment.trustZone;
-          externalRefsDiscovery.code_map = enrichment.codeMap;
-          externalRefsDiscovery.governance_priority = enrichment.governancePriority;
-          externalRefsDiscovery.compliance_exposure = enrichment.complianceExposure;
-          externalRefsDiscovery.ai_act_exposure = enrichment.aiActExposure;
-          externalRefsDiscovery.annex_iii_category = enrichment.annexIiiCategory;
-          externalRefsDiscovery.dora_exposure = enrichment.doraExposure;
-          externalRefsDiscovery.findings = enrichment.lgpd.findings.map((f) => ({
-            category: f.category,
-            severity: f.severity,
-            rule: f.rule,
-            match: f.match,
-            line: f.line,
-            filePath: f.filePath,
-            message: f.message,
-          }));
-          externalRefsDiscovery.regulatory = {
-            financial_services: enrichment.fapi.financialServices,
-            open_banking: enrichment.fapi.openBanking,
-            fapi: enrichment.fapi.fapiCompliant,
-            dora_exposure: enrichment.fapi.doraExposure,
-          };
-          externalRefsDiscovery.summary = enrichment.summary;
-        }
-
-        externalRefsDiscovery.repo_intelligence = {
-          businessDomains: repoIntel.domains.map((d) => d.name),
-          trustZone: repoIntel.trustZone,
-          services: repoIntel.services.map((s) => s.name),
-          frameworks: repoIntel.frameworks,
-          businessCapabilities: repoIntel.businessCapabilities,
-        };
-        externalRefsDiscovery.cross_file_lineage = {
-          totalFlows: crossFileLineage.totalFlows,
-          sourceCount: crossFileLineage.sourceCount,
-          sinkCount: crossFileLineage.sinkCount,
-          riskLevel: crossFileLineage.riskLevel,
-          summary: crossFileLineage.summary,
-        };
-
-        await db.write.from("agents").insert({
-          agent_code: `DISC-${agent.name.slice(0, 20)}-${Math.random().toString(36).slice(2, 6)}`.replace(/[^A-Z0-9_-]/g, "_").toUpperCase().slice(0, 30),
-          name: agent.name,
-          description: `Discovered ${agent.framework} agent from ${result.repository}`,
-          agent_type: agent.agentType,
-          risk_level: enrichment?.complianceExposure === "critical" ? "critical"
-            : enrichment?.complianceExposure === "high" ? "high"
-            : agent.suggestedRiskLevel,
-          oversight_level: agent.suggestedOversightLevel,
-          ai_act_risk_class: agent.classification?.aiActRiskClass ?? "limited",
-          owner_user_id: userId,
-          deployment_env: enrichment?.trustZone.trustZone ?? "development",
-          business_domain: agent.classification?.businessDomain ?? "General",
-          status: "pending_registration",
-          organisation_id: orgId,
-          created_by: userId,
-          external_refs: {
-            discovery: externalRefsDiscovery,
-          },
-        }).select("agent_id").throwOnError().single();
-        inventoryStored++;
-
-        await logToLedger(orgId, userId, "inventory.discovery.agent.detected", {
-          repository: repositoryName,
-          agent_name: agent.name,
-          framework: agent.framework,
-          agent_type: agent.agentType,
-          risk_level: agent.suggestedRiskLevel,
-          classification: agent.classification,
-        });
-      } catch { inventoryErrors++; }
+      await logToLedger(orgId, userId, "inventory.discovery.agent.detected", {
+        repository: repositoryName,
+        agent_name: agent.name,
+        framework: agent.framework,
+        agent_type: agent.agentType,
+        classification: withoutHeuristicRisk(agent.classification),
+      });
     }
 
     await logToLedger(orgId, userId, "inventory.discovery.scan.completed", {
@@ -241,8 +171,10 @@ export async function POST(request: Request) {
       authority: "OPERATIONAL_LEGACY",
       governedIngestion: "NOT_ACTIVE",
       discovered: enrichedAgents.length,
-      inventoryStored,
-      inventoryErrors,
+      inventoryStored: 0,
+      inventoryErrors: 0,
+      legacyInventoryWrite: "STOPPED_M17_S0_D12",
+      heuristicRiskAuthority: LEGACY_RISK_LABEL,
       repoIntelligence: {
         domains: repoIntel.domains,
         services: repoIntel.services,
@@ -256,7 +188,7 @@ export async function POST(request: Request) {
       knowledgeGraph,
       crossFileLineage,
       memoryIndexed: memoryChunksIndexed + codeChunksIndexed,
-      message: `${enrichedAgents.length} agents discovered; ${inventoryStored} inventory rows stored, ${inventoryErrors} storage errors; ${repoIntel.domains.length} domains identified, ${crossFileLineage.totalFlows} data flows traced, ${memoryChunksIndexed + codeChunksIndexed} memory chunks indexed.`,
+      message: `${enrichedAgents.length} agents discovered; no legacy inventory rows written (legacy risk-bearing inventory writes are stopped); ${repoIntel.domains.length} domains identified, ${crossFileLineage.totalFlows} data flows traced, ${memoryChunksIndexed + codeChunksIndexed} memory chunks indexed.`,
     });
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
