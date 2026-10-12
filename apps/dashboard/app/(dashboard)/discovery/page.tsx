@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -83,7 +84,7 @@ export default function DiscoveryPage() {
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-bold text-white">Repository Discovery</h2>
-        <p className="text-sm text-gray-400 mt-1">Source intelligence writes operational inventory only. Automated governed ingestion is NOT ACTIVE; canonical decisions remain in human Governance Review.</p>
+        <p className="text-sm text-gray-400 mt-1">Source intelligence writes no risk-bearing inventory (legacy scanner risk writes are stopped). Automated governed ingestion is NOT ACTIVE; canonical decisions remain in human Governance Review. Risk labels shown below are LEGACY / NON-AUTHORITATIVE.</p>
       </div>
 
       <Card className="mb-6">
@@ -140,7 +141,7 @@ export default function DiscoveryPage() {
                     {a.external_refs?.discovery?.framework ?? a.agent_type} · {a.external_refs?.discovery?.repository} · {a.external_refs?.discovery?.filePath}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={a.risk_level as "critical"|"high"|"medium"|"low"}>{a.risk_level}</Badge>
+                    <LegacyRiskBadge value={a.risk_level} />
                     <Badge variant="registered">{a.agent_type}</Badge>
                     {a.business_domain && <Badge variant="registered">{a.business_domain}</Badge>}
                   </div>

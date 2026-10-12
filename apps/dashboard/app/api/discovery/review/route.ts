@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 
 export async function GET() {
   try {
@@ -28,6 +29,7 @@ export async function GET() {
     return NextResponse.json({
       authority: "OPERATIONAL_LEGACY",
       governedIngestion: "NOT_ACTIVE",
+      legacyRiskAuthority: LEGACY_RISK_LABEL,
       pending: discovered,
       pendingCount: discovered.length,
       inventory: (approved as Array<Record<string, unknown>>) ?? [],

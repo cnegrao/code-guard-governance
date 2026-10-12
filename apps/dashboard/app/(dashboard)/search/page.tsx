@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
 import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import Link from "next/link";
@@ -101,9 +102,7 @@ export default function SearchPage() {
                   <div className="flex items-center gap-2">
                     <Badge variant="registered">{r.type}</Badge>
                     {r.risk_level && (
-                      <Badge variant={r.risk_level as "critical" | "high" | "medium" | "low"}>
-                        {r.risk_level}
-                      </Badge>
+                      <LegacyRiskBadge value={r.risk_level} />
                     )}
                   </div>
                 </div>

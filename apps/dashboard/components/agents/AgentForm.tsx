@@ -159,13 +159,13 @@ export function AgentForm() {
             onChange={(e) => set("agent_type", e.target.value)}
           />
           <Select
-            label="Risk Level"
+            label="Legacy risk label (LEGACY / NON-AUTHORITATIVE)"
             options={RISK_LEVELS}
             value={form.risk_level}
             onChange={(e) => set("risk_level", e.target.value)}
           />
           <Select
-            label="AI Act Risk Class"
+            label="Legacy AI Act risk class (LEGACY / NON-AUTHORITATIVE)"
             options={AI_ACT_CLASSES}
             value={form.ai_act_risk_class}
             onChange={(e) => set("ai_act_risk_class", e.target.value)}

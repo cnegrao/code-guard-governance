@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import type { ReportData } from "@/repositories/reports";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 
 export function generateExecutiveReport(data: ReportData): Uint8Array {
   const doc = new PDFDocument({ margin: 50, size: "A4" });
@@ -55,7 +56,7 @@ export function generateExecutiveReport(data: ReportData): Uint8Array {
   row("Compliance Rate", `${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}`);
   y += 6;
 
-  heading("Risk Distribution", 12);
+  heading(`Legacy Risk Label Distribution (${LEGACY_RISK_LABEL})`, 12);
   const maxRisk = Math.max(data.agents.byRisk.critical, data.agents.byRisk.high, data.agents.byRisk.medium, data.agents.byRisk.low, 1);
   const risks: Array<{ label: string; value: number; color: string }> = [
     { label: "Critical", value: data.agents.byRisk.critical, color: "#ef4444" },
@@ -82,7 +83,7 @@ export function generateExecutiveReport(data: ReportData): Uint8Array {
     y += 4;
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#ffffff").text("Top Compliance Gaps", left, y);
     y += 16;
-    tableRow(["Agent", "Gaps", "Risk"], [250, 80, 80], true);
+    tableRow(["Agent", "Gaps", "Legacy risk label"], [250, 80, 80], true);
     for (const g of data.compliance.topGaps) {
       tableRow([g.agent, String(g.gaps), g.risk], [250, 80, 80]);
     }
@@ -109,7 +110,7 @@ export function generateExecutiveReport(data: ReportData): Uint8Array {
 
   // ─── AI ACT ───
   heading("4. AI Act Exposure");
-  row("High-Risk Systems", String(data.aiAct.highRiskSystems));
+  row(`Legacy high-risk system labels (${LEGACY_RISK_LABEL})`, String(data.aiAct.highRiskSystems));
   row("Agents Without System", String(data.aiAct.agentsWithoutSystem));
 
   if (data.systems.byLifecycle.length > 0) {
@@ -166,7 +167,7 @@ export function generateAIActReport(data: ReportData): Uint8Array {
 
   heading("1. AI Systems Inventory");
   row("Total Systems", String(data.systems.total));
-  row("High-Risk Systems", String(data.aiAct.highRiskSystems));
+  row(`Legacy high-risk system labels (${LEGACY_RISK_LABEL})`, String(data.aiAct.highRiskSystems));
   row("Agents Without AI System", String(data.aiAct.agentsWithoutSystem));
   y += 8;
 
@@ -181,7 +182,7 @@ export function generateAIActReport(data: ReportData): Uint8Array {
   row("Governance Gaps", String(data.compliance.totalGaps));
   y += 8;
 
-  heading("4. Risk Classification");
+  heading(`4. Legacy Risk Labels (${LEGACY_RISK_LABEL})`);
   row("Critical", String(data.agents.byRisk.critical));
   row("High", String(data.agents.byRisk.high));
   row("Medium", String(data.agents.byRisk.medium));
@@ -190,8 +191,8 @@ export function generateAIActReport(data: ReportData): Uint8Array {
 
   heading("5. Recommendations");
   const recs: string[] = [];
-  if (data.aiAct.highRiskSystems > 0) recs.push(`${data.aiAct.highRiskSystems} high-risk systems require conformity assessment (Art. 43).`);
-  if (data.agents.byRisk.high > 3) recs.push(`${data.agents.byRisk.high} agents classified as high risk. Review risk classification.`);
+  if (data.aiAct.highRiskSystems > 0) recs.push(`${data.aiAct.highRiskSystems} systems carry a legacy high-risk label (${LEGACY_RISK_LABEL}); confirm the AI Act classification before any conformity assessment (Art. 43).`);
+  if (data.agents.byRisk.high > 3) recs.push(`${data.agents.byRisk.high} agents carry a legacy "high" risk label (${LEGACY_RISK_LABEL}); this is not governed risk.`);
   if (data.aiAct.agentsWithoutSystem > 0) recs.push(`${data.aiAct.agentsWithoutSystem} agents not linked to an AI System. Link them per AI Act Art. 3.1.`);
   if (data.compliance.rate !== null && data.compliance.rate < 85) recs.push(`Compliance rate is ${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}. Address outstanding governance gaps.`);
   if (recs.length === 0) recs.push("No critical AI Act compliance issues detected. Continue monitoring.");
@@ -237,12 +238,12 @@ export function generateDORAReport(data: ReportData): Uint8Array {
   heading("2. AI Agent Governance (DORA Art. 8)");
   row("Total Agents", String(data.agents.total));
   row("Compliance Rate", `${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}`);
-  row("High-Risk Agents", String(data.agents.byRisk.high + data.agents.byRisk.critical));
+  row(`Legacy high-risk agent labels (${LEGACY_RISK_LABEL})`, String(data.agents.byRisk.high + data.agents.byRisk.critical));
   y += 8;
 
   heading("3. ICT Third-Party Risk");
   row("AI Systems", String(data.systems.total));
-  row("High-Risk Systems", String(data.aiAct.highRiskSystems));
+  row(`Legacy high-risk system labels (${LEGACY_RISK_LABEL})`, String(data.aiAct.highRiskSystems));
   y += 8;
 
   heading("4. Recent Incidents");

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 import { getUnifiedGraph, isAgentNode, type DiscoveryGraphNode } from "@/services/knowledge-graph";
 
 export interface DashboardSummary {
@@ -16,6 +17,11 @@ export interface DashboardSummary {
   totalGovernanceGaps: number;
   auditEventsLast30Days: number;
   riskDistribution: { critical: number; high: number; medium: number; low: number };
+  /**
+   * highRiskAgents / highRiskSystems / riskDistribution / topGaps[].risk_level aggregate LEGACY risk labels
+   * (agents.risk_level, ai_systems.risk_class): never governed risk, never an L15 input (M17-S0).
+   */
+  legacyRiskAuthority: typeof LEGACY_RISK_LABEL;
   recentIncidents: Array<{
     incident_code: string;
     title: string;
@@ -119,6 +125,7 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
     totalGovernanceGaps,
     auditEventsLast30Days,
     riskDistribution,
+    legacyRiskAuthority: LEGACY_RISK_LABEL,
     recentIncidents,
     topGaps,
     governanceQuestions,

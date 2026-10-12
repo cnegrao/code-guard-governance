@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { CompliancePanel } from "@/components/agents/CompliancePanel";
@@ -87,16 +88,16 @@ export default function AgentDetailPage() {
                 <dd className="text-white mt-0.5">{agent.agent_type}</dd>
               </div>
               <div>
-                <dt className="text-gray-500">Risk Level</dt>
+                <dt className="text-gray-500">Legacy risk label</dt>
                 <dd className="text-white mt-0.5">
-                  <Badge variant={agent.risk_level as "critical" | "high" | "medium" | "low"}>
-                    {agent.risk_level}
-                  </Badge>
+                  <LegacyRiskBadge value={agent.risk_level} />
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">AI Act Risk Class</dt>
-                <dd className="text-white mt-0.5">{agent.ai_act_risk_class}</dd>
+                <dt className="text-gray-500">Legacy AI Act risk class</dt>
+                <dd className="text-white mt-0.5">
+                  <LegacyRiskBadge value={agent.ai_act_risk_class} />
+                </dd>
               </div>
               <div>
                 <dt className="text-gray-500">Oversight Level</dt>

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
+import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAgents } from "@/hooks/useAgents";
@@ -58,7 +60,7 @@ export function AgentTable() {
               <th className="py-2 px-3 font-medium">Code</th>
               <th className="py-2 px-3 font-medium">Name</th>
               <th className="py-2 px-3 font-medium">Type</th>
-              <th className="py-2 px-3 font-medium">Risk</th>
+              <th className="py-2 px-3 font-medium">Legacy risk label <span className="text-[10px] text-gray-500">({LEGACY_RISK_LABEL})</span></th>
               <th className="py-2 px-3 font-medium">Status</th>
               <th className="py-2 px-3 font-medium">Compliance</th>
               <th className="py-2 px-3 font-medium"></th>
@@ -87,9 +89,7 @@ export function AgentTable() {
                       <Badge variant="registered">{agent.agent_type}</Badge>
                     </td>
                     <td className="py-2 px-3">
-                      <Badge variant={agent.risk_level as "critical" | "high" | "medium" | "low"}>
-                        {agent.risk_level}
-                      </Badge>
+                      <LegacyRiskBadge value={agent.risk_level} />
                     </td>
                     <td className="py-2 px-3">
                       <Badge
