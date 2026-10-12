@@ -63,9 +63,9 @@ test("closed vocabularies: the fourth fact family; the S1C.3 target union over a
   assert.ok((L14_PROPOSAL_SUBJECT_KINDS as readonly string[]).includes("CONTROL_APPLICABILITY"));
   assert.ok(!(L14_REGISTRY_SUBJECT_KINDS as readonly string[]).includes("CONTROL_APPLICABILITY"), "a fact family, not a registry subject");
   assert.deepEqual([...L14_EXECUTABLE_FACT_SUBJECT_KINDS],
-    ["RESPONSIBILITY_ASSIGNMENT", "BUSINESS_CONTEXT_ASSIGNMENT", "POLICY_APPLICABILITY", "CONTROL_APPLICABILITY"],
-    "exactly four implemented families (S1C.4 adds CONTROL_APPLICABILITY); CONTROL_ASSESSMENT stays unimplemented");
-  assert.ok(!(L14_EXECUTABLE_FACT_SUBJECT_KINDS as readonly string[]).includes("CONTROL_ASSESSMENT"));
+    ["RESPONSIBILITY_ASSIGNMENT", "BUSINESS_CONTEXT_ASSIGNMENT", "POLICY_APPLICABILITY", "CONTROL_APPLICABILITY", "CONTROL_ASSESSMENT"],
+    "exactly the five families (S1C.4 adds CONTROL_APPLICABILITY, S1C.5 CONTROL_ASSESSMENT); no sixth family");
+  assert.ok(!(L14_EXECUTABLE_FACT_SUBJECT_KINDS as readonly string[]).includes("CONTROL_FINDING"));
   assert.deepEqual([...L14_CONTROL_APPLICABILITY_TARGET_TYPES], [...L14_POLICY_APPLICABILITY_TARGET_TYPES], "the same closed target union as S1C.3");
   assert.equal(L14_FACT_STATE_SUPPORT_OWNER_KIND, "FACT_STATE");
   assert.deepEqual([...L14_CONTROL_APPLICABILITY_TARGET_TYPES], ["CANONICAL_OBJECT", "RELATIONSHIP_STATE"]);

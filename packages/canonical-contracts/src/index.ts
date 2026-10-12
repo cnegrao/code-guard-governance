@@ -22,3 +22,4 @@ export * from "./l14-responsibility-assignment.ts";
 export * from "./l14-business-context-assignment.ts";
 export * from "./l14-policy-applicability.ts";
 export * from "./l14-control-applicability.ts";
+export * from "./l14-control-assessment.ts";
