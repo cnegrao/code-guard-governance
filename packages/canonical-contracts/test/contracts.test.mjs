@@ -5246,3 +5246,21 @@ it("canonical endpoint acceptance never permits canonical references in discover
     }
   }
 });
+
+describe("M16 read-projection closure contracts (O32 / O41)", () => {
+  it("conflict read outcomes are exactly RESOLVED / CONFLICT / INSUFFICIENT_EVIDENCE and never extend trust or applicability", () => {
+    assert.deepEqual([...contracts.L14_CONFLICT_READ_OUTCOMES], ["RESOLVED", "CONFLICT", "INSUFFICIENT_EVIDENCE"]);
+    for (const outcome of contracts.L14_CONFLICT_READ_OUTCOMES) {
+      assert.ok(!Object.values(contracts.TRUST_STATE).includes(outcome), `${outcome} is not a trust state`);
+      assert.ok(!contracts.L14_POLICY_APPLICABILITY_OUTCOMES.includes(outcome), `${outcome} is not a policy applicability value`);
+      assert.ok(!contracts.L14_CONTROL_APPLICABILITY_OUTCOMES.includes(outcome), `${outcome} is not a control applicability value`);
+    }
+    assert.deepEqual(Object.values(contracts.TRUST_STATE).sort(), ["DECLARED", "IMPORTED", "INFERRED", "OBSERVED", "VALIDATED"]);
+    assert.deepEqual([...contracts.L14_POLICY_APPLICABILITY_OUTCOMES], ["APPLIES", "DOES_NOT_APPLY"]);
+  });
+  it("Passport projection targets are exactly the AGENT and the selected AGENT_VERSION; still exactly five fact families", () => {
+    assert.deepEqual([...contracts.L14_PASSPORT_TARGET_KINDS], ["AGENT", "AGENT_VERSION"]);
+    assert.deepEqual([...contracts.L14_EXECUTABLE_FACT_SUBJECT_KINDS],
+      ["RESPONSIBILITY_ASSIGNMENT", "BUSINESS_CONTEXT_ASSIGNMENT", "POLICY_APPLICABILITY", "CONTROL_APPLICABILITY", "CONTROL_ASSESSMENT"]);
+  });
+});

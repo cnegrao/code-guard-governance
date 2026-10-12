@@ -16,6 +16,15 @@ function Provenance({ context }: { context: PassportProvenance }) {
       {context.profileOriginProposalId && <div>Profile origin proposal: {context.profileOriginProposalId}. Per-field support is listed below.</div>}
       {context.snapshotId && <div>Accepted source snapshot: {context.snapshotId} · observed {context.observedAt ?? 'UNKNOWN'}</div>}
       {context.policy && <div>Policy: {context.policy.policyId} · accepted version {context.policy.acceptedVersion} · active version {context.policy.activeVersion ?? 'UNKNOWN'}</div>}
+      {context.l14 && <>
+        <div>M16 fact state: {context.l14.factStateId} · predecessor {context.l14.predecessorStateId ?? 'none (first state)'} · trust {context.l14.trustState} · source {context.l14.sourceClass}</div>
+        <div>Proposal: {context.l14.proposalId} · submitted {context.l14.proposalSubmittedAt}</div>
+        <div>Governance decision: {context.l14.decisionOutcome} · {context.l14.decisionReasonCode}</div>
+        <div>Authorization decision: {context.l14.authorizationDecisionId} · {context.l14.authorizationResult} · evaluated {context.l14.authorizationEvaluatedAt}</div>
+        <div>Authority Policy: {context.l14.authorityPolicy.authorityPolicyId} · version {context.l14.authorityPolicy.versionId}</div>
+        <div>Support: {context.l14.supportStatus} · state evidence {context.l14.factSupportEvidenceIds.length} · decision evidence {context.l14.decisionSupportEvidenceIds.length} · proposal evidence {context.l14.proposalSupportEvidenceIds.length}</div>
+        <div>Read at effective {context.l14.readEffectiveAt} · recorded cutoff {context.l14.readRecordedCutoff}</div>
+      </>}
       {context.policy && context.policy.acceptedVersion !== context.policy.activeVersion && <p>Historical acceptance policy. Current authority is not established by that earlier decision; the accepted fact remains governed until a new decision changes it.</p>}
     </dl>
     {context.sources.length === 0 && <p className="mt-2">Source assertion / trust: UNKNOWN</p>}
@@ -43,6 +52,25 @@ function Fact({ fact }: { fact: PassportFact }) {
       <p className="text-xs text-gray-400">AgentVersion: {fact.versionId} · authorization: UNKNOWN.</p>
       <p className="text-xs text-gray-400">Governed source declaration from snapshot {fact.sourceSnapshotId}. Runtime identity and reachability remain UNKNOWN.</p>
     </>; break;
+    case 'governed-l14': {
+      const v = fact.value;
+      content = <>
+        <p>{v.family === 'RESPONSIBILITY_ASSIGNMENT' ? `${v.responsibilityRole}: GovernanceParty ${v.governancePartyId}` :
+          v.family === 'BUSINESS_CONTEXT_ASSIGNMENT' ? `${v.semanticKind}: ${v.domainId}` :
+          v.family === 'POLICY_APPLICABILITY' ? `Policy ${v.policyId}: ${v.applicability}` :
+          v.family === 'CONTROL_APPLICABILITY' ? `Control ${v.controlDefinitionId}: ${v.applicability}` :
+          `Control ${v.controlDefinitionId} assessment: ${v.assessmentOutcome}`}</p>
+        <p className="text-xs text-gray-400">{fact.targetKind}: {fact.targetId} · {v.family}{fact.targetKind === 'AGENT_VERSION' ? ' · exact AgentVersion fact (never inherited)' : ''}</p>
+        <p className="text-xs text-gray-400">Pinned dependency: {v.family === 'RESPONSIBILITY_ASSIGNMENT' ? `GovernanceParty state ${v.partyValidatedStateId}` :
+          v.family === 'BUSINESS_CONTEXT_ASSIGNMENT' ? `domain state ${v.domainValidatedStateId}` :
+          v.family === 'POLICY_APPLICABILITY' ? `policy version ${v.policyVersionId} · state ${v.policyVersionValidatedStateId}` :
+          v.family === 'CONTROL_APPLICABILITY' ? `control version ${v.controlDefinitionVersionId} · state ${v.controlDefinitionValidatedStateId}` :
+          `applicability state ${v.controlApplicabilityStateId} · control version ${v.controlDefinitionVersionId}`}</p>
+        {v.family === 'POLICY_APPLICABILITY' || v.family === 'CONTROL_APPLICABILITY' ? v.applicability === 'DOES_NOT_APPLY' &&
+          <p className="text-xs text-gray-400">Explicit governed negative applicability; not coverage and not UNKNOWN.</p> : null}
+      </>;
+      break;
+    }
     case 'identity': content = <><p>{fact.objectKind}: {fact.objectId}</p><p className="text-xs text-gray-400">Organisation: {fact.organisationId}</p></>; break;
     case 'mapping': content = <><p>{fact.externalType}: {fact.externalId}</p><p className="text-xs text-gray-400">Canonical object: {fact.objectId} · source connection: {fact.connectionId}</p></>; break;
     case 'profile': content = <><p>{fact.field}: {fact.value}</p><p className="text-xs text-gray-400">AgentVersion: {fact.versionId}</p></>; break;
