@@ -205,7 +205,7 @@ Local development runs (Node 24.21.0; development evidence only — the final ex
 |---|---|
 | Targeted O32 / O41 PG17 (`l14-read-projection.test.ts`) | 12 / 12 pass |
 | Targeted ACL PG17 (`l14-read-projection-acl.test.ts`) | 4 / 4 pass (35 negative controls) |
-| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, 77 files) | running at commit time; result recorded in a follow-up commit |
+| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, 77 files) | 1181 / 1181 pass, 0 fail (77 files, ~474 s) |
 | M15 PostgreSQL regression (PG16) | 8 / 8 pass |
 | Dashboard (`npm test`) | 1234 pass / 0 fail (+ passport-ui 17 / 17, pre-demo-ui 8 / 8) |
 | canonical-contracts | 232 / 232 pass |
