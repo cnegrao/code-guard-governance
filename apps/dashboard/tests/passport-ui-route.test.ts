@@ -67,7 +67,17 @@ test('M13 Passport renders governed declaration with explicit unknown runtime an
 test('page uses cryptographically verified cookie tenant, ignoring client organisation and spoofed headers',async()=>{
   const search = {version:'version:1',organisationId:'attacker-tenant',org:'attacker-tenant'};
   await Page({params:Promise.resolve({canonicalObjectId:'canonical:agent'}),searchParams:Promise.resolve(search)});
-  assert.deepEqual(received,[org,'canonical:agent','version:1']);
+  const [principal,...rest]=received as [Record<string,unknown>,...unknown[]];
+  assert.deepEqual(rest,['canonical:agent','version:1']);
+  assert.deepEqual(Object.keys(principal).sort(),['actorUserId','credentialEpoch','expiresAtSeconds','issuedAtSeconds','organisationId']);
+  assert.equal(principal.organisationId,org); assert.equal(principal.actorUserId,'user:1');
+  assert.equal(principal.credentialEpoch,'2026-09-25T00:00:00.000001+00:00');
+  assert.ok(Number.isInteger(principal.issuedAtSeconds)&&Number.isInteger(principal.expiresAtSeconds));
+});
+test('governed projection principal fails closed exactly like the tenant read',async()=>{
+  cookie=undefined; await assert.rejects(session.passportPrincipal(),/NOT_FOUND/);
+  cookie=await new SignJWT({sub:'attacker',org:'foreign'}).setProtectedHeader({alg:'HS256'}).sign(new TextEncoder().encode('attacker-key'));
+  await assert.rejects(session.passportPrincipal(),/NOT_FOUND/);
 });
 test('unknown root returned by canonical query is 404',async()=>{
   available=false; await assert.rejects(Page({params:Promise.resolve({canonicalObjectId:'unknown'}),searchParams:Promise.resolve({})}),/NOT_FOUND/);
@@ -101,6 +111,12 @@ test('new presentation and query dependency boundary contains no write RPC, Grap
     const source=readFileSync(file,'utf8'); assert.ok(!/\.(rpc|insert|update|upsert|delete)\s*\(/.test(source),file);
     assert.ok(!/from ['"][^'"]*(?:graphos|embedding|openai|workspace-commands|decision-commands|multivendor-exchange)/.test(source),file);
   }
+  // The M16 governed read module calls exactly the two read-only projections and nothing else.
+  const governed=readFileSync('lib/governance/passport-governance-read.ts','utf8');
+  assert.ok(!/\.(insert|update|upsert|delete|from)\s*\(/.test(governed));
+  assert.deepEqual([...governed.matchAll(/const (?:PASSPORT|CONFLICT)_RPC = '([a-z0-9_]+)'/g)].map(m=>m[1]),['l14_read_passport_governance_v1','l14_read_fact_conflict_v1']);
+  assert.equal((governed.match(/\.rpc\(/g)??[]).length,1);
+  assert.ok(!/from ['"][^'"]*(?:graphos|embedding|openai|workspace-commands|decision-commands|multivendor-exchange|l14-[a-z-]+-persistence)/.test(governed));
 });
 
 test('canonical list requests only session-local AGENT objects and links to canonical detail',async()=>{
@@ -139,4 +155,23 @@ test('configured development fallback and expired sessions fail closed',async()=
   process.env.JWT_SECRET=secret;
   cookie=await new SignJWT({sub:'user',org}).setProtectedHeader({alg:'HS256'}).setExpirationTime(1).sign(new TextEncoder().encode(secret));
   await assert.rejects(session.passportOrganisation(),/NOT_FOUND/);
+});
+
+test('M16 governed facts render with exact lineage; DOES_NOT_APPLY is shown as an explicit governed negative, never coverage',()=>{
+  const l14={factStateId:'fact:dna',predecessorStateId:null,effectiveFrom:'2026-10-01T00:00:00Z',effectiveTo:null,recordedAt:'2026-10-01T00:00:00Z',
+    trustState:'VALIDATED',sourceClass:'LOCAL_HUMAN',supportStatus:'NONE',proposalId:'proposal:dna',proposalSubmittedAt:'2026-09-30T00:00:00Z',
+    governanceDecisionId:'gdecision:dna',decisionOutcome:'VALIDATE',decisionReasonCode:'POLICY_APPLICABILITY_VALIDATED',decidedAt:'2026-10-01T00:00:00Z',
+    authorizationDecisionId:'authz:dna',authorizationResult:'ALLOW',authorizationEvaluatedAt:'2026-10-01T00:00:00Z',
+    authorityPolicy:{authorityPolicyId:'ap',versionId:'ap:v1',contentHash:'d'.repeat(64)},factSupportEvidenceIds:[],decisionSupportEvidenceIds:[],
+    proposalSupportEvidenceIds:[],readEffectiveAt:'2026-10-12T00:00:00Z',readRecordedCutoff:'2026-10-12T00:00:00Z'} as const;
+  const fact={type:'governed-l14',id:'POLICY_APPLICABILITY:fact:dna',targetKind:'AGENT',targetId:'canonical:agent',
+    value:{family:'POLICY_APPLICABILITY',policyId:'policy:dna',policyVersionId:'pv:1',contentHash:'a'.repeat(64),policyVersionValidatedStateId:'pv-state:1',applicability:'DOES_NOT_APPLY'},
+    provenance:{storage:'l14_fact_states',authority:'GOVERNED_L14_FACT',sources:[],evidence:[],decisionId:'gdecision:dna',decidedAt:l14.decidedAt,
+      recordedAt:l14.recordedAt,validFrom:l14.effectiveFrom,l14}} as const;
+  const view:AgentPassport360={...passport,families:passport.families.map(f=>f.id==='controls'?{...f,status:'PARTIAL' as const,facts:[fact]}:f)};
+  const html=renderToStaticMarkup(createElement(Component,{passport:view}));
+  for(const text of ['Policy policy:dna: DOES_NOT_APPLY','Explicit governed negative applicability; not coverage and not UNKNOWN','GOVERNED_L14_FACT',
+    'proposal:dna','gdecision:dna','authz:dna','POLICY_APPLICABILITY_VALIDATED','pv-state:1','none (first state)']) assert.ok(html.includes(text),text);
+  assert.ok(!/score|coverage %|percent/i.test(html.replace('not coverage and not UNKNOWN','')));
+  assert.equal((html.match(/<section /g)??[]).length,16);
 });

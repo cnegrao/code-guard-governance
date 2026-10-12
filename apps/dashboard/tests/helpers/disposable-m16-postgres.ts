@@ -86,6 +86,10 @@ export const l14ControlApplicabilityMigration = '20261009220000_m16_s1c4_control
 // M16-S1C.5 chain step: CONTROL_ASSESSMENT (the fifth and final authoritative M16 fact family) on top of S1C.4. Applied only by
 // the S1C5 L14 horizon; the S1C4 horizon (and every older one) keeps its exact chain and its exact historical postflight expectations.
 export const l14ControlAssessmentMigration = '20261010120000_m16_s1c5_control_assessment_v1.sql';
+// M16 read-projection closure (O32 / O41) on top of S1C.5: the read-only Passport governed projection and the conflict read
+// projection. Applied only by the M16RP L14 horizon; the S1C5 horizon (and every older one) keeps its exact chain and its exact
+// historical postflight expectations.
+export const l14ReadProjectionMigration = '20261012120000_m16_read_projection_closure_v1.sql';
 // The only statement of the full chain that needs a real pgvector index access method.
 export const hnswIndexMigration = '20260818004053_agent_registry_graph_part_3.sql';
 const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url));
@@ -161,7 +165,7 @@ export function m16PrerequisiteChain(policyStore = false): readonly string[] {
   return chain;
 }
 export function migrationSource(name: string) {
-  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration, ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration, l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration, l14ControlApplicabilityMigration, l14ControlAssessmentMigration].includes(name)
+  assert.ok([...m16Prerequisites, ...policyStorePrerequisites, ...governanceWriteChain, credentialMigration, eligibilityMigration, epochBindingMigration, objectMaterializationCompatMigration, governedWriteWrapperMigration, contractRawRpcRevocationMigration, l14AuthorityPolicyMigration, l14AuthorityPolicySuccessorMigration, l14NoResurrectionMigration, l14RegistryFrameworkMigration, l14GovernancePartyMigration, l14GovernancePartyPendingCancelMigration, l14PolicyStoreHardeningMigration, definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration, ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration, l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration, l14ControlApplicabilityMigration, l14ControlAssessmentMigration, l14ReadProjectionMigration].includes(name)
     || fullPrimaryChainMigrations().includes(name));
   return readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 }
