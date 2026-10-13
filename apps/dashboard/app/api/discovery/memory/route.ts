@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
-import { semanticSearch, codingMemoryRepo } from "@/services/coding-memory";
+import { semanticSearch, getRepositoryMemory } from "@/services/coding-memory";
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const action = searchParams.get("action") ?? "search";
 
     if (action === "repo" && repositoryId) {
-      const chunks = await codingMemoryRepo.getRepositoryMemory(orgId, repositoryId);
+      const chunks = await getRepositoryMemory(orgId, repositoryId);
       return NextResponse.json({ chunks, total: chunks.length });
     }
 

@@ -56,7 +56,9 @@ test("D-01 mirror: unknown / non-governance permissions, wrong action and non-lo
 
 test("static: the S0 migration is additive, hosted-free and creates no L15 store, bootstrap or definer", () => {
   const names = readdirSync(MIGRATIONS).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  assert.equal(names.at(-1), S0, "the S0 migration is the newest canonical migration");
+  // Horizon: S0 is followed by exactly the M17-S1 migration (each later slice extends this exact list; never a wildcard).
+  assert.deepEqual(names.slice(names.indexOf(S0)), [S0, "20261012210000_m17_s1_signals_hypotheses_support_v1.sql"],
+    "the S0 migration is followed only by the M17-S1 migration");
   assert.ok(names.indexOf(S0) > names.indexOf("20261012120000_m16_read_projection_closure_v1.sql"));
   assert.match(sql, /^-- M17-S0/);
   assert.doesNotMatch(code, /CREATE\s+(TABLE|VIEW|MATERIALIZED VIEW|SEQUENCE)\b/i, "no L15 store / relation is created in S0");
