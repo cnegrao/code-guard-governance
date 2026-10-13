@@ -467,8 +467,11 @@ $fn$;
 
 -- Commit-time support completeness (DEFERRABLE INITIALLY DEFERRED): every non-human signal has >= 1 rank-0 link and the
 -- stored support_status equals the actual link set; every hypothesis cites >= 1 signal. Never fabricated, never defaulted.
+-- SECURITY DEFINER necessity: a deferred trigger fires at COMMIT as the committing role (the intake LOGIN / service_role),
+-- which by design holds no L15 table privilege. It is a trigger function only: EXECUTE is owner-only (no application role
+-- can call it), it reads the two L15 tables and writes nothing.
 CREATE FUNCTION gov_repo.l15_support_completeness_guard_v1() RETURNS trigger
-LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $fn$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $fn$
 DECLARE
   v_links bigint;
 BEGIN
@@ -1244,8 +1247,9 @@ BEGIN
                                   WHERE s.rel = t.tgrelid::regclass::text AND s.tgname = t.tgname::text)) THEN
     RAISE EXCEPTION 'M17_S1_POSTFLIGHT: a pre-existing gov_repo constraint / trigger changed';
   END IF;
-  -- I5. Every L15 routine: pinned search_path, no PUBLIC EXECUTE; exactly six SECURITY DEFINER routines, owner postgres:
-  --     four EXECUTE-able by exactly service_role (+ owner), two by exactly the capability role (+ owner).
+  -- I5. Every L15 routine: pinned search_path, no PUBLIC EXECUTE; exactly seven SECURITY DEFINER routines, owner postgres:
+  --     four EXECUTE-able by exactly service_role (+ owner), two by exactly the capability role (+ owner), and the owner-only
+  --     deferred completeness trigger function.
   IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc AS p WHERE p.pronamespace = 'gov_repo'::regnamespace
                AND p.proname LIKE 'l15\_%' ESCAPE '\'
                AND (p.proconfig IS NULL OR NOT ('search_path=pg_catalog, pg_temp' = ANY (p.proconfig))
@@ -1257,7 +1261,7 @@ BEGIN
                         AND p.proname LIKE 'l15\_%' ESCAPE '\' AND p.prosecdef ORDER BY p.proname::text COLLATE "C");
   IF v_definers IS DISTINCT FROM ARRAY['l15_admit_human_hypothesis_v1','l15_admit_human_signal_v1',
        'l15_admit_machine_hypothesis_v1','l15_admit_machine_signal_v1','l15_read_hypothesis_dispositions_v1',
-       'l15_read_signals_v1'] THEN
+       'l15_read_signals_v1','l15_support_completeness_guard_v1'] THEN
     RAISE EXCEPTION 'M17_S1_POSTFLIGHT: unexpected l15 SECURITY DEFINER set %', v_definers;
   END IF;
   IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc AS p WHERE p.pronamespace = 'gov_repo'::regnamespace
