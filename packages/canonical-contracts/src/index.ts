@@ -26,3 +26,4 @@ export * from "./l14-control-assessment.ts";
 export * from "./l14-read-projection.ts";
 export * from "./l15-risk-intelligence.ts";
 export * from "./l15-signals-hypotheses.ts";
+export * from "./l15-registries.ts";
