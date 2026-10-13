@@ -13,7 +13,7 @@ import {
   l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration, l14ControlDefinitionRegistryMigration,
   l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration,
   l14ControlApplicabilityMigration, l14ControlAssessmentMigration, l14ReadProjectionMigration, m17S0AuthorityExtensionMigration,
-  m17S1SignalsHypothesesMigration,
+  m17S1SignalsHypothesesMigration, m17S1R1MachineLoginClosureMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -81,7 +81,8 @@ export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
     ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
     l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,
     l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration, l14ControlApplicabilityMigration, l14ControlAssessmentMigration,
-    l14ReadProjectionMigration, m17S0AuthorityExtensionMigration, m17S1SignalsHypothesesMigration],
+    l14ReadProjectionMigration, m17S0AuthorityExtensionMigration, m17S1SignalsHypothesesMigration,
+    m17S1R1MachineLoginClosureMigration],
   M17S0: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
     ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
     l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,

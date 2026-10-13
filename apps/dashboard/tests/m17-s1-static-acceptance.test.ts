@@ -66,3 +66,14 @@ test('the scanner adapters can only emit DETECTED_PATTERN / DETECTED_ABSENCE and
   const finops = read('packages/scanner/src/l15/finops-signal-adapter.ts').replace(/\/\*\*[\s\S]*?\*\//g, '');
   assert.doesNotMatch(finops, /monthlyCostEstimate|estimatedMonthly|costRisk|breakdown|costHotspots/, 'no estimate is read');
 });
+
+test('S1R1 corrective is additive and never touches the frozen Discovery Machine boundary or any store', () => {
+  const r1 = read('supabase/migrations/20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql')
+    .split('\n').filter(line => !line.trimStart().startsWith('--')).join('\n');
+  assert.doesNotMatch(r1, /(?<!l15_)machine_role_safe_v1|govia_discovery_|machine_principals|machine_execution_bindings/, 'discovery boundary untouched');
+  assert.doesNotMatch(r1, /CREATE\s+(TABLE|VIEW|SEQUENCE|ROLE)|ALTER\s+TABLE|DROP\s+|\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|TRUNCATE)\s+gov_repo\./i);
+  assert.doesNotMatch(r1, /SECURITY\s+DEFINER/i, 'no new definer');
+  assert.doesNotMatch(r1, /GRANT\s+/i, 'no privilege granted');
+  const replaced = [...r1.matchAll(/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(gov_repo\.\w+)/gi)].map(m => m[1]).sort();
+  assert.deepEqual(replaced, ['gov_repo.l15_machine_role_safe_v1', 'gov_repo.l15_require_machine_intake_identity_v1']);
+});

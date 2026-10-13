@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { m17S1SignalsHypothesesMigration, migrationSource } from '../helpers/disposable-m16-postgres';
+import { m17S1R1MachineLoginClosureMigration, m17S1SignalsHypothesesMigration, migrationSource } from '../helpers/disposable-m16-postgres';
 import { l14Cluster, lastLine } from '../helpers/m16-l14-fixtures';
 import { l15SecurityViolationsSql, type DefinerInventoryEntry } from '../helpers/m17-l15-security-profile';
 
@@ -47,13 +47,15 @@ test('M17-S1 L15 security / ACL / definer surface (disposable PG17)', { timeout:
   assert.deepEqual(before, { application_definers: 45, service_role_l15_rpcs: 0, technical_intake_rpcs: 0, l15_definers: 0, l15_routines: 4,
     l15_tables: 0, service_role_l15_table_privileges: 0 });
   await c.migrate(m17S1SignalsHypothesesMigration);
+  await c.migrate(m17S1R1MachineLoginClosureMigration);
   const after = await surface();
   t.diagnostic(`ACL surface after S1: ${JSON.stringify(after)}`);
-  assert.deepEqual(after, { application_definers: 49, service_role_l15_rpcs: 4, technical_intake_rpcs: 2, l15_definers: 7, l15_routines: 24,
+  assert.deepEqual(after, { application_definers: 49, service_role_l15_rpcs: 4, technical_intake_rpcs: 2, l15_definers: 7, l15_routines: 25,
     l15_tables: 3, service_role_l15_table_privileges: 0 });
 
   await t.test('the migration is additive and refuses to re-run (preflight) without changing anything', async () => {
     await rejects(owner(migrationSource(m17S1SignalsHypothesesMigration)), '55000', /M17_S1_PREFLIGHT/);
+    await rejects(owner(migrationSource(m17S1R1MachineLoginClosureMigration)), '55000', /M17_S1R1_PREFLIGHT/);
     assert.deepEqual(await surface(), after);
   });
 
