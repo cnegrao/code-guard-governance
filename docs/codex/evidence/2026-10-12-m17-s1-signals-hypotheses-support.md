@@ -198,13 +198,14 @@ denied) for every application role; FK actions are NO ACTION / RESTRICT only (no
 | Suite | Result (local) |
 |---|---|
 | Focused **M17-S1 PG17** `tests/postgres-m16/m17-s1-signals-hypotheses.test.ts` | **16 / 16 PASS** |
-| **M17-S1 PG17 security / ACL** `tests/postgres-m16/m17-s1-security.test.ts` | **5 / 5 PASS** |
-| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0 and both S1 suites) | **1220 / 1220 PASS** (1199 pre-existing + 21 S1) |
+| **M17-S1 PG17 security / ACL** `tests/postgres-m16/m17-s1-security.test.ts` (now applies S1 + S1R1) | **5 / 5 PASS** |
+| **M17-S1R1 PG17 actual machine LOGIN** `tests/postgres-m16/m17-s1r1-machine-login.test.ts` | **6 / 6 PASS** |
+| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0, the S1 suites and S1R1) | **1226 / 1226 PASS** (1199 pre-existing + 21 S1 + 6 S1R1) |
 | **M15** PostgreSQL regression `tests/postgres/*.test.ts` | **8 / 8 PASS** |
 | `@council/canonical-contracts` (`npm test`, incl. new `l15-signals-hypotheses.test.mjs`, 6) + `tsc --noEmit` | **249 / 249 PASS**; typecheck clean |
 | `@council/governance-review` (`npm test`) + `tsc --noEmit` | **412 / 412 PASS**; typecheck clean |
 | `@council/scanner` new `npm run test:l15-adapters` + `tsc --noEmit` | **7 / 7 PASS**; typecheck clean |
-| Dashboard `npm test` (main + passport-ui + pre-demo-ui + m17-s0-legacy) incl. new `m17-s1-coding-memory` (3) and `m17-s1-static-acceptance` (4) | **1245 PASS / 0 FAIL / 5 skipped (pre-existing)** + 17 / 17 + 8 / 8 + 12 / 12 |
+| Dashboard `npm test` (main + passport-ui + pre-demo-ui + m17-s0-legacy) incl. new `m17-s1-coding-memory` (3) and `m17-s1-static-acceptance` (4) | **1246 PASS / 0 FAIL / 5 skipped (pre-existing)** (after S1R1; incl. the S1R1 static boundary test) + 17 / 17 + 8 / 8 + 12 / 12 |
 | Dashboard `tsc --noEmit -p apps/dashboard/tsconfig.json` | clean |
 
 Harness changes are additive: `m17S1SignalsHypothesesMigration` constant and the `M17S1` horizon (= `M17S0` + the S1 migration);
@@ -273,18 +274,65 @@ privilege.
 
 ## Findings / dependency-deferred
 
-- **F-S1-1**: the closed `unresolved_reason` vocabulary is named but not enumerated by the ADR; S1 reuses the existing L12
-  runtime-binding reasons verbatim. ACP may confirm or amend (additive CHECK change).
+- **F-S1-1 — APPROVED by ACP (delta review of `0347879`).** The exact M17 V1 closed `unresolved_reason` vocabulary is
+  `MISSING_REVISION_EVIDENCE`, `NO_EXACT_MAPPING`, `AMBIGUOUS_MAPPING`, `UNSUPPORTED_BINDING_PROOF` — intentionally the existing
+  L12 runtime-binding vocabulary, reused verbatim. Recorded here as an ACP clarification; the frozen M17 ADR is not modified.
 - **F-S1-2 (S2)**: `proposed_scenario_definition_id` deferred (no column) until the S2 registry exists.
 - **F-S1-3 (S3–S6)**: rank-3 support owners, O79 / O81 / O82 for governed-artifact owners and the RISK_HYPOTHESIS target, and the
   `CITED_BY_*` dispositions land with their stores; the hypothesis-disposition projection fails closed until then.
-- **F-S1-4**: the machine intake capability is platform-level and organisation-explicit (every reference same-tenant by composite
-  FK, organisation must be active). Per-tenant binding of the intake LOGIN would need either a reopened discovery-machine boundary or
-  a new identity registry; neither is in S1 scope. Recorded for ACP.
+- **F-S1-4 — DIRECTION APPROVED by ACP, with the security hardening of S1R1 (below; BLOCKER RESOLVED).** The L15 machine caller
+  is a **platform technical capability, not a tenant principal: platform-wide technical capability != tenant / business
+  authority.** No tenant binding registry, no Discovery Machine change, no per-tenant LOGIN. Tenancy stays mandatory per call:
+  caller-supplied organisation must be active; canonical subject in that organisation; relationship state by the exact
+  organisation + relationship_id + relationship_state_id triple; every support target and cited signal same-tenant by exact
+  composite identity; no cross-tenant reference; no governance authority created. Hosted activation / provisioning of an actual
+  machine LOGIN is outside this branch and remains subject to the production security gates.
 - **F-S1-5**: DRIFT_CANDIDATE is admissible per §4.3 and accepted by the guard, but the current M15 store CHECK cannot hold it.
 - **F-S1-6 (environment)**: PGDG apt unreachable here; PG17 server from `@embedded-postgres`, `psql` 16 client, pgvector stand-in.
   CI (real PGDG PG17 + pgvector) is the arbiter.
 
+## S1R1 — ACP delta: closed surface of the actual machine LOGIN
+
+ACP blocker (review of `03478796`): a LOGIN holding `govia_l15_machine_intake_caller` could also hold unrelated memberships /
+grants and still pass `l15_require_machine_intake_identity_v1()`. Fix, additive corrective migration
+**`supabase/migrations/20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql`** (the S1 migration is not edited):
+
+- new owner-only SECURITY INVOKER predicate `gov_repo.l15_machine_role_safe_v1(oid, text)` (pinned `search_path`, EXECUTE revoked
+  from every application role and the capability), modelled on — but not touching or reusing — the frozen Discovery Machine
+  `machine_role_safe_v1`. On the actual `session_user` it requires: LOGIN; not postgres / service_role / authenticated / anon; no
+  SUPERUSER / BYPASSRLS / CREATEDB / CREATEROLE / REPLICATION; not expired (`rolvaliduntil`); exactly one membership edge, to the
+  capability, without ADMIN; no other role reachable through ANY edge (INHERIT / SET / dormant, direct or transitive, predefined
+  roles included) and no membership held by the capability itself; no CREATE on the database or any non-temporary schema; no
+  table / column / sequence privilege outside `pg_catalog` / `information_schema`; no EXECUTE on any SECURITY DEFINER routine
+  outside the system catalogs nor on any `gov_repo` routine, except exactly `l15_admit_machine_signal_v1` and
+  `l15_admit_machine_hypothesis_v1`.
+- `l15_require_machine_intake_identity_v1()` is replaced (same signature, owner, ACL, volatility, path) to enforce it; it runs
+  before any write, so a refused identity writes nothing. The intake RPC bodies, their inventory hashes, the definer surface
+  (49 application + 2 technical, 7 L15 definers), every store, matrix, FK, adapter and replay rule are unchanged.
+- Postflight: helpers owner-only INVOKER; surface unchanged; the capability holds no membership; every existing LOGIN member of the
+  capability (except the owner's automatic PG16+ ADMIN creator grant on `postgres`, which the helper itself refuses) must be safe.
+- Effective application surface of the machine LOGIN: USAGE on `gov_repo` + EXECUTE on the two intake RPCs (+ inherent catalog
+  access).
+
+Real PG17 adversarial suite `apps/dashboard/tests/postgres-m16/m17-s1r1-machine-login.test.ts` (each case = a real LOGIN with the
+capability plus exactly one enlargement; signal AND hypothesis intake both refused with `L15_INTAKE_IDENTITY_INELIGIBLE`):
+
+| # | Case | Result |
+|---|---|---|
+| 1 | clean dedicated LOGIN, capability only | signal + hypothesis admitted; predicate true |
+| 2 | + service_role / + authenticated membership | refused |
+| 3 | + unrelated role; dormant `INHERIT FALSE, SET FALSE` edge; capability `WITH ADMIN OPTION`; transitive nested role; predefined `pg_read_all_data` | refused |
+| 4 | + role granting SELECT / INSERT on a gov_repo table; direct table SELECT; column privilege; direct L15 table privilege | refused |
+| 5 | + EXECUTE on an L15 read RPC (definer); on an L14 governance RPC; on an owner-only gov_repo helper | refused |
+| 6 | + CREATE on the database | refused |
+| 7 | + CREATE on `gov_repo`; + CREATE on `public` | refused |
+| 8 | expired LOGIN (`VALID UNTIL '2000-01-01'`) | refused |
+| 9 | CREATEDB / CREATEROLE / REPLICATION / BYPASSRLS LOGIN | refused |
+| 10 | after all refusals | zero new signals / hypotheses / support links; governance envelope (authorizations, proposals, decisions, results, fact / registry states, heads) unchanged |
+| + | clean LOGIN vs L14 governance / L15 read RPCs | `42501`; reachable set = exactly the 2 intake RPCs |
+| + | rolled-back enlargements of the clean LOGIN (table grant, service_role, read RPC, schema CREATE, CREATEDB, expiry, enlarging the capability itself) | each detected (predicate false), boundary restored after rollback |
+| + | application roles / the machine LOGIN calling the predicate | `permission denied` |
+
 ## Next gate
 
-ACP review of M17-S1 on the pushed branch (CI on the exact final HEAD), then PR / merge. **S2 NOT STARTED.**
+ACP review of the S1R1 delta on the pushed branch (CI on the exact final HEAD), then PR / merge. **S2 NOT STARTED.**

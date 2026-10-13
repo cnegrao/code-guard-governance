@@ -263,6 +263,9 @@ M14 close
   (30 rules), FinOps flags, M15, L12, L11, M16 control assessment / governance gap and lineage; Coding Memory F-S0-4 resolved.
   Application SECURITY DEFINER surface 45 → 49 (+2 technical intake RPCs); service_role holds no L15 table privilege.
   O08–O18, O80, O84 PASS; O79 / O81 / O82 PASS for S1 owners (rank-3 parts dependency-deferred to S2–S6).
+  ACP delta: F-S1-1 approved (closed `unresolved_reason` = the L12 runtime-binding vocabulary); F-S1-4 platform-wide technical
+  intake approved with S1R1 hardening — additive `20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql` closes the privilege
+  surface of the actual machine LOGIN (`l15_machine_role_safe_v1`); platform technical capability != tenant / business authority.
 - **M17-S2 … S7: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
