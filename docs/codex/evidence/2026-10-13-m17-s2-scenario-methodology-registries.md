@@ -263,7 +263,7 @@ grant; EXECUTE on an owner-only resolver to anon; definer search_path drift; dis
 | Focused **M17-S2 PG17 functional** `tests/postgres-m16/m17-s2-registries.test.ts` | **20 / 20 PASS** |
 | Focused **M17-S2 PG17 concurrency** `tests/postgres-m16/m17-s2-registries-concurrency.test.ts` | **20 / 20 PASS** |
 | Focused **M17-S2 PG17 ACL / security** `tests/postgres-m16/m17-s2-security.test.ts` | **6 / 6 PASS** |
-| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0, S1, S1R1, S2) | FULL_M16_RESULT |
+| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0, S1, S1R1, S2) | **1272 / 1272 PASS** (1226 pre-existing + 46 S2) |
 | **M15** PostgreSQL regression `tests/postgres/*.test.ts` | **8 / 8 PASS** |
 | `@council/canonical-contracts` (`node --test test/*.mjs`, incl. new `l15-registries.test.mjs`, 4) + `tsc --noEmit` | **253 / 253 PASS**; clean |
 | `@council/governance-review` (`tsx --test test/*.test.ts`, incl. new `l15-registries.test.ts`, 6) + `tsc --noEmit` | **418 / 418 PASS**; clean |
@@ -275,6 +275,16 @@ One existing assertion was advanced, not weakened: `tests/m17-s0-authority-contr
 list `[S0, S1, S1R1]`; it now pins `[S0, S1, S1R1, S2]` (the same horizon discipline every slice applies). No other existing test line
 was edited. The package `test` scripts pass `--test-isolation=none`, which the container's Node 22.22 rejects; the same files were run
 without that flag.
+
+### CI
+
+| Workflow | Run | HEAD | Result |
+|---|---|---|---|
+| M16 PostgreSQL 17 security suite (PGDG PG17 + real pgvector) | [38408445809](https://github.com/cnegrao/code-guard-governance/actions/runs/38408445809) | `99a0b79` | success |
+| M15 PostgreSQL regression | [38408446417](https://github.com/cnegrao/code-guard-governance/actions/runs/38408446417) | `99a0b79` | success |
+| M16 PostgreSQL 17 security suite | [38408373093](https://github.com/cnegrao/code-guard-governance/actions/runs/38408373093) | `c6193c8` (last code commit) | success |
+
+This docs-only evidence commit re-runs both workflows on the final branch head.
 
 ### Adversarial matrix (all PASS)
 
