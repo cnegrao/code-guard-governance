@@ -252,7 +252,18 @@ M14 close
   L14 ↔ L15 isolation guards, D-05 `risk_entries` / `risk_treatments` application write-freeze; D-12 scan-route legacy risk
   writer stopped; legacy consumers labelled `LEGACY / NON-AUTHORITATIVE`; L15 root contracts in `canonical-contracts`.
   Application SECURITY DEFINER surface unchanged (45). Criteria needing L15 stores are dependency-deferred to S1–S7.
-- **M17-S1 … S7: NOT STARTED.** M18+: NOT STARTED.
+- **PR #65: MERGED** — M17-S0 (canonical main after PR #65: `59bb7e323af90da74133d51054674f405c81c786`).
+- **M17-S1 — Signals + Hypotheses + Support / Evidence Model and Adapters: IMPLEMENTED ON BRANCH
+  `feat/m17-s1-signals-hypotheses-support`, NOT MERGED** (base main `59bb7e3`;
+  [evidence](../codex/evidence/2026-10-12-m17-s1-signals-hypotheses-support.md)). Additive migration
+  `20261012210000_m17_s1_signals_hypotheses_support_v1.sql`: non-authoritative `l15_risk_signals` / `l15_risk_hypotheses`
+  (insert-only, never VALIDATED, no status / head) and the D-03 `l15_support_links` closed tagged union with the acyclic §9.2
+  matrix (S1 owners); bounded technical-capability machine intake (`govia_l15_machine_intake_caller`) and verified-member intake
+  with DB-computed replay fingerprints; signal / hypothesis-disposition read projections; adapters for scanner `DetectedRisk`
+  (30 rules), FinOps flags, M15, L12, L11, M16 control assessment / governance gap and lineage; Coding Memory F-S0-4 resolved.
+  Application SECURITY DEFINER surface 45 → 49 (+2 technical intake RPCs); service_role holds no L15 table privilege.
+  O08–O18, O80, O84 PASS; O79 / O81 / O82 PASS for S1 owners (rank-3 parts dependency-deferred to S2–S6).
+- **M17-S2 … S7: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
