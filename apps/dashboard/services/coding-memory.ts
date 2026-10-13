@@ -3,6 +3,26 @@ import type { RepoIntelligence, Service, Module, AgentReference } from "@council
 import type { DiscoveredAgent } from "@council/scanner/codeguard/types";
 import * as codingMemoryRepo from "@/repositories/coding-memory";
 
+/**
+ * M17-S1 (F-S0-4): Coding Memory is DERIVED retrieval memory — never evidence, never authority — and it feeds Talk to
+ * Governance / LLM context. The scanner's heuristic risk classification (`riskLevel`, `suggestedRiskLevel`, "Risk: ...") is
+ * therefore never written into chunk summaries or metadata, and legacy chunks indexed before S1 are sanitized on every read
+ * path. The detector severity's only M17 path is scanner -> RISK_SIGNAL -> hint_severity (non-authoritative).
+ */
+const HEURISTIC_RISK_METADATA_KEYS = ['riskLevel', 'suggestedRiskLevel', 'risk_level', 'suggested_risk_level'] as const;
+const HEURISTIC_RISK_TEXT = /,?\s*\b[Rr]isk(?: level)?:\s*[A-Za-z_-]+\b\.?/g;
+
+/** Removes any scanner heuristic risk classification from a chunk summary (legacy rows included). */
+export function stripHeuristicRisk(summary: string): string {
+  return summary.replace(HEURISTIC_RISK_TEXT, '').replace(/\(\s*,\s*/g, '(').replace(/\s{2,}/g, ' ').trim();
+}
+/** Removes heuristic risk keys from chunk metadata (legacy rows included). */
+export function stripHeuristicRiskMetadata(metadata: Record<string, unknown>): Record<string, unknown> {
+  const clean = { ...metadata };
+  for (const key of HEURISTIC_RISK_METADATA_KEYS) delete clean[key];
+  return clean;
+}
+
 export interface ChunkInput {
   path: string;
   symbol_type: string;
@@ -63,8 +83,8 @@ export function chunkRepoIntelligence(repoIntel: RepoIntelligence): ChunkInput[]
       path: `agent:${agent.filePath}`,
       symbol_type: "agent",
       symbol_name: agent.name,
-      summary: `AI Agent: ${agent.name} (${agent.framework}, ${agent.agentType}, risk: ${agent.riskLevel}) at ${agent.filePath}`,
-      metadata: { framework: agent.framework, agentType: agent.agentType, riskLevel: agent.riskLevel, filePath: agent.filePath },
+      summary: `AI Agent: ${agent.name} (${agent.framework}, ${agent.agentType}) at ${agent.filePath}`,
+      metadata: { framework: agent.framework, agentType: agent.agentType, filePath: agent.filePath },
     });
   }
 
@@ -98,11 +118,10 @@ export function chunkAgentCode(agent: DiscoveredAgent, fileContent: string): Chu
     path: agent.filePath,
     symbol_type: "agent_code",
     symbol_name: agent.name,
-    summary: `${agent.framework} agent: ${agent.name}. Type: ${agent.agentType}, Risk: ${agent.suggestedRiskLevel}. Evidence: ${agent.evidence.slice(0, 3).join("; ")}`,
+    summary: `${agent.framework} agent: ${agent.name}. Type: ${agent.agentType}. Evidence: ${agent.evidence.slice(0, 3).join("; ")}`,
     metadata: {
       framework: agent.framework,
       agentType: agent.agentType,
-      riskLevel: agent.suggestedRiskLevel,
       isAutonomous: agent.isAutonomous,
       confidence: agent.confidence,
     },
@@ -226,11 +245,17 @@ export async function semanticSearch(
     if (result.chunks.length === 0) return "";
 
     return result.chunks
-      .map((c, i) => `[${i + 1}] ${c.symbol_type}:${c.symbol_name} (${c.path}) — ${c.summary} [similarity: ${(c.similarity ?? 0).toFixed(2)}]`)
+      .map((c, i) => `[${i + 1}] ${c.symbol_type}:${c.symbol_name} (${c.path}) — ${stripHeuristicRisk(c.summary)} [similarity: ${(c.similarity ?? 0).toFixed(2)}]`)
       .join("\n");
   } catch {
     return "";
   }
+}
+
+/** Repository memory read with legacy heuristic risk text / keys removed (pre-S1 chunks included). */
+export async function getRepositoryMemory(orgId: string, repositoryId: string) {
+  const chunks = await codingMemoryRepo.getRepositoryMemory(orgId, repositoryId);
+  return chunks.map(c => ({ ...c, summary: stripHeuristicRisk(c.summary), metadata: stripHeuristicRiskMetadata(c.metadata ?? {}) }));
 }
 
 export { codingMemoryRepo };
