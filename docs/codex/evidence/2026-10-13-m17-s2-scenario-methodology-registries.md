@@ -273,7 +273,7 @@ grant; EXECUTE on an owner-only resolver to anon; definer search_path drift; dis
 | Focused **M17-S2 PG17 concurrency** `tests/postgres-m16/m17-s2-registries-concurrency.test.ts` | **20 / 20 PASS** |
 | Focused **M17-S2 PG17 ACL / security** `tests/postgres-m16/m17-s2-security.test.ts` | **6 / 6 PASS** |
 | Focused **M17-S2R1 PG17** `tests/postgres-m16/m17-s2r1-allow-guard.test.ts` | **8 / 8 PASS** |
-| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0, S1, S1R1, S2, S2R1) | **@FULL@** (1226 pre-existing + 46 S2 + 8 S2R1) |
+| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0, S1, S1R1, S2, S2R1) | **1280 / 1280 PASS** (1226 pre-existing + 46 S2 + 8 S2R1) |
 | **M15** PostgreSQL regression `tests/postgres/*.test.ts` | **8 / 8 PASS** |
 | `@council/canonical-contracts` (`node --test test/*.mjs`, incl. new `l15-registries.test.mjs`, 4) + `tsc --noEmit` | **253 / 253 PASS**; clean |
 | `@council/governance-review` (`tsx --test test/*.test.ts`, incl. new `l15-registries.test.ts`, 6) + `tsc --noEmit` | **418 / 418 PASS**; clean |
@@ -290,11 +290,13 @@ without that flag.
 
 | Workflow | Run | HEAD | Result |
 |---|---|---|---|
+| M16 PostgreSQL 17 security suite (S2R1) | [38446053285](https://github.com/cnegrao/code-guard-governance/actions/runs/38446053285) | `b36016b` (S2R1 code commit) | success |
+| M15 PostgreSQL regression (S2R1) | [38446053817](https://github.com/cnegrao/code-guard-governance/actions/runs/38446053817) | `b36016b` (S2R1 code commit) | success |
 | M16 PostgreSQL 17 security suite (PGDG PG17 + real pgvector) | [38408445809](https://github.com/cnegrao/code-guard-governance/actions/runs/38408445809) | `99a0b79` | success |
 | M15 PostgreSQL regression | [38408446417](https://github.com/cnegrao/code-guard-governance/actions/runs/38408446417) | `99a0b79` | success |
 | M16 PostgreSQL 17 security suite | [38408373093](https://github.com/cnegrao/code-guard-governance/actions/runs/38408373093) | `c6193c8` (last code commit) | success |
 
-This docs-only evidence commit re-runs both workflows on the final branch head.
+Each docs-only evidence commit re-runs both workflows on the final branch head.
 
 ### Adversarial matrix (all PASS)
 
