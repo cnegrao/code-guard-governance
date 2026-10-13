@@ -286,7 +286,7 @@ O79–O82 / O84 (support), O90 (verified principal).
 | S3 concurrency PG17 (real concurrent sessions) | 12 / 12 |
 | S3 security / ACL PG17 | 7 / 7 |
 | S3 O44 support currency PG17 | 6 / 6 |
-| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, incl. S0 / S1 / S1R1 / S2 / S2R1 / S3) | PENDING (local run in progress; updated on completion) |
+| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, incl. S0 / S1 / S1R1 / S2 / S2R1 / S3) | **1328 / 1328** (92 files, 0 fail, 0 skipped) |
 | M15 PostgreSQL regression | 8 / 8 |
 | canonical-contracts | 256 / 256 |
 | governance-review | 425 / 425 |
