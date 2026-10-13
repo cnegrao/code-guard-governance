@@ -279,7 +279,11 @@ M14 close
   registry owners in `l15_support_links` (DISCOVERY_EVIDENCE / SOURCE_ASSERTION only); the S0-deferred `l14_command_results`
   L15 decision-result branch (`l15_state_id`). `l14_fact_states` / `l14_registry_states` / `l14_support_links` / M16 typed tables
   not widened. Application SECURITY DEFINER surface 49 → 55; L15 definers 7 → 14; machine intake surface unchanged (2).
-  O19, O20, O21 PASS; O79 / O81 / O82 PASS for the S2 owners. Optional hypothesis → scenario pin dependency-deferred (F-S2-2).
+  O19, O20, O21 PASS; O79 / O81 / O82 PASS for the S2 owners. Optional hypothesis → scenario pin APPROVED / DEFERRED (F-S2-2).
+  **M17-S2R1 corrective (same branch, NOT MERGED)** — `20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql`: F-S2-1
+  RESOLVED: the S0 root guard `l15_authorization_allow_guard_v1` is now an owner-only SECURITY DEFINER (byte-identical body, pinned
+  search_path, EXECUTE revoked from every application role and the machine capability); a natural deferred commit from service_role
+  is proven; L15 definers 14 → 15, application definer surface 55 (unchanged), machine surface 2. S3+ must not rely on SET CONSTRAINTS.
 - **M17-S3 … S7: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;

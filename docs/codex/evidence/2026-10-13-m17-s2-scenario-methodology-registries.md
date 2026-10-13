@@ -20,7 +20,8 @@ Architecture authority (not modified): [M17 ADR](../../architecture/ADR-GOVIA-RI
 | M16 | CLOSED (five fact families, unchanged) |
 | M17 architecture | ACCEPTED / FROZEN (unchanged) |
 | M17-S0, S1, S1R1 | MERGED |
-| M17-S2 | IMPLEMENTED ON BRANCH `feat/m17-s2-scenario-methodology-registries`; **NOT MERGED**; PR NOT OPENED |
+| M17-S2 | IMPLEMENTED ON BRANCH `feat/m17-s2-scenario-methodology-registries`; ACP delta review: semantic / functional PASS, O19–O21 PASS; **NOT MERGED**; PR NOT OPENED |
+| M17-S2R1 (F-S2-1 corrective) | IMPLEMENTED ON THE SAME BRANCH (`20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql`); **NOT MERGED** |
 | M17-S3 … S7 | **NOT STARTED** |
 | Hosted (Supabase / Vercel / deployment) | **NOT TOUCHED** |
 
@@ -175,7 +176,9 @@ ALWAYS` raising `BEFORE UPDATE OR DELETE` + `BEFORE TRUNCATE` (`L15_HISTORY_IMMU
   S0, each S2 RPC fires that exact guard inside its owner-pinned definer right after the rule snapshot (`SET CONSTRAINTS
   gov_repo.l15_authorization_decisions_allow_guard IMMEDIATE; … DEFERRED;`), keeping its full check (effective-policy L15 rule of the
   exact mapped permission + action, AUTHORITY_POLICY_VERSION basis, ACTIVE human of the ACTIVE organisation). Proven: an owner-forged
-  L15 ALLOW without an L15 rule is still refused at commit (`L15_ALLOW_WITHOUT_L15_AUTHORITY`).
+  L15 ALLOW without an L15 rule is still refused at commit (`L15_ALLOW_WITHOUT_L15_AUTHORITY`). **F-S2-1 is RESOLVED BY S2R1**
+  (see [M17-S2R1](#m17-s2r1--root-allow-guard-execution-context-f-s2-1)): the guard itself now runs in the owner context, so the
+  RPCs' `SET CONSTRAINTS` pair is only a redundant early check.
 
 ### SYSTEM_SEED (D-11 / O21)
 
@@ -240,6 +243,12 @@ loose label / reference was introduced. Not required for O19–O21.
 | L15 tables | 3 | **18** |
 | service_role direct L15 table privileges | 0 | **0** |
 
+S2R1 delta (derived from the real post-S2 PG17 catalog, asserted before and after the corrective): application definer surface
+**55 → 55** (the guard is owner-only, so it is not application-executable); L15 SECURITY DEFINER inventory **14 → 15** (+ the root guard);
+service_role-executable L15 routines 10 → 10; technical intake surface 2 → 2; service_role L15 table privileges 0 → 0. ACP's directional
+"55 → 56" counted the guard in the application surface; the metric used since M16 (and in P4 of every postflight) counts only
+definers EXECUTE-able by service_role / anon / authenticated / PUBLIC, which the guard is not.
+
 Every new definer: documented necessity (section headers), owner `postgres`, `search_path = pg_catalog, pg_temp` (+ `lock_timeout 5s`
 on RPCs), fully qualified, EXECUTE only to service_role (the commit guard: owner-only trigger fn), tenant / actor / roles re-derived
 in-RPC, registered with owner + body SHA-256 + config in the migration postflight (P7) and the test inventory
@@ -263,11 +272,12 @@ grant; EXECUTE on an owner-only resolver to anon; definer search_path drift; dis
 | Focused **M17-S2 PG17 functional** `tests/postgres-m16/m17-s2-registries.test.ts` | **20 / 20 PASS** |
 | Focused **M17-S2 PG17 concurrency** `tests/postgres-m16/m17-s2-registries-concurrency.test.ts` | **20 / 20 PASS** |
 | Focused **M17-S2 PG17 ACL / security** `tests/postgres-m16/m17-s2-security.test.ts` | **6 / 6 PASS** |
-| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0, S1, S1R1, S2) | **1272 / 1272 PASS** (1226 pre-existing + 46 S2) |
+| Focused **M17-S2R1 PG17** `tests/postgres-m16/m17-s2r1-allow-guard.test.ts` | **8 / 8 PASS** |
+| Full **M16 PG17** suite `tests/postgres-m16/*.test.ts` (incl. M17-S0, S1, S1R1, S2, S2R1) | **@FULL@** (1226 pre-existing + 46 S2 + 8 S2R1) |
 | **M15** PostgreSQL regression `tests/postgres/*.test.ts` | **8 / 8 PASS** |
 | `@council/canonical-contracts` (`node --test test/*.mjs`, incl. new `l15-registries.test.mjs`, 4) + `tsc --noEmit` | **253 / 253 PASS**; clean |
 | `@council/governance-review` (`tsx --test test/*.test.ts`, incl. new `l15-registries.test.ts`, 6) + `tsc --noEmit` | **418 / 418 PASS**; clean |
-| Dashboard `npm test` (main + passport-ui + pre-demo-ui + m17-s0-legacy) incl. new `m17-s2-static-acceptance` (4) | **1250 PASS / 0 FAIL / 5 skipped (pre-existing)** + 17 / 17 + 8 / 8 + 12 / 12 |
+| Dashboard `npm test` (main + passport-ui + pre-demo-ui + m17-s0-legacy) incl. `m17-s2-static-acceptance` (4 + 1 S2R1) | **1251 PASS / 0 FAIL / 5 skipped (pre-existing)** + 17 / 17 + 8 / 8 + 12 / 12 |
 | Dashboard `tsc --noEmit -p apps/dashboard/tsconfig.json` | clean |
 
 Harness changes are additive: `m17S2ScenarioMethodologyMigration` and the `M17S2` horizon (= `M17S1` + S2); `tests/helpers/m17-s2-fixtures.ts`.
@@ -364,6 +374,49 @@ This docs-only evidence commit re-runs both workflows on the final branch head.
 
 Not owned by S2 and not claimed: O03, O08–O18 (S1), O22–O52, O67–O72, O83 (S3–S7).
 
+## M17-S2R1 — root ALLOW guard execution context (F-S2-1)
+
+Additive corrective `supabase/migrations/20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql`; no S0 / S1 / S1R1 / S2
+migration edited; the six S2 RPCs are not rewritten; no hosted mutation.
+
+- **Original defect.** M17-S0 created `gov_repo.l15_authorization_allow_guard_v1()` as a SECURITY INVOKER trigger function behind the
+  `DEFERRABLE INITIALLY DEFERRED` constraint trigger `l15_authorization_decisions_allow_guard`. A deferred trigger fires at COMMIT in
+  the committing session, i.e. as `service_role`, outside the RPC definer that inserted the ALLOW. `service_role` has (by design) no
+  privilege on `l14_authorization_decisions`, `l14_authorization_decision_rules`, `governance_users`, `organisations` nor EXECUTE on
+  `l15_governance_permission_v1`, so the guard raised `42501` and every natural L15 ALLOW commit failed. S0 only exercised the guard
+  through owner inserts, so the defect stayed latent until the first L15 writers (S2).
+- **Why it was fail-closed.** The failure aborted the COMMIT: no L15 ALLOW (legitimate or forged) could ever be persisted through an
+  application role. Availability was lost, never integrity — reproduced on the post-S2 catalog (S2R1 test 1: `42501`, zero rows).
+- **Why the S2 workaround worked.** `SET CONSTRAINTS … IMMEDIATE` inside the owner-pinned RPC fires the pending guard event at that
+  statement, while `current_user` is still the definer owner, so the full check ran with owner privileges before the RPC returned.
+- **Central fix.** The guard is re-declared with the same signature and the **byte-identical S0 body** (prosrc SHA-256
+  `ee7885662da87a4946ad06596dbcd9f1af9bbb52de0e86fb7b16fd17731b5236`, asserted in the preflight, postflight P1 and the static test) as
+  `SECURITY DEFINER`, owner `postgres`, `SET search_path = pg_catalog, pg_temp`. Unchanged checks: subject → permission mapping,
+  `AUTHORITY_POLICY_VERSION` basis, exact basis id / version, exact `AUTHORITY_POLICY_RULE` snapshot of the mapped permission
+  and `requested_action`, ACTIVE actor of the same ACTIVE organisation, error `L14_INVALID_COMMAND` / `GV010` /
+  `L15_ALLOW_WITHOUT_L15_AUTHORITY`. Read-only, no dynamic SQL, no writes, no store outside the envelope / rules / users / organisations
+  / L15 permission map (asserted on the body).
+- **ACL closure.** `REVOKE ALL … FROM PUBLIC, anon, authenticated, service_role, govia_l15_machine_intake_caller`; no GRANT; resulting
+  ACL `{postgres=X/postgres}`. Direct calls are `42501` for service_role, anon, authenticated, the capability and a fresh role (PUBLIC).
+  The trigger definition (incl. its WHEN clause), `DEFERRABLE INITIALLY DEFERRED`, `ENABLE ALWAYS` and its target function are
+  byte-identical (postflight P2/P3 snapshot every gov_repo constraint, trigger and routine). Definer delta: see the S2R1 row above
+  (application 55 → 55, L15 14 → 15); inventory `L15_S2R1_DEFINER_INVENTORY` (owner, body hash, config) in
+  `tests/helpers/m17-l15-definer-inventory.ts`; the L15 profile flags `DEFINER_NOT_INVENTORIED` for the guard if it is omitted.
+- **Natural-trigger proof.** A test-only probe (SECURITY DEFINER, EXECUTE to service_role only, created and dropped inside the test
+  fixture; asserted absent afterwards) writes an L15 ALLOW envelope and returns; the transaction then COMMITs in the plain
+  `service_role` session without any `SET CONSTRAINTS`, so the guard fires at commit as the deferred trigger. Legitimate ALLOW
+  commits; forged / mis-based ALLOWs are refused with `GV010` at that natural commit: no mapped rule snapshot, wrong L15 permission,
+  member without a rule, L14 permission for an L15 subject, bootstrap basis, foreign-tenant actor, suspended actor, deactivated
+  organisation, and an owner-forged ALLOW with an invalid basis. Real S2 admit / validate for both registries still succeed.
+- **S3+ consequence.** The guard no longer depends on the writer's execution context. **S3+ writers MUST NOT depend on
+  `SET CONSTRAINTS … IMMEDIATE`** for the ALLOW guard; the S2 RPCs keep their pair only as a redundant safety measure (left
+  unchanged by ACP decision).
+
+Focused coverage `tests/postgres-m16/m17-s2r1-allow-guard.test.ts` (items 1–24 of the ACP delta review) + the S2R1 static test in
+`tests/m17-s2-static-acceptance.test.ts`; horizon `M17S2R1` (= `M17S2` + S2R1) added to the harness; the post-S0 migration list in
+`tests/m17-s0-authority-contract.test.ts` advanced to `[S0, S1, S1R1, S2, S2R1]`; the S2 static test now pins S2 → S2R1 as the only
+successor. The S1 / S2 definer inventories moved, unchanged, to the shared helper.
+
 ## Invariants
 
 M16 exactly five fact families; `l14_fact_states` / `l14_registry_states` / `l14_support_links` / M16 typed tables not widened; F2
@@ -373,17 +426,15 @@ unchanged; Discovery Machine roles / control plane untouched; service_role has n
 
 ## Findings / dependency-deferred
 
-- **F-S2-1 (S0 latent defect, mitigated in S2 without editing S0).** The S0 deferred `l15_authorization_decisions_allow_guard` is
-  SECURITY INVOKER and, at COMMIT, runs as the committing role (`service_role`), which has no privilege on `l14_authorization_decisions`
-  / `l14_authorization_decision_rules` / `governance_users` nor EXECUTE on `l15_governance_permission_v1`; every real L15 ALLOW committed
-  through a service_role RPC would fail. S2 fires the guard inside the owner-pinned definer (`SET CONSTRAINTS … IMMEDIATE` then
-  `DEFERRED`). S3+ RPCs must do the same, or a future corrective may convert the guard into an owner-only SECURITY DEFINER trigger
-  function (ACP decision).
-- **F-S2-2 (dependency-deferred).** Optional hypothesis → validated-scenario pin: see above; requires an ACP decision on the closed
-  machine surface.
+- **F-S2-1 — RESOLVED BY S2R1.** S0 latent defect (SECURITY INVOKER deferred guard executed as `service_role` at COMMIT; fail-closed).
+  Fixed centrally by the M17-S2R1 corrective (owner-only SECURITY DEFINER guard, byte-identical body); see
+  [M17-S2R1](#m17-s2r1--root-allow-guard-execution-context-f-s2-1). S3+ no longer needs the `SET CONSTRAINTS` workaround and must not
+  depend on it.
+- **F-S2-2 — APPROVED / DEFERRED (ACP).** Optional hypothesis → validated-scenario pin: see above; not implemented (requires a later
+  ACP decision on the closed machine surface).
 - **F-S2-3 (environment).** PGDG apt unreachable here; PG17 server from `@embedded-postgres`, `psql` 16 client, pgvector stand-in;
   Node 22.22 (package scripts' `--test-isolation=none` unsupported, files run without it). CI (real PGDG PG17 + pgvector) is the arbiter.
 
 ## Next gate
 
-ACP review of the S2 branch (CI on the exact final HEAD), then PR / merge. **S3 NOT STARTED.**
+ACP review of the S2R1 corrective delta (CI on the exact final HEAD), then PR / merge of S2 + S2R1. **S3 NOT STARTED.**

@@ -10,6 +10,7 @@ import { test } from 'node:test';
 const root = new URL('../../../', import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), 'utf8');
 const S2 = '20261013120000_m17_s2_scenario_methodology_registries_v1.sql';
+const S2R1 = '20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql';
 const migration = read(`supabase/migrations/${S2}`);
 const code = migration.split('\n').filter(line => !line.trimStart().startsWith('--')).join('\n')
   .replace(/COMMENT ON [^;]*?IS\s*'(?:[^']|'')*';/g, '');
@@ -19,9 +20,9 @@ const sources = [
   'apps/dashboard/lib/governance/l15-registry-persistence.ts',
 ];
 
-test('static: S2 is the newest migration, additive, hosted-free; edits no historical migration; seeds nothing', () => {
+test('static: S2 is followed only by its S2R1 corrective, additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  assert.equal(names.at(-1), S2);
+  assert.deepEqual(names.slice(names.indexOf(S2)), [S2, S2R1]);
   assert.match(migration, /^-- M17-S2/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   assert.doesNotMatch(code, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+gov_repo\.(?!l15_support_link_insert_guard_v1\b)/i,
@@ -75,4 +76,32 @@ test('static: the persistence adapter is server-only and no route / UI consumes 
       : /\.(ts|tsx)$/.test(entry.name) ? [`${dir}${entry.name}`] : []);
   const consumers = [...walk('apps/dashboard/app/'), ...walk('apps/dashboard/components/')].filter(f => /l15-registry-persistence/.test(read(f)));
   assert.deepEqual(consumers, []);
+});
+
+test('static: S2R1 only re-declares the S0 ALLOW guard as an owner-only SECURITY DEFINER with the byte-identical S0 body', () => {
+  const r1 = read(`supabase/migrations/${S2R1}`);
+  const r1code = r1.split('\n').filter(line => !line.trimStart().startsWith('--')).join('\n')
+    .replace(/COMMENT ON [^;]*?IS\s*'(?:[^']|'')*';/g, '');
+  assert.match(r1, /^-- M17-S2R1/);
+  const replaced = [...r1code.matchAll(/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+([\w.]+)/gi)].map(m => m[1]);
+  assert.deepEqual(replaced, ['gov_repo.l15_authorization_allow_guard_v1'], 'the only routine touched is the root guard');
+  assert.match(r1code, /CREATE OR REPLACE FUNCTION gov_repo\.l15_authorization_allow_guard_v1\(\)\s+RETURNS trigger\s+LANGUAGE plpgsql\s+SECURITY DEFINER\s+SET search_path = pg_catalog, pg_temp\s+AS \$guard\$/);
+  assert.match(r1code, /ALTER FUNCTION gov_repo\.l15_authorization_allow_guard_v1\(\) OWNER TO postgres;/);
+  assert.match(r1code, /REVOKE ALL ON FUNCTION gov_repo\.l15_authorization_allow_guard_v1\(\)\s+FROM PUBLIC, anon, authenticated, service_role, govia_l15_machine_intake_caller;/);
+  assert.doesNotMatch(r1code, /\bGRANT\b/i, 'no privilege granted');
+  // The only temporary objects are the preflight snapshots (CREATE TEMPORARY TABLE ... ON COMMIT DROP), compared in the postflight.
+  assert.doesNotMatch(r1code.replace(/CREATE TEMPORARY TABLE m17_s2r1_\w+_snapshot ON COMMIT DROP AS/g, ''), /CREATE\s+(TABLE|VIEW|SEQUENCE|ROLE|TRIGGER|CONSTRAINT\s+TRIGGER)|ALTER\s+(TABLE|TRIGGER|ROLE)|DROP\s+|\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|TRUNCATE)\s+gov_repo\./i,
+    'no store, trigger, role or row touched');
+  assert.doesNotMatch(r1code, /SET\s+CONSTRAINTS/i);
+  assert.doesNotMatch(r1code, /supabase\.co|vercel|hosted_/i);
+  // The guard body is the S0 body byte for byte (the semantic checks are unchanged; only the execution context moves).
+  const s0 = read('supabase/migrations/20261012200000_m17_s0_authority_policy_l15_extension_v1.sql');
+  const body = (sql: string, tag: string) => {
+    const at = sql.indexOf('FUNCTION gov_repo.l15_authorization_allow_guard_v1()');
+    const m = sql.slice(at).match(new RegExp(`AS \\$${tag}\\$([\\s\\S]*?)\\$${tag}\\$`));
+    assert.ok(m, `guard body (${tag})`);
+    return m![1]!;
+  };
+  const s0Tag = s0.slice(s0.indexOf('FUNCTION gov_repo.l15_authorization_allow_guard_v1()')).match(/AS \$(\w*)\$/)![1]!;
+  assert.equal(body(r1, 'guard'), body(s0, s0Tag));
 });
