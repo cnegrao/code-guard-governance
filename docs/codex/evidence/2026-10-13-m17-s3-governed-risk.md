@@ -294,7 +294,9 @@ O79–O82 / O84 (support), O90 (verified principal).
 | typecheck (canonical-contracts, governance-review, scanner, graphos, dashboard) | clean |
 | `git diff --check` | clean |
 
-CI on the final HEAD: PENDING (both workflows running on `1bcc511`; updated on completion).
+CI (push runs on this branch): `M16 PostgreSQL 17 security suite` **success** and `M15 PostgreSQL regression` **success** on
+`1bcc511` (implementation; runs 38459640352 / 38459640357), `9e2977f` (runs 38459724022 / 38459723990) and `9b2d4ba` (runs
+38460600496 / 38460600462). This docs-only commit is re-verified by the same two workflows on the final HEAD.
 
 ## Invariants
 
