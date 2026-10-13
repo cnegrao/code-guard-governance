@@ -2261,7 +2261,7 @@ BEGIN
   -- One DB evaluation instant; temporal class; the CURRENT effective policy is the ONLY basis.
   v_now := pg_catalog.clock_timestamp();
   IF p_outcome IN ('VALIDATE','REVOKE') THEN
-    IF v_proposal.requested_effective_from IS NULL THEN
+    IF v_proposal.requested_effective_from IS NULL OR v_proposal.requested_effective_from = v_now THEN
       v_effective_from := v_now;
     ELSIF v_proposal.requested_effective_from < v_now THEN
       v_effective_from := v_proposal.requested_effective_from;
@@ -2904,7 +2904,7 @@ BEGIN
   -- One DB evaluation instant; temporal class; the CURRENT effective policy is the ONLY basis.
   v_now := pg_catalog.clock_timestamp();
   IF p_outcome IN ('VALIDATE','REVOKE') THEN
-    IF v_proposal.requested_effective_from IS NULL THEN
+    IF v_proposal.requested_effective_from IS NULL OR v_proposal.requested_effective_from = v_now THEN
       v_effective_from := v_now;
     ELSIF v_proposal.requested_effective_from < v_now THEN
       v_effective_from := v_proposal.requested_effective_from;
@@ -3216,8 +3216,8 @@ BEGIN
   IF (SELECT pg_catalog.count(*) FROM (VALUES
       ('gov_repo.l15_admit_methodology_version_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,uuid,text,uuid,text[],integer[],text[],text[],text[],integer[],text[],text[],text[],text[],text[],interval,text,text,text)', '3641a97407bd75c4a066a34c5f648201e2df1765813166b6d5bbe98e7aa3e1c4', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
       ('gov_repo.l15_admit_scenario_version_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,uuid,text,uuid,text,text[],text[],text[],text,text,text)', 'c45547e09b4d3729b4a146aef750a4835e90223a8efe17425c7aecfccdfc26cf', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
-      ('gov_repo.l15_decide_methodology_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)', 'faced910a33bbcb7b7f38531f227abfbef5c96a7b866555f9898d6b343e15172', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
-      ('gov_repo.l15_decide_scenario_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)', '16abef1bfb329985ebdbe117525af6dd36346a3385b95dec5c8e9284e2c50c7d', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_decide_methodology_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)', 'cfaa6eef826731d44d2f53aab7273c544d508c08d21fd4f252ddd6c3732f0e7f', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_decide_scenario_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)', '8897b4cbc05f526bcbd244d09caaa5babf054829368dd4f9224c0bf9e1e1867f', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
       ('gov_repo.l15_submit_methodology_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,uuid,uuid,text,timestamp with time zone,uuid,uuid,text,text[],text[],text)', 'd76e90dad660e532f3cb9f1b359710191257f28c85f53f79175077bb2c8bfc1a', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
       ('gov_repo.l15_submit_scenario_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,uuid,uuid,text,timestamp with time zone,uuid,uuid,text,text[],text[],text)', 'bc7bb094235d241f2893ddf00d14593dfaba5379f319c6357fa34e98330becad', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
       ('gov_repo.l15_registry_commit_guard_v1()', 'fd7fc610a3659d2efcc552f1c934b341d1b235b1edfa6eea391871837c6d196d', 'search_path=pg_catalog, pg_temp')) AS m(sig, sha, cfg)
