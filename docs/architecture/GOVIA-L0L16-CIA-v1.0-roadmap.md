@@ -266,7 +266,21 @@ M14 close
   ACP delta: F-S1-1 approved (closed `unresolved_reason` = the L12 runtime-binding vocabulary); F-S1-4 platform-wide technical
   intake approved with S1R1 hardening — additive `20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql` closes the privilege
   surface of the actual machine LOGIN (`l15_machine_role_safe_v1`); platform technical capability != tenant / business authority.
-- **M17-S2 … S7: NOT STARTED.** M18+: NOT STARTED.
+- **PR #66: MERGED** — M17-S1 + S1R1 (canonical main after PR #66: `0ad683c985d1d9b3458365f542b0b59af5df5cd2`).
+- **M17-S2 — RISK_SCENARIO_DEFINITION + RISK_METHODOLOGY governed registries: IMPLEMENTED ON BRANCH
+  `feat/m17-s2-scenario-methodology-registries`, NOT MERGED** (base main `0ad683c`;
+  [evidence](../codex/evidence/2026-10-13-m17-s2-scenario-methodology-registries.md)). Additive migration
+  `20261013120000_m17_s2_scenario_methodology_registries_v1.sql`: 15 L15-specific registry tables (stable tenant-scoped identity,
+  immutable versions with normalized content — domain + legal subject-kind set + typed reference codes; ordered 2..7-level
+  likelihood / impact scales + total rating lookup matrix + positive validity-maximum interval — DB content hashes, typed
+  proposals, typed VALIDATED / REVOKED states pinning decision / authorization / Authority Policy version + hash, CAS heads, exact
+  bitemporal resolvers for S3 / S4); ADMIT / SUBMIT / DECIDE RPCs under the single Authority Policy (`L15_RISK_SCENARIO_*` /
+  `L15_RISK_METHODOLOGY_*`, organisation-wide); SYSTEM_SEED provenance only (no seed rows, human decision required); rank-3
+  registry owners in `l15_support_links` (DISCOVERY_EVIDENCE / SOURCE_ASSERTION only); the S0-deferred `l14_command_results`
+  L15 decision-result branch (`l15_state_id`). `l14_fact_states` / `l14_registry_states` / `l14_support_links` / M16 typed tables
+  not widened. Application SECURITY DEFINER surface 49 → 55; L15 definers 7 → 14; machine intake surface unchanged (2).
+  O19, O20, O21 PASS; O79 / O81 / O82 PASS for the S2 owners. Optional hypothesis → scenario pin dependency-deferred (F-S2-2).
+- **M17-S3 … S7: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
