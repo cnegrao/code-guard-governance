@@ -3211,6 +3211,22 @@ BEGIN
                AND NOT gov_repo.l15_machine_role_safe_v1(r.oid, r.rolname::text)) THEN
     RAISE EXCEPTION 'M17_S2_POSTFLIGHT: a machine intake LOGIN is no longer on its closed S1R1 surface';
   END IF;
+  -- P7. Definer-capability inventory: each of the seven new L15 SECURITY DEFINER routines has its exact owner, body SHA-256
+  --     and config (any later change requires re-review of this inventory and of the test inventory).
+  IF (SELECT pg_catalog.count(*) FROM (VALUES
+      ('gov_repo.l15_admit_methodology_version_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,uuid,text,uuid,text[],integer[],text[],text[],text[],integer[],text[],text[],text[],text[],text[],interval,text,text,text)', '3641a97407bd75c4a066a34c5f648201e2df1765813166b6d5bbe98e7aa3e1c4', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_admit_scenario_version_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,uuid,text,uuid,text,text[],text[],text[],text,text,text)', 'c45547e09b4d3729b4a146aef750a4835e90223a8efe17425c7aecfccdfc26cf', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_decide_methodology_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)', 'faced910a33bbcb7b7f38531f227abfbef5c96a7b866555f9898d6b343e15172', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_decide_scenario_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)', '16abef1bfb329985ebdbe117525af6dd36346a3385b95dec5c8e9284e2c50c7d', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_submit_methodology_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,uuid,uuid,text,timestamp with time zone,uuid,uuid,text,text[],text[],text)', 'd76e90dad660e532f3cb9f1b359710191257f28c85f53f79175077bb2c8bfc1a', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_submit_scenario_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,uuid,uuid,text,timestamp with time zone,uuid,uuid,text,text[],text[],text)', 'bc7bb094235d241f2893ddf00d14593dfaba5379f319c6357fa34e98330becad', 'search_path=pg_catalog, pg_temp;lock_timeout=5s'),
+      ('gov_repo.l15_registry_commit_guard_v1()', 'fd7fc610a3659d2efcc552f1c934b341d1b235b1edfa6eea391871837c6d196d', 'search_path=pg_catalog, pg_temp')) AS m(sig, sha, cfg)
+      JOIN pg_catalog.pg_proc AS p ON p.oid = pg_catalog.to_regprocedure(m.sig)
+      WHERE p.prosecdef AND pg_catalog.pg_get_userbyid(p.proowner) = 'postgres'
+        AND pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(p.prosrc, 'UTF8')), 'hex') = m.sha
+        AND COALESCE(pg_catalog.array_to_string(p.proconfig, ';'), '-') = m.cfg) <> 7 THEN
+    RAISE EXCEPTION 'M17_S2_POSTFLIGHT: an S2 definer differs from its inventory (owner / body / config)';
+  END IF;
 END;
 $postflight$;
 

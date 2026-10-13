@@ -69,6 +69,16 @@ test('M17-S2 scenario / methodology registries (disposable PG17)', { timeout: 3_
     assert.equal(await k.resolve(SCENARIO, x.org, r, 'clock_timestamp()', 'clock_timestamp()'), null, 'admitted is not VALIDATED');
   });
 
+  await t.test('content-hash golden vectors: PostgreSQL and the TS mirror agree byte-for-byte (pinned in governance-review tests)', async () => {
+    assert.equal(await one(`select gov_repo.l15_risk_scenario_content_hash_v1('PRIVACY', array['REL:READS_FROM','DATA_ELEMENT'],
+      array['SCANNER_RULE_ID','ORGANISATION_SCENARIO_CODE'], array['RISK-PII-DETECTED','GOLDEN-1'])`),
+    '8cb19829917b2f4ea121dba77c9e7e6702e6254c412533b4804b094ebb663acd');
+    assert.equal(await one(`select gov_repo.l15_risk_methodology_content_hash_v1(array['L2','L1'], array[2,1], array['ORGANISATION_DEFINITION_CODE','ORGANISATION_DEFINITION_CODE'],
+      array['DEF-L2','DEF-L1'], array['I1','I2'], array[1,2], array['ORGANISATION_DEFINITION_CODE','ORGANISATION_DEFINITION_CODE'], array['DEF-I1','DEF-I2'],
+      array['L2','L1','L1','L2'], array['I2','I1','I2','I1'], array['HIGH','LOW','MODERATE','MODERATE'], '90 days'::interval)`),
+    '91ea62c91b130b134a1418b5b755f738a920323128973f8943ac404cf481d230');
+  });
+
   await t.test('O19 / attacks 1-2: a wrong caller content hash is rejected before any mutation (scenario + methodology)', async () => {
     const before = await registryCounts();
     const sc = scenarioContent({}, 'WRONG-HASH');
