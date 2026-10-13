@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./discovery": "./src/discovery/index.ts",
-    "./semantic/similarity": "./src/semantic/similarity.ts"
+    "./semantic/similarity": "./src/semantic/similarity.ts",
+    "./l15": "./src/l15/index.ts"
   },
   "dependencies": {
     "@council/canonical-contracts": "^0.1.0"
@@ -19,6 +20,7 @@
     "test:semantic": "tsx --test --test-isolation=none test/semantic/*.test.ts",
     "typecheck:validation-lab": "tsc --noEmit -p tsconfig.validation-lab.json",
     "typecheck:discovery-engine": "tsc --noEmit -p tsconfig.discovery-engine.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:l15-adapters": "tsx --test --test-isolation=none test/l15/*.test.ts"
   }
 }

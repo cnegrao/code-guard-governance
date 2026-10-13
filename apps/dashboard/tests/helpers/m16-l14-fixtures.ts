@@ -13,6 +13,7 @@ import {
   l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration, l14ControlDefinitionRegistryMigration,
   l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration,
   l14ControlApplicabilityMigration, l14ControlAssessmentMigration, l14ReadProjectionMigration, m17S0AuthorityExtensionMigration,
+  m17S1SignalsHypothesesMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -74,8 +75,13 @@ const uuidOrNull = (value: string | null) => (value === null ? 'null::uuid' : `'
  * 'M17S0' is 'M16RP' + the M17-S0 D-01 Authority Policy L15 extension / D-05 write-freeze; the M16RP horizon stays exactly the
  * post-M16 catalog.
  */
-export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2' | 'S1B3' | 'S1B4' | 'S1B5' | 'S1B6' | 'S1C1' | 'S1C2' | 'S1C1R1' | 'S1C3' | 'S1C4' | 'S1C5' | 'M16RP' | 'M17S0';
+export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2' | 'S1B3' | 'S1B4' | 'S1B5' | 'S1B6' | 'S1C1' | 'S1C2' | 'S1C1R1' | 'S1C3' | 'S1C4' | 'S1C5' | 'M16RP' | 'M17S0' | 'M17S1';
 export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
+  M17S1: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
+    ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
+    l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,
+    l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration, l14ControlApplicabilityMigration, l14ControlAssessmentMigration,
+    l14ReadProjectionMigration, m17S0AuthorityExtensionMigration, m17S1SignalsHypothesesMigration],
   M17S0: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
     ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
     l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,
@@ -143,6 +149,7 @@ export async function l14Cluster(diagnostic: (message: string) => void,
   const pg = await disposableM16Postgres(diagnostic, options.horizon === 'S1B3' || options.horizon === 'S1B4' || options.horizon === 'S1B5' || options.horizon === 'S1B6'
     || options.horizon === 'S1C1' || options.horizon === 'S1C2' || options.horizon === 'S1C1R1' || options.horizon === 'S1C3'
     || options.horizon === 'S1C4' || options.horizon === 'S1C5' || options.horizon === 'M16RP' || options.horizon === 'M17S0'
+    || options.horizon === 'M17S1'
     ? { fullPrimaryChain: true } : { governanceWriteChain: true, policyStorePrerequisites });
   try {
     const chain = L14_HORIZON_MIGRATIONS[options.horizon ?? 'S1A'];
