@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "node --test --test-isolation=none test/contracts.test.mjs test/semantic-representation.test.mjs test/execution-context.test.mjs test/runtime-observation.test.mjs test/cross-signal-comparison.test.mjs test/l15-risk-intelligence.test.mjs test/l15-signals-hypotheses.test.mjs test/l15-registries.test.mjs",
+    "test": "node --test --test-isolation=none test/contracts.test.mjs test/semantic-representation.test.mjs test/execution-context.test.mjs test/runtime-observation.test.mjs test/cross-signal-comparison.test.mjs test/l15-risk-intelligence.test.mjs test/l15-signals-hypotheses.test.mjs test/l15-registries.test.mjs test/l15-governed-risk.test.mjs",
     "typecheck": "tsc --noEmit"
   }
 }
