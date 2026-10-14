@@ -16,7 +16,7 @@ import { SCENARIO } from '../helpers/m17-s2-fixtures';
 const op = [...L15_DOMAIN_SUBJECT_MATRIX.OPERATIONAL.objects, ...L15_DOMAIN_SUBJECT_MATRIX.OPERATIONAL.relationships.map(r => `REL:${r}`)];
 
 test('M17-S3 GOVERNED_RISK concurrency (disposable PG17)', { timeout: 3_600_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3R1' });
   t.after(() => c.stop());
   const k = await m17s3Kit(c);
   const monitor = c.session('m16_bootstrap');

@@ -211,11 +211,16 @@ export interface L15GovernedRiskResolverRequest {
   readonly recordedCutoff: string | null;
 }
 
+/**
+ * O44 summary over the EXACT lineage support union of one state: the GOVERNED_RISK links owned by its proposal, its
+ * governance decision and the state itself (M17-S3R1). SUPPORT_NONE iff zero lineage links.
+ */
 export interface L15GovernedRiskSupportCurrencySummary {
   readonly supportCurrency: L15SupportCurrency;
+  /** Lineage links across PROPOSAL + DECISION + STATE. */
   readonly supportLinkCount: number;
   readonly degradedLinkCount: number;
-  /** The exact failing link of the risk (SUPPORT_DEGRADED only). */
+  /** The first failing lineage link (PROPOSAL -> DECISION -> STATE, then link_id); SUPPORT_DEGRADED only. */
   readonly failingLinkId: string | null;
   readonly failingReason: L15SupportFailureReason | null;
   /** For a transitive failure (signal / hypothesis support): the exact upstream signal-owned link. */

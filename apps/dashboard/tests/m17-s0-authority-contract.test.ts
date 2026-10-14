@@ -56,12 +56,13 @@ test("D-01 mirror: unknown / non-governance permissions, wrong action and non-lo
 
 test("static: the S0 migration is additive, hosted-free and creates no L15 store, bootstrap or definer", () => {
   const names = readdirSync(MIGRATIONS).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  // Horizon: S0 is followed by exactly the M17-S1 / S1R1 / S2 / S2R1 / S3 migrations (each later slice extends this exact list; never a
+  // Horizon: S0 is followed by exactly the M17-S1 / S1R1 / S2 / S2R1 / S3 / S3R1 migrations (each later slice extends this exact list; never a
   // wildcard).
   assert.deepEqual(names.slice(names.indexOf(S0)), [S0, "20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
     "20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql", "20261013120000_m17_s2_scenario_methodology_registries_v1.sql",
-    "20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql", "20261013140000_m17_s3_governed_risk_v1.sql"],
-    "the S0 migration is followed only by the M17-S1 / S1R1 / S2 / S2R1 / S3 migrations");
+    "20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql", "20261013140000_m17_s3_governed_risk_v1.sql",
+    "20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql"],
+    "the S0 migration is followed only by the M17-S1 / S1R1 / S2 / S2R1 / S3 / S3R1 migrations");
   assert.ok(names.indexOf(S0) > names.indexOf("20261012120000_m16_read_projection_closure_v1.sql"));
   assert.match(sql, /^-- M17-S0/);
   assert.doesNotMatch(code, /CREATE\s+(TABLE|VIEW|MATERIALIZED VIEW|SEQUENCE)\b/i, "no L15 store / relation is created in S0");

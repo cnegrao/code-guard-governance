@@ -12,6 +12,7 @@ const read = (path: string) => readFileSync(new URL(path, root), 'utf8');
 const S2 = '20261013120000_m17_s2_scenario_methodology_registries_v1.sql';
 const S2R1 = '20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql';
 const S3 = '20261013140000_m17_s3_governed_risk_v1.sql';
+const S3R1 = '20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql';
 const migration = read(`supabase/migrations/${S2}`);
 const code = migration.split('\n').filter(line => !line.trimStart().startsWith('--')).join('\n')
   .replace(/COMMENT ON [^;]*?IS\s*'(?:[^']|'')*';/g, '');
@@ -21,10 +22,10 @@ const sources = [
   'apps/dashboard/lib/governance/l15-registry-persistence.ts',
 ];
 
-test('static: S2 is followed only by its S2R1 corrective (then the M17-S3 slice), additive, hosted-free; edits no historical migration; seeds nothing', () => {
+test('static: S2 is followed only by its S2R1 corrective (then the M17-S3 slice + S3R1), additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
   // Horizon: each later slice extends this exact list (never a wildcard).
-  assert.deepEqual(names.slice(names.indexOf(S2)), [S2, S2R1, S3]);
+  assert.deepEqual(names.slice(names.indexOf(S2)), [S2, S2R1, S3, S3R1]);
   assert.match(migration, /^-- M17-S2/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   assert.doesNotMatch(code, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+gov_repo\.(?!l15_support_link_insert_guard_v1\b)/i,

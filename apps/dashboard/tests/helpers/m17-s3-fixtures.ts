@@ -251,7 +251,8 @@ export async function m17s3Kit(c: L14Cluster) {
   const read = (actor: Actor, s: L15GovernedRiskSubject, scenarioId: string, at: string | null = null, cutoff: string | null = null) =>
     exec(readSql(actor, s, scenarioId, at, cutoff));
   const supportCurrency = async (org: string, stateId: string, at = 'clock_timestamp()', cutoff = 'clock_timestamp()') =>
-    json(`select coalesce(to_json(array_agg(r order by r.link_id)), '[]') from gov_repo.l15_governed_risk_support_currency_v1('${org}', '${stateId}', ${at}, ${cutoff}) r`) as
+    json(`select coalesce(to_json(array_agg(r order by r.n)), '[]') from gov_repo.l15_governed_risk_support_currency_v1('${org}', '${stateId}', ${at}, ${cutoff})
+      with ordinality r(link_id, target_tag, target_id, link_currency, failure_reason, upstream_link_id, n)`) as
       Promise<Array<{ link_id: string; target_tag: string; target_id: string; link_currency: string; failure_reason: string | null; upstream_link_id: string | null }>>;
   const counts = async (org: string) => json(`select json_build_object(${[...GR_TABLES, 'l14_authorization_decisions', 'l14_proposals',
     'l14_governance_decisions', 'l14_command_results', 'l15_support_links'].map(t => `'${t}',(select count(*) from gov_repo.${t} where organisation_id='${org}')`).join(',')})`) as Promise<Record<string, number>>;

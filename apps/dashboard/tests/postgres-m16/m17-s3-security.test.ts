@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { m17S3GovernedRiskMigration, migrationSource } from '../helpers/disposable-m16-postgres';
+import { m17S3GovernedRiskMigration, m17S3R1SupportLineageMigration, migrationSource } from '../helpers/disposable-m16-postgres';
 import { l14Cluster, lastLine } from '../helpers/m16-l14-fixtures';
 import { l15SecurityViolationsSql } from '../helpers/m17-l15-security-profile';
 import {
@@ -22,7 +22,7 @@ const MACHINE_RPCS = ['l15_admit_machine_hypothesis_v1', 'l15_admit_machine_sign
 const S3_RPC_SIGS = L15_S3_DEFINER_INVENTORY.map(e => e.sig).filter(s => !s.includes('commit_guard'));
 
 test('M17-S3 GOVERNED_RISK security / ACL / definer surface (disposable PG17)', { timeout: 3_600_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3', stopBefore: m17S3GovernedRiskMigration });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3R1', stopBefore: m17S3GovernedRiskMigration });
   t.after(() => c.stop());
   const { owner, rejects, bootstrapSql } = c;
   const one = async (query: string) => lastLine(await owner(query));
@@ -53,6 +53,28 @@ test('M17-S3 GOVERNED_RISK security / ACL / definer surface (disposable PG17)', 
   t.diagnostic(`ACL surface after S3: ${JSON.stringify(after)}`);
   assert.deepEqual(after, { application_definers: 58, service_role_l15_rpcs: 13, technical_intake_rpcs: 2, l15_definers: 19, l15_tables: 21,
     service_role_l15_table_privileges: 0 });
+
+  // S3R1 (F-S3-1): replaces only the two owner-only O44 projections in place; every surface count is unchanged.
+  const projections = () => json(`select json_object_agg(p.proname, json_build_object('secdef', p.prosecdef, 'owner', pg_get_userbyid(p.proowner),
+      'cfg', p.proconfig, 'acl', coalesce(p.proacl::text, '-'), 'result', pg_get_function_result(p.oid), 'args', pg_get_function_identity_arguments(p.oid)))
+    from pg_proc p where p.pronamespace='gov_repo'::regnamespace and p.proname in ('l15_governed_risk_support_currency_v1','l15_governed_risk_support_summary_v1')`);
+  const bodies = () => json(`select json_object_agg(p.oid::regprocedure::text, md5(p.prosrc)) from pg_proc p where p.pronamespace='gov_repo'::regnamespace`) as
+    Promise<Record<string, string>>;
+  const projBefore = await projections(), bodiesBefore = await bodies();
+  await c.migrate(m17S3R1SupportLineageMigration);
+  assert.deepEqual(await surface(), after, 'S3R1 leaves the definer / RPC / intake / table / privilege surface unchanged');
+  assert.deepEqual(await projections(), projBefore, 'signature, result columns, invoker, owner, config and ACL preserved');
+  const bodiesAfter = await bodies();
+  assert.deepEqual(Object.keys(bodiesAfter).filter(k => bodiesAfter[k] !== bodiesBefore[k]).sort(),
+    ['gov_repo.l15_governed_risk_support_currency_v1(uuid,uuid,timestamp with time zone,timestamp with time zone)',
+      'gov_repo.l15_governed_risk_support_summary_v1(uuid,uuid,timestamp with time zone,timestamp with time zone)']);
+  assert.equal(Object.keys(bodiesAfter).length, Object.keys(bodiesBefore).length, 'no routine added or removed');
+
+  await t.test('S3R1 refuses to re-run (preflight) and S3 still refuses after it', async () => {
+    await rejects(owner(migrationSource(m17S3R1SupportLineageMigration)), '55000', /M17_S3R1_PREFLIGHT/);
+    await rejects(owner(migrationSource(m17S3GovernedRiskMigration)), '55000', /M17_S3_PREFLIGHT/);
+    assert.deepEqual(await surface(), after);
+  });
 
   await t.test('the migration is additive and refuses to re-run (preflight) without changing anything', async () => {
     await rejects(owner(migrationSource(m17S3GovernedRiskMigration)), '55000', /M17_S3_PREFLIGHT/);

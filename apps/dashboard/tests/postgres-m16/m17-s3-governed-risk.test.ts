@@ -23,7 +23,7 @@ const legalTokens = (d: L15RiskDomain) => {
 const M16_HISTORY = ['l14_fact_states', 'l14_registry_states', 'l14_support_links', 'l14_authority_policy_versions'];
 
 test('M17-S3 GOVERNED_RISK (disposable PG17)', { timeout: 3_600_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3R1' });
   t.after(() => c.stop());
   const { owner, svc, exec, rejects } = c;
   const k = await m17s3Kit(c);

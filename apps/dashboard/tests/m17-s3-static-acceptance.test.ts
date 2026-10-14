@@ -10,6 +10,7 @@ import { test } from 'node:test';
 const root = new URL('../../../', import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), 'utf8');
 const S3 = '20261013140000_m17_s3_governed_risk_v1.sql';
+const S3R1 = '20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql';
 const migration = read(`supabase/migrations/${S3}`);
 const code = migration.split('\n').filter(line => !line.trimStart().startsWith('--')).join('\n')
   .replace(/COMMENT ON [^;]*?IS\s*'(?:[^']|'')*';/g, '');
@@ -19,10 +20,9 @@ const sources = [
   'apps/dashboard/lib/governance/l15-governed-risk-persistence.ts',
 ];
 
-test('static: S3 is the last migration, additive, hosted-free; edits no historical migration; seeds nothing', () => {
+test('static: S3 is followed only by its S3R1 corrective; additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  assert.equal(names.at(-1), S3);
-  assert.equal(names.at(-2), '20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql');
+  assert.deepEqual(names.slice(names.indexOf(S3) - 1), ['20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql', S3, S3R1]);
   assert.match(migration, /^-- M17-S3/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   // The only replaced routines are the owner-only S1 / S2 link guard and the S2 command-result state guard (S1 / S2 branches
@@ -97,4 +97,27 @@ test('static: no LLM / scanner / graph / vector path; the persistence adapter is
       : /\.(ts|tsx)$/.test(entry.name) ? [`${dir}${entry.name}`] : []);
   const consumers = [...walk('apps/dashboard/app/'), ...walk('apps/dashboard/components/')].filter(f => /l15-governed-risk-persistence/.test(read(f)));
   assert.deepEqual(consumers, []);
+});
+
+test('static: S3R1 replaces only the two owner-only O44 projections (lineage union), touching no store, RPC, definer or grant', () => {
+  const r1 = read(`supabase/migrations/${S3R1}`);
+  const r1code = r1.split('\n').filter(line => !line.trimStart().startsWith('--')).join('\n')
+    .replace(/COMMENT ON [^;]*?IS\s*'(?:[^']|'')*';/g, '');
+  assert.match(r1, /^-- M17-S3R1/);
+  assert.deepEqual([...r1code.matchAll(/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+([\w.]+)/gi)].map(m => m[1]),
+    ['gov_repo.l15_governed_risk_support_currency_v1', 'gov_repo.l15_governed_risk_support_summary_v1']);
+  assert.doesNotMatch(r1code, /SECURITY\s+DEFINER|\bGRANT\b|\bREVOKE\b|SET\s+CONSTRAINTS|OWNER\s+TO/i);
+  assert.doesNotMatch(r1code.replace(/CREATE TEMPORARY TABLE m17_s3r1_\w+ ON COMMIT DROP AS/g, ''),
+    /CREATE\s+(TABLE|VIEW|SEQUENCE|ROLE|TRIGGER|INDEX)|ALTER\s+(TABLE|TRIGGER|ROLE|FUNCTION)|DROP\s+|\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|TRUNCATE)\s+gov_repo\./i,
+    'no store, trigger, role, index, row or other routine touched');
+  assert.doesNotMatch(r1code, /supabase\.co|vercel|hosted_/i);
+  // The exact lineage membership: the three typed owners of the state's own proposal / decision / state.
+  for (const owner of ["owner_governed_risk_artifact = 'PROPOSAL' AND l.owner_governed_risk_proposal_id = s.proposal_id",
+    "owner_governed_risk_artifact = 'DECISION' AND l.owner_governance_decision_id = s.governance_decision_id",
+    "owner_governed_risk_artifact = 'STATE' AND l.owner_governed_risk_state_id = s.state_id"]) {
+    assert.ok(r1code.includes(owner), owner);
+  }
+  // The per-link target rules are reused verbatim (not replaced).
+  assert.match(r1code, /gov_repo\.l15_support_link_target_failure_v1\(/);
+  assert.doesNotMatch(r1code, /FUNCTION\s+gov_repo\.l15_support_link_target_failure_v1/);
 });

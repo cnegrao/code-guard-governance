@@ -2,13 +2,17 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { L15_DOMAIN_SUBJECT_MATRIX, type L15GovernedRiskSupport, type L15RiskDomain } from '@council/canonical-contracts';
+import { m17S3R1SupportLineageMigration } from '../helpers/disposable-m16-postgres';
 import { l14Cluster, lastLine } from '../helpers/m16-l14-fixtures';
 import { controlAssessmentKit, inDays } from '../helpers/m16-l14-control-assessment-fixtures';
 import { m17s1Kit, objectSubject as s1Subject } from '../helpers/m17-s1-fixtures';
 import { m17s3Kit, objectSubject, type Rel } from '../helpers/m17-s3-fixtures';
 
 /**
- * M17-S3 — O44 support currency on real disposable PostgreSQL 17 (ADR-GOVIA-RISK-INTELLIGENCE-v1 §§9.2, 12, 16; D-03).
+ * M17-S3 / S3R1 — O44 support currency on real disposable PostgreSQL 17 (ADR-GOVIA-RISK-INTELLIGENCE-v1 §§9.2, 12, 13.2, 16;
+ * D-03). The cluster stops before S3R1 to reproduce F-S3-1 (the S3 projection saw only STATE-owned links), applies S3R1, and
+ * every later subtest proves the corrected projection over the EXACT lineage support union of a state: the GOVERNED_RISK links
+ * owned by its proposal + its governance decision + the state (first failing link PROPOSAL -> DECISION -> STATE, then link_id).
  * Upstream rows are REAL: M16 CONTROL_ASSESSMENT facts through the real M16 RPCs (and revoked / expired / superseded through
  * them), a member human signal + hypothesis through the real S1 RPCs, an administrator technical field state lineage. The
  * GOVERNED_RISK authority enters the control-assessment organisation through a normal AP successor that keeps the M16 rules.
@@ -22,7 +26,7 @@ import { m17s3Kit, objectSubject, type Rel } from '../helpers/m17-s3-fixtures';
 const legalObjects = (d: L15RiskDomain) => L15_DOMAIN_SUBJECT_MATRIX[d].objects as readonly string[];
 
 test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3_600_000 }, async t => {
-  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3' });
+  const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S3R1', stopBefore: m17S3R1SupportLineageMigration });
   t.after(() => c.stop());
   const { owner, exec } = c;
   const k = await m17s3Kit(c);
@@ -47,6 +51,15 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
       failing_reason: string | null; failing_upstream_link_id: string | null }>;
   const stateLink = (stateId: string, tag: string) => k.one(`select link_id from gov_repo.l15_support_links where organisation_id='${org}'
     and owner_kind='GOVERNED_RISK' and owner_governed_risk_artifact='STATE' and owner_governed_risk_state_id='${stateId}' and target_tag='${tag}'`);
+  const ownerLink = (artifact: 'PROPOSAL' | 'DECISION' | 'STATE', ownerId: string, tag: string) => k.one(`select link_id
+    from gov_repo.l15_support_links where organisation_id='${org}' and owner_kind='GOVERNED_RISK' and owner_governed_risk_artifact='${artifact}'
+      and ${artifact === 'PROPOSAL' ? 'owner_governed_risk_proposal_id' : artifact === 'DECISION' ? 'owner_governance_decision_id' : 'owner_governed_risk_state_id'}='${ownerId}'
+      and target_tag='${tag}'`);
+  type V = Awaited<ReturnType<typeof k.validateRisk>>;
+  const propLink = (r: V, tag: string) => ownerLink('PROPOSAL', r.submitted.proposal_id, tag);
+  const decLink = (r: V, tag: string) => ownerLink('DECISION', r.decided.governance_decision_id, tag);
+  const decisions = () => k.one(`select count(*) from gov_repo.l14_governance_decisions where organisation_id='${org}' and subject_kind='GOVERNED_RISK'`);
+  const stateRow = (stateId: string) => k.one(`select t::text from gov_repo.l15_governed_risk_states t where organisation_id='${org}' and state_id='${stateId}'`);
   const m16Digest = () => ca.historyDigest(org);
   const grRows = () => k.one(`select md5(coalesce(string_agg(x, '|' order by x), '')) from (
     select 's:'||t::text x from gov_repo.l15_governed_risk_states t where organisation_id='${org}'
@@ -66,6 +79,20 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
   const expiring = await fact('o44-expiring', 'API');
   const superseded = await fact('o44-superseded', 'AGENT');
 
+  await t.test('F-S3-1 reproduced on the S3 catalog, corrected by S3R1: proposal-only support is part of the lineage', async () => {
+    const pre = await fact('f-o44-pre', 'DATA_ASSET');
+    const scenPre = await k.scenario(x, 'scn-o44-pre', 'OPERATIONAL', legalObjects('OPERATIONAL'));
+    const r = await k.validateRisk(x, 'o44-pre', subjectOf(0), scenPre, { support: present(['L14_FACT_STATE', pre.stateId]) });
+    const s3 = await summary(r.stateId);
+    assert.deepEqual([s3.support_currency, Number(s3.support_link_count)], ['SUPPORT_NONE', 0], 'S3: the proposal-cited fact was invisible (F-S3-1)');
+    const rows = await grRows();
+    await c.migrate(m17S3R1SupportLineageMigration);
+    assert.equal(await grRows(), rows, 'S3R1 writes no GOVERNED_RISK / support row');
+    const s3r1 = await summary(r.stateId);
+    assert.deepEqual([s3r1.support_currency, Number(s3r1.support_link_count), Number(s3r1.degraded_link_count)], ['SUPPORT_CURRENT', 1, 0]);
+    assert.equal((await k.supportCurrency(org, r.stateId))[0]!.link_id, await propLink(r, 'L14_FACT_STATE'));
+  });
+
   await t.test('O44 SUPPORT_NONE: a risk validated with explicit NONE support projects SUPPORT_NONE (never CURRENT by default)', async () => {
     const r = await k.validateRisk(x, 'o44-none', subjectOf(0), scen);
     const s = await summary(r.stateId);
@@ -80,12 +107,15 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
     const r = await k.validateRisk(x, 'o44-l14', s, scen, {
       support: present(['L14_FACT_STATE', direct.stateId]),
       decideSupport: present(['L14_FACT_STATE', direct.stateId], ['DISCOVERY_EVIDENCE', x.evidence]) });
-    const l14Link = await stateLink(r.stateId, 'L14_FACT_STATE');
+    // Lineage: PROPOSAL L14 + DECISION {L14, EV} + STATE {L14, EV} = 5 links; the first failing link is the PROPOSAL one.
+    const l14Link = await propLink(r, 'L14_FACT_STATE');
     const evLink = await stateLink(r.stateId, 'DISCOVERY_EVIDENCE');
     assert.equal((await summary(r.stateId)).support_currency, 'SUPPORT_CURRENT');
     const rows = await k.supportCurrency(org, r.stateId);
     assert.deepEqual(rows.map(l => [l.target_tag, l.link_currency, l.failure_reason]).sort(),
-      [['DISCOVERY_EVIDENCE', 'CURRENT', null], ['L14_FACT_STATE', 'CURRENT', null]]);
+      [['DISCOVERY_EVIDENCE', 'CURRENT', null], ['DISCOVERY_EVIDENCE', 'CURRENT', null], ['L14_FACT_STATE', 'CURRENT', null],
+        ['L14_FACT_STATE', 'CURRENT', null], ['L14_FACT_STATE', 'CURRENT', null]]);
+    assert.equal(rows[0]!.link_id, l14Link, 'rows ordered PROPOSAL -> DECISION -> STATE');
     assert.equal(rows.find(l => l.target_tag === 'L14_FACT_STATE')!.target_id, direct.stateId, 'the exact cited fact_state_id');
     const before = await now();
     const grBefore = await grRows();
@@ -96,7 +126,7 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
     const deg = await summary(r.stateId);
     assert.deepEqual([deg.support_currency, Number(deg.support_link_count), Number(deg.degraded_link_count), deg.failing_link_id,
       deg.failing_reason, deg.failing_upstream_link_id],
-    ['SUPPORT_DEGRADED', 2, 1, l14Link, 'L14_FACT_STATE_NOT_CURRENT', null]);
+    ['SUPPORT_DEGRADED', 5, 3, l14Link, 'L14_FACT_STATE_NOT_CURRENT', null]);
     const perLink = await k.supportCurrency(org, r.stateId);
     assert.deepEqual(perLink.find(l => l.link_id === evLink)!.link_currency, 'CURRENT', 'immutable evidence stays current');
     // The risk itself is untouched: no automatic transition, no revoke, no re-decision; history + head byte-identical.
@@ -110,7 +140,7 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
     const read = await k.read(x.member, s, scen.id);
     assert.deepEqual([read.resolution, read.state_id, read.support_currency, read.failing_link_id, read.failing_reason,
       Number(read.support_link_count), Number(read.degraded_link_count)],
-    ['CURRENT', r.stateId, 'SUPPORT_DEGRADED', l14Link, 'L14_FACT_STATE_NOT_CURRENT', 2, 1]);
+    ['CURRENT', r.stateId, 'SUPPORT_DEGRADED', l14Link, 'L14_FACT_STATE_NOT_CURRENT', 5, 3]);
     const past = await k.read(x.member, s, scen.id, at(before), at(before));
     assert.equal(past.support_currency, 'SUPPORT_CURRENT');
     assert.equal(await m16Digest(), m16, 'no M16 row written by the L15 read');
@@ -172,9 +202,10 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
     await ca.revoke(ctx, 'o44-signal', viaSignal.app.stateId, viaSignal.stateId, 'NOT_SATISFIED');
     const a = await summary(rs.stateId), b = await summary(rh.stateId);
     assert.deepEqual([a.support_currency, a.failing_link_id, a.failing_reason, a.failing_upstream_link_id],
-      ['SUPPORT_DEGRADED', await stateLink(rs.stateId, 'RISK_SIGNAL'), 'SIGNAL_SUPPORT_NOT_CURRENT', upstream]);
+      ['SUPPORT_DEGRADED', await propLink(rs, 'RISK_SIGNAL'), 'SIGNAL_SUPPORT_NOT_CURRENT', upstream]);
+    assert.equal(Number(a.degraded_link_count), 3, 'proposal + decision + state links all degrade transitively');
     assert.deepEqual([b.support_currency, b.failing_link_id, b.failing_reason, b.failing_upstream_link_id],
-      ['SUPPORT_DEGRADED', await stateLink(rh.stateId, 'RISK_HYPOTHESIS'), 'HYPOTHESIS_SUPPORT_NOT_CURRENT', upstream]);
+      ['SUPPORT_DEGRADED', await propLink(rh, 'RISK_HYPOTHESIS'), 'HYPOTHESIS_SUPPORT_NOT_CURRENT', upstream]);
     assert.equal(await grRows(), grBefore, 'no GOVERNED_RISK row changes');
     assert.equal(await k.one(`select md5(string_agg(t::text, '|' order by t::text)) from gov_repo.l15_risk_signals t where organisation_id='${org}'`),
       signalRows, 'the signal itself is never re-evaluated or rewritten');
@@ -200,9 +231,90 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
       from gov_repo.technical_field_states where organisation_id = '${org}' and state_id = '${tech}';`);
     const d = await summary(r.stateId);
     assert.deepEqual([d.support_currency, d.failing_link_id, d.failing_reason],
-      ['SUPPORT_DEGRADED', await stateLink(r.stateId, 'TECHNICAL_FIELD_STATE'), 'FIELD_STATE_SUPERSEDED']);
+      ['SUPPORT_DEGRADED', await decLink(r, 'TECHNICAL_FIELD_STATE'), 'FIELD_STATE_SUPERSEDED']);
+    assert.deepEqual([Number(d.support_link_count), Number(d.degraded_link_count)], [2, 2], 'DECISION + STATE links (no proposal support)');
     assert.equal((await summary(r.stateId, at(before), at(before))).support_currency, 'SUPPORT_CURRENT');
     assert.equal((await k.resolution(org, s, scen3.id)).resolution, 'CURRENT');
+  });
+
+  await t.test('O44 / F-S3-1: proposal-only support degrades the unchanged risk, naming the exact PROPOSAL-owned link', async () => {
+    const pf = await fact('f-o44-prop', 'DATA_ELEMENT');
+    const scenP = await k.scenario(x, 'scn-o44-prop', 'OPERATIONAL', legalObjects('OPERATIONAL'));
+    const s = subjectOf(1);
+    // 1-2. PRESENT proposal support (exact L14_FACT_STATE); decision / state support NONE.
+    const r = await k.validateRisk(x, 'o44-prop', s, scenP, { support: present(['L14_FACT_STATE', pf.stateId]) });
+    const link = await propLink(r, 'L14_FACT_STATE');
+    assert.equal(await k.one(`select count(*) from gov_repo.l15_support_links where organisation_id='${org}' and owner_kind='GOVERNED_RISK'
+      and (owner_governance_decision_id='${r.decided.governance_decision_id}' or owner_governed_risk_state_id='${r.stateId}')`), '0',
+    'decision / state support NONE');
+    // 3. Immediately after validation: SUPPORT_CURRENT (never SUPPORT_NONE).
+    const cur = await k.read(x.member, s, scenP.id);
+    assert.deepEqual([cur.resolution, cur.support_currency, Number(cur.support_link_count), Number(cur.degraded_link_count)],
+      ['CURRENT', 'SUPPORT_CURRENT', 1, 0]);
+    const before = await now();
+    const row = await stateRow(r.stateId), head = await k.head(org, s, scenP.id), gr = await grRows(), dec = await decisions();
+    // 4. The exact M16 fact is revoked through its normal governed path.
+    await ca.revoke(ctx, 'o44-prop', pf.app.stateId, pf.stateId, 'NOT_SATISFIED');
+    // 5. The unchanged risk reads SUPPORT_DEGRADED naming the exact PROPOSAL-owned link.
+    const deg = await k.read(x.member, s, scenP.id);
+    assert.deepEqual([deg.resolution, deg.state_id, deg.support_currency, deg.failing_link_id, deg.failing_reason, deg.failing_upstream_link_id,
+      Number(deg.support_link_count), Number(deg.degraded_link_count)],
+    ['CURRENT', r.stateId, 'SUPPORT_DEGRADED', link, 'L14_FACT_STATE_NOT_CURRENT', null, 1, 1]);
+    // 6. State VALIDATED and byte-identical; head unchanged; no new decision / command result / support link; no replacement.
+    assert.equal(await stateRow(r.stateId), row);
+    assert.match(row, /,VALIDATED,/);
+    assert.equal(await k.head(org, s, scenP.id), head);
+    assert.equal(await grRows(), gr, 'no GOVERNED_RISK state / head / proposal / support link / command result written');
+    assert.equal(await decisions(), dec, 'no new governance decision');
+    const again = await ca.assess(ctx, 'o44-prop-again', pf.app.stateId, { outcome: 'NOT_SATISFIED' });
+    assert.equal(await ca.resolve(org, pf.app.stateId, 'clock_timestamp()', 'clock_timestamp()'), again.stateId);
+    const still = await summary(r.stateId);
+    assert.deepEqual([still.support_currency, still.failing_link_id], ['SUPPORT_DEGRADED', link], 'no replacement support selected');
+    // 7. Historical read before the M16 invalidation: SUPPORT_CURRENT.
+    assert.equal((await k.read(x.member, s, scenP.id, at(before), at(before))).support_currency, 'SUPPORT_CURRENT');
+  });
+
+  await t.test('O44 lineage aggregation: PROPOSAL A + DECISION / STATE B; failure of A is never hidden by current B; deterministic order', async () => {
+    const fa = await fact('f-o44-agg-a', 'AGENT_VERSION'), fb = await fact('f-o44-agg-b', 'API');
+    const scenA = await k.scenario(x, 'scn-o44-agg', 'OPERATIONAL', legalObjects('OPERATIONAL'));
+    const s = subjectOf(2);
+    const r = await k.validateRisk(x, 'o44-agg', s, scenA, { support: present(['L14_FACT_STATE', fa.stateId]),
+      decideSupport: present(['L14_FACT_STATE', fb.stateId]) });
+    // Unrelated support of the SAME logical key (a rejected proposal citing B and evidence) never enters this lineage.
+    const other = k.proposalOf(s, scenA, { intent: 'REVOKE', targetStateId: r.stateId, expectedCurrentStateId: r.stateId,
+      closureReason: 'RECORDED_IN_ERROR' });
+    const rej = await k.submit(x, 'o44-agg-rej', other, { support: present(['L14_FACT_STATE', fb.stateId], ['DISCOVERY_EVIDENCE', x.evidence]) });
+    await k.decide(x, 'o44-agg-rej', rej, other, { outcome: 'REJECT', support: present(['DISCOVERY_EVIDENCE', x.evidence]) });
+    const ok = await summary(r.stateId);
+    assert.deepEqual([ok.support_currency, Number(ok.support_link_count), Number(ok.degraded_link_count)], ['SUPPORT_CURRENT', 3, 0],
+      'exactly PROPOSAL(A) + DECISION(B) + STATE(B)');
+    const rows = await k.supportCurrency(org, r.stateId);
+    assert.deepEqual(rows.map(l => l.link_id), [await propLink(r, 'L14_FACT_STATE'), await decLink(r, 'L14_FACT_STATE'),
+      await stateLink(r.stateId, 'L14_FACT_STATE')], 'PROPOSAL -> DECISION -> STATE');
+    assert.deepEqual(rows.map(l => l.target_id), [fa.stateId, fb.stateId, fb.stateId]);
+    // Failure of A (proposal-only) with B current: DEGRADED, 1 of 3, the PROPOSAL link named.
+    await ca.revoke(ctx, 'o44-agg-a', fa.app.stateId, fa.stateId, 'NOT_SATISFIED');
+    const a = await summary(r.stateId);
+    assert.deepEqual([a.support_currency, Number(a.support_link_count), Number(a.degraded_link_count), a.failing_link_id],
+      ['SUPPORT_DEGRADED', 3, 1, await propLink(r, 'L14_FACT_STATE')]);
+    // B fails too: 3 of 3, still the PROPOSAL link first (rank before link_id).
+    await ca.revoke(ctx, 'o44-agg-b', fb.app.stateId, fb.stateId, 'NOT_SATISFIED');
+    const ab = await summary(r.stateId);
+    assert.deepEqual([Number(ab.degraded_link_count), ab.failing_link_id], [3, await propLink(r, 'L14_FACT_STATE')]);
+  });
+
+  await t.test('O44 deterministic failing link: DECISION before STATE when the proposal support is current', async () => {
+    const fc = await fact('f-o44-ord', 'AGENT');
+    const scenO = await k.scenario(x, 'scn-o44-ord', 'OPERATIONAL', legalObjects('OPERATIONAL'));
+    const s = subjectOf(3);
+    const r = await k.validateRisk(x, 'o44-ord', s, scenO, { support: present(['DISCOVERY_EVIDENCE', x.evidence]),
+      decideSupport: present(['L14_FACT_STATE', fc.stateId]) });
+    await ca.revoke(ctx, 'o44-ord', fc.app.stateId, fc.stateId, 'NOT_SATISFIED');
+    const d = await summary(r.stateId);
+    assert.deepEqual([d.support_currency, Number(d.support_link_count), Number(d.degraded_link_count), d.failing_link_id],
+      ['SUPPORT_DEGRADED', 3, 2, await decLink(r, 'L14_FACT_STATE')]);
+    // Repeated reads are identical (deterministic).
+    assert.deepEqual(await summary(r.stateId), d);
   });
 
   await t.test('O44 currency is never authority: a degraded risk is revoked only by a normal authorized REVOKE (closure reason)', async () => {
@@ -212,7 +324,8 @@ test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3
     const rv = await k.revokeRisk(x, 'o44-close', s, scen, cur.state_id!, 'RISK_NO_LONGER_APPLICABLE');
     assert.deepEqual([rv.decided.outcome, rv.decided.state_kind, rv.decided.closure_reason], ['REVOKED', 'REVOKED', 'RISK_NO_LONGER_APPLICABLE']);
     assert.equal((await k.resolution(org, s, scen.id)).resolution, 'REVOKED');
-    assert.equal((await summary(rv.stateId)).support_currency, 'SUPPORT_NONE', 'the REVOKED state carries its own (explicit NONE) support');
+    assert.equal((await summary(rv.stateId)).support_currency, 'SUPPORT_NONE',
+      'the REVOKED state lineage (REVOKE proposal + decision + state, all explicit NONE) never inherits the predecessor support');
     // The function surface: no support-currency function is executable by any application role (owner-only projection).
     for (const fn of ['l15_governed_risk_support_currency_v1', 'l15_governed_risk_support_summary_v1', 'l15_support_link_target_failure_v1']) {
       assert.equal(await k.one(`select count(*) from pg_proc p, unnest(array['anon','authenticated','service_role']) r(role)
