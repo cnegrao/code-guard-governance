@@ -76,6 +76,8 @@ For M17/PostgreSQL work, choose checks based on the affected scope. Existing sou
 
 These are choices, not an always-run suite. Re-discover before use. PostgreSQL checks require the existing disposable local harness and its documented binary prerequisites. Docs/tooling changes do not justify heavy M15/M16 database regression by themselves.
 
+M15/M16 CI runs for pull requests targeting `main`, pushes/merges to `main`, and manual dispatch. Feature-branch pushes do not trigger these heavy workflows; pull request events provide their validation without duplicate push runs.
+
 Handoff derives branch, HEAD, base, changed files and worktree state from Git. It includes recorded validation/results, attempt count and interrupted commands. Earlier candidate evidence is labeled; it is never presented as proof of the current candidate. Use repeated `--validation "command: result"` for external checks, `--attempt "description"` for attempts outside the runner, `--blocker "description"`, `--stop-reason "reason"`, and required `--objective` / `--next-action`. No recorded tests means no recorded tests, not success.
 
 When available, record platform-reported working time manually with `handoff.mjs --reported-working-time "7m 42s"` alongside the required arguments. This is explicit input, not inferred from timestamps, scraped from the Codex UI, or automatically measured by repository tooling. If unavailable, leave it unspecified.
