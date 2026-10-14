@@ -6,7 +6,7 @@ description: Execute one authorized Gov IA implementation slice with scoped arch
 Follow [OPERATING_MODEL.md](../../../docs/agent/OPERATING_MODEL.md).
 Use [ARCHITECTURE_INDEX.md](../../../docs/agent/ARCHITECTURE_INDEX.md) and read only pointers relevant to the requested slice.
 Inspect merged implementation patterns before inventing abstractions.
-Run `node scripts/agent/preflight.mjs --expected-base <sha> --branch <name>` before implementation.
+Run `node scripts/agent/preflight.mjs --expected-base <sha> --branch <name> --budget-minutes <positive-integer>` before implementation, using the operational budget in the shared model.
 Use focused verification while coding, integration when candidate-ready, and final verification once.
 Stop on repeated failure, architecture conflict or any shared stop condition; record the next action.
 Generate handoff with `scripts/agent/handoff.mjs`.
