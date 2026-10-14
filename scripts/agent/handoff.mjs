@@ -8,12 +8,12 @@ import { readBudget, timingReport } from './budget.mjs';
 
 export function handoff(args) {
   const options = cli({
-    objective: stringOption, base: stringOption, 'next-action': stringOption,
+    objective: stringOption, base: stringOption, 'next-action': stringOption, 'reported-working-time': stringOption,
     blocker: manyOption, 'stop-reason': stringOption, attempt: manyOption,
     validation: manyOption, phase: { type: 'string', default: 'handoff' }, help: { type: 'boolean' },
   }, args);
   if (options.help) {
-    console.log('handoff.mjs --objective <text> --next-action <text> [--base <ref>] [--phase <phase>] [--blocker <text>] [--stop-reason <text>] [--attempt <text>] [--validation <external-command-and-result>]');
+    console.log('handoff.mjs --objective <text> --next-action <text> [--base <ref>] [--phase <phase>] [--blocker <text>] [--stop-reason <text>] [--attempt <text>] [--validation <external-command-and-result>] [--reported-working-time <text>]');
     return;
   }
   if (!options.objective?.trim() || !options['next-action']?.trim()) throw new Error('--objective and --next-action are required');
@@ -26,8 +26,9 @@ export function handoff(args) {
     ...event, currentCandidate: event.candidate === fingerprint,
   }));
   const interrupted = attempts.filter(attempt => !results.some(result => result.run === attempt.run && result.key === attempt.key));
-  const timing = timingReport(readBudget(state), events);
-  const stopReason = [options['stop-reason'], timing.budgetExceeded ? 'Session budget exhausted; STOP. Resume only with a new explicit preflight budget.' : null].filter(Boolean).join('; ') || null;
+  const timing = timingReport(readBudget(state), events, options['reported-working-time']);
+  const stopReason = options['stop-reason'] || null;
+  const { wallClock, measuredExecution, operationalTarget } = timing;
   const report = {
     objective: options.objective, phase: options.phase, at: new Date().toISOString(),
     branch: state.branch, head: state.head, base: state.base, candidate: fingerprint,
@@ -40,12 +41,12 @@ export function handoff(args) {
     '# Agent handoff', '', `Objective: ${report.objective}`, `Phase: ${report.phase}`,
     `Branch: ${report.branch}`, `HEAD: ${report.head}`, `Base: ${report.base}`,
     `Worktree: ${report.worktree}`, '', '## Timing', '',
-    `Started: ${timing.startedAt} (preflight start)`,
-    `Elapsed: ${timing.elapsedMs} ms; budget: ${timing.budgetMinutes} minutes; remaining: ${timing.remainingMs} ms`,
-    `Until first verification: ${timing.implementationExplorationMs ?? 'not recorded'} ms (approximation)`,
-    `Verification: focused ${timing.verificationMs.focused} ms; integration ${timing.verificationMs.integration} ms; final ${timing.verificationMs.final} ms; total ${timing.totalVerificationMs} ms`,
-    timing.implementationExplorationNote, timing.verificationDurationNote,
-    `Budget status: ${timing.budgetStatus}${timing.budgetExceeded ? ' — STOP' : ''}`, '', 'Changed files:',
+    `Wall clock: started ${wallClock.startedAt}; elapsed ${wallClock.elapsedMs} ms`, wallClock.note,
+    `First verification: ${wallClock.firstVerificationAt ?? 'not recorded'}; interval from preflight: ${wallClock.untilFirstVerificationMs ?? 'not recorded'} ms`,
+    `Measured execution: focused ${measuredExecution.verificationMs.focused} ms; integration ${measuredExecution.verificationMs.integration} ms; final ${measuredExecution.verificationMs.final} ms; total ${measuredExecution.totalVerificationMs} ms`,
+    measuredExecution.note,
+    `Operational target: ${operationalTarget.minutes} minutes; status: ${operationalTarget.status}; diagnostic target timestamp: ${operationalTarget.targetAt}`,
+    `Reported working time (explicit input): ${timing.reportedWorkingTime ?? 'not supplied'}`, '', 'Changed files:',
     ...report.changedFiles.map(file => `- ${file}`), '', 'Validation:',
     ...results.map(result => `- ${result.profile}: ${result.step.label}: ${result.status} (${result.currentCandidate ? 'current candidate' : `earlier candidate ${result.candidate.slice(0, 12)}`}); ${result.log}`),
     ...options.validation.map(note => `- External: ${note}`),
@@ -59,7 +60,6 @@ export function handoff(args) {
   const markdown = lines.join('\n');
   writeFileSync(path.join(artifactDir(state.root), 'handoff.md'), markdown);
   console.log(markdown);
-  if (timing.budgetExceeded) throw new Error(stopReason);
 }
 
 mainGuard(import.meta.url, () => handoff());

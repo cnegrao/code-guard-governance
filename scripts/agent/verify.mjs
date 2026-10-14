@@ -5,7 +5,7 @@ import {
   appendEvent, artifactDir, candidate, candidateSafety, cli, digest, git, mainGuard, manyOption,
   readEvents, repository, stringOption,
 } from './preflight.mjs';
-import { readBudget, requireBudget, runBudgetedCommand } from './budget.mjs';
+import { readBudget, runVerificationCommand } from './budget.mjs';
 
 export const profiles = {
   focused: 'Selected checks for the current edit; no implicit suite.',
@@ -35,7 +35,7 @@ export function verify(args) {
   }
   if (!Object.hasOwn(profiles, options.profile)) throw new Error('Select --profile focused, integration or final');
   candidateSafety(state);
-  const budget = requireBudget(readBudget(state));
+  const budget = readBudget(state);
   const sessionId = budget.session.sessionId;
   const steps = [];
   function localFile(file) {
@@ -108,25 +108,25 @@ export function verify(args) {
   const directory = artifactDir(state.root);
   // Record the reservation before any subprocess, including interrupted attempts.
   const run = randomUUID();
-  requireBudget(readBudget(state, Date.now(), sessionId));
+  readBudget(state, Date.now(), sessionId);
   appendEvent(state.root, { at: new Date().toISOString(), sessionId, run, phase: 'start', profile: options.profile, branch: state.branch, head: state.head, base: state.base, candidate: fingerprint, hypothesis });
   for (const [index, step] of steps.entries()) {
     const event = { at: new Date().toISOString(), sessionId, run, profile: options.profile, branch: state.branch, head: state.head, base: state.base, candidate: fingerprint, hypothesis, key: digest(JSON.stringify(step)), step };
-    requireBudget(readBudget(repository(options.base), Date.now(), sessionId));
+    readBudget(repository(options.base), Date.now(), sessionId);
     appendEvent(state.root, { ...event, phase: 'attempt' });
-    const execution = runBudgetedCommand(state, step, sessionId);
+    const execution = runVerificationCommand(state, step, sessionId);
     const { result } = execution;
     const log = path.join(directory, `${run}-${index}.log`);
     writeFileSync(log, `${result.stdout ?? ''}${result.stderr ?? ''}${result.error ? `\n${result.error.message}\n` : ''}`);
-    const passed = !execution.exhausted && !result.error && result.status === 0;
+    const passed = !result.error && result.status === 0;
     appendEvent(state.root, { ...event, phase: 'result', at: execution.endedAt,
       startedAt: execution.startedAt, durationMs: execution.durationMs, timeoutMs: execution.timeoutMs,
-      status: execution.exhausted ? 'budget-exhausted' : passed ? 'passed' : 'failed',
+      status: execution.timedOut ? 'timed-out' : passed ? 'passed' : 'failed',
       exitCode: result.status, signal: result.signal, log: path.relative(state.root, log) });
     console.log(`${passed ? 'PASS' : 'FAIL'} ${step.label} (${path.relative(state.root, log)})`);
-    if (execution.exhausted) throw new Error(`Session budget exhausted during verification: ${step.label}; STOP and hand off`);
+    if (execution.timedOut) throw new Error(`Verification command timed out: ${step.label}; STOP and hand off`);
     if (!passed) throw new Error(`Verification failed: ${step.label}; inspect log and form a materially new hypothesis before retrying`);
-    requireBudget(readBudget(repository(options.base), Date.now(), sessionId));
+    readBudget(repository(options.base), Date.now(), sessionId);
   }
 }
 

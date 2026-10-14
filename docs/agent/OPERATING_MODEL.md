@@ -21,7 +21,7 @@ After every phase, checkpoint objective, branch, HEAD, files changed, tests/resu
 - Never repeat the same command without new evidence or a changed hypothesis. A changed Git candidate alone is insufficient if unrelated to the failure.
 - Stop on architecture conflict, missing dependency, a need to edit historical migrations, a hosted mutation requirement, or scope ambiguity.
 - No review-of-review loops. Perform ACP delta review once when applicable.
-- Declare an execution budget at preflight. Exceeding it means STOP and handoff, even with a new commit, evidence or hypothesis.
+- Declare an active-work operational target at preflight. Assess it together with measured command durations, attempt count and new evidence/commit/hypothesis; wall-clock delay alone never triggers STOP.
 - Record the STOP reason and next action in handoff. Do not silently reset evidence to bypass a stop.
 - Hosted mutation requires explicit Carlos authorization and is never performed by `govia-slice`. Deployment/production changes require explicit authorization outside this local workflow.
 
@@ -39,9 +39,11 @@ node scripts/agent/handoff.mjs --objective "One objective" --phase focused --nex
 
 Preflight checks Node 24, canonical origin, clean index/worktree, a non-main implementation branch, requested branch, base ancestry and exact expected SHA when supplied. It compares historical migration paths to the base and stores a baseline count/tree digest. It rejects changed known deployment/configuration paths and any `--scope` other than `local`. These checks detect file scope, not intent: inspect the requested operation for hosted effects even if no protected file changes. No tool grants hosted authorization.
 
-Every implementation preflight requires `--budget-minutes <positive integer>`; `--objective <text>` optionally labels the session. A successful explicit preflight creates a fresh identity and fixed deadline in ignored `.artifacts/agent/session.json`, including branch, base, starting HEAD and preflight start. Failed preflight never replaces that session. This file is timing evidence, not project truth: Git remains authoritative. Verification and handoff fail closed on a missing/invalid session or branch/base mismatch. A later commit on the same branch does not restart the clock.
+Every implementation preflight requires `--budget-minutes <positive integer>`; the existing flag and stored `budgetMinutes` now declare an informative active-work target. `--objective <text>` optionally labels the session. A successful explicit preflight creates a fresh identity in ignored `.artifacts/agent/session.json`, including branch, base, starting HEAD and preflight start. The existing `deadlineAt` field is only a diagnostic target timestamp. Failed preflight never replaces that session. This file is timing evidence, not project truth: Git remains authoritative. Verification and handoff fail closed on a missing/invalid session or branch/base mismatch. A later commit on the same branch does not restart the clock.
 
-Verification checks the active budget before starting and before each command. Each subprocess receives a timeout capped by both its existing 30-minute command limit and the remaining session budget. Expiry during a command is recorded as `budget-exhausted` and stops verification. Handoff still writes JSON and Markdown when exhausted, clearly carries STOP and exits non-zero. Timing reports session elapsed/remaining, the approximate interval from preflight start to first verification (including preflight and idle time), and recorded command durations by profile and total. Interrupted attempts have unknown duration; their totals are explicitly lower-bound approximations. External validation is not included in recorded duration totals.
+Verification checks session identity before starting and before each command. Each subprocess retains its independent 30-minute safe command timeout, regardless of session wall-clock elapsed time. Individual command timeout (`timed-out`) or failure stops verification. Session wall-clock elapsed time never rejects a subprocess, blocks verification, or fails handoff.
+
+Handoff separates wall-clock telemetry, measured execution and the operational target. Wall-clock telemetry includes preflight start, elapsed time and the first verification timestamp/interval; it may include user/approval idle time and cannot measure active reasoning or exploration. Exact command/test durations use a monotonic clock, with focused, integration, final and total verification command milliseconds recorded. Interrupted attempts have unknown duration, so totals omitting them are explicitly lower-bound approximations. External validation is not included in recorded totals. Operational target status is always `INFORMATIVE`, never automatically `EXHAUSTED` from elapsed wall clock. Earlier event statuses remain historical evidence and do not turn wall-clock telemetry into a STOP.
 
 Verification and handoff repeat the shared candidate safety check without requiring a clean worktree. Historical migration changes and protected paths in either the index or working candidate fail closed before validation or handoff output; new additive migrations remain legal.
 
@@ -76,16 +78,20 @@ These are choices, not an always-run suite. Re-discover before use. PostgreSQL c
 
 Handoff derives branch, HEAD, base, changed files and worktree state from Git. It includes recorded validation/results, attempt count and interrupted commands. Earlier candidate evidence is labeled; it is never presented as proof of the current candidate. Use repeated `--validation "command: result"` for external checks, `--attempt "description"` for attempts outside the runner, `--blocker "description"`, `--stop-reason "reason"`, and required `--objective` / `--next-action`. No recorded tests means no recorded tests, not success.
 
-## Operational budgets
+When available, record platform-reported working time manually with `handoff.mjs --reported-working-time "7m 42s"` alongside the required arguments. This is explicit input, not inferred from timestamps, scraped from the Codex UI, or automatically measured by repository tooling. If unavailable, leave it unspecified.
+
+## Active-work operational targets
 
 - Small correction/tooling task: normally 30 minutes.
 - Normal implementation slice: normally 90 minutes.
-- A larger budget requires explicit justification in the task prompt.
+- A larger target requires explicit justification in the task prompt.
 
-These are execution budgets, not estimates. The budget must be declared at preflight and is never auto-extended. Long reasoning, exploration and idle time count against the same wall-clock budget. Exceeding it means STOP + handoff; do not continue “because it is almost finished”. A new session may resume from Git with a new explicit preflight budget, after satisfying preflight's clean-worktree requirement. Preserve the STOP handoff and existing validation evidence; a new session does not erase attempt controls.
+These are operational active-work targets declared at preflight, not automatic wall-clock kill switches. Wall-clock time is not active-agent time: approval/user waiting must not trigger a STOP. Repository tooling cannot automatically measure Codex reasoning time, time waiting for permission, or time waiting for the user, and cannot reliably separate them.
 
-The framework enforces budgets at tool/checkpoint boundaries and through verification subprocess timeouts. The executor must also stop when it observes that the declared wall-clock budget has expired, including during reasoning or exploration between checkpoints.
+The executor uses platform-reported working time when available, together with exact command durations, attempt count and new evidence/commit/hypothesis, to assess whether the active-work target is being exceeded and decide the next checkpoint or STOP. These signals are not assumed to be disjoint; do not add command durations to a platform total that already includes them. If working time is unavailable, report that limitation instead of substituting elapsed wall clock. No automatic extension/reset behavior is needed because there is no wall-clock kill switch. Preserve session and validation evidence; a new session does not erase attempt controls.
+
+Deterministic STOP controls remain mandatory: same failure twice without a materially new hypothesis; repeated command without new evidence/hypothesis; architecture conflict; historical migration requirement; hosted mutation requirement; scope ambiguity; final verification already attempted for the same candidate; individual command timeout or failure. Tooling enforces its existing candidate, command and final-attempt guards; the executor remains responsible for semantic stop conditions and repeated failures across candidates.
 
 ## Operational targets
 
-Feature prompt <1500 tokens; corrective prompt <700 tokens; context >150k is exceptional; ACP delta review once; architecture blockers introduced = 0. These are targets, not guarantees; execution budgets above are mandatory stop boundaries.
+Feature prompt <1500 tokens; corrective prompt <700 tokens; context >150k is exceptional; ACP delta review once; architecture blockers introduced = 0. These are targets, not guarantees; deterministic STOP controls remain mandatory.

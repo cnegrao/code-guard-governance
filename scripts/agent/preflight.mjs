@@ -118,7 +118,7 @@ export function preflight(args) {
     scope: { type: 'string', default: 'local' }, help: { type: 'boolean' },
   }, args);
   if (options.help) {
-    console.log('preflight.mjs --budget-minutes <positive-integer> [--objective <text>] [--expected-base <full-sha>] [--base <ref>] [--branch <name>] [--scope local]');
+    console.log('preflight.mjs --budget-minutes <positive-integer> [--objective <text>] [--expected-base <full-sha>] [--base <ref>] [--branch <name>] [--scope local]\n--budget-minutes declares an informative active-work target, not a wall-clock timeout.');
     return;
   }
   const state = repository(options.base);
@@ -133,7 +133,7 @@ export function preflight(args) {
   // Failed preflight must still work before .artifacts is configured.
   if (violations.length) throw new Error(violations.join('\n'));
   const report = { phase: 'preflight', at: session.startedAt, sessionId: session.sessionId, ...state, ...candidateSafety(state), violations };
-  // Only a successful, explicit preflight creates/replaces the active budget.
+  // Only a successful, explicit preflight creates/replaces the session and its target.
   writeJson(state.root, 'session.json', session);
   writeJson(state.root, 'preflight.json', report);
   console.log(JSON.stringify(report, null, 2));

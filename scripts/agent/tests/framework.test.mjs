@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, unlinkSyn
 import path from 'node:path';
 import test from 'node:test';
 import { pathToFileURL } from 'node:url';
-import { newSession, readBudget, requireBudget, runBudgetedCommand, timingReport } from '../budget.mjs';
+import { COMMAND_TIMEOUT_MS, newSession, readBudget, runVerificationCommand, timingReport } from '../budget.mjs';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 const scripts = path.join(root, 'scripts/agent');
@@ -158,9 +158,9 @@ function stateFor(dir) {
   const active = session(dir);
   return { root: dir, branch: active.branch, base: active.base, head: active.headAtStart };
 }
-function expire(dir) {
+function ageSession(dir) {
   const active = session(dir);
-  const deadline = Date.now() - 1000;
+  const deadline = Date.now() - 7 * 24 * 60 * 60_000;
   setSession(dir, { ...active, startedAt: new Date(deadline - active.budgetMinutes * 60_000).toISOString(), deadlineAt: new Date(deadline).toISOString() });
 }
 
@@ -180,10 +180,10 @@ test('preflight requires an explicit positive integral budget and failed calls c
   assert.equal(renewed.headAtStart, git(dir, 'rev-parse', 'HEAD'));
 });
 
-test('valid budget accepts all profiles, exposes timing, and never resets after a new commit', () => {
+test('session target accepts all profiles, exposes timing, and preserves identity after a new commit', () => {
   const dir = fixture();
   const original = session(dir);
-  assert.equal(requireBudget(readBudget(stateFor(dir))).budgetStatus, 'OK');
+  assert.ok(readBudget(stateFor(dir)).elapsedWallClockMs >= 0);
   const checks = [
     ['focused', 'probe.test.mjs'],
     ['integration', 'packages/canonical-contracts/a.test.mjs'],
@@ -192,40 +192,47 @@ test('valid budget accepts all profiles, exposes timing, and never resets after 
   for (const [profile, file] of checks) pass(script(dir, 'verify', '--profile', profile, '--test', file));
   write(dir, 'note.txt', 'A later commit does not reset the clock.');
   commit(dir);
-  pass(script(dir, 'handoff', '--objective', 'Timing', '--next-action', 'Review'));
+  pass(script(dir, 'handoff', '--objective', 'Timing', '--next-action', 'Review', '--reported-working-time', '7m 42s'));
   assert.deepEqual(session(dir), original);
   const report = JSON.parse(readFileSync(path.join(dir, '.artifacts/agent/handoff.json'), 'utf8'));
-  assert.equal(report.timing.budgetStatus, 'OK');
-  assert.equal(report.timing.startedAt, original.startedAt);
-  assert.equal(report.timing.preflightStartedAt, original.startedAt);
-  assert.ok(report.timing.remainingMs > 0);
-  assert.ok(report.timing.implementationExplorationMs >= 0);
-  assert.match(report.timing.implementationExplorationNote, /Approximation/);
-  for (const [profile] of checks) assert.ok(report.timing.verificationMs[profile] > 0);
-  assert.equal(report.timing.totalVerificationMs, Object.values(report.timing.verificationMs).reduce((a, b) => a + b, 0));
+  assert.equal(report.timing.operationalTarget.status, 'INFORMATIVE');
+  assert.equal(report.timing.wallClock.startedAt, original.startedAt);
+  assert.ok(report.timing.wallClock.untilFirstVerificationMs >= 0);
+  assert.match(report.timing.wallClock.note, /user\/approval idle time/);
+  assert.equal(report.timing.reportedWorkingTime, '7m 42s');
+  const measured = report.timing.measuredExecution;
+  for (const [profile] of checks) assert.ok(measured.verificationMs[profile] > 0);
+  assert.equal(measured.totalVerificationMs, Object.values(measured.verificationMs).reduce((a, b) => a + b, 0));
   for (const event of events(dir).filter(event => event.phase === 'result')) {
-    assert.ok(event.timeoutMs <= Date.parse(original.deadlineAt) - Date.parse(event.startedAt));
-    assert.equal(event.durationMs, Date.parse(event.at) - Date.parse(event.startedAt));
+    assert.equal(event.timeoutMs, COMMAND_TIMEOUT_MS);
+    assert.equal(measured.verificationMs[event.profile], event.durationMs);
   }
   const markdown = readFileSync(path.join(dir, '.artifacts/agent/handoff.md'), 'utf8');
   assert.match(markdown, /## Timing/);
-  assert.match(markdown, /Budget status: OK/);
+  assert.match(markdown, /Operational target: 30 minutes; status: INFORMATIVE/);
+  assert.match(markdown, /Reported working time \(explicit input\): 7m 42s/);
 });
 
-test('expired session blocks every verify profile and produces a non-success STOP handoff', () => {
+test('week-old wall clock permits every verify profile and a successful handoff without reset', () => {
   const dir = fixture();
-  expire(dir);
+  ageSession(dir);
   const original = session(dir);
-  for (const profile of ['focused', 'integration', 'final']) {
-    fail(script(dir, 'verify', '--profile', profile, '--test', 'probe.test.mjs'), /budget exhausted/);
+  for (const [profile, file] of [
+    ['focused', 'probe.test.mjs'], ['integration', 'packages/canonical-contracts/a.test.mjs'], ['final', 'packages/canonical-contracts/b.test.mjs'],
+  ]) {
+    pass(script(dir, 'verify', '--profile', profile, '--test', file));
   }
-  assert.equal(existsSync(path.join(dir, '.artifacts/executed')), false);
-  fail(script(dir, 'handoff', '--objective', 'Expired', '--next-action', 'New explicit preflight'), /budget exhausted/);
+  assert.equal(existsSync(path.join(dir, '.artifacts/executed')), true);
+  pass(script(dir, 'handoff', '--objective', 'Long user wait', '--next-action', 'Review'));
   const report = JSON.parse(readFileSync(path.join(dir, '.artifacts/agent/handoff.json'), 'utf8'));
-  assert.equal(report.timing.budgetStatus, 'EXHAUSTED');
-  assert.equal(report.timing.remainingMs, 0);
-  assert.match(report.stopReason, /STOP/);
-  assert.match(readFileSync(path.join(dir, '.artifacts/agent/handoff.md'), 'utf8'), /EXHAUSTED.*STOP/);
+  assert.equal(report.timing.operationalTarget.status, 'INFORMATIVE');
+  assert.ok(report.timing.wallClock.elapsedMs > 7 * 24 * 60 * 60_000);
+  assert.equal(report.stopReason, null);
+  assert.equal(report.timing.reportedWorkingTime, null);
+  const markdown = readFileSync(path.join(dir, '.artifacts/agent/handoff.md'), 'utf8');
+  assert.match(markdown, /Wall clock: started/);
+  assert.match(markdown, /user\/approval idle time/);
+  assert.doesNotMatch(markdown, /EXHAUSTED/);
   assert.deepEqual(session(dir), original);
 });
 
@@ -247,7 +254,7 @@ for (const mode of ['missing', 'malformed', 'inconsistent deadline']) {
   });
 }
 
-test('fake clock caps each command timeout and prevents commands after expiry without sleeping', () => {
+test('command limit and exact measured duration are independent of session wall clock', () => {
   const dir = fixture();
   const state = stateFor(dir);
   const start = Date.parse(session(dir).startedAt);
@@ -256,31 +263,30 @@ test('fake clock caps each command timeout and prevents commands after expiry wi
   const deadline = Date.parse(active.deadlineAt);
   const step = { command: 'fake', args: [], cwd: dir };
   let clock = start;
+  let ticks = 0;
   const timeouts = [];
   const spawn = (_command, _args, options) => {
     timeouts.push(options.timeout);
     assert.equal(options.shell, false);
     assert.equal(options.killSignal, 'SIGKILL');
     clock += 1;
+    ticks += 12.5;
     return { status: 0 };
   };
-  runBudgetedCommand(state, step, active.sessionId, { now: () => clock, spawn });
-  clock = deadline - 25;
-  const near = runBudgetedCommand(state, step, active.sessionId, { now: () => clock, spawn });
-  assert.equal(near.exhausted, false);
-  clock = deadline - 10;
-  const timed = runBudgetedCommand(state, step, active.sessionId, { now: () => clock, spawn: (_cmd, _args, options) => {
-    assert.equal(options.timeout, 10);
-    clock = deadline;
-    return { status: null, signal: 'SIGKILL', error: Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' }) };
-  } });
-  assert.equal(timed.exhausted, true);
-  assert.equal(timed.durationMs, 10);
-  assert.throws(() => runBudgetedCommand(state, step, active.sessionId, { now: () => clock, spawn }), /budget exhausted/);
-  assert.deepEqual(timeouts, [30 * 60_000, 25]);
-  // Even a successful process exit at the deadline must be classified as exhaustion.
-  clock = deadline - 1;
-  assert.equal(runBudgetedCommand(state, step, active.sessionId, { now: () => clock, spawn }).exhausted, true);
+  for (const wallTime of [start, deadline - 1, deadline, deadline + 7 * 24 * 60 * 60_000]) {
+    clock = wallTime;
+    const execution = runVerificationCommand(state, step, active.sessionId, {
+      now: () => clock, monotonic: () => ticks, spawn, timeoutMs: COMMAND_TIMEOUT_MS * 2,
+    });
+    assert.equal(execution.timedOut, false);
+    assert.equal(execution.durationMs, 12.5);
+  }
+  assert.deepEqual(timeouts, Array(4).fill(COMMAND_TIMEOUT_MS));
+  const adjustedClock = runVerificationCommand(state, step, active.sessionId, {
+    now: () => clock, monotonic: () => ticks,
+    spawn: () => { clock -= 60_000; ticks += 8.25; return { status: 0 }; },
+  });
+  assert.equal(adjustedClock.durationMs, 8.25);
 });
 
 test('timing isolates sessions, reports all profiles and labels interrupted durations as approximations', () => {
@@ -293,17 +299,20 @@ test('timing isolates sessions, reports all profiles and labels interrupted dura
     ...['focused', 'integration', 'final'].map((profile, index) => ({ ...common, phase: 'result', profile, durationMs: index + 1 })),
     { ...common, phase: 'attempt', key: 'interrupted' },
     { sessionId: 'old-session', phase: 'result', profile: 'focused', durationMs: 9999 },
+    { ...common, phase: 'result', profile: 'focused', durationMs: 0, status: 'budget-exhausted' },
   ];
   const timing = timingReport(readBudget(stateFor(dir), start + 200), evidence);
-  assert.deepEqual(timing.verificationMs, { focused: 1, integration: 2, final: 3 });
-  assert.equal(timing.totalVerificationMs, 6);
-  assert.equal(timing.implementationExplorationMs, 100);
-  assert.match(timing.verificationDurationNote, /Approximation.*lower bound/);
-  assert.equal(timingReport(readBudget(stateFor(dir), start), []).implementationExplorationMs, null);
+  assert.deepEqual(timing.measuredExecution.verificationMs, { focused: 1, integration: 2, final: 3 });
+  assert.equal(timing.measuredExecution.totalVerificationMs, 6);
+  assert.equal(timing.operationalTarget.status, 'INFORMATIVE');
+  assert.equal(timing.wallClock.untilFirstVerificationMs, 100);
+  assert.match(timing.measuredExecution.note, /lower-bound approximation/);
+  assert.equal(timingReport(readBudget(stateFor(dir), start), []).wallClock.untilFirstVerificationMs, null);
 });
 
-test('expiry inside a verification command records exhaustion, stops later commands and forces STOP handoff', () => {
+test('individual command timeout records failure and stops later commands independently of session age', () => {
   const dir = fixture();
+  ageSession(dir);
   const active = session(dir);
   const wrapper = '.artifacts/fake-timeout.mjs';
   write(dir, wrapper, `
@@ -311,41 +320,51 @@ test('expiry inside a verification command records exhaustion, stops later comma
     import { syncBuiltinESMExports } from 'node:module';
     import { verify } from ${JSON.stringify(pathToFileURL(path.join(scripts, 'verify.mjs')).href)};
     const realSpawn = childProcess.spawnSync;
-    let clock = ${Date.parse(active.startedAt)} + 100;
-    Date.now = () => clock;
     childProcess.spawnSync = (command, args, options) => {
       if (command !== process.execPath) return realSpawn(command, args, options);
-      if (options.timeout > ${Date.parse(active.deadlineAt)} - clock) throw new Error('Timeout exceeds remaining budget');
-      clock = ${Date.parse(active.deadlineAt)};
+      if (options.timeout !== ${COMMAND_TIMEOUT_MS}) throw new Error('Unexpected command timeout');
       return { status: null, signal: 'SIGKILL', error: { code: 'ETIMEDOUT', message: 'Simulated timeout' } };
     };
     syncBuiltinESMExports();
     try { verify(['--profile', 'focused', '--test', 'probe.test.mjs', '--test', 'packages/canonical-contracts/a.test.mjs']); }
     catch (error) { console.error('STOP: ' + error.message); process.exitCode = 1; }
   `);
-  fail(run(process.execPath, [path.join(dir, wrapper)], dir), /budget exhausted during verification/);
+  fail(run(process.execPath, [path.join(dir, wrapper)], dir), /command timed out/);
   const evidence = events(dir);
   assert.equal(evidence.filter(event => event.phase === 'attempt').length, 1);
   const result = evidence.find(event => event.phase === 'result');
-  assert.equal(result.status, 'budget-exhausted');
+  assert.equal(result.status, 'timed-out');
   assert.ok(result.durationMs > 0);
   assert.ok(result.timeoutMs > 0);
   assert.equal(existsSync(path.join(dir, '.artifacts/executed')), false);
-  fail(script(dir, 'handoff', '--objective', 'Expired in command', '--next-action', 'STOP'), /budget exhausted/);
+  fail(script(dir, 'verify', '--profile', 'focused', '--test', 'probe.test.mjs'), /Repeated command/);
+  pass(script(dir, 'handoff', '--objective', 'Command timeout', '--next-action', 'Investigate', '--stop-reason', 'Individual command timeout'));
+  assert.equal(JSON.parse(readFileSync(path.join(dir, '.artifacts/agent/handoff.json'), 'utf8')).stopReason, 'Individual command timeout');
   assert.deepEqual(session(dir), active);
 });
 
-test('real subprocess timeout is enforced with a short remaining budget', () => {
+test('real subprocess timeout is enforced independently with a short command limit', () => {
   const dir = fixture();
   const state = stateFor(dir);
   const active = newSession(state, '1', 'Short timeout');
   setSession(dir, active);
-  let samples = 0;
-  const deadline = Date.parse(active.deadlineAt);
-  const execution = runBudgetedCommand(state, {
+  const execution = runVerificationCommand(state, {
     command: process.execPath, args: ['-e', 'const end = Date.now() + 1000; while (Date.now() < end) {}'], cwd: dir,
-  }, active.sessionId, { now: () => ++samples <= 2 ? deadline - 200 : deadline });
+  }, active.sessionId, { timeoutMs: 200 });
   assert.equal(execution.result.error?.code, 'ETIMEDOUT');
-  assert.equal(execution.exhausted, true);
+  assert.equal(execution.timedOut, true);
   assert.ok(execution.timeoutMs <= 200);
+});
+
+test('ordinary command failure still stops verification and blocks an unchanged repeat', () => {
+  const dir = fixture();
+  ageSession(dir);
+  write(dir, 'probe.test.mjs', 'throw new Error("fixture failure");');
+  const selection = ['--profile', 'focused', '--test', 'probe.test.mjs', '--test', 'packages/canonical-contracts/a.test.mjs'];
+  fail(script(dir, 'verify', ...selection), /Verification failed/);
+  assert.equal(events(dir).filter(event => event.phase === 'attempt').length, 1);
+  assert.equal(events(dir).find(event => event.phase === 'result').status, 'failed');
+  assert.equal(existsSync(path.join(dir, '.artifacts/pids')), false);
+  fail(script(dir, 'verify', ...selection), /Repeated command/);
+  assert.equal(events(dir).filter(event => event.phase === 'attempt').length, 1);
 });
