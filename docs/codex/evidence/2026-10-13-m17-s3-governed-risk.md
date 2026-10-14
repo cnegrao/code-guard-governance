@@ -345,7 +345,7 @@ O79–O82 / O84 (support), O90 (verified principal).
 | S3 concurrency PG17 (real concurrent sessions) | 12 / 12 |
 | S3 security / ACL PG17 (incl. S3R1 surface proof) | 8 / 8 |
 | S3 O44 support currency PG17 (incl. F-S3-1 reproduction + S3R1 proofs) | 10 / 10 |
-| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, incl. S0 / S1 / S1R1 / S2 / S2R1 / S3 / S3R1) | PENDING (post-S3R1 run in progress; updated on completion) |
+| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, incl. S0 / S1 / S1R1 / S2 / S2R1 / S3 / S3R1) | **1333 / 1333** (92 files, 0 fail, 0 skipped; pre-S3R1 1328 / 1328) |
 | M15 PostgreSQL regression | 8 / 8 |
 | canonical-contracts | 256 / 256 |
 | governance-review | 425 / 425 |
@@ -355,7 +355,9 @@ O79–O82 / O84 (support), O90 (verified principal).
 
 CI (push runs on this branch): `M16 PostgreSQL 17 security suite` **success** and `M15 PostgreSQL regression` **success** on
 `1bcc511` (implementation; runs 38459640352 / 38459640357), `9e2977f` (runs 38459724022 / 38459723990) and `9b2d4ba` (runs
-38460600496 / 38460600462), and `1e96875` (pre-S3R1 reviewed HEAD; runs 38462596572 / 38462596503). S3R1: PENDING (updated on completion).
+38460600496 / 38460600462), and `1e96875` (pre-S3R1 reviewed HEAD; runs 38462596572 / 38462596503). S3R1: `M16 PostgreSQL 17 security suite` **success** and `M15 PostgreSQL regression` **success** on `6bdeb3b` (corrective;
+runs 38490849874 / 38490849800) and `8dcc70e` (runs 38490936586 / 38490936569). This docs-only commit is re-verified by the same
+two workflows on the final HEAD.
 
 ## Invariants
 
