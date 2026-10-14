@@ -166,6 +166,28 @@ customer:
 - Okta
 - Keycloak
 
+### Strategic future capability — Normative Intelligence / Policy Engineering
+
+**Status: ROADMAP ONLY / NOT STARTED.**
+
+- Normative onboarding of existing customer policies, standards, regulations
+  and procedures must preserve source, provenance, document/version identity,
+  page/section references and evidence.
+- Policy Engineering supports assisted creation and evolution of governed
+  policies. Machine/LLM output is non-authoritative until explicit human
+  governance review.
+- Reuse existing governed policy/control concepts where semantically valid;
+  no parallel truth store. POLICY, CONTROL, PROCEDURE and STANDARD do not
+  become CanonicalObjectKinds.
+- Implementation requires a future ADR covering ingestion, identity/versioning,
+  semantic decomposition, reconciliation, authority/review, RAG/LLM boundaries,
+  temporal semantics, auditability, tenant isolation and commercial packaging.
+- Commercial capability: **Policy Onboarding / Normative Engineering** as a
+  paid implementation service.
+- Default timing is post-V0; it may move earlier only for a concrete customer
+  and an explicit architecture/roadmap decision. It must not interrupt current
+  M17 execution.
+
 ## Practical Commercial V0 sequence
 
 ```text
@@ -181,7 +203,7 @@ M14 close
 → M22
 ```
 
-## Current execution position (2026-10-12)
+## Current execution position (2026-10-14)
 
 - **M15 — CROSS-SIGNAL RECONCILIATION & DRIFT V1: CLOSED / MERGED**, at
   canonical base `f431fa6901bfdb58cb1729553ea0193568fcc160`.
@@ -301,8 +323,8 @@ M14 close
   PROPOSAL + DECISION + STATE (deterministic first failing link); only the two owner-only projections replaced; surface unchanged.
   O44 PASS.
 - **PR #68: MERGED** — M17-S3 + S3R1 (canonical main after PR #68: `83642d4a45978f85a7db60dbdfbd904df36582e5`).
-- **M17-S4 — INHERENT RISK_ASSESSMENT (second L15 authoritative fact family): IMPLEMENTED ON BRANCH
-  `feat/m17-s4-inherent-risk-assessment`, NOT MERGED, PR NOT OPENED** (base main `83642d4`;
+- **PR #69 MERGED / M17-S4 CLOSED-MERGED** — **INHERENT RISK_ASSESSMENT (second L15 authoritative fact family)**.
+  Canonical main after PR #69: `9a13106bac55805d9f9b382b4caabee89dec260a` (base main `83642d4`;
   [evidence](../codex/evidence/2026-10-13-m17-s4-inherent-risk-assessment.md)). Additive migration
   `20261013160000_m17_s4_inherent_risk_assessment_v1.sql`: L15 proposal / state / CAS-head stores keyed by organisation +
   `governed_risk_state_id` + `assessment_basis` (INHERENT executable; RESIDUAL reserved for S6 by one named CHECK); exact GOVERNED_RISK
