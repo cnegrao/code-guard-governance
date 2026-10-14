@@ -28,3 +28,4 @@ export * from "./l15-risk-intelligence.ts";
 export * from "./l15-signals-hypotheses.ts";
 export * from "./l15-registries.ts";
 export * from "./l15-governed-risk.ts";
+export * from "./l15-risk-assessment.ts";
