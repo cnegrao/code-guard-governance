@@ -19,7 +19,8 @@ Architecture authority (not modified): [M17 ADR](../../architecture/ADR-GOVIA-RI
 | M16 | CLOSED (five fact families, unchanged) |
 | M17 architecture | ACCEPTED / FROZEN (unchanged) |
 | M17-S0, S1, S1R1, S2, S2R1 | MERGED |
-| M17-S3 | IMPLEMENTED ON BRANCH `feat/m17-s3-governed-risk`; **NOT MERGED**; PR NOT OPENED |
+| M17-S3 | IMPLEMENTED ON BRANCH `feat/m17-s3-governed-risk`; ACP delta review: implementation / O22–O30 / authority / subject / pins / concurrency / security PASS; one blocker F-S3-1 (O44 lineage); **NOT MERGED**; PR NOT OPENED |
+| M17-S3R1 (F-S3-1 corrective) | IMPLEMENTED ON THE SAME BRANCH (`20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql`); **NOT MERGED** |
 | M17-S4 … S7 | **NOT STARTED** |
 | Hosted (Supabase / Vercel / deployment) | **NOT TOUCHED** |
 
@@ -148,7 +149,8 @@ signal, a 1.0-confidence hypothesis or 100 hypotheses grant zero authority.
 
 ## Support currency (O44)
 
-`l15_governed_risk_support_currency_v1(org, state_id, at, cutoff)` (read only; persists nothing) projects every STATE-owned link:
+`l15_governed_risk_support_currency_v1(org, state_id, at, cutoff)` (read only; persists nothing) projects the **exact GOVERNED_RISK
+lineage support union PROPOSAL + DECISION + STATE** of the state (as corrected by S3R1, see below). Per-link target rules:
 
 | Target | Current iff |
 |---|---|
@@ -157,10 +159,65 @@ signal, a 1.0-confidence hypothesis or 100 hypotheses grant zero authority.
 | `DISCOVERY_EVIDENCE`, `SOURCE_ASSERTION`, `RUNTIME_OBSERVATION`, `CROSS_SIGNAL_RESULT`, `LINEAGE_OBSERVATION` | immutable evidence: existence + same-tenant typed identity |
 | `RISK_SIGNAL` / `RISK_HYPOTHESIS` | transitively: the signal's own rank-0 links (hypothesis → its cited signals) → `SIGNAL_SUPPORT_NOT_CURRENT` / `HYPOTHESIS_SUPPORT_NOT_CURRENT`, naming the upstream failing link |
 
-`l15_governed_risk_support_summary_v1` → `SUPPORT_NONE` / `SUPPORT_CURRENT` / `SUPPORT_DEGRADED` (+ link counts, first failing link,
-reason, upstream link); surfaced by the read RPC. M16 is read only through the exact resolvers and never written. A degraded support
+`l15_governed_risk_support_summary_v1` → `SUPPORT_NONE` / `SUPPORT_CURRENT` / `SUPPORT_DEGRADED` (+ lineage link counts, first failing
+link PROPOSAL → DECISION → STATE then `link_id`, reason, upstream link); surfaced by the read RPC. M16 is read only through the exact resolvers and never written. A degraded support
 never changes, revokes, expires or re-decides the risk (history / heads / results byte-identical); historical as-of before the
 upstream change still projects `SUPPORT_CURRENT`; closing a degraded risk needs a normal authorized REVOKE.
+
+### F-S3-1 and the S3R1 correction (O44 lineage)
+
+**Finding (ACP delta review).** The original S3 projection evaluated only the links whose owner was the STATE
+(`owner_governed_risk_artifact = 'STATE'`). The frozen ADR §13.2 requires support invalidation to be visible on every governed-risk
+read even when the dependency was only cited — explicitly including proposal support — and D-03 makes PROPOSAL / DECISION / STATE
+first-class support owners. A VALIDATED state has one authoritative lineage (its proposal + its governance decision + itself), so
+support cited only on the proposal (or only on the decision) was invisible: a risk validated with proposal-only support read
+`SUPPORT_NONE`, and an invalidated proposal-cited M16 fact never surfaced. The S3 writer happens to mirror decision support into the
+state, which hid the DECISION half of the gap; the semantics must not depend on that coincidence.
+
+**Correction.** Additive **`supabase/migrations/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql`** (no historical
+migration edited) replaces in place only the two owner-only SECURITY INVOKER projections, with the same signatures and result
+columns (owner postgres, ACL, `search_path = pg_catalog, pg_temp` preserved):
+
+- `l15_governed_risk_support_currency_v1` — lineage membership for state `S` (same organisation, `owner_kind = 'GOVERNED_RISK'`,
+  link `recorded_at <= cutoff`):
+  - PROPOSAL: `owner_governed_risk_artifact = 'PROPOSAL' AND owner_governed_risk_proposal_id = S.proposal_id`
+  - DECISION: `owner_governed_risk_artifact = 'DECISION' AND owner_governance_decision_id = S.governance_decision_id`
+  - STATE: `owner_governed_risk_artifact = 'STATE' AND owner_governed_risk_state_id = S.state_id`
+
+  Never the support of another proposal / decision / state, never scenario-registry support, never other support of the same
+  logical key. Rows ordered PROPOSAL → DECISION → STATE, then `link_id`.
+- `l15_governed_risk_support_summary_v1` — **SUPPORT_NONE** iff zero lineage links; **SUPPORT_DEGRADED** iff ≥ 1 lineage link fails
+  its target rule; **SUPPORT_CURRENT** otherwise (≥ 1 link, all current at `(effective_at, recorded_cutoff)`). Returns the total
+  lineage `support_link_count`, `degraded_link_count`, the deterministic first `failing_link_id` (PROPOSAL → DECISION → STATE, then
+  `link_id`), `failing_reason` and `failing_upstream_link_id` for a transitive failure.
+
+The per-link target rules are unchanged (`l15_support_link_target_failure_v1` reused verbatim, not replaced); no replacement is ever
+selected; no support link is mutated. `l15_read_governed_risk_v1` already reads the summary function, so its body and inventory hash
+are unchanged. The S3R1 preflight requires the uncorrected S3 projection and the reviewed S3 definer inventory; its postflight proves
+only the two projection bodies changed (signature / result / invoker / owner / config / ACL preserved, routine count unchanged), no
+table / constraint / trigger / table ACL changed, no support / GOVERNED_RISK / head / `l14_fact_states` row changed, and the surface is
+unchanged.
+
+**Proof** (`m17-s3-support-currency.test.ts`, horizon `M17S3R1` stopping before S3R1):
+
+- *F-S3-1 reproduced*: on the S3 catalog a risk validated with proposal-only L14 support reads `SUPPORT_NONE` (0 links); S3R1 is
+  applied (no GOVERNED_RISK / support row written); the same risk reads `SUPPORT_CURRENT` (1 link, the PROPOSAL link).
+- *Proposal-only degradation*: proposal support PRESENT (exact `L14_FACT_STATE`), decision / state support NONE (asserted 0 links) →
+  read `SUPPORT_CURRENT` (1 / 0); the exact M16 fact is revoked through the real M16 RPC → the unchanged risk reads
+  `SUPPORT_DEGRADED`, `failing_link_id` = the exact PROPOSAL-owned link, `L14_FACT_STATE_NOT_CURRENT`, 1 / 1. The state row is
+  byte-identical and VALIDATED, the head is unchanged, no governance decision / command result / proposal / support link is written; a
+  re-validation of the M16 key selects no replacement (still degraded, same link); the historical read before the invalidation is
+  `SUPPORT_CURRENT`.
+- *Lineage aggregation*: PROPOSAL support A + DECISION / STATE support B → exactly 3 links (A, B, B) in PROPOSAL → DECISION → STATE
+  order; an unrelated rejected REVOKE proposal of the same key citing B + evidence is excluded; A fails while B is current →
+  `SUPPORT_DEGRADED` 3 / 1 naming the PROPOSAL link (never hidden by current B); both fail → 3 / 3, still the PROPOSAL link first.
+- *Deterministic ordering*: proposal support current, decision / state support failing → the DECISION link is named before the STATE
+  link; repeated reads identical.
+- Existing O44 cases re-proven over the lineage union (exact M16 resolver: 5 lineage links, 3 degraded, PROPOSAL link first; expiry /
+  supersession; transitive signal / hypothesis naming the PROPOSAL link + the upstream signal link; field-state supersession naming
+  the DECISION link; a REVOKED state's own lineage (all explicit NONE) never inherits the predecessor's support).
+- Security suite: after S3R1 the surface is unchanged (application definers 58, service_role L15 RPCs 13, intake 2, L15 definers 19,
+  L15 tables 21, service_role L15 table privileges 0); only the two projection bodies changed; S3R1 and S3 both refuse to re-run.
 
 ## Exact risk resolver
 
@@ -215,6 +272,8 @@ SECURITY INVOKER and owner-only (no application EXECUTE).
 ## Files
 
 - Migration: `supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql`.
+- Corrective migration (F-S3-1): `supabase/migrations/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql`;
+  test horizon `M17S3R1` (the `M17S3` horizon keeps the exact S3 chain).
 - Contracts: `packages/canonical-contracts/src/l15-governed-risk.ts` (subject union + key / token, scenario pins, proposal, closure
   reasons, state, command result, resolutions, support failure reasons, resolver request / result, support summary).
 - Mirrors: `packages/governance-review/src/l15-governed-risk.ts` (subject / proposal checks, support parts, reason codes, submit /
@@ -240,7 +299,7 @@ SECURITY INVOKER and owner-only (no application EXECUTE).
 | O28 no free text; closed reasons / closure_reason | **PASS** | functional O28 + closure placement; static |
 | O29 only an exact-current REVOKE closes | **PASS** | functional O29; concurrency attack 33 |
 | O30 scenario successor never repins; revocation invalidates without mutation | **PASS** | functional O30 + scenario dependency; concurrency guard |
-| O44 support currency | **PASS** | `m17-s3-support-currency.test.ts` (6 subtests, real M16 / S1 upstream) |
+| O44 support currency | **PASS** (after S3R1; F-S3-1 resolved) | `m17-s3-support-currency.test.ts` (10 subtests, real M16 / S1 upstream; exact PROPOSAL + DECISION + STATE lineage) |
 
 Inherited criteria re-proven for the S3 surface: O01 / O02 (additive, static), O04–O07 (no L14 widening, single AP, M16 history
 byte-identical), O13 / O14 (machine boundary), O19 / O21 (scenario pin), O53–O58 (authority evaluation), O59–O62 (ACL / definer
@@ -284,19 +343,19 @@ O79–O82 / O84 (support), O90 (verified principal).
 |---|---|
 | S3 functional PG17 | 19 / 19 |
 | S3 concurrency PG17 (real concurrent sessions) | 12 / 12 |
-| S3 security / ACL PG17 | 7 / 7 |
-| S3 O44 support currency PG17 | 6 / 6 |
-| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, incl. S0 / S1 / S1R1 / S2 / S2R1 / S3) | **1328 / 1328** (92 files, 0 fail, 0 skipped) |
+| S3 security / ACL PG17 (incl. S3R1 surface proof) | 8 / 8 |
+| S3 O44 support currency PG17 (incl. F-S3-1 reproduction + S3R1 proofs) | 10 / 10 |
+| Full M16 PG17 (`tests/postgres-m16/*.test.ts`, incl. S0 / S1 / S1R1 / S2 / S2R1 / S3 / S3R1) | PENDING (post-S3R1 run in progress; updated on completion) |
 | M15 PostgreSQL regression | 8 / 8 |
 | canonical-contracts | 256 / 256 |
 | governance-review | 425 / 425 |
-| dashboard (`npm test` set) | 1255 pass, 0 fail, 5 pre-existing opt-in skips; passport-ui 17 / 17, pre-demo-ui 8 / 8, m17-s0-legacy 12 / 12 |
+| dashboard (`npm test` set, incl. S3 / S3R1 static) | 1256 pass, 0 fail, 5 pre-existing opt-in skips; passport-ui 17 / 17, pre-demo-ui 8 / 8, m17-s0-legacy 12 / 12 |
 | typecheck (canonical-contracts, governance-review, scanner, graphos, dashboard) | clean |
 | `git diff --check` | clean |
 
 CI (push runs on this branch): `M16 PostgreSQL 17 security suite` **success** and `M15 PostgreSQL regression` **success** on
 `1bcc511` (implementation; runs 38459640352 / 38459640357), `9e2977f` (runs 38459724022 / 38459723990) and `9b2d4ba` (runs
-38460600496 / 38460600462). This docs-only commit is re-verified by the same two workflows on the final HEAD.
+38460600496 / 38460600462), and `1e96875` (pre-S3R1 reviewed HEAD; runs 38462596572 / 38462596503). S3R1: PENDING (updated on completion).
 
 ## Invariants
 
@@ -310,7 +369,10 @@ history byte-identical across every S3 suite; S2R1 natural deferred commit.
 - **SOURCE_CONNECTION** GOVERNED_RISK proposals: dependency-deferred to **M19** (no safe bounded source-connection intake identity
   exists). The store CHECK admits the value; the proposal guard refuses it (`SOURCE_CLASS_NOT_EXECUTABLE`); the TypeScript executable
   set is `['LOCAL_HUMAN']`.
-- O44 projects STATE-owned links (the deciding decision's support). PROPOSAL / DECISION-owned links remain immutable provenance.
+- **F-S3-1 — RESOLVED BY S3R1.** O44 originally projected only STATE-owned links; it now projects the exact lineage support union
+  PROPOSAL + DECISION + STATE (see "F-S3-1 and the S3R1 correction"). No authority impact: support degradation remains a read
+  projection that never revokes, supersedes, moves a head, writes a decision, changes authorization, repins, mutates M16 or selects
+  replacement evidence.
 - The TypeScript subject key counts code points to match PostgreSQL `length()` (non-BMP identifiers frame identically on both sides).
 - No other finding. S4 (assessment) NOT STARTED.
 
@@ -320,5 +382,5 @@ NOT TOUCHED. No hosted Supabase mutation, no Vercel change, no deployment.
 
 ## Next gate
 
-ACP review of M17-S3 on branch `feat/m17-s3-governed-risk` (no PR opened). S4 (RISK_ASSESSMENT pinning
+ACP review of M17-S3 + S3R1 on branch `feat/m17-s3-governed-risk` (no PR opened); F-S3-1 re-review. S4 (RISK_ASSESSMENT pinning
 `l15_governed_risk_states_kind_unique` and the methodology) only after S3 is accepted and merged.
