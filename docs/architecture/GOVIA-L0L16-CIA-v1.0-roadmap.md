@@ -284,7 +284,23 @@ M14 close
   RESOLVED: the S0 root guard `l15_authorization_allow_guard_v1` is now an owner-only SECURITY DEFINER (byte-identical body, pinned
   search_path, EXECUTE revoked from every application role and the machine capability); a natural deferred commit from service_role
   is proven; L15 definers 14 → 15, application definer surface 55 (unchanged), machine surface 2. S3+ must not rely on SET CONSTRAINTS.
-- **M17-S3 … S7: NOT STARTED.** M18+: NOT STARTED.
+- **PR #67: MERGED** — M17-S2 + S2R1 (canonical main after PR #67: `fb700690e361bfc136ee68c92cfa82a37917458e`).
+- **M17-S3 — GOVERNED_RISK (first L15 authoritative fact family): IMPLEMENTED ON BRANCH `feat/m17-s3-governed-risk`, NOT MERGED**
+  (base main `fb70069`; [evidence](../codex/evidence/2026-10-13-m17-s3-governed-risk.md)). Additive migration
+  `20261013140000_m17_s3_governed_risk_v1.sql`: L15-specific proposal / state / CAS-head stores; logical key organisation +
+  exact subject key + `scenario_definition_id`; closed subject union (8 legal canonical object kinds | exact relationship-state
+  triple, type DB-resolved); domain DB-derived from the pinned scenario version and enforced against the frozen §8.2 matrix and
+  the version's declared subjects; each state pins the exact VALIDATED scenario state; VALIDATE / REJECT / DEFER / REVOKE under
+  the single Authority Policy (`L15_GOVERNED_RISK_VALIDATE`, existing M16 typed-scope evaluators); closed `closure_reason` on
+  REVOKE; M16 §17 temporal semantics; exact bitemporal resolver for S4 / S5; GOVERNED_RISK rank-3 owners in
+  `l15_support_links`; O44 read-only support-currency projection (M16 read only through the exact resolvers). LOCAL_HUMAN only
+  (SOURCE_CONNECTION dependency-deferred to M19). No SET CONSTRAINTS (S2R1 root guard fires at COMMIT). Application SECURITY
+  DEFINER surface 55 → 58; L15 definers 15 → 19; service_role L15 RPCs 10 → 13; machine intake surface unchanged (2).
+  O22–O30 PASS. ACP delta: F-S3-1 (O44 projected only STATE-owned support) — **RESOLVED BY M17-S3R1 (same branch, NOT MERGED)**
+  `20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql`: O44 now projects the exact lineage support union
+  PROPOSAL + DECISION + STATE (deterministic first failing link); only the two owner-only projections replaced; surface unchanged.
+  O44 PASS.
+- **M17-S4 … S7: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not

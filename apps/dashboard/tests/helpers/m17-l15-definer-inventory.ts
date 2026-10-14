@@ -29,3 +29,10 @@ export const L15_S2_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
 export const L15_S2R1_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
   { sig: 'gov_repo.l15_authorization_allow_guard_v1()', owner: 'postgres', sha: 'ee7885662da87a4946ad06596dbcd9f1af9bbb52de0e86fb7b16fd17731b5236', cfg: 'search_path=pg_catalog, pg_temp' },
 ];
+/** M17-S3: the three GOVERNED_RISK RPCs + the owner-only deferred support-integrity guard (owner, body SHA-256, config). */
+export const L15_S3_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
+  { sig: 'gov_repo.l15_submit_governed_risk_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,text,text,text,text,text,uuid,uuid,text,timestamp with time zone,timestamp with time zone,uuid,uuid,text,uuid,text,text[],text[],text)', owner: 'postgres', sha: 'e6d8587dacea996a38c7f15bb50db3c3937cdc32a574f61e67a20a5e035531f5', cfg: CFG },
+  { sig: 'gov_repo.l15_decide_governed_risk_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,text,uuid,text,text[],text[],text)', owner: 'postgres', sha: '73e0d2401cf073e67d27cc6510d05b7ce0f556dbe397ff6baa8ae07128f60038', cfg: CFG },
+  { sig: 'gov_repo.l15_read_governed_risk_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,text,text,uuid,timestamp with time zone,timestamp with time zone)', owner: 'postgres', sha: '9425fa2272293d5148d3aa6433407afc85cc09825432844cd4a440d489326862', cfg: CFG },
+  { sig: 'gov_repo.l15_governed_risk_commit_guard_v1()', owner: 'postgres', sha: 'b9b88cf166ad7294fc47264893fc4e8051ce381009e4fcc32111c3bedf26ad5c', cfg: 'search_path=pg_catalog, pg_temp' },
+];
