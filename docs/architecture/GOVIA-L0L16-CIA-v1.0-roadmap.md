@@ -300,7 +300,19 @@ M14 close
   `20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql`: O44 now projects the exact lineage support union
   PROPOSAL + DECISION + STATE (deterministic first failing link); only the two owner-only projections replaced; surface unchanged.
   O44 PASS.
-- **M17-S4 … S7: NOT STARTED.** M18+: NOT STARTED.
+- **PR #68: MERGED** — M17-S3 + S3R1 (canonical main after PR #68: `83642d4a45978f85a7db60dbdfbd904df36582e5`).
+- **M17-S4 — INHERENT RISK_ASSESSMENT (second L15 authoritative fact family): IMPLEMENTED ON BRANCH
+  `feat/m17-s4-inherent-risk-assessment`, NOT MERGED, PR NOT OPENED** (base main `83642d4`;
+  [evidence](../codex/evidence/2026-10-13-m17-s4-inherent-risk-assessment.md)). Additive migration
+  `20261013160000_m17_s4_inherent_risk_assessment_v1.sql`: L15 proposal / state / CAS-head stores keyed by organisation +
+  `governed_risk_state_id` + `assessment_basis` (INHERENT executable; RESIDUAL reserved for S6 by one named CHECK); exact GOVERNED_RISK
+  pin (FK onto `l15_governed_risk_states_kind_unique`) and exact VALIDATED methodology pin; RATED levels bound to the pinned scales;
+  rating band DB-derived from the exact pinned cell (no band argument; never arithmetic); mandatory `valid_until` bounded by the
+  methodology maximum (UTC calendar), expiry without mutation; exact bitemporal resolver for S6; member read RPC distinguishing UNKNOWN /
+  INSUFFICIENT_EVIDENCE / RATED; `L15_RISK_ASSESSMENT_VALIDATE` over the pinned risk subject; SHARED dependency locks on the exact S3 / S2
+  keys; natural S2R1 commit; RISK_ASSESSMENT rank-3 support owners. LOCAL_HUMAN only. Application SECURITY DEFINER surface 58 → 61; L15
+  definers 19 → 23; service_role L15 RPCs 13 → 16; L15 tables 21 → 24; machine intake surface unchanged (2). O31–O37 PASS.
+- **M17-S5 … S7: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
