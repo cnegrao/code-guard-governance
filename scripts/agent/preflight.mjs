@@ -4,6 +4,7 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { newSession } from './budget.mjs';
 
 export function git(args, cwd = process.cwd()) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8', shell: false });
@@ -110,15 +111,18 @@ export function mainGuard(url, main) {
 }
 
 export function preflight(args) {
+  const startedAt = Date.now();
   const options = cli({
     'expected-base': stringOption, base: stringOption, branch: stringOption,
+    'budget-minutes': stringOption, objective: stringOption,
     scope: { type: 'string', default: 'local' }, help: { type: 'boolean' },
   }, args);
   if (options.help) {
-    console.log('preflight.mjs [--expected-base <full-sha>] [--base <ref>] [--branch <name>] [--scope local]');
+    console.log('preflight.mjs --budget-minutes <positive-integer> [--objective <text>] [--expected-base <full-sha>] [--base <ref>] [--branch <name>] [--scope local]');
     return;
   }
   const state = repository(options.base);
+  const session = newSession(state, options['budget-minutes'], options.objective, startedAt);
   const violations = [];
   if (options.scope !== 'local') violations.push('Hosted/deployment scope requires STOP and explicit authorization outside this framework');
   if (!state.branch || ['main', 'master'].includes(state.branch)) violations.push('Implementation requires a named non-main branch');
@@ -128,7 +132,9 @@ export function preflight(args) {
 
   // Failed preflight must still work before .artifacts is configured.
   if (violations.length) throw new Error(violations.join('\n'));
-  const report = { phase: 'preflight', at: new Date().toISOString(), ...state, ...candidateSafety(state), violations };
+  const report = { phase: 'preflight', at: session.startedAt, sessionId: session.sessionId, ...state, ...candidateSafety(state), violations };
+  // Only a successful, explicit preflight creates/replaces the active budget.
+  writeJson(state.root, 'session.json', session);
   writeJson(state.root, 'preflight.json', report);
   console.log(JSON.stringify(report, null, 2));
 }

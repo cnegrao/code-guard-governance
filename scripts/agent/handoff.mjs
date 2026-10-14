@@ -4,6 +4,7 @@ import {
   artifactDir, candidate, candidateSafety, cli, mainGuard, manyOption,
   readEvents, repository, stringOption, writeJson,
 } from './preflight.mjs';
+import { readBudget, timingReport } from './budget.mjs';
 
 export function handoff(args) {
   const options = cli({
@@ -25,18 +26,26 @@ export function handoff(args) {
     ...event, currentCandidate: event.candidate === fingerprint,
   }));
   const interrupted = attempts.filter(attempt => !results.some(result => result.run === attempt.run && result.key === attempt.key));
+  const timing = timingReport(readBudget(state), events);
+  const stopReason = [options['stop-reason'], timing.budgetExceeded ? 'Session budget exhausted; STOP. Resume only with a new explicit preflight budget.' : null].filter(Boolean).join('; ') || null;
   const report = {
     objective: options.objective, phase: options.phase, at: new Date().toISOString(),
     branch: state.branch, head: state.head, base: state.base, candidate: fingerprint,
     changedFiles: safety.filesChanged, worktree: state.status || 'clean',
     validation: results, externalValidation: options.validation,
     attempts: { recorded: attempts.length, interrupted: interrupted.map(event => event.step.label), notes: options.attempt },
-    blockers: options.blocker, stopReason: options['stop-reason'] || null, nextAction: options['next-action'],
+    timing, blockers: options.blocker, stopReason, nextAction: options['next-action'],
   };
   const lines = [
     '# Agent handoff', '', `Objective: ${report.objective}`, `Phase: ${report.phase}`,
     `Branch: ${report.branch}`, `HEAD: ${report.head}`, `Base: ${report.base}`,
-    `Worktree: ${report.worktree}`, '', 'Changed files:',
+    `Worktree: ${report.worktree}`, '', '## Timing', '',
+    `Started: ${timing.startedAt} (preflight start)`,
+    `Elapsed: ${timing.elapsedMs} ms; budget: ${timing.budgetMinutes} minutes; remaining: ${timing.remainingMs} ms`,
+    `Until first verification: ${timing.implementationExplorationMs ?? 'not recorded'} ms (approximation)`,
+    `Verification: focused ${timing.verificationMs.focused} ms; integration ${timing.verificationMs.integration} ms; final ${timing.verificationMs.final} ms; total ${timing.totalVerificationMs} ms`,
+    timing.implementationExplorationNote, timing.verificationDurationNote,
+    `Budget status: ${timing.budgetStatus}${timing.budgetExceeded ? ' — STOP' : ''}`, '', 'Changed files:',
     ...report.changedFiles.map(file => `- ${file}`), '', 'Validation:',
     ...results.map(result => `- ${result.profile}: ${result.step.label}: ${result.status} (${result.currentCandidate ? 'current candidate' : `earlier candidate ${result.candidate.slice(0, 12)}`}); ${result.log}`),
     ...options.validation.map(note => `- External: ${note}`),
@@ -50,6 +59,7 @@ export function handoff(args) {
   const markdown = lines.join('\n');
   writeFileSync(path.join(artifactDir(state.root), 'handoff.md'), markdown);
   console.log(markdown);
+  if (timing.budgetExceeded) throw new Error(stopReason);
 }
 
 mainGuard(import.meta.url, () => handoff());
