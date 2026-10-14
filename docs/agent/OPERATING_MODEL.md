@@ -39,6 +39,8 @@ node scripts/agent/handoff.mjs --objective "One objective" --phase focused --nex
 
 Preflight checks Node 24, canonical origin, clean index/worktree, a non-main implementation branch, requested branch, base ancestry and exact expected SHA when supplied. It compares historical migration paths to the base and stores a baseline count/tree digest. It rejects changed known deployment/configuration paths and any `--scope` other than `local`. These checks detect file scope, not intent: inspect the requested operation for hosted effects even if no protected file changes. No tool grants hosted authorization.
 
+Verification and handoff repeat the shared candidate safety check without requiring a clean worktree. Historical migration changes and protected paths in either the index or working candidate fail closed before validation or handoff output; new additive migrations remain legal.
+
 Verification profiles are deliberately explicit, with **no default test suite**:
 
 | Profile | Selection policy |
@@ -50,6 +52,8 @@ Verification profiles are deliberately explicit, with **no default test suite**:
 All profiles accept repeated `--script <directory>:<script-name>`, `--test <file-or-glob>` and `--syntax <file.mjs>`. `--discover` lists existing package scripts, test files and workflow paths. `--plan` prints the exact commands without executing or consuming an attempt. A missing selection, nonexistent command/file or unsupported profile fails. Package script names must begin with `test`, `typecheck`, `lint` or `validate`; inspect their displayed bodies and local prerequisites before execution. This is a runner, not a sandbox for arbitrary package scripts.
 
 `--test` uses Node's test runner with the existing dashboard and contract/governance flags, and `tsx` for TypeScript. Use package scripts for tests requiring a different harness. Globs expand inside Node on every platform. Commands run without a shell; package scripts use the installed `npm-cli.js` adjacent to Node, or `npm_execpath` pointing to that CLI. A missing runtime/dependency is a blocker; the tools do not install it.
+
+Within each `--test` pattern, files with the same package and runner flags share one Node invocation. Different packages or runner configurations remain separate; overlapping test selections are rejected.
 
 Verification records an attempt before execution and stops on the first failed command. Logs and JSONL results include candidate, command, hypothesis and status. An identical command on the same candidate/hypothesis is blocked; provide `--hypothesis "materially new evidence and proposed cause"` only when justified. Final attempts are reserved before execution and cannot be retried on the same candidate, even after interruption. Candidate identity includes HEAD, working diff and untracked file content; ignored artifacts are excluded. Agents remain responsible for detecting repeated failures across candidates and for the broader cycle controls above.
 

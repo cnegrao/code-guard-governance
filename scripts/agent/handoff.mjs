@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
-  artifactDir, candidate, changedFiles, cli, mainGuard, manyOption,
+  artifactDir, candidate, candidateSafety, cli, mainGuard, manyOption,
   readEvents, repository, stringOption, writeJson,
 } from './preflight.mjs';
 
@@ -17,6 +17,7 @@ export function handoff(args) {
   }
   if (!options.objective?.trim() || !options['next-action']?.trim()) throw new Error('--objective and --next-action are required');
   const state = repository(options.base);
+  const safety = candidateSafety(state);
   const fingerprint = candidate(state);
   const events = readEvents(state.root).filter(event => event.branch === state.branch && event.base === state.base);
   const attempts = events.filter(event => event.phase === 'attempt');
@@ -27,7 +28,7 @@ export function handoff(args) {
   const report = {
     objective: options.objective, phase: options.phase, at: new Date().toISOString(),
     branch: state.branch, head: state.head, base: state.base, candidate: fingerprint,
-    changedFiles: changedFiles(state), worktree: state.status || 'clean',
+    changedFiles: safety.filesChanged, worktree: state.status || 'clean',
     validation: results, externalValidation: options.validation,
     attempts: { recorded: attempts.length, interrupted: interrupted.map(event => event.step.label), notes: options.attempt },
     blockers: options.blocker, stopReason: options['stop-reason'] || null, nextAction: options['next-action'],

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, globSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
-  appendEvent, artifactDir, candidate, cli, digest, git, mainGuard, manyOption,
+  appendEvent, artifactDir, candidate, candidateSafety, cli, digest, git, mainGuard, manyOption,
   readEvents, repository, stringOption,
 } from './preflight.mjs';
 
@@ -34,6 +34,7 @@ export function verify(args) {
     return;
   }
   if (!Object.hasOwn(profiles, options.profile)) throw new Error('Select --profile focused, integration or final');
+  candidateSafety(state);
   const steps = [];
   function localFile(file) {
     const absolute = path.resolve(state.root, file);
@@ -58,20 +59,32 @@ export function verify(args) {
     if (!existsSync(npm) || !/npm-cli\.js$/.test(npm)) throw new Error('npm-cli.js missing; provide npm_execpath to the installed npm CLI');
     steps.push({ label: selection, source: pkg.scripts[name], command: process.execPath, args: [npm, 'run', name], cwd: path.join(state.root, directory) });
   }
+  const selectedTests = new Set();
   for (const pattern of options.test) {
     const files = globSync(pattern, { cwd: state.root }).sort();
     if (!files.length) throw new Error(`No test files match ${pattern}`);
+    const groups = new Map();
     for (const file of files) {
       if (!/\.(?:test|spec)\.[cm]?[jt]s$/.test(file)) throw new Error(`Unsupported test file: ${file}; use its existing package script`);
       const absolute = localFile(file);
       const relative = path.relative(state.root, absolute).split(path.sep).join('/');
+      if (selectedTests.has(relative)) throw new Error(`Duplicate checks selected: ${relative}`);
+      selectedTests.add(relative);
       const pkg = packages.filter(item => item.directory === '.' || relative.startsWith(`${item.directory}/`))
         .sort((a, b) => b.directory.length - a.directory.length)[0];
       const flags = [];
       if (pkg.directory === 'apps/dashboard') flags.push('--conditions=react-server', '--experimental-test-module-mocks');
       if (/\.[cm]?ts$/.test(file)) flags.push('--import', 'tsx');
       if (pkg.directory === 'packages/canonical-contracts' || pkg.directory === 'packages/governance-review') flags.push('--test-isolation=none');
-      steps.push({ label: relative, command: process.execPath, args: [...flags, '--test', absolute], cwd: path.join(state.root, pkg.directory) });
+      const cwd = path.join(state.root, pkg.directory);
+      const key = JSON.stringify([cwd, flags]);
+      if (!groups.has(key)) groups.set(key, { files: [], labels: [], flags, cwd });
+      const group = groups.get(key);
+      group.files.push(absolute);
+      group.labels.push(relative);
+    }
+    for (const group of groups.values()) {
+      steps.push({ label: group.labels.join(', '), command: process.execPath, args: [...group.flags, '--test', ...group.files], cwd: group.cwd });
     }
   }
   if (!steps.length) throw new Error('Select checks explicitly; use --discover to inspect existing commands and files');

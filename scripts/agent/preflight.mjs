@@ -48,8 +48,27 @@ export function repository(baseRef = 'origin/main') {
 export function changedFiles(state) {
   return [...new Set([
     ...git(['diff', '--no-renames', '--name-only', '-z', state.base, '--'], state.root).split('\0'),
+    ...git(['diff', '--cached', '--no-renames', '--name-only', '-z', state.base, '--'], state.root).split('\0'),
     ...git(['ls-files', '--others', '--exclude-standard', '-z'], state.root).split('\0'),
   ].filter(Boolean))].sort();
+}
+
+// Candidate safety is independent of worktree cleanliness and applies at every gate.
+export function candidateSafety(state) {
+  const files = changedFiles(state);
+  const migrationEntries = git(['ls-tree', '-r', '-z', state.base], state.root).split('\0')
+    .filter(entry => /(^|\/)migrations\//i.test(entry.split('\t')[1] || ''));
+  const historical = new Set(migrationEntries.map(entry => entry.split('\t')[1]));
+  const violations = [];
+  const touchedHistory = files.filter(file => historical.has(file));
+  if (touchedHistory.length) violations.push(`Historical migration changes: ${touchedHistory.join(', ')}`);
+  const protectedFiles = files.filter(file => /(^|\/)(?:\.github\/workflows\/|\.vercel(?:\/|$)|\.env(?:[./]|$)|vercel\.json$|netlify\.toml$|supabase\/config\.toml$|(?:deploy|deployment|deployments|infra|terraform)(?:\/|[.-]))/i.test(file));
+  if (protectedFiles.length) violations.push(`Review hosted/deployment scope before proceeding: ${protectedFiles.join(', ')}`);
+  if (violations.length) throw new Error(violations.join('\n'));
+  return {
+    filesChanged: files,
+    migrationBaseline: { count: historical.size, treeSha256: digest(migrationEntries.join('\0')) },
+  };
 }
 
 export function candidate(state) {
@@ -107,22 +126,9 @@ export function preflight(args) {
   if (options['expected-base'] && state.base !== options['expected-base']) violations.push(`Expected base ${options['expected-base']}; got ${state.base}`);
   if (state.status) violations.push('Worktree must be clean (including index and untracked files)');
 
-  const files = changedFiles(state);
-  const isMigration = file => /(^|\/)migrations\//i.test(file);
-  const migrationEntries = git(['ls-tree', '-r', '-z', state.base], state.root).split('\0')
-    .filter(entry => isMigration(entry.split('\t')[1] || ''));
-  const historical = migrationEntries.map(entry => entry.split('\t')[1]);
-  const touchedHistory = files.filter(file => historical.includes(file));
-  if (touchedHistory.length) violations.push(`Historical migration changes: ${touchedHistory.join(', ')}`);
-  const protectedFiles = files.filter(file => /(^|\/)(?:\.github\/workflows\/|\.vercel(?:\/|$)|\.env(?:[./]|$)|vercel\.json$|netlify\.toml$|supabase\/config\.toml$|(?:deploy|deployment|deployments|infra|terraform)(?:\/|[.-]))/i.test(file));
-  if (protectedFiles.length) violations.push(`Review hosted/deployment scope before proceeding: ${protectedFiles.join(', ')}`);
-  const baseline = {
-    count: historical.length,
-    treeSha256: digest(migrationEntries.join('\0')),
-  };
-  const report = { phase: 'preflight', at: new Date().toISOString(), ...state, filesChanged: files, migrationBaseline: baseline, violations };
   // Failed preflight must still work before .artifacts is configured.
   if (violations.length) throw new Error(violations.join('\n'));
+  const report = { phase: 'preflight', at: new Date().toISOString(), ...state, ...candidateSafety(state), violations };
   writeJson(state.root, 'preflight.json', report);
   console.log(JSON.stringify(report, null, 2));
 }
