@@ -43,3 +43,4 @@ export * from './l14-control-assessment.ts';
 export * from './discovery-machine/index.ts';
 export * from './l15-registries.ts';
 export * from './l15-governed-risk.ts';
+export * from './l15-risk-assessment.ts';

@@ -11,6 +11,8 @@ const root = new URL('../../../', import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), 'utf8');
 const S3 = '20261013140000_m17_s3_governed_risk_v1.sql';
 const S3R1 = '20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql';
+// Horizon: each later slice extends this exact list (never a wildcard).
+const S4 = '20261013160000_m17_s4_inherent_risk_assessment_v1.sql';
 const migration = read(`supabase/migrations/${S3}`);
 const code = migration.split('\n').filter(line => !line.trimStart().startsWith('--')).join('\n')
   .replace(/COMMENT ON [^;]*?IS\s*'(?:[^']|'')*';/g, '');
@@ -20,9 +22,9 @@ const sources = [
   'apps/dashboard/lib/governance/l15-governed-risk-persistence.ts',
 ];
 
-test('static: S3 is followed only by its S3R1 corrective; additive, hosted-free; edits no historical migration; seeds nothing', () => {
+test('static: S3 is followed only by its S3R1 corrective (then M17-S4); additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  assert.deepEqual(names.slice(names.indexOf(S3) - 1), ['20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql', S3, S3R1]);
+  assert.deepEqual(names.slice(names.indexOf(S3) - 1), ['20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql', S3, S3R1, S4]);
   assert.match(migration, /^-- M17-S3/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   // The only replaced routines are the owner-only S1 / S2 link guard and the S2 command-result state guard (S1 / S2 branches
