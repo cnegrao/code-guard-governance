@@ -23,10 +23,30 @@ test('S5 fingerprint binds exact key, party, planning metadata, pins, status, te
   const base = submitRiskTreatmentProposalFingerprint(input);
   for (const over of [{ governedRiskStateId: id(40) },{ treatmentOption: 'AVOID' as const },{ treatmentOrdinalKey: 'other' },
     { responsibleGovernancePartyId: id(41) },{ partyValidatedStateId: id(42) },{ targetImplementationDate: '2027-01-01' },
-    { controlDefinitionVersionIds: [id(43)] },{ implementationStatus: 'IMPLEMENTED' as const },{ requestedEffectiveFrom: '2027-01-01T00:00:00.000000Z' },
+    { controlDefinitionVersionIds: [id(43)] },{ requestedEffectiveFrom: '2027-01-01T00:00:00.000000Z' },
     { requestedEffectiveTo: '2028-01-01T00:00:00.000000Z' },{ expectedCurrentStateId: id(44) }]) {
     assert.notEqual(submitRiskTreatmentProposalFingerprint({ ...input, proposal: { ...proposal, ...over } }), base);
   }
+  const successor = { ...proposal, expectedCurrentStateId: id(44) };
+  assert.notEqual(submitRiskTreatmentProposalFingerprint({ ...input, proposal: successor }),
+    submitRiskTreatmentProposalFingerprint({ ...input, proposal: { ...successor, implementationStatus: 'IMPLEMENTED' } }));
+});
+
+test('O47 review accepts root PLANNED and rejects root IMPLEMENTED before submit/decide framing', () => {
+  assert.doesNotThrow(() => checkRiskTreatmentProposal(proposal));
+  const root = { ...proposal, implementationStatus: 'IMPLEMENTED' as const };
+  assert.throws(() => checkRiskTreatmentProposal(root), /IMPLEMENTATION_PREDECESSOR_REQUIRED/);
+  assert.throws(() => submitRiskTreatmentProposalFingerprint({ ...input, proposal: root }), /IMPLEMENTATION_PREDECESSOR_REQUIRED/);
+  assert.throws(() => decideRiskTreatmentProposalFingerprint({ ...input, proposal: root, proposalId: id(30), outcome: 'VALIDATE', expectedCurrentStateId: null }), /IMPLEMENTATION_PREDECESSOR_REQUIRED/);
+});
+
+test('O47 review requires a predecessor in both proposal and VALIDATE decision expectations', () => {
+  const successor = { ...proposal, implementationStatus: 'IMPLEMENTED' as const, expectedCurrentStateId: id(31) };
+  assert.doesNotThrow(() => submitRiskTreatmentProposalFingerprint({ ...input, proposal: successor }));
+  const decision = { ...input, proposal: successor, proposalId: id(30), outcome: 'VALIDATE' as const, expectedCurrentStateId: id(31) };
+  assert.doesNotThrow(() => decideRiskTreatmentProposalFingerprint(decision));
+  assert.throws(() => decideRiskTreatmentProposalFingerprint({ ...decision, expectedCurrentStateId: null }), /IMPLEMENTATION_PREDECESSOR_REQUIRED/);
+  assert.throws(() => decideRiskTreatmentProposalFingerprint({ ...decision, proposal: { ...successor, expectedCurrentStateId: null } }), /IMPLEMENTATION_PREDECESSOR_REQUIRED/);
 });
 test('S5 non-MITIGATE controls and non-human source rejected', () => {
   assert.throws(() => checkRiskTreatmentProposal({ ...proposal, treatmentOption: 'TRANSFER', controlDefinitionVersionIds: [id(21)] }), /CONTROL_PINS_NOT_PERMITTED/);

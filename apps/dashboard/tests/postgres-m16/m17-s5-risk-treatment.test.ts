@@ -18,10 +18,11 @@ test('M17-S5 treatment O46/O47/O48, authority, replay and dependencies (PG17)', 
   const unrelated = () => k.one(`select md5(coalesce(string_agg(v,'|' order by v),'')) from (
     ${['l14_fact_states','l14_registry_states','l14_control_applicability_states','l14_control_assessment_states','canonical_objects','canonical_relationships'].map(t => `select '${t}:'||s::text v from gov_repo.${t} s where organisation_id='${x.org}'`).join(' union all ')}) a`);
 
-  for (const option of ['MITIGATE','AVOID','TRANSFER'] as const) await t.test(`O46 accepted ${option}; planning date does not expire treatment`, async () => {
+  for (const option of ['MITIGATE','AVOID','TRANSFER'] as const) await t.test(`O46 root PLANNED ${option} succeeds; planning date does not expire treatment`, async () => {
     const p = fresh({ treatmentOption: option, targetImplementationDate: '2001-01-01' });
     const result = await k.treat(x, name(), p);
     assert.equal(result.decided.outcome, 'VALIDATED');
+    assert.equal(result.decided.predecessor_state_id, null);
     const read = await k.read(x.member, p);
     assert.equal(read.treatment_status, 'PLANNED');
     assert.equal(read.current_state.target_implementation_date, '2001-01-01');
@@ -33,7 +34,25 @@ test('M17-S5 treatment O46/O47/O48, authority, replay and dependencies (PG17)', 
   for (const status of ['verified','failed','VERIFIED','FAILED','WAIVED']) await t.test(`O46 rejects status ${status} in PostgreSQL`, async () => {
     await reject(k.submitSql(x.member, { commandId: x.cmd(name()), proposal: fresh(), fingerprint: 'b'.repeat(64), raw: { p_implementation_status: lit(status) } }), 'IMPLEMENTATION_STATUS_UNKNOWN');
   });
-  await t.test('O47 successor has its own decision/evidence and leaves predecessor, pins and support byte-identical', async () => {
+  await t.test('O47 root IMPLEMENTED is rejected by PostgreSQL independently of the TypeScript mirror', async () => {
+    await reject(k.submitSql(x.member, { commandId: x.cmd(name()), proposal: fresh(), fingerprint: 'b'.repeat(64),
+      support: k.evidence(x), raw: { p_implementation_status: "'IMPLEMENTED'" } }), 'IMPLEMENTATION_PREDECESSOR_REQUIRED');
+  });
+  await t.test('O47 IMPLEMENTED without predecessor is rejected by the state guard and structural CHECK', async () => {
+    const planned = await k.treat(x, name(), fresh());
+    const columns = await k.one(`select string_agg(quote_ident(attname),',' order by attnum) from pg_attribute
+      where attrelid='gov_repo.l15_risk_treatment_states'::regclass and attnum>0 and not attisdropped and attgenerated=''`);
+    const forged = `select ${columns} from jsonb_populate_record(null::gov_repo.l15_risk_treatment_states,
+      (select to_jsonb(s) from gov_repo.l15_risk_treatment_states s where state_id='${planned.stateId}')
+      || jsonb_build_object('state_id','${randomUUID()}','implementation_status','IMPLEMENTED','predecessor_state_id',null))`;
+    await assert.rejects(c.owner(`begin; insert into gov_repo.l15_risk_treatment_states(${columns}) ${forged}; rollback;`), /IMPLEMENTATION_PREDECESSOR_NOT_PLANNED/);
+    // Copy the actual CHECKs into a disposable table without triggers, proving
+    // structural rejection independently of the envelope and insert guards.
+    await assert.rejects(c.owner(`begin; create temp table s5_root_probe
+      (like gov_repo.l15_risk_treatment_states including all) on commit drop;
+      insert into s5_root_probe(${columns}) ${forged}; rollback;`), /l15_risk_treatment_implementation_predecessor_check/);
+  });
+  await t.test('O47 PLANNED -> IMPLEMENTED successor has its own decision/evidence and leaves predecessor, pins and support byte-identical', async () => {
     const ctrl = await k.control(x, 'o47-control');
     const p = fresh({ controlDefinitionVersionIds: [ctrl.versionId] });
     const beforeM16 = await unrelated();
@@ -53,6 +72,21 @@ test('M17-S5 treatment O46/O47/O48, authority, replay and dependencies (PG17)', 
     assert.equal(await k.one(`select string_agg(l::text,'|' order by link_id) from gov_repo.l15_support_links l where owner_risk_treatment_state_id='${planned.stateId}'`), links);
     assert.equal((await k.read(x.member, p)).treatment_status, 'IMPLEMENTED');
     assert.equal(await unrelated(), beforeM16, 'naming controls creates no M16/canonical state');
+  });
+  for (const predecessor of ['IMPLEMENTED','REVOKED'] as const) await t.test(`O47 IMPLEMENTED successor from ${predecessor} predecessor is rejected`, async () => {
+    const p = fresh(), planned = await k.treat(x, name(), p);
+    let predecessorId: string;
+    if (predecessor === 'IMPLEMENTED') {
+      predecessorId = (await k.treat(x, name(), { ...p, implementationStatus: 'IMPLEMENTED', expectedCurrentStateId: planned.stateId }, k.evidence(x))).stateId;
+    } else {
+      const rev = k.revocation(p, planned.stateId), submitted = await k.submit(x, name(), rev);
+      predecessorId = (await k.decide(x, name(), submitted, rev, { outcome: 'REVOKE' })).state_id;
+    }
+    const next = { ...p, implementationStatus: 'IMPLEMENTED' as const, expectedCurrentStateId: predecessorId };
+    const submitted = await k.submit(x, name(), next), history = await k.history(x.org), commandId = x.cmd(name());
+    await reject(k.decideSql(x.treatment, { commandId, proposalId: submitted.proposal_id, proposal: next, support: k.evidence(x) }), 'IMPLEMENTATION_PREDECESSOR_NOT_PLANNED');
+    assert.equal(await k.history(x.org), history, 'failed transition changes no state, pins or support');
+    assert.equal(await k.one(`select count(*) from gov_repo.l14_command_results where organisation_id='${x.org}' and command_id='${commandId}'`), '0');
   });
   await t.test('O48 control invalidation identifies exact pin, preserves history/as-of and permits REVOKE', async () => {
     const ctrl = await k.control(x, 'o48-control');

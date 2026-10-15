@@ -48,7 +48,7 @@ export const L15_S5_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
   {
     "sig": "gov_repo.l15_submit_risk_treatment_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,uuid,text,text,uuid,uuid,text,date,text,uuid[],timestamp with time zone,timestamp with time zone,uuid,uuid,uuid,text,text[],text[],text)",
     "owner": "postgres",
-    "sha": "eaf60cf45db079970fc29243032da02f68df1116fb3b20050119e199821e5e24",
+    "sha": "a2b016bc4496ba68c0aa1fffd89b2be68cb5b45bb14fb2c5b550d8ae9db9f9d5",
     "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
   },
   {

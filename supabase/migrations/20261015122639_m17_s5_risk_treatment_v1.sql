@@ -75,6 +75,8 @@ CREATE TABLE gov_repo.l15_risk_treatment_states (
  CHECK(effective_to IS NULL OR effective_to>effective_from),
  CHECK(predecessor_state_id IS NULL OR predecessor_state_id<>state_id),
  CHECK(predecessor_state_id IS NOT NULL OR state_kind='VALIDATED'),
+ CONSTRAINT l15_risk_treatment_implementation_predecessor_check
+ CHECK(implementation_status IS DISTINCT FROM 'IMPLEMENTED' OR predecessor_state_id IS NOT NULL),
  FOREIGN KEY (organisation_id, governed_risk_state_id, governed_risk_subject_key, governed_risk_scenario_definition_id,
  governed_risk_scenario_definition_version_id, governed_risk_scenario_content_hash, governed_risk_scenario_validated_state_id, governed_risk_state_kind)
  REFERENCES gov_repo.l15_governed_risk_states (organisation_id,state_id,subject_key,scenario_definition_id,scenario_definition_version_id,
@@ -342,6 +344,9 @@ BEGIN
  IF p_implementation_status IS NOT NULL AND p_implementation_status NOT IN ('PLANNED','IMPLEMENTED') THEN RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='IMPLEMENTATION_STATUS_UNKNOWN'; END IF;
  IF p_treatment_revocation_reason IS NOT NULL AND p_treatment_revocation_reason NOT IN ('TREATMENT_FAILED','TREATMENT_WITHDRAWN','RECORDED_IN_ERROR') THEN RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='TREATMENT_REVOCATION_REASON_UNKNOWN'; END IF;
  IF p_intent='VALIDATE' AND (p_implementation_status IS NULL OR p_treatment_revocation_reason IS NOT NULL OR p_target_state_id IS NOT NULL) THEN RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='TREATMENT_CONTENT_INVALID'; END IF;
+ IF p_intent='VALIDATE' AND p_implementation_status='IMPLEMENTED' AND p_expected_current_state_id IS NULL THEN
+   RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='IMPLEMENTATION_PREDECESSOR_REQUIRED';
+ END IF;
  IF p_intent='REVOKE' AND (p_implementation_status IS NOT NULL OR p_target_implementation_date IS NOT NULL OR p_requested_effective_to IS NOT NULL OR p_treatment_revocation_reason IS NULL OR p_target_state_id IS NULL OR p_expected_current_state_id IS DISTINCT FROM p_target_state_id) THEN RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='REVOCATION_CONTENT_INVALID'; END IF;
  IF p_control_definition_version_ids IS NULL OR array_position(p_control_definition_version_ids,NULL) IS NOT NULL OR cardinality(p_control_definition_version_ids)<> (SELECT count(DISTINCT x) FROM unnest(p_control_definition_version_ids) x) THEN RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='CONTROL_PINS_MALFORMED'; END IF;
  IF p_treatment_option<>'MITIGATE' AND cardinality(p_control_definition_version_ids)>0 THEN RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='CONTROL_PINS_NOT_PERMITTED'; END IF;
@@ -764,6 +769,16 @@ DECLARE
   v_predecessor record;
 
 BEGIN
+  -- Frozen §15.1 / O47: implementation is a successor of approved, planned treatment.
+  IF NEW.implementation_status = 'IMPLEMENTED' AND NOT EXISTS (
+    SELECT 1 FROM gov_repo.l15_risk_treatment_states s
+    WHERE s.organisation_id = NEW.organisation_id AND s.state_id = NEW.predecessor_state_id
+      AND s.governed_risk_state_id = NEW.governed_risk_state_id
+      AND s.treatment_option = NEW.treatment_option AND s.treatment_ordinal_key = NEW.treatment_ordinal_key
+      AND s.state_kind = 'VALIDATED' AND s.implementation_status = 'PLANNED'
+  ) THEN
+    RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE='GV010', DETAIL='IMPLEMENTATION_PREDECESSOR_NOT_PLANNED';
+  END IF;
   SELECT d.proposal_id, d.decided_at, d.support_status, d.actor_user_id INTO v_decision
   FROM gov_repo.l14_governance_decisions AS d
   WHERE d.organisation_id = NEW.organisation_id AND d.governance_decision_id = NEW.governance_decision_id

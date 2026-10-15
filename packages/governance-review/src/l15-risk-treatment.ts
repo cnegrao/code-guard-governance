@@ -26,6 +26,7 @@ export function checkRiskTreatmentProposal(p: L15RiskTreatmentProposalContent): 
   if (p.implementationStatus !== null && !within(L15_RISK_TREATMENT_IMPLEMENTATION_STATUSES, p.implementationStatus)) fail('IMPLEMENTATION_STATUS_UNKNOWN');
   if (p.treatmentRevocationReason !== null && !within(L15_RISK_TREATMENT_REVOCATION_REASONS, p.treatmentRevocationReason)) fail('TREATMENT_REVOCATION_REASON_UNKNOWN');
   if (p.intent === 'VALIDATE' && (p.implementationStatus === null || p.treatmentRevocationReason !== null || p.targetStateId !== null)) fail('TREATMENT_CONTENT_INVALID');
+  if (p.intent === 'VALIDATE' && p.implementationStatus === 'IMPLEMENTED' && p.expectedCurrentStateId === null) fail('IMPLEMENTATION_PREDECESSOR_REQUIRED');
   if (p.intent === 'REVOKE' && (p.implementationStatus !== null || p.targetImplementationDate !== null || p.requestedEffectiveTo !== null || p.treatmentRevocationReason === null || p.targetStateId === null || p.expectedCurrentStateId !== p.targetStateId)) fail('REVOCATION_CONTENT_INVALID');
   if (!Array.isArray(p.controlDefinitionVersionIds) || new Set(p.controlDefinitionVersionIds.map(id => canonicalUuid(id))).size !== p.controlDefinitionVersionIds.length) fail('CONTROL_PINS_MALFORMED');
   if (p.treatmentOption !== 'MITIGATE' && p.controlDefinitionVersionIds.length) fail('CONTROL_PINS_NOT_PERMITTED');
@@ -58,6 +59,9 @@ export interface L15DecideRiskTreatmentFingerprintInput {
   readonly support: L15RiskTreatmentSupport;
 }
 export function decideRiskTreatmentProposalFingerprint(i: L15DecideRiskTreatmentFingerprintInput): string {
+  // The DB resolves the predecessor's persisted VALIDATED + PLANNED status.
+  if (i.outcome === 'VALIDATE' && i.proposal.implementationStatus === 'IMPLEMENTED'
+    && (i.proposal.expectedCurrentStateId === null || i.expectedCurrentStateId === null)) fail('IMPLEMENTATION_PREDECESSOR_REQUIRED');
   return hash(['L15_COMMAND_FINGERPRINT_V1', 'DECIDE_PROPOSAL', canonicalUuid(i.organisationId), canonicalUuid(i.actorUserId),
     i.outcome, riskTreatmentReasonCode(i.outcome), canonicalUuid(i.proposalId), 'RISK_TREATMENT', i.proposal.intent, i.proposal.sourceClass,
     ...content(i.proposal), ...target(i.proposal.targetStateId), ...expected(i.expectedCurrentStateId), ...riskTreatmentSupportParts(i.support)]);

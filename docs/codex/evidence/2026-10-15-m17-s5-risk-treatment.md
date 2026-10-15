@@ -129,3 +129,28 @@ CI is not claimed: no PR is opened, and the heavy M15/M16 workflows do not run o
 Implementation, focused coverage, candidate-ready integration and the one final selection are complete. O46/O47/O48 PASS.
 No architecture or implementation blocker remains. The next action after the authorized commit/push is review of the S5 branch;
 opening a PR is outside this request. Historical migrations remain unchanged, and the generated dashboard typecheck cache was restored.
+
+## ACP O47 correction — planned before implemented
+
+ACP found that the initial delivery at `9100cb691de2aca9d8a5b505cec3a89448c14ec3` allowed a root IMPLEMENTED state.
+The original passing counts above did not cover that invalid transition. This corrective delta enforces frozen §15.1 / O47:
+
+- The state-table CHECK `l15_risk_treatment_implementation_predecessor_check` requires a non-null predecessor for IMPLEMENTED.
+  Together with the existing closed status/state shape checks, the first VALIDATED state must be PLANNED.
+- The existing state insert guard requires the referenced predecessor, in the same organisation and treatment key, to be
+  `state_kind = 'VALIDATED' AND implementation_status = 'PLANNED'`; otherwise it raises `IMPLEMENTATION_PREDECESSOR_NOT_PLANNED`.
+- The submit RPC and TypeScript proposal/VALIDATE-decision mirrors reject missing predecessor expectations with
+  `IMPLEMENTATION_PREDECESSOR_REQUIRED`. PostgreSQL resolves the predecessor's persisted status; no new client-trusted status operand.
+- The submit definer inventory hash is updated. No new status, RPC parameter, permission, dependency, store or shared-surface rule.
+  This amends the branch's unmerged S5 migration; no migration from the accepted main base is edited.
+
+Targeted correction verification: **52/52 tests, zero failures/skips** — canonical-contracts 3, governance-review 14,
+S5 static acceptance 3, S5 main PostgreSQL flow 32 (including its parent). The main flow explicitly covers root PLANNED success,
+root IMPLEMENTED rejection, PLANNED → IMPLEMENTED success, direct state insertion rejection, the actual CHECK copied to a
+temporary table independently of triggers, and rejection after either IMPLEMENTED or REVOKED predecessors with no partial result/history change.
+Canonical-contracts, governance-review and dashboard typechecks all pass; `git diff --check` passes.
+
+Focused run: `2578f701-7cb9-4c99-80b6-28b4456645a7`, **13,759.0443 ms** including typechecks.
+Targeted PostgreSQL integration: `7c995395-16fc-4fdd-a566-392395358f68`, **68,041.9462 ms**.
+Total correction verification: **81,800.9905 ms**. No failed attempt or retry. The previous 918-test selection was not rerun;
+PR CI remains the independent M15/M16 repository gate. No blocker remains; the same branch is pushed with a separate corrective commit, without a PR.
