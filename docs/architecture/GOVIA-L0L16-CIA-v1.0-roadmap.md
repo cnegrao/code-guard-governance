@@ -152,6 +152,7 @@ The existing authority and evidence invariants remain mandatory:
     - ISO/IEC 38505-1:2026
     - ISO/IEC 23894
     - NIST AI RMF
+    - EU AI Act
 
     **V1 — Trust & Assurance Hub:**
 
@@ -161,6 +162,24 @@ The existing authority and evidence invariants remain mandatory:
     - evidence coverage and gap views
     - certification/award readiness views
     - externally defensible commercial proof points
+
+    **European scope:**
+
+    - EU AI Act regulatory assurance mapping
+    - European Assurance Profile
+    - explicit separation between:
+      - framework alignment
+      - regulatory evidence
+      - certification readiness
+      - external certification
+    - the European view must expose the statuses:
+      - mapped
+      - evidence available
+      - gap
+      - not applicable
+      - unknown
+      - certification-ready
+      - certified
 
     Hard boundaries:
 
