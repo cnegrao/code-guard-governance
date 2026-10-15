@@ -116,6 +116,73 @@ The existing authority and evidence invariants remain mandatory:
 17. **RISK INTELLIGENCE V1**
     L15; signal → hypothesis → governed risk → residual risk.
 
+17.5. **TRUST & ASSURANCE FOUNDATION V1 — PRE-PRESENTATION GATE**
+    Interstitial milestone between M17 and M18.
+
+    Purpose: turn existing canonical governance truth and evidence into
+    externally understandable, auditable and commercially reusable assurance.
+
+    Core chain:
+
+    ```text
+    Architecture
+    → Capability
+    → Evidence
+    → Standard / Framework
+    → Assurance
+    → Certification / Award Readiness
+    → Commercial Claim
+    ```
+
+    **V0 — Readiness Pack:**
+
+    - External Credibility Matrix
+    - Standards / Framework Crosswalk
+    - Evidence Index
+    - Certification Gap Register
+    - Award Readiness Matrix + Calendar
+    - Commercial Claims Register
+    - Product / Customer KPI Framework
+
+    Initial mappings:
+
+    - DAMA-DMBOK
+    - EDM Council / DCAM
+    - ISO/IEC 42001
+    - ISO/IEC 38505-1:2026
+    - ISO/IEC 23894
+    - NIST AI RMF
+
+    **V1 — Trust & Assurance Hub:**
+
+    - capability → evidence → framework mapping
+    - framework/readiness coverage projections
+    - drill-down from requirement to evidence and governed object/decision
+    - evidence coverage and gap views
+    - certification/award readiness views
+    - externally defensible commercial proof points
+
+    Hard boundaries:
+
+    - read/projection layer over existing canonical governance truth
+    - no parallel source of truth
+    - no new governance authority
+    - no new CanonicalObjectKinds
+    - no new canonical relationships
+    - no certification claim unless externally granted
+    - no fabricated compliance/readiness evidence
+    - UNKNOWN / NOT EVIDENCED remain explicit
+    - do NOT pull Normative Intelligence implementation forward
+
+    Timing:
+
+    - starts only after M17 closure
+    - precedes focused M18
+    - V0 Readiness Pack estimate: 1–2 engineering days
+    - V1 Trust & Assurance Hub estimate: 3–5 engineering days
+    - Trust & Assurance V1 should be demo-ready before the principal
+      commercial presentation
+
 18. **BUSINESS WORKSPACE V1**
     Commercial V0 focus:
 
@@ -196,6 +263,7 @@ M14 close
 → M15
 → M16
 → M17
+→ M17.5 Trust & Assurance Foundation
 → focused M18
 → M19: IDMC/Purview/Databricks/AWS/Google Cloud/dbt
 → M20 only real consumers
