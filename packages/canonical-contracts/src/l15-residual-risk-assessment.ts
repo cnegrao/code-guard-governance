@@ -31,6 +31,9 @@ export interface L15ResidualCurrentState {
 export type L15ResidualRiskAssessmentReadResult = {
   readonly effectiveAt: string;
   readonly recordedCutoff: string;
+  readonly causeKind: string | null;
+  readonly causeId: string | null;
+  readonly causeResolution: string | null;
 } & (
   | { readonly status: 'RATED' | 'INSUFFICIENT_EVIDENCE'; readonly resolution: 'CURRENT'; readonly dependencyKind: null; readonly dependencyId: null; readonly current: L15ResidualCurrentState }
   | { readonly status: 'UNKNOWN'; readonly resolution: 'DEPENDENCY_INVALID'; readonly dependencyKind: L15ResidualDependencyKind; readonly dependencyId: string; readonly current: null }

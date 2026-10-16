@@ -116,9 +116,10 @@ export const m17S3GovernedRiskMigration = '20261013140000_m17_s3_governed_risk_v
 export const m17S3R1SupportLineageMigration = '20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql';
 // M17-S4 chain step: INHERENT RISK_ASSESSMENT (the second L15 authoritative fact family), on top of M17-S3 + S3R1. Applied only
 // by the M17S4 horizon; the M17S3R1 horizon (and every older one) keeps its exact chain and postflight expectations.
-export const m17S6ResidualRiskAcceptanceMigration = '20261016021012_m17_s6_residual_risk_acceptance_v1.sql';
-export const m17S5RiskTreatmentMigration = '20261015122639_m17_s5_risk_treatment_v1.sql';
 export const m17S4InherentRiskAssessmentMigration = '20261013160000_m17_s4_inherent_risk_assessment_v1.sql';
+// S5 and S6 extend only their own horizons; historical chains remain exact.
+export const m17S5RiskTreatmentMigration = '20261015122639_m17_s5_risk_treatment_v1.sql';
+export const m17S6ResidualRiskAcceptanceMigration = '20261016021012_m17_s6_residual_risk_acceptance_v1.sql';
 // The only statement of the full chain that needs a real pgvector index access method.
 export const hnswIndexMigration = '20260818004053_agent_registry_graph_part_3.sql';
 const migrationsDirectory = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url));

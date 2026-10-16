@@ -152,6 +152,7 @@ export async function readResidualRiskAssessment(principal: GovernanceWritePrinc
   const r = firstRow(data);
   if (!r) throw new GovernedWriteError('Residual read returned no row');
   return Object.freeze({ status: r.assessment_status, resolution: r.resolution, dependencyKind: r.dependency_kind,
-    dependencyId: r.dependency_id, effectiveAt: r.effective_at, recordedCutoff: r.recorded_cutoff,
+    dependencyId: r.dependency_id, causeKind: r.cause_kind, causeId: r.cause_id, causeResolution: r.cause_resolution,
+    effectiveAt: r.effective_at, recordedCutoff: r.recorded_cutoff,
     current: r.current_state }) as L15ResidualRiskAssessmentReadResult;
 }

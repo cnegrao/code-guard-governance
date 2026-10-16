@@ -765,7 +765,11 @@ BEGIN
      AND v_latest_outcome = v_proposal.assessment_outcome
      AND v_latest_likelihood IS NOT DISTINCT FROM v_proposal.likelihood_level_code
      AND v_latest_impact IS NOT DISTINCT FROM v_proposal.impact_level_code
-     AND v_latest_until = v_proposal.requested_valid_until THEN
+     AND v_latest_until = v_proposal.requested_valid_until
+     AND (v_proposal.assessment_basis='INHERENT' OR
+       gov_repo.l15_residual_proposal_pin_parts_v1(v_org,p_proposal_id) IS NOT DISTINCT FROM
+       (SELECT gov_repo.l15_residual_proposal_pin_parts_v1(v_org,s.proposal_id)
+        FROM gov_repo.l15_risk_assessment_states s WHERE s.organisation_id=v_org AND s.state_id=v_head_latest)) THEN
     -- A renewal / correction must change something: another methodology pin, outcome, level or valid_until.
     RAISE EXCEPTION 'L15_INVALID_COMMAND' USING ERRCODE = 'GV010', DETAIL = 'RISK_ASSESSMENT_ALREADY_VALIDATED';
   END IF;
@@ -1035,10 +1039,70 @@ LANGUAGE sql STABLE SET search_path = pg_catalog, pg_temp AS $$
   FROM (SELECT 1) AS one
   LEFT JOIN LATERAL (SELECT * FROM latest ORDER BY latest.effective_from DESC, latest.recorded_at DESC LIMIT 1) AS l ON true
 $$;
+-- Diagnostics inspect exact pins at the same coordinates; they never select replacement dependencies.
+CREATE FUNCTION gov_repo.l15_residual_m16_fact_resolution_v1(p_org uuid,p_state uuid,p_at timestamptz,p_cutoff timestamptz)
+RETURNS text LANGUAGE sql STABLE SET search_path=pg_catalog,pg_temp AS $$
+ SELECT CASE WHEN s.fact_state_id IS NULL THEN 'ABSENT'
+ WHEN s.state_kind<>'VALIDATED' THEN 'REVOKED'
+ WHEN s.effective_from>p_at THEN 'NOT_YET_EFFECTIVE'
+ WHEN EXISTS(SELECT 1 FROM gov_repo.l14_fact_states n WHERE n.organisation_id=p_org
+   AND n.predecessor_state_id=s.fact_state_id AND n.recorded_at<=p_cutoff AND n.effective_from<=p_at) THEN 'SUPERSEDED'
+ WHEN s.effective_to<=p_at THEN 'EXPIRED' ELSE 'CURRENT' END
+ FROM (SELECT 1) one LEFT JOIN gov_repo.l14_fact_states s ON s.organisation_id=p_org
+ AND s.fact_state_id=p_state AND s.recorded_at<=p_cutoff
+$$;
+CREATE FUNCTION gov_repo.l15_residual_dependency_cause_v1(p_org uuid,p_kind text,p_id uuid,p_at timestamptz,p_cutoff timestamptz)
+RETURNS TABLE(cause_kind text,cause_id uuid,cause_resolution text)
+LANGUAGE plpgsql STABLE SET search_path=pg_catalog,pg_temp AS $$
+DECLARE s record;a record;d record;r text;
+BEGIN
+ IF p_kind='CONTROL_ASSESSMENT' THEN
+   r:=gov_repo.l15_residual_m16_fact_resolution_v1(p_org,p_id,p_at,p_cutoff);
+   IF r<>'CURRENT' THEN RETURN QUERY SELECT p_kind,p_id,r; RETURN; END IF;
+   SELECT * INTO s FROM gov_repo.l14_control_assessment_states WHERE organisation_id=p_org AND fact_state_id=p_id;
+   r:=gov_repo.l15_residual_m16_fact_resolution_v1(p_org,s.control_applicability_state_id,p_at,p_cutoff);
+   IF r<>'CURRENT' THEN RETURN QUERY SELECT 'CONTROL_APPLICABILITY'::text,s.control_applicability_state_id,r; RETURN; END IF;
+   SELECT * INTO a FROM gov_repo.l14_control_applicability_states WHERE organisation_id=p_org AND fact_state_id=s.control_applicability_state_id;
+   IF a.applicability<>'APPLIES' THEN
+     RETURN QUERY SELECT 'CONTROL_APPLICABILITY'::text,a.fact_state_id,'DOES_NOT_APPLY'::text; RETURN;
+   END IF;
+   IF NOT EXISTS(SELECT 1 FROM gov_repo.l14_control_definition_valid_state_v1(p_org,a.control_definition_id,
+      a.control_definition_version_id,a.content_hash::text,p_at,p_cutoff) v WHERE v.state_id=a.control_definition_validated_state_id) THEN
+     RETURN QUERY SELECT 'CONTROL_DEFINITION'::text,a.control_definition_validated_state_id,'NOT_CURRENT'::text; RETURN;
+   END IF;
+   RETURN QUERY SELECT 'CONTROL_APPLICABILITY'::text,a.fact_state_id,'DEPENDENCY_INVALID'::text;
+ ELSIF p_kind='RISK_TREATMENT' THEN
+   SELECT * INTO d FROM gov_repo.l15_risk_treatment_dependency_failure_v1(p_org,p_id,p_at,p_cutoff);
+   IF FOUND THEN RETURN QUERY SELECT d.dependency_kind,d.dependency_id,'NOT_CURRENT'::text;
+   ELSE
+     SELECT * INTO s FROM gov_repo.l15_risk_treatment_states WHERE organisation_id=p_org AND state_id=p_id;
+     SELECT resolution INTO r FROM gov_repo.l15_risk_treatment_resolution_v1(p_org,s.governed_risk_state_id,
+       s.treatment_option,s.treatment_ordinal_key,p_at,p_cutoff);
+     RETURN QUERY SELECT p_kind,p_id,CASE WHEN r='CURRENT' THEN 'SUPERSEDED' ELSE r END;
+   END IF;
+ ELSIF p_kind='INHERENT_RISK_ASSESSMENT' THEN
+   SELECT * INTO s FROM gov_repo.l15_risk_assessment_states WHERE organisation_id=p_org AND state_id=p_id;
+   SELECT resolution INTO r FROM gov_repo.l15_risk_assessment_resolution_v1(p_org,s.governed_risk_state_id,'INHERENT',p_at,p_cutoff);
+   IF r='METHODOLOGY_DEPENDENCY_INVALID' THEN
+     RETURN QUERY SELECT 'RISK_METHODOLOGY'::text,s.methodology_validated_state_id,'NOT_CURRENT'::text;
+   ELSIF r='GOVERNED_RISK_DEPENDENCY_INVALID' THEN
+     RETURN QUERY SELECT 'GOVERNED_RISK'::text,s.governed_risk_state_id,'NOT_CURRENT'::text;
+   ELSE RETURN QUERY SELECT p_kind,p_id,CASE WHEN r='CURRENT' THEN 'SUPERSEDED' ELSE r END;
+   END IF;
+ ELSIF p_kind='GOVERNED_RISK' THEN
+   SELECT * INTO s FROM gov_repo.l15_governed_risk_states WHERE organisation_id=p_org AND state_id=p_id;
+   IF NOT EXISTS(SELECT 1 FROM gov_repo.l15_risk_scenario_definition_valid_state_v1(p_org,s.scenario_definition_id,
+      s.scenario_definition_version_id,s.scenario_content_hash::text,p_at,p_cutoff) v WHERE v.state_id=s.scenario_validated_state_id) THEN
+     RETURN QUERY SELECT 'RISK_SCENARIO_DEFINITION'::text,s.scenario_validated_state_id,'NOT_CURRENT'::text;
+   ELSE RETURN QUERY SELECT p_kind,p_id,'NOT_CURRENT'::text;
+   END IF;
+ ELSE RETURN QUERY SELECT p_kind,p_id,'NOT_CURRENT'::text;
+ END IF;
+END $$;
 CREATE FUNCTION gov_repo.l15_read_risk_assessment_v2(
  p_verified_organisation_id uuid,p_verified_actor_user_id uuid,p_verified_session_iat bigint,p_verified_session_exp bigint,
  p_verified_credential_epoch timestamptz,p_governed_risk_state_id uuid,p_assessment_basis text,p_effective_at timestamptz,p_recorded_cutoff timestamptz)
-RETURNS TABLE(assessment_status text,resolution text,dependency_kind text,dependency_id uuid,effective_at timestamptz,recorded_cutoff timestamptz,current_state jsonb)
+RETURNS TABLE(assessment_status text,resolution text,dependency_kind text,dependency_id uuid,cause_kind text,cause_id uuid,cause_resolution text,effective_at timestamptz,recorded_cutoff timestamptz,current_state jsonb)
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=pg_catalog,pg_temp SET lock_timeout='5s' AS $$
 DECLARE v_now timestamptz:=clock_timestamp();v_at timestamptz:=coalesce(p_effective_at,v_now);v_cutoff timestamptz:=coalesce(p_recorded_cutoff,v_now);r record;d record;s record;
 BEGIN
@@ -1055,6 +1119,10 @@ BEGIN
  CASE WHEN r.resolution='GOVERNED_RISK_DEPENDENCY_INVALID' THEN 'GOVERNED_RISK' ELSE 'RISK_METHODOLOGY' END) END;
  dependency_id:=CASE WHEN resolution='DEPENDENCY_INVALID' THEN coalesce(d.dependency_id,
  CASE WHEN r.resolution='GOVERNED_RISK_DEPENDENCY_INVALID' THEN s.governed_risk_state_id ELSE s.methodology_validated_state_id END) END;
+ IF resolution='DEPENDENCY_INVALID' THEN
+   SELECT f.cause_kind,f.cause_id,f.cause_resolution INTO cause_kind,cause_id,cause_resolution
+   FROM gov_repo.l15_residual_dependency_cause_v1(p_verified_organisation_id,dependency_kind,dependency_id,v_at,v_cutoff) f;
+ END IF;
  effective_at:=v_at;recorded_cutoff:=v_cutoff;
  IF resolution='CURRENT' THEN current_state:=to_jsonb(s)||jsonb_build_object(
  'treatment_state_ids',ARRAY(SELECT treatment_state_id FROM gov_repo.l15_risk_assessment_state_treatment_pins WHERE organisation_id=p_verified_organisation_id AND state_id=s.state_id ORDER BY treatment_state_id),

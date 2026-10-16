@@ -24,7 +24,7 @@ const sources = [
 
 test('static: S3 is followed only by S3R1, S4 and S5; additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  assert.deepEqual(names.slice(names.indexOf(S3) - 1), ['20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql', S3, S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql']);
+  assert.deepEqual(names.slice(names.indexOf(S3) - 1), ['20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql', S3, S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql', '20261016021012_m17_s6_residual_risk_acceptance_v1.sql']);
   assert.match(migration, /^-- M17-S3/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   // The only replaced routines are the owner-only S1 / S2 link guard and the S2 command-result state guard (S1 / S2 branches
