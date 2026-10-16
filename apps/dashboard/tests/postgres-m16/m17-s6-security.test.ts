@@ -6,10 +6,11 @@ import { m17S6ResidualRiskAcceptanceMigration } from '../helpers/disposable-m16-
 import { m17s6Kit } from '../helpers/m17-s6-fixtures';
 import { l15SecurityViolationsSql, type DefinerInventoryEntry } from '../helpers/m17-l15-security-profile';
 import { L15_S1_DEFINER_INVENTORY,L15_S2_DEFINER_INVENTORY,L15_S2R1_DEFINER_INVENTORY,
-  L15_S3_DEFINER_INVENTORY,L15_S4_DEFINER_INVENTORY,L15_S5_DEFINER_INVENTORY,L15_S6_PHASE_A_DEFINER_DELTA } from '../helpers/m17-l15-definer-inventory';
+  L15_S3_DEFINER_INVENTORY,L15_S4_DEFINER_INVENTORY,L15_S5_DEFINER_INVENTORY,L15_S6_PHASE_A_DEFINER_DELTA,L15_S6_PHASE_B_DEFINER_DELTA } from '../helpers/m17-l15-definer-inventory';
 const previous = [...L15_S1_DEFINER_INVENTORY,...L15_S2_DEFINER_INVENTORY,...L15_S2R1_DEFINER_INVENTORY,
   ...L15_S3_DEFINER_INVENTORY,...L15_S4_DEFINER_INVENTORY,...L15_S5_DEFINER_INVENTORY];
-const newNames = ['l15_submit_risk_assessment_proposal_v2','l15_read_risk_assessment_v2','l15_residual_commit_guard_v1'];
+const newNames = ['l15_submit_risk_assessment_proposal_v2','l15_read_risk_assessment_v2','l15_residual_commit_guard_v1',
+  'l15_submit_risk_acceptance_proposal_v1','l15_decide_risk_acceptance_proposal_v1','l15_read_risk_acceptance_v1','l15_risk_acceptance_commit_guard_v1'];
 const pins = ['proposal_treatment','state_treatment','proposal_control_assessment','state_control_assessment'].map(s => `l15_risk_assessment_${s}_pins`);
 test('S6 actual catalog security, preserved INHERENT v1 rows and M16 authority surface', { timeout:600_000 },async t => {
   const c = await l14Cluster(m => t.diagnostic(m),{ horizon:'M17S5' }); t.after(() => c.stop());
@@ -33,9 +34,9 @@ test('S6 actual catalog security, preserved INHERENT v1 rows and M16 authority s
     from pg_proc where pronamespace='gov_repo'::regnamespace and proname like 'l15_%' and prosecdef) q`) as DefinerInventoryEntry[];
   const delta = inventory.filter(e => newNames.some(n => e.sig.startsWith(`gov_repo.${n}(`)) || e.sig.startsWith('gov_repo.l15_decide_risk_assessment_proposal_v1('));
   const approved = [...previous.map(e => e.sig).filter(s => /l15_(admit_human|read_|admit_scenario|admit_methodology|submit_|decide_)/.test(s)),
-    ...delta.filter(e => /l15_(submit_|read_)/.test(e.sig)).map(e => e.sig)];
+    ...delta.filter(e => /l15_(submit_|read_|decide_)/.test(e.sig)).map(e => e.sig)];
   await t.test('actual definer delta and inherited/default ACL closure',async () => {
-    assert.deepEqual(delta,L15_S6_PHASE_A_DEFINER_DELTA);
+    assert.deepEqual(delta,[...L15_S6_PHASE_A_DEFINER_DELTA,...L15_S6_PHASE_B_DEFINER_DELTA].sort((a,b)=>a.sig.localeCompare(b.sig)));
     assert.deepEqual(inventory.filter(e => !delta.includes(e)).sort((a,b) => a.sig.localeCompare(b.sig)),
       previous.filter(e => !e.sig.startsWith('gov_repo.l15_decide_risk_assessment_proposal_v1(')).sort((a,b) => a.sig.localeCompare(b.sig)));
     assert.deepEqual(await k.json(l15SecurityViolationsSql([...previous.filter(e => !e.sig.startsWith('gov_repo.l15_decide_risk_assessment_proposal_v1(')),...delta],approved)),[]);

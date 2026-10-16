@@ -98,3 +98,31 @@ export const L15_S6_PHASE_A_DEFINER_DELTA: readonly DefinerInventoryEntry[] = [
         "owner":  "postgres"
     }
 ];
+
+// M17-S6 Phase B: exact catalog measured on disposable PostgreSQL 17; three RPCs and one owner-only deferred trigger.
+export const L15_S6_PHASE_B_DEFINER_DELTA: readonly DefinerInventoryEntry[] = [
+  {
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s",
+    "sha": "4585134e8d3a65731d669fbc1c878ee84f6b8925fa1155cdd367ab36dbe03084",
+    "sig": "gov_repo.l15_decide_risk_acceptance_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres"
+  },
+  {
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s",
+    "sha": "d77aee386c942e0e3909fa24ef1a29ffa35f02735a2b5278fc1ca36f1c1b474e",
+    "sig": "gov_repo.l15_read_risk_acceptance_v1(uuid,uuid,bigint,bigint,timestamp with time zone,uuid,timestamp with time zone,timestamp with time zone)",
+    "owner": "postgres"
+  },
+  {
+    "cfg": "search_path=pg_catalog, pg_temp",
+    "sha": "0899cf54eb5da2638bf321c8645c64d4388d1cf87f4e051dd0c9f002a7f330c3",
+    "sig": "gov_repo.l15_risk_acceptance_commit_guard_v1()",
+    "owner": "postgres"
+  },
+  {
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s",
+    "sha": "26c3c7c20b94b9e55e043fe12129d1b4522ac7f470bbafcaa4d137eef7f1c3c9",
+    "sig": "gov_repo.l15_submit_risk_acceptance_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,uuid,timestamp with time zone,timestamp with time zone,uuid,uuid,uuid,text,text[],text[],text)",
+    "owner": "postgres"
+  }
+];

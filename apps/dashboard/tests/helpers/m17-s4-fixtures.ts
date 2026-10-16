@@ -92,8 +92,8 @@ export async function m17s4Kit(c: L14Cluster) {
   ];
 
   /** An organisation with the S3 setup (scenario / methodology / GOVERNED_RISK rules) and, unless `ra = false`, the RA rules. */
-  async function setup(options: { ra?: boolean } = {}) {
-    const x = await k3.setup({ extra: (o, r) => (options.ra === false ? [] : raRules(o, r)) });
+  async function setup(options: { ra?: boolean; extra?: (o: Record<string, string>, r: Record<string, Rel>) => L14AuthorityPolicyRule[] } = {}) {
+    const x = await k3.setup({ extra: (o, r) => [...(options.ra === false ? [] : raRules(o, r)), ...(options.extra?.(o, r) ?? [])] });
     const u = async (...r: string[]) => c.mkUser(x.org, r);
     const actors = {
       methodologyAdmitter: await u(s2.roles.methodologyAdmit), methodologyValidator: await u(s2.roles.methodologyValidate),
