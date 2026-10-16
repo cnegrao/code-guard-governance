@@ -421,7 +421,9 @@ M14 close
   INSUFFICIENT_EVIDENCE / RATED; `L15_RISK_ASSESSMENT_VALIDATE` over the pinned risk subject; SHARED dependency locks on the exact S3 / S2
   keys; natural S2R1 commit; RISK_ASSESSMENT rank-3 support owners. LOCAL_HUMAN only. Application SECURITY DEFINER surface 58 → 61; L15
   definers 19 → 23; service_role L15 RPCs 13 → 16; L15 tables 21 → 24; machine intake surface unchanged (2). O31–O37 PASS.
-- **M17-S5 … S7: NOT STARTED.** M18+: NOT STARTED.
+- **M17-S5 RISK_TREATMENT: IMPLEMENTED.** O46/O47/O48 PASS; local verification and scope recorded in
+  [S5 evidence](../codex/evidence/2026-10-15-m17-s5-risk-treatment.md).
+- **M17-S6 … S7: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not

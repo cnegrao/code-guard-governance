@@ -43,3 +43,30 @@ export const L15_S4_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
   { sig: 'gov_repo.l15_read_risk_assessment_v1(uuid,uuid,bigint,bigint,timestamp with time zone,uuid,text,timestamp with time zone,timestamp with time zone)', owner: 'postgres', sha: '8ee008ad3911d82887c46d090a91fc3da84a345373dcab80350e34a6c856df66', cfg: CFG },
   { sig: 'gov_repo.l15_risk_assessment_commit_guard_v1()', owner: 'postgres', sha: 'afed637992ab3fdf692e56d9409854283020d0f8214ffae70c4eae5187b87e37', cfg: 'search_path=pg_catalog, pg_temp' },
 ];
+/** M17-S5: bounded treatment RPCs and owner-only deferred integrity guard. */
+export const L15_S5_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
+  {
+    "sig": "gov_repo.l15_submit_risk_treatment_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,uuid,text,text,uuid,uuid,text,date,text,uuid[],timestamp with time zone,timestamp with time zone,uuid,uuid,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "a2b016bc4496ba68c0aa1fffd89b2be68cb5b45bb14fb2c5b550d8ae9db9f9d5",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_decide_risk_treatment_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "ac3125f883eb86b69829e9fff0ec2751cccf62011c3a715b0da84aadf32a46b0",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_risk_treatment_commit_guard_v1()",
+    "owner": "postgres",
+    "sha": "37754139af6db700e4a504d95f8993c4cc163a96cbbe68d609f98be5aed7abfd",
+    "cfg": "search_path=pg_catalog, pg_temp"
+  },
+  {
+    "sig": "gov_repo.l15_read_risk_treatment_v1(uuid,uuid,bigint,bigint,timestamp with time zone,uuid,text,text,timestamp with time zone,timestamp with time zone)",
+    "owner": "postgres",
+    "sha": "7ef7b8ed1a0214907fa9b7506dd98f69679849021ce718dff2284bceb9cee453",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  }
+];
