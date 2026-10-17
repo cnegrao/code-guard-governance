@@ -39,7 +39,7 @@ test('S7A O68: all seven lifecycle states are deterministic and projection execu
   const plannedProposal=s5.proposal(tx,treatedRisk.stateId),planned=await s5.treat(tx,'planned',plannedProposal);
   assert.equal((await project(tx.member,treatedRisk.subject,treatedRisk.scen.id)).lifecycle,'TREATMENT_APPROVED');
   const implementedProposal={...plannedProposal,implementationStatus:'IMPLEMENTED' as const,expectedCurrentStateId:planned.stateId};
-  await s5.treat(tx,'implemented',implementedProposal);
+  await s5.treat(tx,'implemented',implementedProposal,s5.evidence(tx));
   assert.equal((await project(tx.member,treatedRisk.subject,treatedRisk.scen.id)).lifecycle,'TREATMENT_IMPLEMENTED');
 
   const closed=await a.k.risk(x,'closed','AGENT_VERSION');

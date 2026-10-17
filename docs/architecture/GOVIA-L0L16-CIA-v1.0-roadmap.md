@@ -426,8 +426,9 @@ M14 close
 - **M17-S6 RESIDUAL / RISK_ACCEPTANCE: CLOSED / MERGED.** O38–O43, O49–O52 and O83 covered; final
   candidate verification and security inventory recorded in
   [S6 evidence](../codex/evidence/2026-10-16-m17-s6-residual-risk-acceptance.md).
-- **M17-S7A deterministic read projections: IMPLEMENTATION CHECKPOINT / VERIFICATION BLOCKED.** Local PostgreSQL 17
-  is required to execute the candidate fixture; S7A is not candidate-ready until that focused proof passes.
+- **M17-S7A deterministic read projections: IMPLEMENTED / CANDIDATE READY.** O45, O67, O68 and categorical M16
+  control-coverage proofs PASS on disposable PostgreSQL 17; candidate evidence is recorded in
+  [S7A evidence](../codex/evidence/2026-10-16-m17-s7a-read-projections.md).
 - **M17-S7B exposure / Passport overlay: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;

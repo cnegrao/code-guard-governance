@@ -64,8 +64,8 @@ AS $read$
 DECLARE
   v_org uuid := p_verified_organisation_id;
   v_now timestamptz := pg_catalog.clock_timestamp();
-  v_at timestamptz := pg_catalog.coalesce(p_effective_at,v_now);
-  v_cutoff timestamptz := pg_catalog.coalesce(p_recorded_cutoff,v_now);
+  v_at timestamptz := coalesce(p_effective_at,v_now);
+  v_cutoff timestamptz := coalesce(p_recorded_cutoff,v_now);
   v_resolution record;
 BEGIN
   PERFORM 1 FROM gov_repo.l14_session_basis_v1(v_org,p_verified_actor_user_id,p_verified_session_iat,
@@ -128,7 +128,7 @@ BEGIN
 
   -- §13.1 / O45: exact M16 target only. No AGENT -> AGENT_VERSION or other inheritance.
   IF p_subject_type='CANONICAL_OBJECT' AND p_subject_canonical_kind IN ('AGENT','DATA_ASSET','DATA_ELEMENT') THEN
-    SELECT pg_catalog.coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+    SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
       'responsibilityRole',r.responsibility_role,'governancePartyId',r.governance_party_id,
       'factStateId',r.fact_state_id) ORDER BY r.responsibility_role,r.governance_party_id),'[]'::jsonb)
       INTO accountable_parties
@@ -139,10 +139,10 @@ BEGIN
   accountable_party_status := CASE WHEN pg_catalog.jsonb_array_length(accountable_parties)>0 THEN 'CURRENT' ELSE 'UNKNOWN' END;
 
   -- Categorical only. DOES_NOT_APPLY remains explicit and can never acquire an assessment outcome.
-  SELECT pg_catalog.coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+  SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
     'controlDefinitionId',ca.control_definition_id,'controlDefinitionVersionId',ca.control_definition_version_id,
     'applicability',ca.applicability,'assessmentOutcome',CASE WHEN ca.applicability='APPLIES'
-      THEN pg_catalog.coalesce(ass.assessment_outcome,'UNKNOWN') ELSE 'UNKNOWN' END,
+      THEN coalesce(ass.assessment_outcome,'UNKNOWN') ELSE 'UNKNOWN' END,
     'applicabilityFactStateId',ca.fact_state_id,'assessmentFactStateId',ass.fact_state_id)
     ORDER BY ca.control_definition_id),'[]'::jsonb) INTO control_coverage
   FROM gov_repo.l14_control_applicabilities_current_v1(v_org,p_subject_type,p_subject_canonical_kind,
