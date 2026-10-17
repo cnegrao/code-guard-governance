@@ -33,3 +33,4 @@ export * from "./l15-risk-treatment.ts";
 export * from "./l15-risk-acceptance.ts";
 
 export * from './l15-residual-risk-assessment.ts';
+export * from './l15-read-projections.ts';
