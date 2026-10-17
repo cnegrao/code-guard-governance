@@ -26,7 +26,7 @@ const sources = [
 test('static: S2 is followed only by S2R1, S3, S3R1, S4 and S5; additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
   // Horizon: each later slice extends this exact list (never a wildcard).
-  assert.deepEqual(names.slice(names.indexOf(S2)), [S2, S2R1, S3, S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql']);
+  assert.deepEqual(names.slice(names.indexOf(S2)), [S2, S2R1, S3, S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql', '20261016021012_m17_s6_residual_risk_acceptance_v1.sql']);
   assert.match(migration, /^-- M17-S2/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   assert.doesNotMatch(code, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+gov_repo\.(?!l15_support_link_insert_guard_v1\b)/i,

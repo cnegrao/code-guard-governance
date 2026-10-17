@@ -11,8 +11,8 @@ export const RT_TABLES = ['l15_risk_treatment_proposals', 'l15_risk_treatment_st
   'l15_risk_treatment_proposal_control_pins', 'l15_risk_treatment_state_control_pins'];
 export const val = (x: string | null, type = 'text') => x === null ? `null::${type}` : `${lit(x)}::${type}`;
 export const arr = (x: readonly string[], type = 'text') => `ARRAY[${x.map(lit).join(',')}]::${type}[]`;
-export async function m17s5Kit(c: L14Cluster) {
-  const k3 = await m17s3Kit(c), pk = await partyKit(c), ck = await controlDefinitionKit(c);
+export async function m17s5Kit(c: L14Cluster, controlKit?: Awaited<ReturnType<typeof controlDefinitionKit>>) {
+  const k3 = await m17s3Kit(c), pk = await partyKit(c), ck = controlKit ?? await controlDefinitionKit(c);
   const flexRole = randomUUID();
   await c.owner(`insert into gov_repo.governance_roles(role_id,role_code,role_name,role_tier,is_system_role) values('${flexRole}','S5_FLEX','S5 flex','organisation',false)`);
   const actions = ['VALIDATE', 'REJECT', 'DEFER', 'REVOKE'] as const;
