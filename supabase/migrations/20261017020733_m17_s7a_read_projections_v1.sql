@@ -133,7 +133,8 @@ BEGIN
       'factStateId',r.fact_state_id) ORDER BY r.responsibility_role,r.governance_party_id),'[]'::jsonb)
       INTO accountable_parties
     FROM gov_repo.l14_responsibility_assignments_current_v1(v_org,p_subject_canonical_kind,
-      p_subject_canonical_object_id,v_at,v_cutoff) r;
+      p_subject_canonical_object_id,v_at,v_cutoff) r
+    WHERE r.responsibility_role IN ('BUSINESS_OWNER','TECHNICAL_OWNER','DATA_OWNER');
   ELSE accountable_parties := '[]'::jsonb;
   END IF;
   accountable_party_status := CASE WHEN pg_catalog.jsonb_array_length(accountable_parties)>0 THEN 'CURRENT' ELSE 'UNKNOWN' END;

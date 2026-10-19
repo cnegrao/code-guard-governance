@@ -65,20 +65,31 @@ test('S7A O45: accountable parties use only the exact M16 subject', { timeout: 6
   const k = await responsibilityKit(c), x = await k.setup(), party = await k.party(x, 'owner');
   const assignments = [
     ['AGENT', x.objects.agent, 'BUSINESS_OWNER'],
+    ['AGENT', x.objects.agent, 'TECHNICAL_OWNER'],
     ['DATA_ASSET', x.objects.asset, 'DATA_OWNER'],
-    ['DATA_ELEMENT', x.objects.element, 'DATA_STEWARD'],
+    ['DATA_ELEMENT', x.objects.element, 'DATA_OWNER'],
   ] as const;
   for (const [kind, id, role] of assignments) {
-    await k.assign(x, `assign-${kind}`, k.keyOf(kind, id, role, party.partyId), party);
+    await k.assign(x, `assign-${kind}-${role}`, k.keyOf(kind, id, role, party.partyId), party);
+  }
+  await k.assign(x, 'assign-DATA_ELEMENT-steward',
+    k.keyOf('DATA_ELEMENT', x.objects.element, 'DATA_STEWARD', party.partyId), party);
+
+  const expectedOwners = [
+    ['AGENT', x.objects.agent, [['BUSINESS_OWNER', party.partyId], ['TECHNICAL_OWNER', party.partyId]]],
+    ['DATA_ASSET', x.objects.asset, [['DATA_OWNER', party.partyId]]],
+    ['DATA_ELEMENT', x.objects.element, [['DATA_OWNER', party.partyId]]],
+  ] as const;
+  for (const [kind, id, expected] of expectedOwners) {
     const result = await project(c, x.member, objectSubject(kind, id), randomUUID());
     assert.equal(result.accountable_party_status, 'CURRENT', kind);
     assert.deepEqual(result.accountable_parties.map((p: Record<string, string>) => [p.responsibilityRole, p.governancePartyId]),
-      [[role, party.partyId]], kind);
+      expected, `${kind}: only current M16 owner roles are accountable; DATA_STEWARD is excluded`);
   }
 
   const otherKinds = ['AGENT_VERSION', 'MODEL', 'TOOL', 'MCP_SERVER', 'API'] as const;
   for (const kind of otherKinds) {
-    const id = kind === 'AGENT_VERSION' ? x.objects.agent : `${x.label}-${kind.toLowerCase()}`;
+    const id = kind === 'AGENT_VERSION' ? x.objects.agentVersion : `${x.label}-${kind.toLowerCase()}`;
     const result = await project(c, x.member, objectSubject(kind, id), randomUUID());
     assert.equal(result.accountable_party_status, 'UNKNOWN', kind);
     assert.deepEqual(result.accountable_parties, [], kind);

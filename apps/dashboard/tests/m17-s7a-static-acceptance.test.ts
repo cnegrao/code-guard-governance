@@ -22,6 +22,7 @@ test('O67 conflict is exact-key and categorical; forbidden selectors cannot choo
 });
 test('O45 and control coverage reuse exact M16 reads without inheritance, scores or mutation',()=>{
   assert.match(sql,/p_subject_canonical_kind IN \('AGENT','DATA_ASSET','DATA_ELEMENT'\)/);
+  assert.match(sql,/r\.responsibility_role IN \('BUSINESS_OWNER','TECHNICAL_OWNER','DATA_OWNER'\)/);
   assert.match(sql,/l14_control_applicabilities_current_v1/);assert.match(sql,/l14_control_assessments_current_v1/);
   assert.match(sql,/ca\.applicability='APPLIES'/);assert.match(sql,/ELSE 'UNKNOWN'/);
   assert.doesNotMatch(sql,/percentage|weighted|coverage_score|acceptance.*waiver|effectiveness/i);
