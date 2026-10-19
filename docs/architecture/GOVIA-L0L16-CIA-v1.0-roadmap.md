@@ -423,10 +423,13 @@ M14 close
   definers 19 → 23; service_role L15 RPCs 13 → 16; L15 tables 21 → 24; machine intake surface unchanged (2). O31–O37 PASS.
 - **M17-S5 RISK_TREATMENT: CLOSED / MERGED.** O46/O47/O48 PASS; local verification and scope recorded in
   [S5 evidence](../codex/evidence/2026-10-15-m17-s5-risk-treatment.md).
-- **M17-S6 RESIDUAL / RISK_ACCEPTANCE: IMPLEMENTED / CANDIDATE READY.** O38–O43, O49–O52 and O83 covered; final
+- **M17-S6 RESIDUAL / RISK_ACCEPTANCE: CLOSED / MERGED.** O38–O43, O49–O52 and O83 covered; final
   candidate verification and security inventory recorded in
   [S6 evidence](../codex/evidence/2026-10-16-m17-s6-residual-risk-acceptance.md).
-- **M17-S7: NOT STARTED.** M18+: NOT STARTED.
+- **M17-S7A deterministic read projections: IMPLEMENTED / CANDIDATE READY.** O45, O67, O68 and categorical M16
+  control-coverage proofs PASS on disposable PostgreSQL 17; candidate evidence is recorded in
+  [S7A evidence](../codex/evidence/2026-10-16-m17-s7a-read-projections.md).
+- **M17-S7B exposure / Passport overlay: NOT STARTED.** M18+: NOT STARTED.
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
