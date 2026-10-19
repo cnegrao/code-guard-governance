@@ -16,7 +16,8 @@ const identity = { type:'identity', id:'canonical:agent', objectId:'canonical:ag
 const passport: AgentPassport360 = { canonicalAgent:identity, displayName:null, currentVersionId:null, selectedVersionId:null,
   versionContexts:[{objectId:'version:1',versionCode:null,associationMappingIds:['mapping:1']},{objectId:'version:2',versionCode:null,associationMappingIds:['mapping:2']}],
   families:PASSPORT_FAMILIES.map(([id,label])=>({id,label,status:id==='identity'?'KNOWN':'UNKNOWN',facts:id==='identity'?[identity]:[],unknowns:id==='identity'?[]:['UNKNOWN']})) as PassportFamily[],
-  provenanceSummary:[provenance] };
+  provenanceSummary:[provenance], riskOverlay:{status:'UNKNOWN',authority:'GOVERNED_READ',items:[],
+    nonAuthoritativeAnalysis:{label:'NON-AUTHORITATIVE ANALYSIS',hypotheses:[]}} };
 let Page: typeof import('@/app/(dashboard)/agents/canonical/[canonicalObjectId]/page').default;
 let Component: typeof import('@/components/agents/AgentPassport').AgentPassport;
 let session: typeof import('@/lib/governance/passport-session');
@@ -53,6 +54,20 @@ test('real Passport component renders exactly 16 accessible and navigable sectio
   assert.ok(html.includes('UNKNOWN')); assert.ok(html.includes('canonical:agent'));assert.ok(html.includes('Current AgentVersion: UNKNOWN'));
   assert.ok(html.includes('Selected AgentVersion: UNKNOWN')); assert.ok(html.includes('version%3A1'));assert.ok(html.includes('version%3A2'));
   assert.ok(html.includes('<details'));assert.ok(html.includes('Source, trust and provenance')); assert.ok(!html.includes('17. Risk'));
+});
+
+test('O72 risk overlay attaches to existing families without changing the 16-family coverage statuses',()=>{
+  const riskOverlay:AgentPassport360['riskOverlay']={status:'PRESENT',authority:'GOVERNED_READ',items:[{
+    governedRiskStateId:'risk-state:1',scenarioDefinitionId:'scenario:1',riskDomain:'OPERATIONAL',subjectKind:'AGENT',
+    subjectCanonicalObjectId:'canonical:agent',familyId:'runtime',lifecycle:'IDENTIFIED',inherentBand:'UNKNOWN',residualBand:'UNKNOWN',
+    acceptanceStatus:'UNKNOWN',acceptanceValidity:'UNKNOWN',supportCurrency:'SUPPORT_NONE',accountableParties:[],controlAssessmentStateIds:[],
+    lineage:{proposalId:'proposal:1',governanceDecisionId:'decision:1',authorizationDecisionId:'authz:1',authorityPolicyId:'policy:1',authorityPolicyVersionId:'policy-version:1',recordedAt:'2026-10-19T00:00:00Z'},
+  }],nonAuthoritativeAnalysis:{label:'NON-AUTHORITATIVE ANALYSIS',hypotheses:[]}};
+  const view={...passport,riskOverlay};const before=passport.families.map(f=>[f.id,f.status]);
+  const html=renderToStaticMarkup(createElement(Component,{passport:view}));
+  assert.equal((html.match(/<section /g)??[]).length,16);assert.deepEqual(view.families.map(f=>[f.id,f.status]),before);
+  assert.match(html,/Governed risk overlay/);assert.match(html,/OPERATIONAL/);assert.match(html,/INHERENT: UNKNOWN/);
+  assert.match(html,/NON-AUTHORITATIVE ANALYSIS/);assert.ok(!html.includes('17. Risk'));
 });
 
 test('M13 Passport renders governed declaration with explicit unknown runtime and authorization',()=>{

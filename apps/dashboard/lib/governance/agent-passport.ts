@@ -109,6 +109,28 @@ export interface AgentPassport360 {
   currentVersionId: null;
   families: readonly PassportFamily[];
   provenanceSummary: readonly PassportProvenance[];
+  riskOverlay: PassportRiskOverlay;
+}
+
+export interface PassportRiskOverlayLineage {
+  readonly proposalId: string; readonly governanceDecisionId: string; readonly authorizationDecisionId: string;
+  readonly authorityPolicyId: string; readonly authorityPolicyVersionId: string; readonly recordedAt: string;
+}
+export interface PassportRiskOverlayItem {
+  readonly governedRiskStateId: string; readonly scenarioDefinitionId: string; readonly riskDomain: string;
+  readonly subjectKind: 'AGENT'|'AGENT_VERSION'; readonly subjectCanonicalObjectId: string;
+  readonly familyId: PassportFamilyId; readonly lifecycle: string;
+  readonly inherentBand: 'LOW'|'MODERATE'|'HIGH'|'CRITICAL'|'UNKNOWN';
+  readonly residualBand: 'LOW'|'MODERATE'|'HIGH'|'CRITICAL'|'UNKNOWN';
+  readonly acceptanceStatus: 'ACCEPTED'|'UNKNOWN'; readonly acceptanceValidity: string;
+  readonly supportCurrency: 'SUPPORT_CURRENT'|'SUPPORT_DEGRADED'|'SUPPORT_NONE';
+  readonly accountableParties: readonly { readonly responsibilityRole: string; readonly governancePartyId: string; readonly factStateId: string }[];
+  readonly controlAssessmentStateIds: readonly string[]; readonly lineage: PassportRiskOverlayLineage;
+}
+export interface PassportRiskOverlay {
+  readonly status: 'PRESENT'|'UNKNOWN'; readonly authority: 'GOVERNED_READ';
+  readonly items: readonly PassportRiskOverlayItem[];
+  readonly nonAuthoritativeAnalysis: { readonly label: 'NON-AUTHORITATIVE ANALYSIS'; readonly hypotheses: readonly never[] };
 }
 
 export function family<K extends PassportFamilyId>(id: K, facts: readonly FamilyItems[K][], unknowns: readonly string[]):

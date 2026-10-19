@@ -14,7 +14,7 @@ import {
   l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration, l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration,
   l14ControlApplicabilityMigration, l14ControlAssessmentMigration, l14ReadProjectionMigration, m17S0AuthorityExtensionMigration,
   m17S1SignalsHypothesesMigration, m17S1R1MachineLoginClosureMigration, m17S2ScenarioMethodologyMigration,
-  m17S2R1AllowGuardMigration, m17S3GovernedRiskMigration, m17S3R1SupportLineageMigration, m17S4InherentRiskAssessmentMigration, m17S5RiskTreatmentMigration, m17S6ResidualRiskAcceptanceMigration, m17S7AReadProjectionsMigration,
+  m17S2R1AllowGuardMigration, m17S3GovernedRiskMigration, m17S3R1SupportLineageMigration, m17S4InherentRiskAssessmentMigration, m17S5RiskTreatmentMigration, m17S6ResidualRiskAcceptanceMigration, m17S7AReadProjectionsMigration, m17S7BPassportRiskOverlayMigration,
 } from './disposable-m16-postgres';
 import { lit, named } from './m16-governed-write-fixtures';
 
@@ -84,8 +84,16 @@ const uuidOrNull = (value: string | null) => (value === null ? 'null::uuid' : `'
  * 'M17S3R1' is 'M17S3' + the S3R1 O44 lineage support-currency correction; the M17S3 horizon stays exactly the post-S3 catalog.
  * 'M17S4' is 'M17S3R1' + the M17-S4 INHERENT RISK_ASSESSMENT fact family; the M17S3R1 horizon stays exactly the post-S3R1 catalog.
  */
-export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2' | 'S1B3' | 'S1B4' | 'S1B5' | 'S1B6' | 'S1C1' | 'S1C2' | 'S1C1R1' | 'S1C3' | 'S1C4' | 'S1C5' | 'M16RP' | 'M17S0' | 'M17S1' | 'M17S2' | 'M17S2R1' | 'M17S3' | 'M17S3R1' | 'M17S4' | 'M17S5' | 'M17S6' | 'M17S7A';
+export type L14Horizon = 'S1A' | 'S1B0' | 'S1B1' | 'S1B1R1' | 'S1B2' | 'S1B3' | 'S1B4' | 'S1B5' | 'S1B6' | 'S1C1' | 'S1C2' | 'S1C1R1' | 'S1C3' | 'S1C4' | 'S1C5' | 'M16RP' | 'M17S0' | 'M17S1' | 'M17S2' | 'M17S2R1' | 'M17S3' | 'M17S3R1' | 'M17S4' | 'M17S5' | 'M17S6' | 'M17S7A' | 'M17S7B';
 export const L14_HORIZON_MIGRATIONS: Record<L14Horizon, readonly string[]> = {
+  M17S7B: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
+    ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
+    l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,
+    l14PartyDependencyGuardMigration, l14PolicyApplicabilityMigration, l14ControlApplicabilityMigration, l14ControlAssessmentMigration,
+    l14ReadProjectionMigration, m17S0AuthorityExtensionMigration, m17S1SignalsHypothesesMigration,
+    m17S1R1MachineLoginClosureMigration, m17S2ScenarioMethodologyMigration, m17S2R1AllowGuardMigration, m17S3GovernedRiskMigration,
+    m17S3R1SupportLineageMigration, m17S4InherentRiskAssessmentMigration, m17S5RiskTreatmentMigration, m17S6ResidualRiskAcceptanceMigration,
+    m17S7AReadProjectionsMigration, m17S7BPassportRiskOverlayMigration],
   M17S7A: [definerCapabilitySurfaceMigration, runtimeExecutionClosureMigration, s0ExecutionContextClosureMigration,
     ...postR3PrimaryChainMigrations, l14PolicyAdmissionMigration, l14PolicyVersionValidationMigration, l14DomainRegistryMigration,
     l14ControlDefinitionRegistryMigration, l14ResponsibilityAssignmentMigration, l14BusinessContextAssignmentMigration,
@@ -214,7 +222,7 @@ export async function l14Cluster(diagnostic: (message: string) => void,
     || options.horizon === 'S1C1' || options.horizon === 'S1C2' || options.horizon === 'S1C1R1' || options.horizon === 'S1C3'
     || options.horizon === 'S1C4' || options.horizon === 'S1C5' || options.horizon === 'M16RP' || options.horizon === 'M17S0'
     || options.horizon === 'M17S1' || options.horizon === 'M17S2' || options.horizon === 'M17S2R1' || options.horizon === 'M17S3' || options.horizon === 'M17S3R1'
-    || options.horizon === 'M17S4' || options.horizon === 'M17S5' || options.horizon === 'M17S6' || options.horizon === 'M17S7A'
+    || options.horizon === 'M17S4' || options.horizon === 'M17S5' || options.horizon === 'M17S6' || options.horizon === 'M17S7A' || options.horizon === 'M17S7B'
     ? { fullPrimaryChain: true } : { governanceWriteChain: true, policyStorePrerequisites });
   try {
     const chain = L14_HORIZON_MIGRATIONS[options.horizon ?? 'S1A'];

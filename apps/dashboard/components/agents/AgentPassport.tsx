@@ -118,10 +118,25 @@ export function AgentPassport({ passport }: { passport: AgentPassport360 }) {
           </div>
           {!section.facts.length && <p className="mt-3 text-sm text-gray-400">UNKNOWN — no governed fact available in this context.</p>}
           <ul className="mt-3 text-sm text-gray-300">{section.facts.map(fact => <Fact key={fact.id} fact={fact} />)}</ul>
+          {passport.riskOverlay.items.filter(item => item.familyId === section.id || section.id === 'provenance'
+            || (section.id === 'controls' && item.controlAssessmentStateIds.length > 0)).map(item =>
+            <div key={`${section.id}:${item.governedRiskStateId}`} className="mt-3 border-t border-border-dark/50 pt-3 text-xs text-gray-300">
+              <p className="font-semibold text-white">Governed risk overlay · {item.riskDomain}</p>
+              <p>Lifecycle: {item.lifecycle} · INHERENT: {item.inherentBand} · RESIDUAL: {item.residualBand}</p>
+              <p>Acceptance: {item.acceptanceStatus} · validity: {item.acceptanceValidity} · support: {item.supportCurrency}</p>
+              <p className="break-words">Exact subject: {item.subjectKind} {item.subjectCanonicalObjectId} · scenario {item.scenarioDefinitionId}</p>
+              {section.id === 'ownership' && <p>Accountable parties: {item.accountableParties.length ? item.accountableParties.map(p => `${p.responsibilityRole}:${p.governancePartyId}`).join(', ') : 'UNKNOWN'}</p>}
+              {section.id === 'controls' && <p>Residual control dependencies: {item.controlAssessmentStateIds.join(', ')}</p>}
+              {section.id === 'provenance' && <p className="break-words">L15 lineage: proposal {item.lineage.proposalId} · authorization {item.lineage.authorizationDecisionId} · decision {item.lineage.governanceDecisionId} · state {item.governedRiskStateId}</p>}
+            </div>)}
           {section.id === 'identity' && <p className="text-xs text-gray-400">Display name, Agent code and versionCode: UNKNOWN. Identity coverage concerns canonical ID, kind and organisation.</p>}
           {section.unknowns.map(gap => <p key={gap} className="mt-2 text-xs text-gray-400">{gap}</p>)}
         </Card>
       </section>)}
     </div>
+    <Card>
+      <h3 className="text-sm font-semibold text-white">NON-AUTHORITATIVE ANALYSIS</h3>
+      <p className="mt-2 text-xs text-gray-400">Hypotheses: {passport.riskOverlay.nonAuthoritativeAnalysis.hypotheses.length ? '' : 'UNKNOWN — none displayed.'}</p>
+    </Card>
   </div>;
 }

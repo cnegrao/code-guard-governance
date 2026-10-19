@@ -6,6 +6,7 @@ import { asOrganisationId, CANONICAL_OBJECT_KIND, GOVERNED_RELATIONSHIP_TYPE,
 import { compareSemanticRepresentations } from '@council/scanner/semantic/similarity';
 import { projectCanonicalGraph, governedNodeId, traverseCanonicalGraph,
   retrieveCanonicalVectors, buildAnalyticalContext, type CanonicalObjectRow, type CanonicalRelationshipRow } from '../governed';
+import { projectL15RiskExposure, retrieveL15RiskVectors, runL15LlmBoundaryStub } from '../src/governed/l15-risk-analysis';
 import { GraphEngine } from '../src/engine';
 
 const org = asOrganisationId('tenant-a'), other = asOrganisationId('tenant-b');
@@ -233,4 +234,31 @@ test('presentation ordering is explicit, analytical and independent of input ord
   assert.deepEqual(vectors([a,b,older]),vectors([older,b,a]));
   assert.equal(vectors().presentationOrder,'COSINE_DESC_THEN_REPRESENTATION_ID_ASC');
   assert.equal(hybrid().presentationOrder,'VECTOR_ORDER_THEN_GRAPH_ONLY_BFS_CANONICAL_EDGE_ID_ASC');
+});
+
+test('O69 M17 exposure reuses exact M12 blast radius with analytical witness paths and no mutation', () => {
+  const graph = project([object('a'),object('b'),object('c')],[edge('1','b','a'),edge('2','c','b')]);
+  const saved = JSON.stringify(graph), risk = { governedRiskStateId:'risk:1', scenarioDefinitionId:'scenario:1',
+    subjectCanonicalKind:'DATA_ELEMENT', subjectCanonicalObjectId:'a' };
+  const result = projectL15RiskExposure({ organisationId:org,graph,risk,maxDepth:2 });
+  assert.equal(result.authority,'ANALYTICAL'); assert.equal(result.canonicalWriteAuthority,'NONE');
+  assert.ok(result.contributions.every(c=>c.authority==='ANALYTICAL'&&c.policyVersion==='GOVIA_BLAST_RADIUS_V1'
+    &&c.hopCount===c.path.length&&c.path.length>0));
+  assert.equal(JSON.stringify(graph),saved); assert.deepEqual(result.risk,risk);
+  assert.throws(()=>projectL15RiskExposure({...{organisationId:org,graph,risk,maxDepth:2},risk:{...risk,subjectCanonicalKind:'AGENT_VERSION'}}),/EXACT_RISK_SUBJECT/);
+});
+
+test('O70 M17 vector boundary preserves exact risk identity and has no scenario selection or write authority', () => {
+  const graph=project(), risk={governedRiskStateId:'risk:1',scenarioDefinitionId:'scenario:1',
+    subjectCanonicalKind:'DATA_ELEMENT',subjectCanonicalObjectId:'a'};
+  const result=retrieveL15RiskVectors({organisationId:org,graph,risk,anchorRepresentationId:'a',representations:[rep('a'),rep('b')],minimumCosine:0});
+  assert.equal(result.authority,'ANALYTICAL');assert.equal(result.canonicalWriteAuthority,'NONE');assert.equal(result.scenarioSelection,'NONE');
+  assert.deepEqual(result.risk,risk);assert.equal(result.retrieval.neighbors[0].authority,'ANALYTICAL');
+});
+
+test('O71 hostile authority-like LLM text remains inert and cannot become evidence, proposal or actor',()=>{
+  for(const output of ['validated','accepted','closed'] as const){const result=runL15LlmBoundaryStub(output);
+    assert.deepEqual([result.llmAuthority,result.canonicalWriteAuthority,result.governanceAction],['NONE','NONE','NONE']);
+    assert.equal(result.evidenceStorage,'PROHIBITED');assert.equal(result.proposalSubmission,'PROHIBITED');assert.equal(result.decisionActor,'PROHIBITED');
+  }
 });
