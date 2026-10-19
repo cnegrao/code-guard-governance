@@ -34,7 +34,8 @@ const db = { from(table: string) {
   return query;
 }, rpc(name: string, args: Record<string, unknown>) {
   rpcCalls.push({ name, args });
-  // The ONLY permitted RPC is the read-only M16 governed projection; every write / other RPC stays forbidden.
+  // The only permitted RPCs are the read-only M16 projection and M17 Passport overlay.
+  if (name === 'l15_read_passport_risk_overlay_v1') return Promise.resolve({ data: [{ overlay_status: overlayItems.length ? 'PRESENT' : 'UNKNOWN', items: overlayItems }], error: null });
   if (name !== 'l14_read_passport_governance_v1') throw new Error('WRITE / RPC FORBIDDEN');
   if (rpcError) return Promise.resolve({ data: null, error: { message: 'fixture failure', code: 'GV003' } });
   // Simulates the DB contract: the verified tenant only; the exact AGENT and the exact selected AGENT_VERSION only.
@@ -49,6 +50,7 @@ let governance: Row[];
 let rpcCalls: { name: string; args: Record<string, unknown> }[];
 let rpcError: boolean;
 let leakAll: boolean;
+let overlayItems: Row[];
 /** A verified principal (the only identity the governed projection accepts). */
 const viewer = (tenant: string) => ({ organisationId: tenant, actorUserId: 'user:1', issuedAtSeconds: 1_758_000_000,
   expiresAtSeconds: 1_758_003_600, credentialEpoch: '2026-09-25T00:00:00.000001+00:00' });
@@ -134,7 +136,7 @@ function addData() {
   add('technical_fact_observation_assertions', { observation_id: 'obs:accepted', assertion_id: 'assert:field' });
   add('technical_fact_observation_evidence', { observation_id: 'obs:accepted', evidence_id: 'evidence:field' });
 }
-beforeEach(() => { tables = {}; calls = []; dbError = undefined; governance = []; rpcCalls = []; rpcError = false; leakAll = false; addObject('agent','AGENT'); });
+beforeEach(() => { tables = {}; calls = []; dbError = undefined; governance = []; overlayItems = []; rpcCalls = []; rpcError = false; leakAll = false; addObject('agent','AGENT'); });
 const section = (p: NonNullable<Awaited<ReturnType<typeof getPassport>>>, id: string) => p.families.find(f => f.id === id)!;
 
 function addExecution(accepted = true) {
@@ -481,7 +483,8 @@ test('O32: canonical identity alone implies no control coverage; families 3 / 4 
   for (const id of ['ownership', 'business', 'controls']) { assert.equal(section(p, id).status, 'UNKNOWN'); assert.deepEqual(section(p, id).facts, []); }
   assert.ok(section(p, 'controls').unknowns.some(u => /Canonical identity alone implies no control coverage/.test(u)));
   assert.equal(section(p, 'identity').status, 'KNOWN', 'identity is still the canonical identity family only');
-  assert.deepEqual(rpcCalls.map(r => r.name), ['l14_read_passport_governance_v1']);
+  assert.deepEqual(rpcCalls.map(r => r.name), ['l14_read_passport_governance_v1','l15_read_passport_risk_overlay_v1']);
+  assert.equal(p.riskOverlay.status,'UNKNOWN');
 });
 
 test('O32: governed facts populate families 3 / 4 / 12 with exact lineage (family 14); DOES_NOT_APPLY stays explicit', async () => {
@@ -523,7 +526,7 @@ test('O32: AGENT_VERSION facts only for the exact selected version, never on the
   assert.deepEqual(governedFacts((await getPassport(viewer(org), 'agent'))!, 'controls'), [], 'no implicit inheritance version -> AGENT');
   const selected = (await getPassport(viewer(org), 'agent', 'version:1'))!;
   assert.deepEqual(governedFacts(selected, 'controls').map(f => `${f.targetKind}:${f.targetId}`), ['AGENT_VERSION:version:1']);
-  assert.equal(rpcCalls.at(-1)!.args.p_agent_version_canonical_object_id, 'version:1');
+  assert.equal(rpcCalls.filter(r=>r.name==='l14_read_passport_governance_v1').at(-1)!.args.p_agent_version_canonical_object_id, 'version:1');
   governance.push(governedRow('RESPONSIBILITY_ASSIGNMENT', 'version:1', 'AGENT_VERSION', { responsibility_role: 'BUSINESS_OWNER',
     governance_party_id: 'party:1', party_validated_state_id: 'party-state:1' }, 8));
   await assert.rejects(getPassport(viewer(org), 'agent', 'version:1'), /PASSPORT_GOVERNANCE_ROW_INVALID/);

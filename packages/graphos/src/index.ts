@@ -16,3 +16,6 @@ export { RELATIONSHIP_DEFS } from './types/relationships';
 export { buildFullGraph } from './compat';
 export type { ViewResult, ViewName, GraphNodeType, GraphNode, GraphEdge } from './compat';
 export { VIEW_META, VIEW_BUILDERS } from './compat';
+
+export { projectL15RiskExposure, retrieveL15RiskVectors, runL15LlmBoundaryStub } from './governed/l15-risk-analysis';
+export type { L15AnalyticalRiskIdentity } from './governed/l15-risk-analysis';
