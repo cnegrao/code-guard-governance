@@ -2,6 +2,9 @@
 
 Pointers only. Section and acceptance identifiers below refer to the canonical M17 ADR.
 
+- [M17.5-S4 Product / Customer KPI Framework](../trust-assurance/kpi-framework-v0.md) / [JSON](../trust-assurance/kpi-framework-v0.json) — 11 versioned count definitions, five PRODUCT and six TENANT; seven DEFINITION_ONLY, four offline documentary predicates, zero operational evaluators or results.
+- [M17.5-S4 handoff](../codex/evidence/2026-10-20-m17.5-s4-kpi-framework.md) — UNKNOWN/zero, exact populations, immutable Git pins, seven-artifact completeness and proposed S5 closure review; S5 not started.
+
 - [M17.5-S3 Award Readiness Matrix](../trust-assurance/award-readiness-matrix-v0.md) / [JSON](../trust-assurance/award-readiness-matrix-v0.json) — six organizer-verified edition records; all applicant eligibility UNKNOWN; no submission or external claim approval.
 - [M17.5-S3 Award Calendar](../trust-assurance/award-calendar-v0.md) / [JSON](../trust-assurance/award-calendar-v0.json) — 25 source-pinned events, explicit precision/timezone UNKNOWN, preserved historical dates and unresolved organizer chronology conflicts.
 - [M17.5-S3 handoff](../codex/evidence/2026-10-20-m17.5-s3-award-readiness.md) — source research, deterministic documentation checks, boundaries and proposed S4, not started.
