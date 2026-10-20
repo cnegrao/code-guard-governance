@@ -2,6 +2,10 @@
 
 Pointers only. Section and acceptance identifiers below refer to the canonical M17 ADR.
 
+- [M17.5-S2 Gap Register](../trust-assurance/gap-register-v0.md) / [JSON](../trust-assurance/gap-register-v0.json) — 61 open Assurance projection gaps with S0/S1 lineage and closure/review gates; no governed risk/control creation.
+- [M17.5-S2 draft Commercial Claims Register](../trust-assurance/commercial-claims-register-v0.md) / [JSON](../trust-assurance/commercial-claims-register-v0.json) — all 38 capability ceilings and 42 INELIGIBLE proposals; five alignment candidates are not approved claims.
+- [M17.5-S2 handoff](../codex/evidence/2026-10-20-m17.5-s2-gaps-claims.md) — documentation checks, publication/legacy gates and proposed S3, not started.
+
 - [M17.5-S1 source catalog](../trust-assurance/framework-source-catalog-v0.json) — seven publisher-verified version identities, bounded public reference gate and immutable source/version policy; licensed requirement populations stay pending.
 - [M17.5-S1 draft crosswalk](../trust-assurance/framework-crosswalk-v0.md) and [credibility matrix](../trust-assurance/external-credibility-matrix-v0.md) — 38 S0 capability dispositions, limited repository correspondences and explicit claim ceilings.
 - [M17.5-S1 evidence index](../trust-assurance/evidence-index-v0.md) and [legacy containment](../trust-assurance/legacy-containment-register-v0.md) — 109 immutable S0 references and unresolved presentation gates.
