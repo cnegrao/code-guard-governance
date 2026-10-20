@@ -442,13 +442,14 @@ M14 close
   36-definer inventory and classifies all five numeric L15 columns under the additive
   [O31 clarification](ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md); Category 4 is empty, runtime semantics are unchanged,
   and the [corrective evidence](../codex/evidence/2026-10-19-m17-closure-corrective.md) records **O01-O91 = 91 / 91 PASS**.
-- **M17-S7D: BLOCKED BEFORE IMPLEMENTATION.** The supplied independent adversarial review reports 88 PASS / 1 FAIL /
-  2 UNPROVEN: O56 self-decision runtime defect, O71 DB-proof gap, five red static files and O91 awaiting current-tree CI.
+- **M17-S7D: OWNER-APPROVED CORRECTIVE / AWAITING FINAL CI.** The supplied independent adversarial review reported
+  88 PASS / 1 FAIL / 2 UNPROVEN. The additive correction covers O56 across all six decision families, O71's DB proof,
+  disposition semantics and the five exact historical migration ordering checks.
   **C-M17-01 — Hypothesis disposition projection** is a supplemental closure requirement absent from O01-O91.
-  A hypothesis can legally have live/rejected or governed/rejected citations simultaneously; frozen ADR §5.2 supplies
-  no precedence. Implementation stopped under the explicit F-M17-D3 instruction; no runtime correction is claimed.
-  See [S7D blocked evidence](../codex/evidence/2026-10-20-m17-s7d-adversarial-corrective.md).
-- **M17 status: OPEN / CORRECTIVE.** Closure requires O01-O91 PASS and C-M17-01 PASS, current PR CI evidence for O91,
+  The prior architecture STOP was correct and is resolved by the
+  [owner-approved C-M17-01 clarification](ADR-GOVIA-RISK-INTELLIGENCE-C-M17-01-CLARIFICATION-v1.md).
+  See [S7D corrective evidence](../codex/evidence/2026-10-20-m17-s7d-adversarial-corrective.md).
+- **M17 status: OPEN / CORRECTIVE.** Closure requires O01-O91 PASS and C-M17-01 PASS, current-tree GitHub CI evidence for O91,
   and final independent adversarial re-review. Historical S7C PASS prose does not prove these current closure gates.
   **M17.5: NOT STARTED / HOLD.**
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.

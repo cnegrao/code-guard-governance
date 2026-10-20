@@ -24,7 +24,7 @@ const LEGACY = /risk_entries|risk_treatments|risk_status|risk_category|risk_leve
 
 test('static: S4 directly follows S3R1, followed only by S5; additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  assert.deepEqual(names.slice(names.indexOf(S3R1)), [S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql', '20261016021012_m17_s6_residual_risk_acceptance_v1.sql']);
+  assert.deepEqual(names.slice(names.indexOf(S3R1)), [S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql', '20261016021012_m17_s6_residual_risk_acceptance_v1.sql', '20261017020733_m17_s7a_read_projections_v1.sql', '20261019130000_m17_s7b_passport_risk_overlay_v1.sql', '20261019140000_m17_s7c_final_security_closure_v1.sql', '20261020031523_m17_s7d_adversarial_corrective_v1.sql']);
   assert.match(migration, /^-- M17-S4/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   // The only replaced routines are the owner-only S1 / S2 / S3 link guard and the S2 / S3 command-result state guard.

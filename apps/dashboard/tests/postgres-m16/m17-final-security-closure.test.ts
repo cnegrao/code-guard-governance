@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { s7dCluster } from '../helpers/m17-s7d-fixtures';
 import { l14Cluster } from '../helpers/m16-l14-fixtures';
 import { m17S7CFinalSecurityClosureMigration } from '../helpers/disposable-m16-postgres';
 import { l15SecurityViolationsSql, type DefinerInventoryEntry } from '../helpers/m17-l15-security-profile';
 import {
   L15_S1_DEFINER_INVENTORY, L15_S2_DEFINER_INVENTORY, L15_S2R1_DEFINER_INVENTORY,
   L15_S3_DEFINER_INVENTORY, L15_S4_DEFINER_INVENTORY, L15_S5_DEFINER_INVENTORY,
-  L15_S6_PHASE_A_DEFINER_DELTA, L15_S6_PHASE_B_DEFINER_DELTA, L15_S7_DEFINER_INVENTORY,
+  L15_S6_PHASE_A_DEFINER_DELTA, L15_S6_PHASE_B_DEFINER_DELTA, L15_S7_DEFINER_INVENTORY, L15_S7D_DEFINER_DELTA,
 } from '../helpers/m17-l15-definer-inventory';
 
 const replacedAtS6 = 'gov_repo.l15_decide_risk_assessment_proposal_v1(';
@@ -48,9 +49,12 @@ const FINAL_REVIEWED_NUMERIC_CONSUMERS = [
   { token: 'hint_confidence', object_kind: 'ROUTINE', identity: 'gov_repo.l15_write_signal_v1(uuid,text,text,text,text,text,text,text,text,text,text,text,text,text,numeric,timestamp with time zone,text,text,text,uuid,text[],text[],uuid,text)', definition_sha: '5c5d9de332c83988a28ef9c5f0cc791638151cba9672600195ca12ed97da26f9' },
 ] as const;
 
-test('final M17S7B security closure pins the complete L15 definer, ACL and non-authority surface',
+for (const horizon of ['M17S7B', 'M17S7D'] as const) test(`final ${horizon} security closure pins the complete L15 definer, ACL and non-authority surface`,
   { timeout: 600_000 }, async t => {
-    const c = await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S7B' });
+    const c = horizon === 'M17S7D' ? await s7dCluster(message => t.diagnostic(message))
+      : await l14Cluster(message => t.diagnostic(message), { horizon: 'M17S7B' });
+    const expectedInventory = FINAL_INVENTORY.map(e => horizon === 'M17S7D'
+      ? L15_S7D_DEFINER_DELTA.find(d => d.sig === e.sig) ?? e : e);
     t.after(() => c.stop());
 
     const snapshot = async () => {
@@ -69,11 +73,11 @@ test('final M17S7B security closure pins the complete L15 definer, ACL and non-a
       from pg_catalog.pg_proc p where p.pronamespace='gov_repo'::regnamespace
         and p.proname like 'l15\\_%' escape '\\' and p.prosecdef) q`)) as DefinerInventoryEntry[];
     assert.equal(inventory.length, 36, 'measured final catalog count');
-    assert.deepEqual(bySignature(inventory), bySignature(FINAL_INVENTORY), 'no unknown, missing or changed definer');
+    assert.deepEqual(bySignature(inventory), bySignature(expectedInventory), 'no unknown, missing or changed definer');
 
-    const serviceRpcs = FINAL_INVENTORY.filter(e => !e.sig.includes('_guard_') && !e.sig.includes('l15_admit_machine_'))
+    const serviceRpcs = expectedInventory.filter(e => !e.sig.includes('_guard_') && !e.sig.includes('l15_admit_machine_'))
       .map(e => e.sig);
-    assert.deepEqual(await c.exec(l15SecurityViolationsSql(FINAL_INVENTORY, serviceRpcs)), []);
+    assert.deepEqual(await c.exec(l15SecurityViolationsSql(expectedInventory, serviceRpcs)), []);
 
     const acl = JSON.parse(await c.owner(`select json_agg(to_json(q) order by sig,grantee) from (
       select p.oid::regprocedure::text sig,pg_catalog.pg_get_userbyid(a.grantee) grantee,
@@ -81,7 +85,7 @@ test('final M17S7B security closure pins the complete L15 definer, ACL and non-a
       from pg_catalog.pg_proc p cross join lateral pg_catalog.aclexplode(p.proacl) a
       where p.pronamespace='gov_repo'::regnamespace and p.proname like 'l15\\_%' escape '\\' and p.prosecdef) q`)) as
       Array<{ sig: string; grantee: string; privilege: string; grantable: boolean }>;
-    const expectedAcl = FINAL_INVENTORY.flatMap(({ sig }) => [
+    const expectedAcl = expectedInventory.flatMap(({ sig }) => [
       { sig, grantee: 'postgres', privilege: 'EXECUTE', grantable: false },
       ...(sig.includes('l15_admit_machine_')
         ? [{ sig, grantee: 'govia_l15_machine_intake_caller', privilege: 'EXECUTE', grantable: false }]
@@ -92,7 +96,7 @@ test('final M17S7B security closure pins the complete L15 definer, ACL and non-a
     const machineRpcs = JSON.parse(await c.owner(`select json_agg(p.oid::regprocedure::text order by p.oid::regprocedure::text)
       from pg_catalog.pg_proc p where p.pronamespace='gov_repo'::regnamespace
         and pg_catalog.has_function_privilege('govia_l15_machine_intake_caller',p.oid,'EXECUTE')`));
-    assert.deepEqual(machineRpcs, FINAL_INVENTORY.filter(e => e.sig.includes('l15_admit_machine_')).map(e => e.sig).sort(),
+    assert.deepEqual(machineRpcs, expectedInventory.filter(e => e.sig.includes('l15_admit_machine_')).map(e => e.sig).sort(),
       'machine intake capability remains exactly the approved two RPCs');
 
     const s7Sources = JSON.parse(await c.owner(`select json_agg(p.prosrc order by p.proname) from pg_catalog.pg_proc p
@@ -100,6 +104,12 @@ test('final M17S7B security closure pins the complete L15 definer, ACL and non-a
     for (const source of s7Sources) {
       assert.doesNotMatch(source, /\b(?:insert\s+into|update|delete\s+from|merge\s+into|truncate)\b/i);
       assert.doesNotMatch(source, /\bl15_(?:submit|decide|admit)_\w+\s*\(/i);
+    }
+    if (horizon === 'M17S7D') {
+      const dispositionSource = await c.owner(`select prosrc from pg_proc where oid=
+        'gov_repo.l15_read_hypothesis_dispositions_v1(uuid,uuid,bigint,bigint,timestamptz,text,text,text,text,text)'::regprocedure`);
+      assert.doesNotMatch(dispositionSource, /\b(?:insert\s+into|update|delete\s+from|merge\s+into|truncate)\b/i);
+      assert.doesNotMatch(dispositionSource, /\bl15_(?:submit|decide|admit)_\w+\s*\(/i);
     }
 
     const numericColumns = JSON.parse(await c.owner(`select json_agg(to_json(q) order by column_name) from (
@@ -165,10 +175,13 @@ test('final M17S7B security closure pins the complete L15 definer, ACL and non-a
       join pg_catalog.pg_class c on c.oid=d.adrelid join pg_catalog.pg_attribute a on a.attrelid=c.oid and a.attnum=d.adnum
       where c.relnamespace='gov_repo'::regnamespace
     ) q`)) as Array<{ token: string; object_kind: string; identity: string; definition_sha: string }>;
-    assert.deepEqual(numericConsumerObjects, FINAL_REVIEWED_NUMERIC_CONSUMERS,
+    const reviewedConsumers = FINAL_REVIEWED_NUMERIC_CONSUMERS.map(row => horizon === 'M17S7D'
+      && row.identity.startsWith('gov_repo.l15_read_hypothesis_dispositions_v1(')
+      ? { ...row, definition_sha: L15_S7D_DEFINER_DELTA.find(e => e.sig === row.identity)!.sha } : row);
+    assert.deepEqual(numericConsumerObjects, reviewedConsumers,
       'hint_confidence and control_pin_count have only the reviewed non-authoritative/integrity consumers');
 
-    await c.migrate(m17S7CFinalSecurityClosureMigration);
+    if (horizon === 'M17S7B') await c.migrate(m17S7CFinalSecurityClosureMigration);
     assert.deepEqual(await snapshot(), before, 'the final security proof mutates no L15 production table/state');
   });
 

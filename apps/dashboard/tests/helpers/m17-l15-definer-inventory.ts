@@ -142,3 +142,55 @@ export const L15_S7_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
     cfg: CFG,
   },
 ];
+
+/** S7D delta measured from pg_proc on disposable PostgreSQL 17.11 after S7C + S7D. */
+export const L15_S7D_DEFINER_DELTA: readonly DefinerInventoryEntry[] = [
+  {
+    "sig": "gov_repo.l15_authorization_allow_guard_v1()",
+    "owner": "postgres",
+    "sha": "4771d840b4ee8a5fbaff1611a6993deabb962cd1d230d4cbb276a6ae1927b7af",
+    "cfg": "search_path=pg_catalog, pg_temp"
+  },
+  {
+    "sig": "gov_repo.l15_decide_governed_risk_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "08e122bd32f3cb7eac8f65a08b0cc86da0dd6ee00323147182b73537d4997ca4",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_decide_methodology_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "e002ba81f82cd438004dd323dbf08c7e86719f53f32da1ec1a4fb07b4b6c97ca",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_decide_risk_acceptance_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "f11ef0c6f7e82f9692699834dc61f6777948f89795d69bdb6c2be295be57803f",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_decide_risk_assessment_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "c4f0a7801b5069e62b27251f9b4f791022aba6be276f9abe6cad89e5aed5f48f",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_decide_risk_treatment_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "06add2fbc7931571d6b25ee7ea58d49a18d255711e50f7bc4e418bf65dbbbc14",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_decide_scenario_proposal_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,uuid,text,text,uuid,text,text[],text[],text)",
+    "owner": "postgres",
+    "sha": "b276fbe6c975c761733700d57826d4e778a66af88d9a02f16bcb8e4706911494",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  },
+  {
+    "sig": "gov_repo.l15_read_hypothesis_dispositions_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,text,text)",
+    "owner": "postgres",
+    "sha": "51af8834a5e75e9b804721403d602656afea153c0d819af0bb39a06c1f9f4699",
+    "cfg": "search_path=pg_catalog, pg_temp;lock_timeout=5s"
+  }
+];
