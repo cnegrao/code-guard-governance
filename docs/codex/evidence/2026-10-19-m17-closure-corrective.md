@@ -4,6 +4,14 @@ Date: 2026-10-19 (America/Sao_Paulo)
 
 Status: **CORRECTIVE CANDIDATE / CLOSED LOCALLY / NOT MERGED**
 
+> **2026-10-20 superseding status:** the status and PASS claims below describe
+> the historical S7C scope. M17 is now **OPEN / CORRECTIVE**: the supplied
+> adversarial review reports 88 PASS / 1 FAIL / 2 UNPROVEN, including the O56
+> runtime defect and O71 proof gap. O91 requires current-tree CI; historical
+> runs are insufficient. Supplemental C-M17-01 is required and blocked on
+> disposition overlap semantics. See [S7D evidence](2026-10-20-m17-s7d-adversarial-corrective.md).
+> M17.5 remains **NOT STARTED / HOLD**.
+
 ## Audit provenance
 
 PR #80 originally merged the formal M17 closure into canonical `main` at

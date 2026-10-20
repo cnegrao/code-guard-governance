@@ -442,7 +442,14 @@ M14 close
   36-definer inventory and classifies all five numeric L15 columns under the additive
   [O31 clarification](ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md); Category 4 is empty, runtime semantics are unchanged,
   and the [corrective evidence](../codex/evidence/2026-10-19-m17-closure-corrective.md) records **O01-O91 = 91 / 91 PASS**.
-- **M17 canonical status: HOLD FOR S7C MERGE.** Do not state canonical M17 is re-closed until the corrective PR is merged.
+- **M17-S7D: BLOCKED BEFORE IMPLEMENTATION.** The supplied independent adversarial review reports 88 PASS / 1 FAIL /
+  2 UNPROVEN: O56 self-decision runtime defect, O71 DB-proof gap, five red static files and O91 awaiting current-tree CI.
+  **C-M17-01 — Hypothesis disposition projection** is a supplemental closure requirement absent from O01-O91.
+  A hypothesis can legally have live/rejected or governed/rejected citations simultaneously; frozen ADR §5.2 supplies
+  no precedence. Implementation stopped under the explicit F-M17-D3 instruction; no runtime correction is claimed.
+  See [S7D blocked evidence](../codex/evidence/2026-10-20-m17-s7d-adversarial-corrective.md).
+- **M17 status: OPEN / CORRECTIVE.** Closure requires O01-O91 PASS and C-M17-01 PASS, current PR CI evidence for O91,
+  and final independent adversarial re-review. Historical S7C PASS prose does not prove these current closure gates.
   **M17.5: NOT STARTED / HOLD.**
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
