@@ -2,6 +2,9 @@
 
 Pointers only. Section and acceptance identifiers below refer to the canonical M17 ADR.
 
+- [M17.5 Trust & Assurance contract](../architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md) — S0 read/projection boundary, neutral model, separate status axes, source provenance, claims and KPI semantics.
+- [M17.5-S0 verified inventory](../codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.md) — current implementation evidence, machine-readable inventory, legacy containment and proposed S1.
+
 - [M17 canonical ADR](../architecture/ADR-GOVIA-RISK-INTELLIGENCE-v1.md)
 - [M17 O31 numeric catalog clarification](../architecture/ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md)
 - [C-M17-01 owner-approved hypothesis disposition clarification](../architecture/ADR-GOVIA-RISK-INTELLIGENCE-C-M17-01-CLARIFICATION-v1.md)
