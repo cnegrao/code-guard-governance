@@ -3,6 +3,9 @@
 Pointers only. Section and acceptance identifiers below refer to the canonical M17 ADR.
 
 - [M17 canonical ADR](../architecture/ADR-GOVIA-RISK-INTELLIGENCE-v1.md)
+- [M17 O31 numeric catalog clarification](../architecture/ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md)
+- [C-M17-01 owner-approved hypothesis disposition clarification](../architecture/ADR-GOVIA-RISK-INTELLIGENCE-C-M17-01-CLARIFICATION-v1.md)
+- [M17-S7C corrective closure evidence](../codex/evidence/2026-10-19-m17-closure-corrective.md)
 - [M17 authority extension](../architecture/ADR-GOVIA-M16-AUTHORITY-POLICY-M17-EXTENSION-v1.md)
 - [Roadmap](../architecture/GOVIA-L0L16-CIA-v1.0-roadmap.md)
 
@@ -19,4 +22,5 @@ Pointers only. Section and acceptance identifiers below refer to the canonical M
 | Exactly 16 Passport families | §2, §22 |
 | Exactly five M16 authoritative fact families | §12–§13; O07, O74 |
 | Exactly four L15 authoritative fact families | §16; O05 |
+| O31 governed-risk numeric prohibition and final catalog classification | [additive O31 clarification](../architecture/ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md) |
 | F2 boundary remains untouched | §2, §8, §21; §25 canonical impact |

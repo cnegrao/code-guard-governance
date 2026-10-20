@@ -20,6 +20,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Execute M17 static acceptance, including exact historical migration order
+        working-directory: apps/dashboard
+        run: node --conditions=react-server --import tsx --test tests/m17-s0-authority-contract.test.ts tests/m17-s*-static-acceptance.test.ts
       # ubuntu-24.04 runners ship PostgreSQL 16 by default, not the canonical
       # M16 profile (17). Native package installation from the official PGDG
       # apt repository is the simplest reliable way to pin an exact major

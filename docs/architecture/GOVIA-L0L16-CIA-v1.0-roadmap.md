@@ -432,9 +432,26 @@ M14 close
 - **M17-S7B exposure / Vector / LLM boundaries and Passport overlay: CLOSED / MERGED via PR #79.** Canonical main after PR #79:
   `d803c0711afc68c4b110767177d7bc04e5429852`. O69-O72 focused proofs PASS;
   [S7B evidence](../codex/evidence/2026-10-19-m17-s7b-exposure-passport-overlay.md).
-- **M17 formal closure: CLOSED / READY FOR M17.5 — O01-O91: 91 / 91 PASS.** Closure branch
-  `chore/m17-final-closure` starts from canonical main `d803c0711afc68c4b110767177d7bc04e5429852`;
-  [closure evidence](../codex/evidence/2026-10-19-m17-closure.md). M17.5 remains **NOT STARTED**.
+- **PR #80: MERGED — original M17 formal closure.** Merge commit
+  `1914e7e2e18591000588ffab4325e61911fc2189`; historical
+  [closure evidence](../codex/evidence/2026-10-19-m17-closure.md).
+- **Post-merge ACP adversarial review: M17 closure REOPENED.** F-M17-C1 found that the final O61 inventory stopped at S6 and
+  omitted the S7A/S7B SECURITY DEFINER routines. F-M17-C2 found that O31's literal wording contradicted legitimate
+  non-authoritative/structural numeric columns.
+- **M17-S7C: CORRECTIVE CANDIDATE / CLOSED LOCALLY / NOT MERGED.** The assertion-only PostgreSQL 17 proof closes the exact
+  36-definer inventory and classifies all five numeric L15 columns under the additive
+  [O31 clarification](ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md); Category 4 is empty, runtime semantics are unchanged,
+  and the [corrective evidence](../codex/evidence/2026-10-19-m17-closure-corrective.md) records **O01-O91 = 91 / 91 PASS**.
+- **M17-S7D: OWNER-APPROVED CORRECTIVE / AWAITING FINAL CI.** The supplied independent adversarial review reported
+  88 PASS / 1 FAIL / 2 UNPROVEN. The additive correction covers O56 across all six decision families, O71's DB proof,
+  disposition semantics and the five exact historical migration ordering checks.
+  **C-M17-01 — Hypothesis disposition projection** is a supplemental closure requirement absent from O01-O91.
+  The prior architecture STOP was correct and is resolved by the
+  [owner-approved C-M17-01 clarification](ADR-GOVIA-RISK-INTELLIGENCE-C-M17-01-CLARIFICATION-v1.md).
+  See [S7D corrective evidence](../codex/evidence/2026-10-20-m17-s7d-adversarial-corrective.md).
+- **M17 status: OPEN / CORRECTIVE.** Closure requires O01-O91 PASS and C-M17-01 PASS, current-tree GitHub CI evidence for O91,
+  and final independent adversarial re-review. Historical S7C PASS prose does not prove these current closure gates.
+  **M17.5: NOT STARTED / HOLD.**
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not

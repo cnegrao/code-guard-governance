@@ -23,10 +23,10 @@ const sources = [
   'apps/dashboard/lib/governance/l15-registry-persistence.ts',
 ];
 
-test('static: S2 is followed only by S2R1, S3, S3R1, S4 and S5; additive, hosted-free; edits no historical migration; seeds nothing', () => {
+test('static: S2 has exact ordered successors through S7D; additive, hosted-free; edits no historical migration; seeds nothing', () => {
   const names = readdirSync(new URL('supabase/migrations/', root)).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
   // Horizon: each later slice extends this exact list (never a wildcard).
-  assert.deepEqual(names.slice(names.indexOf(S2)), [S2, S2R1, S3, S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql', '20261016021012_m17_s6_residual_risk_acceptance_v1.sql']);
+  assert.deepEqual(names.slice(names.indexOf(S2)), [S2, S2R1, S3, S3R1, S4, '20261015122639_m17_s5_risk_treatment_v1.sql', '20261016021012_m17_s6_residual_risk_acceptance_v1.sql', '20261017020733_m17_s7a_read_projections_v1.sql', '20261019130000_m17_s7b_passport_risk_overlay_v1.sql', '20261019140000_m17_s7c_final_security_closure_v1.sql', '20261020031523_m17_s7d_adversarial_corrective_v1.sql']);
   assert.match(migration, /^-- M17-S2/);
   assert.doesNotMatch(code, /\bDROP\s+(TABLE|COLUMN|FUNCTION|TRIGGER|VIEW|INDEX|ROLE)\b/i);
   assert.doesNotMatch(code, /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+gov_repo\.(?!l15_support_link_insert_guard_v1\b)/i,
