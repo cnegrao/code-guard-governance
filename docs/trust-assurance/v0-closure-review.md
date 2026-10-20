@@ -1,0 +1,4309 @@
+# M17.5 V0 Readiness Pack — closure and publication-boundary review
+
+**M17.5 V0 READINESS PACK: CLOSED / PASS** is bounded to documentary completeness at the pinned Git snapshot. Overall M17.5 remains open. V1 is not started.
+
+No claim, gap, award, KPI or legacy source record is amended. External publication, a live product demonstration, tenant assurance and certification remain HOLD. INTERNAL_ONLY permits review of drafts and rejected wording with their labels; it does not authorize their affirmative use.
+
+## Separate decisions
+
+| Decision | State |
+| --- | --- |
+| V0_DOCUMENTARY_CLOSURE | PASS |
+| CONTROLLED_DEMO_READINESS | HOLD |
+| EXTERNAL_PUBLICATION_READINESS | HOLD |
+| TENANT_ASSURANCE_READINESS | HOLD |
+| CERTIFICATION_READINESS | HOLD |
+
+## Closure matrix
+
+| Dimension | State | Basis |
+| --- | --- | --- |
+| ARCHITECTURE CONSISTENCY | PASS | ADR neutral read/projection, frozen kinds/edges/facts and existing authority preserved. |
+| ID / LINEAGE INTEGRITY | PASS | All exact S0-S4 identities, input versions, parent chain and unchanged semantics resolve. |
+| SOURCE BOUNDARY | PASS | Seven identities; five pending populations; bounded NIST/original EU observations and access limits remain explicit. |
+| EVIDENCE BOUNDARY | PASS | 109 immutable references retain original authority; local/CI/deployment/effectiveness stay separate. |
+| GAP TRACEABILITY | PASS | 61 OPEN gaps route to impact buckets without closure or new governed truth. |
+| CLAIM CEILINGS | PASS | 42 INELIGIBLE drafts and all 38 ceilings unchanged; zero eligible or demo-approved claims. |
+| AWARD BOUNDARY | PASS | 12 discovery/6 admitted; applicant UNKNOWN; no readiness or award status promotion. |
+| KPI BOUNDARY | PASS | 11 count definitions; PRODUCT 5/TENANT 6; zero operational execution. |
+| LEGACY EXCLUSION | PASS | Unresolved surfaces excluded as affirmative evidence; no containment/safety promotion. |
+| PUBLICATION SAFETY | HOLD | No independent publication/exposure/currency approval; external publication and live demo remain barred. Fail-closed documentation is complete. |
+
+## Gap impact summary
+
+| Primary impact bucket | OPEN gaps |
+| --- | --- |
+| V0_DOCUMENTARY_BLOCKER | 0 |
+| V1_IMPLEMENTATION_DEPENDENCY | 2 |
+| EXTERNAL_PUBLICATION_GATE | 49 |
+| CUSTOMER_SPECIFIC_DEPENDENCY | 3 |
+| FUTURE_EXTERNAL_ARTIFACT_DEPENDENCY | 2 |
+| LEGACY_PRESENTATION_GATE | 5 |
+
+Primary buckets are mutually exclusive routing metadata. Blocking effects are scope-dependent and may overlap. NO never closes the gap. A documentary review of a gap is distinct from demonstrating its dependent capability.
+
+## Claim publication boundary
+
+| Claim class | Drafts | Eligibility | Internal | Controlled demo | External |
+| --- | --- | --- | --- | --- | --- |
+| FACTUAL_CAPABILITY | 34 | INELIGIBLE | INTERNAL_ONLY | PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW | PROHIBITED |
+| EVIDENCE_BACKED_ALIGNMENT | 5 | INELIGIBLE | INTERNAL_ONLY | PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW | PROHIBITED |
+| READINESS_STATEMENT | 1 | INELIGIBLE | INTERNAL_ONLY | PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW | PROHIBITED |
+| EXTERNAL_CERTIFICATION | 1 | INELIGIBLE | INTERNAL_ONLY | PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW | PROHIBITED |
+| EXTERNAL_ATTESTATION | 1 | INELIGIBLE | INTERNAL_ONLY | PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW | PROHIBITED |
+
+All 42 draft use states remain INTERNAL_ONLY. Rejected proposals are retained solely as negative review examples. No draft gains CONTROLLED_DEMO_ONLY or EXTERNAL_PUBLICATION_ELIGIBLE. A separately selected document excerpt may be reviewed for a controlled demonstration; that is not a claim approval or present product-demo clearance.
+
+## Copy-ready wording guide
+
+| Category | Wording | Boundary |
+| --- | --- | --- |
+| SAFE INTERNAL FACTUAL LANGUAGE | The bounded V0 documentary pack contains seven version-pinned artifacts. Its 61 gaps remain OPEN and its 42 claim drafts remain INELIGIBLE. | Document delivery and register observation only; no certification or customer conclusion. |
+| SAFE INTERNAL FACTUAL LANGUAGE | At implementation commit acb95f84036b9bd5759c8afa04460bf1a004595f, the inventory records implementation evidence and exact historical local-test limits. It does not establish present CI, deployment or operating effectiveness. | Use original per-capability proof/limitation; never imply all 38 capabilities were executed. |
+| SAFE CONTROLLED DEMO LANGUAGE | This document walkthrough shows version-pinned references and unresolved states. A mapping identifies a bounded correspondence; it does not establish requirement satisfaction, legal compliance or certification. | Template only after separate excerpt/wording/access/exposure review. No draft claim or live product journey is cleared here. |
+| SAFE CONTROLLED DEMO LANGUAGE | These are count definitions. No customer KPI result or operational assurance evaluation is shown. | Documentary excerpt only; no live tenant data or legacy percentages. |
+| PROHIBITED EXTERNAL LANGUAGE | GovIA is ISO 42001 compliant; GovIA is EU AI Act compliant; GovIA is certified; GovIA guarantees compliance; 100% governance coverage; award-ready; award-winning; customer is compliant; controls are effective. | Negative examples only. No current V0 basis permits these statements. Broad legal/absolute claims have no V0 approval route. |
+| REQUIRES INDEPENDENT REVIEW | Any exact factual capability or alignment wording requires review of its original assertion, version, evidence limits, current scope/currency and actual presentation exposure. | Human review records publication metadata; it cannot repair missing evidence or create compliance truth. |
+| REQUIRES EXTERNAL ARTIFACT | Certification, attestation, nomination, finalist or winner language requires its exact independently issued and authenticated artifact, subject, scope, edition and validity basis. | No such artifact is supplied; no future certification basis alone grants a broad legal compliance guarantee. |
+
+## Legacy exposure gates
+
+| Surface | Classification | Blocks documentary closure | Demo / external effect |
+| --- | --- | --- | --- |
+| L01: CompliancePanel and agent/system API flag scores | NEEDS_CONTAINMENT | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| L02: Scanner certifySystem / UnifiedScanner | NEEDS_CONTAINMENT | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| L03: Extension compliance scanners / reports | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| L04: graphos-complete remnants | NEEDS_CONTAINMENT | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| L05: Dashboard regulatory report export guard | SAFE | false | NO_FOR_INSPECTED_GUARD_ONLY / NO_FOR_INSPECTED_GUARD_ONLY |
+| LX01: legacy agents / ai_systems business surfaces | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| LX02: legacy home percentage | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| LX03: legacy graph/search/Talk paths | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| LX04: heuristic cost estimates | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| LX05: extension budget defaults | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| LX06: legacy ict_incidents | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+| LX07: legacy oversight default | LEGACY_NON_AUTHORITATIVE | false | EXPOSED_SURFACE / EXPOSED_SURFACE |
+
+## V1 handoff — not started
+
+Future work only. Projection-only means the content can be derived from existing pinned metadata without changing canonical truth; it does not assert an existing Hub/UI/API. Serving tenant content requires separately authorized implementation and verification. No storage, cache, route or UI is selected here.
+
+| Capability | Projection-only content | Additive work / prerequisites |
+| --- | --- | --- |
+| Capability -> evidence -> framework navigation | Static product navigation over the exact V0 metadata is derivable now, retaining proof/source limitations. | Hub UI/API routing, access/licensing and version-selection contracts require implementation; tenant links require org-bound read adapters. |
+| Tenant-scoped assurance projections | No new governance truth or fact families; project existing upstream governed references only. | Bind verified principal, SCOPE_V1 manifest, every source/state/decision/evidence/version and authorization/policy pin, existing authorized reads, atomic cutoff and deny/partial behavior. Concrete additive read projection/database/API/UI work is not yet designed. |
+| Requirement -> evidence -> governed object/decision drill-down | Product locators are navigable without claiming tenant sufficiency. | Same-tenant typed immutable target resolution and permission checks at every hop; no direct-table/service-role bypass. Establish missing normalized links/read projections before any tenant drill-down. |
+| Framework/readiness coverage and gap views | Show categorical mappings, evidence availability, explicit pending/UNKNOWN and the 61 documentary gaps; never a score or percentage. | Complete scoped requirement populations/licensed access where selected, reviewed applicability/sufficiency/freshness, source cutoff and tenant gap read models. Missing full-framework sources remain UNKNOWN. |
+| Certification/attestation and award views | Display NOT_ASSERTED, UNKNOWN, source conflicts and current absence of approved claims. | Versioned authenticated issuer references, exact subjects/scopes, expiry/revocation and reviewer workflow before positive claims. Applicant dossier and organizer conflict review before award readiness; no application implied. |
+| Commercial proof-point views | Project 42 INELIGIBLE drafts and all 38 ceilings internally. | Independent exact-wording, currency, eligibility and actual exposure acceptance; permission/validity/invalidation controls and UI/API fail-closed rendering before external use. |
+| European Assurance Profile | Expose source-pinned EU base-text references and separate mapping, evidence, gap, reviewed NOT_APPLICABLE, UNKNOWN, internal readiness and external certification axes. | Qualified operative-law/version and applicability review, lawful source populations and tenant evidence drill-down. Certification-ready is an internal scoped readiness presentation only after sufficiency; certified requires verified issuer artifact. Neither is EU legal compliance. |
+| KPI observability and M18 Pillar 8 consumption | Reuse definition/version, authority/source class, exact/known/UNKNOWN population, as-of, limitations and authorized drill-down metadata; M18 consumes the same projections. | Operational evaluators, freshness policy, org-scope manifest, complete atomic reads and authorization are new work. No alternative persona truth, aggregation engine, numeric assurance or M18 implementation is authorized. |
+
+Proposed M17.5-V1-S0: Trust & Assurance Hub read-contract and exposure-boundary design, documentation only, after separate Carlos authorization. Bind concrete existing tenant read resolvers and missing additive projections, SCOPE_V1/cutoff/error/permission contracts, Hub view acceptance and European Profile states; enumerate separate implementation and legacy-containment slices. No runtime implementation, tenant execution, publication, hosted mutation, M18 or Normative Intelligence in that proposal.
+
+## Complete review metadata
+
+The following complete JSON field projection supplies exact versions, dependencies, every gap/claim/ceiling decision, source and legacy boundaries, wording and V1 prerequisites. JSON is the canonical review metadata; Markdown parity is deterministic.
+
+- **schema_version:** 1.0.0
+- **review_id:** M17.5-S5-V0-CLOSURE
+- **recorded_at:** 2026-10-20
+- **timezone:** America/Sao_Paulo
+- **author:** Codex / Carlos-authorized S5 documentary review
+- **starting_head:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+- **repository:** cnegrao/code-guard-governance
+- **branch:** feat/m17.5-trust-assurance-v0
+- **bounded_scope:** Seven delivered V0 documentary artifacts and controlling S0-S4 records at this exact Git snapshot. Internal completeness means references, states and limits are explicit and consistent; it does not mean all requirements, evidence or external gates are complete. No present-law/source revalidation, tenant assessment or independent commercial approval performed.
+- **decisions**
+  - **V0_DOCUMENTARY_CLOSURE:** PASS
+  - **CONTROLLED_DEMO_READINESS:** HOLD
+  - **EXTERNAL_PUBLICATION_READINESS:** HOLD
+  - **TENANT_ASSURANCE_READINESS:** HOLD
+  - **CERTIFICATION_READINESS:** HOLD
+- **closure_statement:** M17.5 V0 READINESS PACK: CLOSED / PASS
+- **overall_milestone:** OPEN; authorized V1/closure path remains outstanding
+- **review_authority:** S5 is documentary review metadata. Codex cannot supply independent mapping, sufficiency, legal, publication or issuer approval. Carlos authorization to commit/push S5 is not approval of a claim or a demonstration.
+- **readiness_pack**
+  - **1**
+    - **artifact_id:** V0-01
+    - **artifact:** External Credibility Matrix
+    - **input_ids**
+      - **1:** CREDIBILITY
+    - **status:** PRESENT
+    - **external_use:** INTERNAL_ONLY
+  - **2**
+    - **artifact_id:** V0-02
+    - **artifact:** Standards / Framework Crosswalk
+    - **input_ids**
+      - **1:** CROSSWALK
+      - **2:** CROSSWALK_MD
+    - **status:** PRESENT
+    - **external_use:** INTERNAL_ONLY
+  - **3**
+    - **artifact_id:** V0-03
+    - **artifact:** Evidence Index
+    - **input_ids**
+      - **1:** EVIDENCE
+      - **2:** EVIDENCE_MD
+    - **status:** PRESENT
+    - **external_use:** INTERNAL_ONLY
+  - **4**
+    - **artifact_id:** V0-04
+    - **artifact:** Certification Gap Register
+    - **input_ids**
+      - **1:** GAPS
+      - **2:** GAPS_MD
+    - **status:** PRESENT
+    - **external_use:** INTERNAL_ONLY
+  - **5**
+    - **artifact_id:** V0-05
+    - **artifact:** Award Readiness Matrix + Calendar
+    - **input_ids**
+      - **1:** AWARDS
+      - **2:** AWARDS_MD
+      - **3:** CALENDAR
+      - **4:** CALENDAR_MD
+    - **status:** PRESENT
+    - **external_use:** INTERNAL_ONLY
+  - **6**
+    - **artifact_id:** V0-06
+    - **artifact:** Commercial Claims Register
+    - **input_ids**
+      - **1:** CLAIMS
+      - **2:** CLAIMS_MD
+    - **status:** PRESENT
+    - **external_use:** INTERNAL_ONLY
+  - **7**
+    - **artifact_id:** V0-07
+    - **artifact:** Product / Customer KPI Framework
+    - **input_ids**
+      - **1:** KPI
+      - **2:** KPI_MD
+    - **status:** PRESENT
+    - **external_use:** INTERNAL_ONLY
+- **input_inventory**
+  - **1**
+    - **artifact_id:** ADR
+    - **path:** docs/architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c3fcf7228530aa5f165361d78ad76cf5f612feb0
+    - **git_blob:** 9ad77374aa9c392013c911415f5d9cd6188a73cb
+    - **sha256_lf_utf8:** 2ce903ea6e88bf6d78c9e7d3a70ab2f6959935d6f66d30baefc2b2a27586df1e
+    - **purpose:** Controls neutral projections, source authority, axes and claim semantics.
+    - **authority_class:** ARCHITECTURE_CONTRACT
+    - **input_dependencies**
+      - (empty)
+    - **output_dependencies**
+      - **1:** CREDIBILITY
+      - **2:** CROSSWALK
+      - **3:** EVIDENCE
+      - **4:** GAPS
+      - **5:** AWARDS
+      - **6:** CLAIMS
+      - **7:** KPI
+    - **current_status:** S0 architecture contract; unchanged
+    - **unresolved_gates:** Separate runtime authorization; no canonical extension
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **2**
+    - **artifact_id:** S0
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c3fcf7228530aa5f165361d78ad76cf5f612feb0
+    - **git_blob:** e8316db57f39a6bce03b41a09f871ffbd8e1eb43
+    - **sha256_lf_utf8:** 74d949895f23f7f53499c00f07e287d42f7c92acdeda001c5608ae6059ad8b0f
+    - **purpose:** 38 capabilities and 109 immutable evidence identities.
+    - **authority_class:** REPOSITORY_INVENTORY_PROJECTION
+    - **input_dependencies**
+      - **1:** ADR
+    - **output_dependencies**
+      - **1:** CREDIBILITY
+      - **2:** CROSSWALK
+      - **3:** EVIDENCE
+      - **4:** GAPS
+      - **5:** CLAIMS
+      - **6:** KPI
+    - **current_status:** 38 capabilities; historical proof classifications retained
+    - **unresolved_gates:** No deployed or independent CI proof inferred
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **3**
+    - **artifact_id:** S0_MD
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c3fcf7228530aa5f165361d78ad76cf5f612feb0
+    - **git_blob:** da2a247c464809c392a5fd03b2cea3da85110f7b
+    - **sha256_lf_utf8:** 699f19874477652181153308a5bab0ca53ad1e4432dcda4c4bf0f86c7b39b02a
+    - **purpose:** S0 evidence scope and historical local verification.
+    - **authority_class:** HISTORICAL_EXECUTION_HANDOFF
+    - **input_dependencies**
+      - **1:** S0
+    - **output_dependencies**
+      - **1:** EVIDENCE
+      - **2:** S5
+    - **current_status:** S0 completed record
+    - **unresolved_gates:** Ignored local logs are not portable external proof
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **4**
+    - **artifact_id:** CATALOG
+    - **path:** docs/trust-assurance/framework-source-catalog-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** 32e24e96d78f3dd1483256d6b5a2c72b506e657d
+    - **sha256_lf_utf8:** d220b50f8943e337bcf20622692175165998d5cf818ca979496658bae44bfa40
+    - **purpose:** Seven exact framework editions and nine bounded references.
+    - **authority_class:** EXTERNAL_REFERENCE_METADATA
+    - **input_dependencies**
+      - **1:** ADR
+      - **2:** S0
+    - **output_dependencies**
+      - **1:** CROSSWALK
+      - **2:** GAPS
+      - **3:** CLAIMS
+      - **4:** KPI
+    - **current_status:** 7 versions; 5 requirement populations pending
+    - **unresolved_gates:** Lawful sources; EU operative-law review; independent mapping
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **5**
+    - **artifact_id:** CREDIBILITY
+    - **path:** docs/trust-assurance/external-credibility-matrix-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** ef40ea61692eb03dde4e47e0234ef0356d83de7e
+    - **sha256_lf_utf8:** 6a46bf1bddef532ad10f0af9a4d22647dc1fd402e7c47e709119245250e9b3ed
+    - **purpose:** Bounded capability proof and external claim ceilings.
+    - **authority_class:** REPOSITORY_ASSURANCE_PROJECTION
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CROSSWALK
+      - **3:** EVIDENCE
+      - **4:** CATALOG
+    - **output_dependencies**
+      - **1:** CLAIMS
+      - **2:** KPI
+      - **3:** S5
+    - **current_status:** 38 bounded assertions; no approved claims
+    - **unresolved_gates:** Independent wording/currency/exposure review
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **6**
+    - **artifact_id:** CROSSWALK
+    - **path:** docs/trust-assurance/framework-crosswalk-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** 24ae2be21f517077ef0ec640f4b4b8fb8be572a9
+    - **sha256_lf_utf8:** a701d10decebc4a7b81c33b84f4412d1f33d5261b43b6f7a7055649b66b8a816
+    - **purpose:** Versioned implementation correspondences.
+    - **authority_class:** SOURCE_BOUNDED_MAPPING_PROJECTION
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** EVIDENCE
+    - **output_dependencies**
+      - **1:** CREDIBILITY
+      - **2:** GAPS
+      - **3:** CLAIMS
+      - **4:** AWARDS
+      - **5:** KPI
+    - **current_status:** 38 dispositions: MAPPED 5 / NOT_MAPPED 6 / UNKNOWN 27
+    - **unresolved_gates:** Mapping is not satisfaction; five licensed populations pending
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **7**
+    - **artifact_id:** EVIDENCE
+    - **path:** docs/trust-assurance/evidence-index-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** 95f8a4572373ca6fefcf58bbc95580f63a8e3b43
+    - **sha256_lf_utf8:** 84f273f365c2721434e7b54c28f8ffe27a5e5ecc8e79037dca2fb09ade33a12f
+    - **purpose:** Immutable locators preserving original authority.
+    - **authority_class:** EVIDENCE_REFERENCE_PROJECTION
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** S0_MD
+    - **output_dependencies**
+      - **1:** CREDIBILITY
+      - **2:** CROSSWALK
+      - **3:** GAPS
+      - **4:** CLAIMS
+      - **5:** AWARDS
+      - **6:** KPI
+    - **current_status:** 109 references; source identity only
+    - **unresolved_gates:** Currency/sufficiency, portable runs, CI, deployment and operation
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **8**
+    - **artifact_id:** GAPS
+    - **path:** docs/trust-assurance/gap-register-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **git_blob:** d257548ae81c4bc5ec6c01fd5b461e2271ea8caa
+    - **sha256_lf_utf8:** d3abd41ccbbe777966d6c30deba22026ff8475b9c6d3b686203fd0495d25af46
+    - **purpose:** 61 open gaps with dependencies and closure criteria.
+    - **authority_class:** ASSURANCE_GAP_PROJECTION
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** LEGACY
+    - **output_dependencies**
+      - **1:** CLAIMS
+      - **2:** AWARDS
+      - **3:** KPI
+      - **4:** S5
+    - **current_status:** OPEN 61; no governed risk/control creation
+    - **unresolved_gates:** All 61 remain OPEN; impact routes below
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **9**
+    - **artifact_id:** CLAIMS
+    - **path:** docs/trust-assurance/commercial-claims-register-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **git_blob:** 9b55194733c824b6d5d19246c2f1aca155fd57cf
+    - **sha256_lf_utf8:** eaf3208146f151bf17ce8390628faadd94cd46e1a11cc10c08c3ff81de3e4107
+    - **purpose:** 42 draft texts and all 38 capability ceilings.
+    - **authority_class:** COMMERCIAL_DRAFT_METADATA
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** LEGACY
+    - **output_dependencies**
+      - **1:** AWARDS
+      - **2:** KPI
+      - **3:** S5
+    - **current_status:** ELIGIBLE 0 / INELIGIBLE 42
+    - **unresolved_gates:** No independent approval, currency or exposure acceptance
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **10**
+    - **artifact_id:** AWARDS
+    - **path:** docs/trust-assurance/award-readiness-matrix-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** fefcdf820d8d182fb1e29b958922faaba6c8785e
+    - **sha256_lf_utf8:** f2337cbd6ef6b07cc2a23c5e28aae90ef16a11d34bd24765abae0c1cccb38bba
+    - **purpose:** 12 discovery records and six admitted edition records.
+    - **authority_class:** ORGANIZER_REFERENCE_AND_READINESS_PROJECTION
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** LEGACY
+    - **output_dependencies**
+      - **1:** CALENDAR
+      - **2:** KPI
+      - **3:** S5
+    - **current_status:** Eligibility UNKNOWN 6; no submission
+    - **unresolved_gates:** Applicant dossier, independent review, criteria/external evidence
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **11**
+    - **artifact_id:** CALENDAR
+    - **path:** docs/trust-assurance/award-calendar-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** fae65ee8b37d95073e7f6db38a663cfa1d702921
+    - **sha256_lf_utf8:** 98a1d631b52c67507903e917c556829add35a02b8e24356c499bc9bb5fd44f19
+    - **purpose:** 25 source-pinned historical and future event observations.
+    - **authority_class:** EXTERNAL_EVENT_REFERENCE_METADATA
+    - **input_dependencies**
+      - **1:** AWARDS
+    - **output_dependencies**
+      - **1:** KPI
+      - **2:** S5
+    - **current_status:** Source conflicts and UNKNOWN dates retained
+    - **unresolved_gates:** Organizer clarification and current revalidation before any action
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **12**
+    - **artifact_id:** KPI
+    - **path:** docs/trust-assurance/kpi-framework-v0.json
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **git_blob:** 0bd96efa393d9306a1eb332a5e7b0df80f69c4c3
+    - **sha256_lf_utf8:** 98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69
+    - **purpose:** 11 versioned count definitions; no operational evaluation.
+    - **authority_class:** KPI_DEFINITION_PROJECTION_METADATA
+    - **input_dependencies**
+      - **1:** ADR
+      - **2:** S0
+      - **3:** CREDIBILITY
+      - **4:** CATALOG
+      - **5:** CROSSWALK
+      - **6:** EVIDENCE
+      - **7:** GAPS
+      - **8:** CLAIMS
+      - **9:** AWARDS
+      - **10:** CALENDAR
+      - **11:** KINDS
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** PRODUCT 5 / TENANT 6; 7 DEFINITION_ONLY / 4 PRODUCT_DOCUMENTARY_ONLY
+    - **unresolved_gates:** Tenant projections, scope manifest, atomic reads and freshness policy
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **13**
+    - **artifact_id:** LEGACY
+    - **path:** docs/trust-assurance/legacy-containment-register-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** 5763ca02ca74689e8c831b45271dfd728ea4799c
+    - **sha256_lf_utf8:** d20001d94f1cca7c5d24c64ac427a0a3f949bb826b57772a68dd2d92c6285623
+    - **purpose:** Five inherited legacy presentation gates.
+    - **authority_class:** EXCLUSION_AND_PRESENTATION_GATE_METADATA
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** EVIDENCE
+    - **output_dependencies**
+      - **1:** GAPS
+      - **2:** CLAIMS
+      - **3:** AWARDS
+      - **4:** KPI
+      - **5:** S5
+    - **current_status:** L01/L02/L04 NEEDS_CONTAINMENT; L03 LEGACY_NON_AUTHORITATIVE; L05 SAFE guard only
+    - **unresolved_gates:** Exclusion is not implemented containment
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **14**
+    - **artifact_id:** ROADMAP
+    - **path:** docs/architecture/GOVIA-L0L16-CIA-v1.0-roadmap.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 1212aa14f22a30d58fd0b4a2497219dd0ff85894
+    - **git_blob:** 09673d1ca3979c30269be719a161b45ad4ca67b3
+    - **sha256_lf_utf8:** ad1a71dca174209e3bc2982d6c0a666bdf18d82cc0742169cd67f390a7af7f5b
+    - **purpose:** V0 pack, V1 Hub and European scope.
+    - **authority_class:** ROADMAP_SCOPE_AUTHORITY
+    - **input_dependencies**
+      - **1:** ADR
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** V1 and M18 remain unstarted by this review
+    - **unresolved_gates:** Future authorized V1 architecture/read contract selection
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **15**
+    - **artifact_id:** KINDS
+    - **path:** packages/canonical-contracts/src/contracts.ts
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** b4e499b8abb6de1df224df0a57c522d8a232c058
+    - **git_blob:** f44dd97a0fba469d40286b69e2eabc909374867f
+    - **sha256_lf_utf8:** f3c113e2d0853f1062fe3116bf55a86f41deb2e99774cf5833589e0b2803dab6
+    - **purpose:** Frozen eleven canonical object kinds.
+    - **authority_class:** CANONICAL_CONTRACT_REFERENCE
+    - **input_dependencies**
+      - **1:** ADR
+    - **output_dependencies**
+      - **1:** KPI
+      - **2:** S5
+    - **current_status:** Frozen; read only
+    - **unresolved_gates:** No new canonical kind authorized
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **16**
+    - **artifact_id:** CROSSWALK_MD
+    - **path:** docs/trust-assurance/framework-crosswalk-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** 49e31439714965c32630c9df254f7467ee231ef5
+    - **sha256_lf_utf8:** f1b652d5cdd250f9b7e58705d0232362fcdedf0707b91984cc85e2c1057facde
+    - **purpose:** Human-readable companion; same bounded semantics.
+    - **authority_class:** DOCUMENTARY_RENDERING
+    - **input_dependencies**
+      - **1:** CROSSWALK
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Present and version-pinned
+    - **unresolved_gates:** Mapping is not satisfaction; five licensed populations pending
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **17**
+    - **artifact_id:** EVIDENCE_MD
+    - **path:** docs/trust-assurance/evidence-index-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** 4f691d2892c502aaac09bbb468e790401e7c113a
+    - **sha256_lf_utf8:** 991e718b0c03cd15e9be5d5da56287301faa6729c017e368e2a0747576bf2938
+    - **purpose:** Human-readable companion; same bounded semantics.
+    - **authority_class:** DOCUMENTARY_RENDERING
+    - **input_dependencies**
+      - **1:** EVIDENCE
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Present and version-pinned
+    - **unresolved_gates:** Currency/sufficiency, portable runs, CI, deployment and operation
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **18**
+    - **artifact_id:** GAPS_MD
+    - **path:** docs/trust-assurance/gap-register-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **git_blob:** efda50263253d690b4db7698d5195b4efa34facf
+    - **sha256_lf_utf8:** 83a449f3502bf6c0a3d066d24d0aa2ccfebacd5ee5a56fd34132ef25dd36b1fd
+    - **purpose:** Human-readable companion; same bounded semantics.
+    - **authority_class:** DOCUMENTARY_RENDERING
+    - **input_dependencies**
+      - **1:** GAPS
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Present and version-pinned
+    - **unresolved_gates:** All 61 remain OPEN; impact routes below
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **19**
+    - **artifact_id:** CLAIMS_MD
+    - **path:** docs/trust-assurance/commercial-claims-register-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **git_blob:** 5559cab90d49b84780ba0ef93db1efd83bdc874f
+    - **sha256_lf_utf8:** 06907c6b0f00ba082bce7cab2e5ef367ab274cf4129464aaf4e8099b24452dc6
+    - **purpose:** Human-readable companion; same bounded semantics.
+    - **authority_class:** DOCUMENTARY_RENDERING
+    - **input_dependencies**
+      - **1:** CLAIMS
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Present and version-pinned
+    - **unresolved_gates:** No independent approval, currency or exposure acceptance
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **20**
+    - **artifact_id:** AWARDS_MD
+    - **path:** docs/trust-assurance/award-readiness-matrix-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** 95706c8d4cef022f4f1b7905d038f5fd0303441f
+    - **sha256_lf_utf8:** 4e439f0d3450cbfe42e915bca11203cd65cb9ee38a3b57b911bcc472fa261299
+    - **purpose:** Human-readable companion; same bounded semantics.
+    - **authority_class:** DOCUMENTARY_RENDERING
+    - **input_dependencies**
+      - **1:** AWARDS
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Present and version-pinned
+    - **unresolved_gates:** Applicant dossier, independent review, criteria/external evidence
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **21**
+    - **artifact_id:** CALENDAR_MD
+    - **path:** docs/trust-assurance/award-calendar-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** 1f4832b80db8b64afe9ea0b2f628a61ab72557b0
+    - **sha256_lf_utf8:** aace88bf943fe0feee4ad1cb71fd0a70c2fe03c0d0999367b6f25f55522f5f24
+    - **purpose:** Human-readable companion; same bounded semantics.
+    - **authority_class:** DOCUMENTARY_RENDERING
+    - **input_dependencies**
+      - **1:** CALENDAR
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Present and version-pinned
+    - **unresolved_gates:** Organizer clarification and current revalidation before any action
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **22**
+    - **artifact_id:** KPI_MD
+    - **path:** docs/trust-assurance/kpi-framework-v0.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **git_blob:** ca417d8825464c20d764be8ae8e058f0b0aa169e
+    - **sha256_lf_utf8:** 5670e68b5a4b69c5fef7336ee3cd6f4cb30fdc3323fb606c2f1b3a0d5ac166b9
+    - **purpose:** Human-readable companion; same bounded semantics.
+    - **authority_class:** DOCUMENTARY_RENDERING
+    - **input_dependencies**
+      - **1:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Present and version-pinned
+    - **unresolved_gates:** Tenant projections, scope manifest, atomic reads and freshness policy
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **23**
+    - **artifact_id:** HANDOFF_S1
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s1-source-crosswalk.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** 0c8553a55a7b912bebadcecd9a72244bb9edb14e
+    - **sha256_lf_utf8:** 2d6dd5bb7eeaf88f402fdbfc7b3a225f509a1e4f9a40d704ef5d227f4b99e8f4
+    - **purpose:** Records completed slice, verification and then-future proposals.
+    - **authority_class:** HISTORICAL_SLICE_HANDOFF
+    - **input_dependencies**
+      - **1:** ADR
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Historical S1 completion; not a new authorization
+    - **unresolved_gates:** Contemporaneous HOLD/not-started wording retains original cutoff
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **24**
+    - **artifact_id:** HANDOFF_S2
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s2-gaps-claims.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **git_blob:** 0c5932752750e9e69ef3f5717afc07a01e23dc94
+    - **sha256_lf_utf8:** d1889b774bfaebca4f086ce8f323370e55d1dfc9a000e1b7fb88c5f198c76a2c
+    - **purpose:** Records completed slice, verification and then-future proposals.
+    - **authority_class:** HISTORICAL_SLICE_HANDOFF
+    - **input_dependencies**
+      - **1:** ADR
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Historical S2 completion; not a new authorization
+    - **unresolved_gates:** Contemporaneous HOLD/not-started wording retains original cutoff
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **25**
+    - **artifact_id:** HANDOFF_S3
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s3-award-readiness.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** 3c06033cc26033a6d3af4f2c895f3de37903da7e
+    - **sha256_lf_utf8:** 38b26e8c5cc8f6c64268a0730940abd3e77711bff009934e83747c0cc086f17d
+    - **purpose:** Records completed slice, verification and then-future proposals.
+    - **authority_class:** HISTORICAL_SLICE_HANDOFF
+    - **input_dependencies**
+      - **1:** ADR
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Historical S3 completion; not a new authorization
+    - **unresolved_gates:** Contemporaneous HOLD/not-started wording retains original cutoff
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **26**
+    - **artifact_id:** HANDOFF_S4
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s4-kpi-framework.md
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **git_blob:** 3ab1afb6798c23b305bdef472a5d9d6a06670553
+    - **sha256_lf_utf8:** f6b8ba376d754add59bce12ced81a274ab27e0bb1fdd90088da556bd2c539f34
+    - **purpose:** Records completed slice, verification and then-future proposals.
+    - **authority_class:** HISTORICAL_SLICE_HANDOFF
+    - **input_dependencies**
+      - **1:** ADR
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Historical S4 completion; not a new authorization
+    - **unresolved_gates:** Contemporaneous HOLD/not-started wording retains original cutoff
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **27**
+    - **artifact_id:** HELPER_award-render-v0.mjs
+    - **path:** docs/trust-assurance/award-render-v0.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** 766404b14ff0ab8ed15b9f81e83f4373675ea425
+    - **sha256_lf_utf8:** b7a9659e5cc18b6eb661b85877c418a3117a848db5e22ba4b31dab6015310a71
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **28**
+    - **artifact_id:** HELPER_kpi-render-v0.mjs
+    - **path:** docs/trust-assurance/kpi-render-v0.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **git_blob:** fd630017383967639a4c18cb42c39b448774376f
+    - **sha256_lf_utf8:** 844e77d6c57d7b98ac3a1eec57fa04f4506224a525980b82de261488472e6f94
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **29**
+    - **artifact_id:** HELPER_verify-s2-final.test.mjs
+    - **path:** docs/trust-assurance/verify-s2-final.test.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **git_blob:** d144bf3492a2c982051378a26c8d2bdae84c113c
+    - **sha256_lf_utf8:** ccf51c88c65f888bd7bed06085aa28555c4b2f8d36fa8747d22b0ca5ed9eb6e2
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **30**
+    - **artifact_id:** HELPER_verify-s2.test.mjs
+    - **path:** docs/trust-assurance/verify-s2.test.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **git_blob:** 251c0a71e8265a6c913aff340b57af160fd69170
+    - **sha256_lf_utf8:** df82d2378875d7c89317b2d1ed39382b958db3a3cae90c4c905c0b282dc82c06
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **31**
+    - **artifact_id:** HELPER_verify-s3-final.test.mjs
+    - **path:** docs/trust-assurance/verify-s3-final.test.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** be926149c98a76f39dde149d48bff7286cb4d58f
+    - **sha256_lf_utf8:** 06ddbc18072f45e0a628b42fd0d1dca739a4879aea16a228b7bb5aff221e531d
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **32**
+    - **artifact_id:** HELPER_verify-s3.test.mjs
+    - **path:** docs/trust-assurance/verify-s3.test.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **git_blob:** 2d8277ddfb7229ae3bf269d9f3ab03a848c7e750
+    - **sha256_lf_utf8:** e42a7360e157f387f165e1ad2d29d1df01c4c79247c7fca305040fab3eac9c71
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **33**
+    - **artifact_id:** HELPER_verify-s4-final.test.mjs
+    - **path:** docs/trust-assurance/verify-s4-final.test.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **git_blob:** f51196ce99eda866ff0e88c539a9c1960bf7c701
+    - **sha256_lf_utf8:** 9adc4bc748e804a22daedfd33391a991337fd4bf7396dae659182f1a2f72a53c
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **34**
+    - **artifact_id:** HELPER_verify-s4.test.mjs
+    - **path:** docs/trust-assurance/verify-s4.test.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **git_blob:** 1ebd6f171e0f7627e0fdc02f3fd901f8456f293d
+    - **sha256_lf_utf8:** cf86b801e93b1421b1256594022c0c43401e8011801675a52a8f864499e7a757
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+  - **35**
+    - **artifact_id:** HELPER_verify-v0.test.mjs
+    - **path:** docs/trust-assurance/verify-v0.test.mjs
+    - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **last_change_commit:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **git_blob:** f079f37581b2bfee35d81e0e742ead81b8389579
+    - **sha256_lf_utf8:** 83735970d72a34d59ff9d42783893cb248b5f942320ffa1273987deed3ebe8cd
+    - **purpose:** Deterministic metadata, reference, parity or historical staged-scope guard.
+    - **authority_class:** OFFLINE_DOCUMENTATION_HELPER
+    - **input_dependencies**
+      - **1:** S0
+      - **2:** CATALOG
+      - **3:** CROSSWALK
+      - **4:** EVIDENCE
+      - **5:** GAPS
+      - **6:** CLAIMS
+      - **7:** AWARDS
+      - **8:** CALENDAR
+      - **9:** KPI
+    - **output_dependencies**
+      - **1:** S5
+    - **current_status:** Inspected; historical final guards are not re-executed
+    - **unresolved_gates:** Only relevant metadata guards reused; no historical runtime suite
+    - **external_use_status:** INTERNAL_ONLY_FOR_THIS_PACK; no new external permission (public reference origin is independent)
+- **immutable_chain**
+  - **1**
+    - **slice:** S0
+    - **input_head:** acb95f84036b9bd5759c8afa04460bf1a004595f
+    - **output_head:** c3fcf7228530aa5f165361d78ad76cf5f612feb0
+    - **history:** Immutable parent-to-child Git chain; prior artifact bytes preserved at every later slice.
+  - **2**
+    - **slice:** S1
+    - **input_head:** c3fcf7228530aa5f165361d78ad76cf5f612feb0
+    - **output_head:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **history:** Immutable parent-to-child Git chain; prior artifact bytes preserved at every later slice.
+  - **3**
+    - **slice:** S2
+    - **input_head:** 38314b7ea20e479f4d108ea1b48fd37c78d37ebf
+    - **output_head:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **history:** Immutable parent-to-child Git chain; prior artifact bytes preserved at every later slice.
+  - **4**
+    - **slice:** S3
+    - **input_head:** c354691e8dc24e771c4887a999f57f2165dc14ac
+    - **output_head:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **history:** Immutable parent-to-child Git chain; prior artifact bytes preserved at every later slice.
+  - **5**
+    - **slice:** S4
+    - **input_head:** e56d9d8b9ed729b982f234e20a5658e0f9d60be3
+    - **output_head:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+    - **history:** Immutable parent-to-child Git chain; prior artifact bytes preserved at every later slice.
+- **lineage_summary**
+  - **capabilities:** 38
+  - **evidence:** 109
+  - **framework_versions:** 7
+  - **bounded_public_references:** 9
+  - **capability_dispositions:** 38
+  - **MAPPED:** 5
+  - **NOT_MAPPED:** 6
+  - **UNKNOWN:** 27
+  - **pending_framework_populations:** 5
+  - **pending_capability_associations:** 190
+  - **gaps_OPEN:** 61
+  - **claim_drafts:** 42
+  - **capability_ceilings:** 38
+  - **award_discovery:** 12
+  - **award_programs:** 6
+  - **calendar_events:** 25
+  - **kpi_definitions:** 11
+  - **orphan_ids:** 0
+  - **dangling_references:** 0
+  - **version_drift:** 0
+  - **silent_semantic_replacements:** 0
+- **semantic_boundaries**
+  - **1**
+    - **left:** UNKNOWN
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** FALSE
+    - **state:** PASS
+  - **2**
+    - **left:** UNKNOWN
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** ZERO
+    - **state:** PASS
+  - **3**
+    - **left:** UNKNOWN
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** NOT_APPLICABLE
+    - **state:** PASS
+  - **4**
+    - **left:** MAPPED
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** SATISFIED
+    - **state:** PASS
+  - **5**
+    - **left:** MAPPED
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** COMPLIANT
+    - **state:** PASS
+  - **6**
+    - **left:** EVIDENCE_AVAILABLE
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** EVIDENCE_SUFFICIENT
+    - **state:** PASS
+  - **7**
+    - **left:** READY
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** CERTIFIED
+    - **state:** PASS
+  - **8**
+    - **left:** INTERNAL_READINESS
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** EXTERNAL_CERTIFICATION
+    - **state:** PASS
+  - **9**
+    - **left:** FACTUAL_CAPABILITY
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** ALIGNMENT
+    - **state:** PASS
+  - **10**
+    - **left:** ALIGNMENT
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** COMPLIANCE
+    - **state:** PASS
+  - **11**
+    - **left:** REPOSITORY_IMPLEMENTATION
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** DEPLOYED_OPERATION
+    - **state:** PASS
+  - **12**
+    - **left:** LOCAL_TEST
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** CI
+    - **state:** PASS
+  - **13**
+    - **left:** CI
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** CUSTOMER_DEPLOYMENT
+    - **state:** PASS
+  - **14**
+    - **left:** DEPLOYMENT
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** OPERATING_EFFECTIVENESS
+    - **state:** PASS
+  - **15**
+    - **left:** AWARD_CRITERION_CORRESPONDENCE
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** AWARD_READINESS
+    - **state:** PASS
+  - **16**
+    - **left:** AWARD_READINESS
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** NOMINATION / FINALIST / WINNER
+    - **state:** PASS
+  - **17**
+    - **left:** KPI_DEFINITION
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** KPI_EXECUTION
+    - **state:** PASS
+  - **18**
+    - **left:** PRODUCT_KPI
+    - **relation:** DOES_NOT_IMPLY_OR_EQUAL
+    - **right:** TENANT_KPI
+    - **state:** PASS
+- **historical_terminology_review**
+  - **1:** ADR S0 source-pending statements and TA-C36 describe the S0 cutoff; S1 explicitly adds only six NIST and three EU bounded references, preserving five pending populations. No retroactive S0 mutation or claim-ceiling promotion.
+  - **2:** S0-S4 handoff not-started proposals are historical, not current vetoes or implementation authorizations. S4 PRESENT 7 is delivery; S5 alone makes the bounded documentary closure decision.
+  - **3:** The credibility matrix phrase what can be demonstrated today is constrained by repository fixtures/proof limits and downstream exposure gates. It is not a live demo approval.
+  - **4:** S2 Draft claim wording and rejected proposals are inputs for review, not safe extraction text. Five NIST alignment candidates retain factual external ceilings.
+  - **5:** Award source-published official judging weights are organizer criteria metadata, not GovIA scores. No derived award readiness percentage exists.
+- **framework_boundary**
+  - **1**
+    - **framework_version_id:** NIST-AI-RMF-1.0
+    - **identity_state:** AUTHORITATIVE_SOURCE_VERIFIED
+    - **population_state:** BOUNDED_PUBLIC_REFERENCES_POPULATED
+    - **reference_count:** 6
+    - **source_access:** PUBLIC_NORMATIVE_SOURCE
+    - **content_permission:** IDENTIFIERS_LOCATORS_AND_BIBLIOGRAPHIC_METADATA_ONLY_NO_NORMATIVE_BODY
+    - **review:** Published 1.0 only; revision-in-progress is separate. Six identifiers/locators, not full-framework coverage.
+  - **2**
+    - **framework_version_id:** EU-AI-ACT-2024-1689-OJ-20240712
+    - **identity_state:** AUTHORITATIVE_SOURCE_VERIFIED
+    - **population_state:** BOUNDED_PUBLIC_REFERENCES_POPULATED
+    - **reference_count:** 3
+    - **source_access:** PUBLIC_NORMATIVE_SOURCE
+    - **content_permission:** IDENTIFIERS_LOCATORS_AND_BIBLIOGRAPHIC_METADATA_ONLY_NO_NORMATIVE_BODY
+    - **review:** Original OJ 2024-07-12 only; live full-text retrieval limited. No current operative law, amendments or legal applicability asserted; qualified legal review required.
+  - **3**
+    - **framework_version_id:** ISO-IEC-42001-2023-ED1
+    - **identity_state:** AUTHORITATIVE_SOURCE_VERIFIED
+    - **population_state:** EXTERNAL_REQUIREMENT_SOURCE_PENDING
+    - **reference_count:** 0
+    - **source_access:** PUBLIC_METADATA_ONLY
+    - **content_permission:** IDENTIFIERS_LOCATORS_AND_BIBLIOGRAPHIC_METADATA_ONLY_NO_NORMATIVE_BODY
+    - **review:** Licensed requirement population pending; verified public bibliography cannot populate requirements.
+  - **4**
+    - **framework_version_id:** ISO-IEC-38505-1-2026-ED2
+    - **identity_state:** AUTHORITATIVE_SOURCE_VERIFIED
+    - **population_state:** EXTERNAL_REQUIREMENT_SOURCE_PENDING
+    - **reference_count:** 0
+    - **source_access:** PUBLIC_METADATA_ONLY
+    - **content_permission:** IDENTIFIERS_LOCATORS_AND_BIBLIOGRAPHIC_METADATA_ONLY_NO_NORMATIVE_BODY
+    - **review:** Licensed requirement population pending; verified public bibliography cannot populate requirements.
+  - **5**
+    - **framework_version_id:** ISO-IEC-23894-2023-ED1
+    - **identity_state:** AUTHORITATIVE_SOURCE_VERIFIED
+    - **population_state:** EXTERNAL_REQUIREMENT_SOURCE_PENDING
+    - **reference_count:** 0
+    - **source_access:** PUBLIC_METADATA_ONLY
+    - **content_permission:** IDENTIFIERS_LOCATORS_AND_BIBLIOGRAPHIC_METADATA_ONLY_NO_NORMATIVE_BODY
+    - **review:** Licensed requirement population pending; verified public bibliography cannot populate requirements.
+  - **6**
+    - **framework_version_id:** DCAM-3
+    - **identity_state:** AUTHORITATIVE_SOURCE_VERIFIED
+    - **population_state:** EXTERNAL_REQUIREMENT_SOURCE_PENDING
+    - **reference_count:** 0
+    - **source_access:** PUBLIC_METADATA_ONLY
+    - **content_permission:** IDENTIFIERS_LOCATORS_AND_BIBLIOGRAPHIC_METADATA_ONLY_NO_NORMATIVE_BODY
+    - **review:** Member-restricted entitlement/source population remains pending; no reconstructed capability text.
+  - **7**
+    - **framework_version_id:** DAMA-DMBOK2-REVISED-EN
+    - **identity_state:** AUTHORITATIVE_SOURCE_VERIFIED
+    - **population_state:** EXTERNAL_REQUIREMENT_SOURCE_PENDING
+    - **reference_count:** 0
+    - **source_access:** PUBLIC_METADATA_ONLY
+    - **content_permission:** IDENTIFIERS_LOCATORS_AND_BIBLIOGRAPHIC_METADATA_ONLY_NO_NORMATIVE_BODY
+    - **review:** Licensed requirement population pending; verified public bibliography cannot populate requirements.
+- **source_review:** No new research needed: no actual source contradiction found within the frozen observations. Publisher-controlled observations remain source-pinned. No third-party summary is authoritative; normative_text remains null; no protected normative body reconstructed. This is not confirmation of present external law or award availability.
+- **gap_bucket_vocabulary**
+  - **1:** V0_DOCUMENTARY_BLOCKER
+  - **2:** V1_IMPLEMENTATION_DEPENDENCY
+  - **3:** EXTERNAL_PUBLICATION_GATE
+  - **4:** CUSTOMER_SPECIFIC_DEPENDENCY
+  - **5:** FUTURE_EXTERNAL_ARTIFACT_DEPENDENCY
+  - **6:** LEGACY_PRESENTATION_GATE
+- **gap_bucket_counts**
+  - **V0_DOCUMENTARY_BLOCKER:** 0
+  - **V1_IMPLEMENTATION_DEPENDENCY:** 2
+  - **EXTERNAL_PUBLICATION_GATE:** 49
+  - **CUSTOMER_SPECIFIC_DEPENDENCY:** 3
+  - **FUTURE_EXTERNAL_ARTIFACT_DEPENDENCY:** 2
+  - **LEGACY_PRESENTATION_GATE:** 5
+- **gap_effect_legend**
+  - **NO:** Does not block bounded documentary closure / an UNKNOWN-preserving documentary walkthrough or Hub view. Never means gap closed.
+  - **DEPENDENT_SCOPE:** Blocks an affirmative conclusion in any scope requiring this input. Not a universal prerequisite for unrelated factual claims.
+  - **EXPOSED_SURFACE:** Blocks any controlled demo/external presentation that exposes or consumes this surface, until containment/exclusion and exposure acceptance are evidenced.
+  - **OPERATIONAL_FEATURE:** Blocks that operational V1 feature only; the Hub may project its unresolved state without implementing or executing it.
+- **gap_effect_scope:** Demo effects below refer to a labelled documentary walkthrough. Overall live/product demo remains HOLD pending a selected journey, actual exposure review and separate acceptance. Certification and tenant effects apply only where the named gap is a required input for that scoped conclusion. All 61 original statuses and closure criteria remain unchanged.
+- **gap_dispositions**
+  - **1**
+    - **gap_id:** G-SOURCE-01
+    - **title:** Requirement population pending: ISO-IEC-42001-2023-ED1
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Entitlement/access record for the exact edition.
+      - **2:** Source-verified requirement IDs and locators with permitted fingerprints and content handling.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **2**
+    - **gap_id:** G-SOURCE-02
+    - **title:** Requirement population pending: ISO-IEC-38505-1-2026-ED2
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Entitlement/access record for the exact edition.
+      - **2:** Source-verified requirement IDs and locators with permitted fingerprints and content handling.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **3**
+    - **gap_id:** G-SOURCE-03
+    - **title:** Requirement population pending: ISO-IEC-23894-2023-ED1
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Entitlement/access record for the exact edition.
+      - **2:** Source-verified requirement IDs and locators with permitted fingerprints and content handling.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **4**
+    - **gap_id:** G-SOURCE-04
+    - **title:** Requirement population pending: DCAM-3
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Entitlement/access record for the exact edition.
+      - **2:** Source-verified requirement IDs and locators with permitted fingerprints and content handling.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **5**
+    - **gap_id:** G-SOURCE-05
+    - **title:** Requirement population pending: DAMA-DMBOK2-REVISED-EN
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Entitlement/access record for the exact edition.
+      - **2:** Source-verified requirement IDs and locators with permitted fingerprints and content handling.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **6**
+    - **gap_id:** G-EU-OPERATIVE
+    - **title:** EU original OJ references do not establish operative/current-law basis
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Successful authorized official-source retrieval and immutable access/version record.
+      - **2:** Qualified legal review of operative instruments, amendments, dates, jurisdiction and intended scope.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **7**
+    - **gap_id:** G-MAP-TA-C01
+    - **title:** Unestablished correspondence: TA-C01
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **8**
+    - **gap_id:** G-MAP-TA-C02
+    - **title:** Unestablished correspondence: TA-C02
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **9**
+    - **gap_id:** G-MAP-TA-C03
+    - **title:** Unestablished correspondence: TA-C03
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **10**
+    - **gap_id:** G-MAP-TA-C04
+    - **title:** Unestablished correspondence: TA-C04
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **11**
+    - **gap_id:** G-MAP-TA-C05
+    - **title:** Unestablished correspondence: TA-C05
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **12**
+    - **gap_id:** G-MAP-TA-C06
+    - **title:** Unestablished correspondence: TA-C06
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **13**
+    - **gap_id:** G-MAP-TA-C07
+    - **title:** Unestablished correspondence: TA-C07
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **14**
+    - **gap_id:** G-MAP-TA-C08
+    - **title:** Unestablished correspondence: TA-C08
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **15**
+    - **gap_id:** G-MAP-TA-C09
+    - **title:** Unestablished correspondence: TA-C09
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **16**
+    - **gap_id:** G-MAP-TA-C10
+    - **title:** Unestablished correspondence: TA-C10
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **17**
+    - **gap_id:** G-MAP-TA-C13
+    - **title:** Unestablished correspondence: TA-C13
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **18**
+    - **gap_id:** G-MAP-TA-C14
+    - **title:** Unestablished correspondence: TA-C14
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **19**
+    - **gap_id:** G-MAP-TA-C15
+    - **title:** Unestablished correspondence: TA-C15
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **20**
+    - **gap_id:** G-MAP-TA-C16
+    - **title:** Unestablished correspondence: TA-C16
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **21**
+    - **gap_id:** G-MAP-TA-C17
+    - **title:** Unestablished correspondence: TA-C17
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **22**
+    - **gap_id:** G-MAP-TA-C18
+    - **title:** Unestablished correspondence: TA-C18
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **23**
+    - **gap_id:** G-MAP-TA-C19
+    - **title:** Unestablished correspondence: TA-C19
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **24**
+    - **gap_id:** G-MAP-TA-C20
+    - **title:** Unestablished correspondence: TA-C20
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **25**
+    - **gap_id:** G-MAP-TA-C21
+    - **title:** Unestablished correspondence: TA-C21
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **26**
+    - **gap_id:** G-MAP-TA-C22
+    - **title:** Unestablished correspondence: TA-C22
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **27**
+    - **gap_id:** G-MAP-TA-C23
+    - **title:** Unestablished correspondence: TA-C23
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **28**
+    - **gap_id:** G-MAP-TA-C24
+    - **title:** Unestablished correspondence: TA-C24
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **29**
+    - **gap_id:** G-MAP-TA-C25
+    - **title:** Unestablished correspondence: TA-C25
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **30**
+    - **gap_id:** G-MAP-TA-C29
+    - **title:** Unestablished correspondence: TA-C29
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **31**
+    - **gap_id:** G-MAP-TA-C30
+    - **title:** Unestablished correspondence: TA-C30
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **32**
+    - **gap_id:** G-MAP-TA-C31
+    - **title:** Unestablished correspondence: TA-C31
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **33**
+    - **gap_id:** G-MAP-TA-C32
+    - **title:** Unestablished correspondence: TA-C32
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **34**
+    - **gap_id:** G-MAP-TA-C33
+    - **title:** Unestablished correspondence: TA-C33
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **35**
+    - **gap_id:** G-MAP-TA-C34
+    - **title:** Unestablished correspondence: TA-C34
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **36**
+    - **gap_id:** G-MAP-TA-C35
+    - **title:** Unestablished correspondence: TA-C35
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **37**
+    - **gap_id:** G-MAP-TA-C36
+    - **title:** Unestablished correspondence: TA-C36
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **38**
+    - **gap_id:** G-MAP-TA-C37
+    - **title:** Unestablished correspondence: TA-C37
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **39**
+    - **gap_id:** G-MAP-TA-C38
+    - **title:** Unestablished correspondence: TA-C38
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Reviewed version-pinned source-to-capability/evidence correspondence, or a scoped reviewed exclusion with rationale; no requirement-satisfaction inference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **40**
+    - **gap_id:** G-REF-NIST-1.0-GOVERN-1.6
+    - **title:** Public reference correspondence not established: NIST-1.0-GOVERN-1.6
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Scoped independently reviewed mapping or explicit exclusion against the exact source reference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **41**
+    - **gap_id:** G-REF-NIST-1.0-MEASURE-2.4
+    - **title:** Public reference correspondence not established: NIST-1.0-MEASURE-2.4
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Scoped independently reviewed mapping or explicit exclusion against the exact source reference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **42**
+    - **gap_id:** G-REF-EU-OJ-20240712-ART-11
+    - **title:** Public reference correspondence not established: EU-OJ-20240712-ART-11
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - **1:** G-EU-OPERATIVE
+    - **required_evidence**
+      - **1:** Scoped independently reviewed mapping or explicit exclusion against the exact source reference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **43**
+    - **gap_id:** G-REF-EU-OJ-20240712-ART-12
+    - **title:** Public reference correspondence not established: EU-OJ-20240712-ART-12
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - **1:** G-EU-OPERATIVE
+    - **required_evidence**
+      - **1:** Scoped independently reviewed mapping or explicit exclusion against the exact source reference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **44**
+    - **gap_id:** G-REF-EU-OJ-20240712-ANNEX-IV
+    - **title:** Public reference correspondence not established: EU-OJ-20240712-ANNEX-IV
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - **1:** G-EU-OPERATIVE
+    - **required_evidence**
+      - **1:** Scoped independently reviewed mapping or explicit exclusion against the exact source reference.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **45**
+    - **gap_id:** G-APPLICABILITY
+    - **title:** Customer and intended-use applicability not assessed
+    - **original_status:** OPEN
+    - **primary_bucket:** CUSTOMER_SPECIFIC_DEPENDENCY
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Tenant/subject/intended-use/jurisdiction scope with exact requirement versions, applicability rationale, reviewer and validity interval.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **46**
+    - **gap_id:** G-SUFFICIENCY
+    - **title:** Requirement evidence sufficiency unassessed
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - **1:** G-APPLICABILITY
+      - **2:** G-REVIEWER
+      - **3:** G-FRESHNESS
+    - **required_evidence**
+      - **1:** Independent per-requirement adequacy rationale over accessible exact evidence versions; residual gaps, validity and exclusions.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **47**
+    - **gap_id:** G-REVIEWER
+    - **title:** Independent mapping and commercial publication review missing
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Named qualified reviewer, independence/role basis and signed scope/version-specific mapping and publication decisions.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **48**
+    - **gap_id:** G-EXECUTION
+    - **title:** Portable executed verification for full implementation assertions missing
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Executed verification artifact for exact candidate, command, environment, result and portable durable locator matching the assertion.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **49**
+    - **gap_id:** G-CI
+    - **title:** Independent CI result not verified
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Verified independent CI run with exact input commit, selection, result and durable artifact locator.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **50**
+    - **gap_id:** G-DEPLOYMENT
+    - **title:** Customer deployment evidence not verified
+    - **original_status:** OPEN
+    - **primary_bucket:** CUSTOMER_SPECIFIC_DEPENDENCY
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Authorized scoped deployment/version/configuration record and environment-specific verification evidence.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **51**
+    - **gap_id:** G-OPERATING
+    - **title:** Operating effectiveness not established
+    - **original_status:** OPEN
+    - **primary_bucket:** CUSTOMER_SPECIFIC_DEPENDENCY
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - **1:** G-DEPLOYMENT
+      - **2:** G-APPLICABILITY
+    - **required_evidence**
+      - **1:** Scoped observation interval, operating evidence, exceptions and independent effectiveness assessment.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **52**
+    - **gap_id:** G-CERTIFICATION
+    - **title:** Verified external certification basis not established
+    - **original_status:** OPEN
+    - **primary_bucket:** FUTURE_EXTERNAL_ARTIFACT_DEPENDENCY
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Externally issued artifact, issuer/authenticity, artifact ID, subject/legal entity, exact scope and edition, validity and current revocation/expiry verification.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **53**
+    - **gap_id:** G-ATTESTATION
+    - **title:** Verified external attestation basis not established
+    - **original_status:** OPEN
+    - **primary_bucket:** FUTURE_EXTERNAL_ARTIFACT_DEPENDENCY
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Externally issued artifact, issuer/authenticity, artifact ID, subject/legal entity, exact scope and edition, validity and current revocation/expiry verification.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **54**
+    - **gap_id:** G-FRESHNESS
+    - **title:** Evidence freshness policies and revalidation missing
+    - **original_status:** OPEN
+    - **primary_bucket:** EXTERNAL_PUBLICATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Approved per-evidence/claim freshness and invalidation rules with effective/recorded cutoffs, reviewers and revalidation events.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Original gap scope/closure evidence controls; no demand that all unrelated gaps close for a bounded repository fact.
+  - **55**
+    - **gap_id:** G-LEGACY-L01
+    - **title:** Unresolved presentation gate: L01
+    - **original_status:** OPEN
+    - **primary_bucket:** LEGACY_PRESENTATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** EXPOSED_SURFACE
+    - **blocks_external_publication:** EXPOSED_SURFACE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** EXPOSED_SURFACE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Exclude from assurance, readiness and claims. Contain naming/percentage exposure and manual flag ambiguity in a separately authorized slice before external assurance presentation. No S0 refactor.
+      - **2:** Separately authorized containment or wording/exclusion review, exact exposure scope and independent acceptance evidence.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** No exposure acceptance or runtime containment has been established by documentary exclusion.
+  - **56**
+    - **gap_id:** G-LEGACY-L02
+    - **title:** Unresolved presentation gate: L02
+    - **original_status:** OPEN
+    - **primary_bucket:** LEGACY_PRESENTATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** EXPOSED_SURFACE
+    - **blocks_external_publication:** EXPOSED_SURFACE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** EXPOSED_SURFACE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Not an external artifact, canonical fact or admissible requirement proof. Isolate exported labels from external claims in later authorized containment work.
+      - **2:** Separately authorized containment or wording/exclusion review, exact exposure scope and independent acceptance evidence.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** No exposure acceptance or runtime containment has been established by documentary exclusion.
+  - **57**
+    - **gap_id:** G-LEGACY-L03
+    - **title:** Unresolved presentation gate: L03
+    - **original_status:** OPEN
+    - **primary_bucket:** LEGACY_PRESENTATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** EXPOSED_SURFACE
+    - **blocks_external_publication:** EXPOSED_SURFACE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** EXPOSED_SURFACE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Preserve as local heuristic analysis. Do not count an empty/limited scan as conformity or evidence completeness. Review wording before exposing as assurance.
+      - **2:** Separately authorized containment or wording/exclusion review, exact exposure scope and independent acceptance evidence.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** No exposure acceptance or runtime containment has been established by documentary exclusion.
+  - **58**
+    - **gap_id:** G-LEGACY-L04
+    - **title:** Unresolved presentation gate: L04
+    - **original_status:** OPEN
+    - **primary_bucket:** LEGACY_PRESENTATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** EXPOSED_SURFACE
+    - **blocks_external_publication:** EXPOSED_SURFACE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** EXPOSED_SURFACE
+    - **dependency_ids**
+      - (empty)
+    - **required_evidence**
+      - **1:** Never ingest these outputs as assurance or deploy this subsystem as an assurance authority. Hosted reachability UNKNOWN, not audited in S0; canonical workspace excludes this root.
+      - **2:** Separately authorized containment or wording/exclusion review, exact exposure scope and independent acceptance evidence.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** No exposure acceptance or runtime containment has been established by documentary exclusion.
+  - **59**
+    - **gap_id:** G-REACHABILITY-L04
+    - **title:** Hosted reachability of graphos-complete unknown
+    - **original_status:** OPEN
+    - **primary_bucket:** LEGACY_PRESENTATION_GATE
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** NO
+    - **blocks_demo:** EXPOSED_SURFACE
+    - **blocks_external_publication:** EXPOSED_SURFACE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** EXPOSED_SURFACE
+    - **dependency_ids**
+      - **1:** G-LEGACY-L04
+    - **required_evidence**
+      - **1:** Separately authorized environment/reachability inventory with scope, cutoff, methods and reviewer; no absence inference from repository exclusion.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** No exposure acceptance or runtime containment has been established by documentary exclusion.
+  - **60**
+    - **gap_id:** G-EMBEDDING-POPULATION
+    - **title:** Hosted embedding population unverified
+    - **original_status:** OPEN
+    - **primary_bucket:** V1_IMPLEMENTATION_DEPENDENCY
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** OPERATIONAL_FEATURE
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - **1:** G-DEPLOYMENT
+    - **required_evidence**
+      - **1:** Separately authorized scoped environment read/inspection, exact model/space/version/population and durable evidence.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Only operational counts/hosted embedding assertions depend on this implementation; not required merely to display UNKNOWN.
+  - **61**
+    - **gap_id:** G-KPI-EXECUTION
+    - **title:** Assurance operational count execution not established
+    - **original_status:** OPEN
+    - **primary_bucket:** V1_IMPLEMENTATION_DEPENDENCY
+    - **blocks_v0_documentary_closure:** NO
+    - **blocks_v1:** OPERATIONAL_FEATURE
+    - **blocks_demo:** NO
+    - **blocks_external_publication:** DEPENDENT_SCOPE
+    - **blocks_certification_attestation_claims:** DEPENDENT_SCOPE
+    - **blocks_tenant_assurance:** DEPENDENT_SCOPE
+    - **dependency_ids**
+      - **1:** G-LEGACY-L01
+    - **required_evidence**
+      - **1:** Separately authorized count-only implementation with exact population/predicate/deduplication/cutoff, UNKNOWN handling and executed evidence.
+    - **reviewer:** Independent, scope-qualified reviewer must record decision, exact input versions and cutoff; no Codex self-approval.
+    - **scope_note:** Only operational counts/hosted embedding assertions depend on this implementation; not required merely to display UNKNOWN.
+- **use_states**
+  - **INTERNAL_ONLY:** Review metadata/drafts with exact source, cutoff, rejection and limitation labels; no affirmative reuse approval.
+  - **CONTROLLED_DEMO_ONLY:** Only a specifically selected, labelled documentary excerpt with independently accepted wording, access and actual exposure exclusions; no current draft is assigned this state.
+  - **EXTERNAL_PUBLICATION_ELIGIBLE:** Exact claim must already be ELIGIBLE within all capability ceilings, with named independent approval, scope, currency and exposure evidence. Current count zero.
+  - **PROHIBITED:** Affirmative unsupported certification, legal compliance, customer results or award status; rejected text may appear internally only as a negative example.
+  - **UNKNOWN:** Permission/basis unresolved; fail closed; never permission by omission.
+- **claim_boundary_counts**
+  - **INTERNAL_ONLY:** 42
+  - **CONTROLLED_DEMO_ONLY:** 0
+  - **EXTERNAL_PUBLICATION_ELIGIBLE:** 0
+  - **PROHIBITED:** 0
+  - **UNKNOWN:** 0
+  - **ELIGIBLE:** 0
+  - **INELIGIBLE:** 42
+- **claim_classes**
+  - **1**
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **count:** 34
+    - **current_eligibility:** INELIGIBLE
+    - **internal_use:** INTERNAL_ONLY
+    - **controlled_demo_use:** PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW
+    - **external_publication:** PROHIBITED
+    - **required_reviewer:** Named independent scope-qualified wording, source/currency and actual exposure reviewer; alignment/readiness additionally require applicability and sufficiency review.
+    - **unresolved_blockers:** Exact wording, currency, provenance and actual legacy exposure acceptance; partial/local proof qualifiers retained.
+  - **2**
+    - **claim_class:** EVIDENCE_BACKED_ALIGNMENT
+    - **count:** 5
+    - **current_eligibility:** INELIGIBLE
+    - **internal_use:** INTERNAL_ONLY
+    - **controlled_demo_use:** PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW
+    - **external_publication:** PROHIBITED
+    - **required_reviewer:** Named independent scope-qualified wording, source/currency and actual exposure reviewer; alignment/readiness additionally require applicability and sufficiency review.
+    - **unresolved_blockers:** Independent rationale, applicable scope, sufficient/current evidence and exposure approval; candidate correspondence alone insufficient.
+  - **3**
+    - **claim_class:** READINESS_STATEMENT
+    - **count:** 1
+    - **current_eligibility:** INELIGIBLE
+    - **internal_use:** INTERNAL_ONLY
+    - **controlled_demo_use:** PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW
+    - **external_publication:** PROHIBITED
+    - **required_reviewer:** Named independent scope-qualified wording, source/currency and actual exposure reviewer; alignment/readiness additionally require applicability and sufficiency review.
+    - **unresolved_blockers:** Scoped READY, reviewed sufficiency and no unresolved scope gaps; present readiness UNKNOWN.
+  - **4**
+    - **claim_class:** EXTERNAL_CERTIFICATION
+    - **count:** 1
+    - **current_eligibility:** INELIGIBLE
+    - **internal_use:** INTERNAL_ONLY
+    - **controlled_demo_use:** PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW
+    - **external_publication:** PROHIBITED
+    - **required_reviewer:** Independent issuer-artifact verifier and scope-qualified exact-wording reviewer; an internal reviewer cannot issue the artifact.
+    - **unresolved_blockers:** Verified current authentic issuer artifact for exact legal subject, edition, scope, dates and revocation/expiry basis is absent.
+  - **5**
+    - **claim_class:** EXTERNAL_ATTESTATION
+    - **count:** 1
+    - **current_eligibility:** INELIGIBLE
+    - **internal_use:** INTERNAL_ONLY
+    - **controlled_demo_use:** PROHIBITED_AS_AFFIRMATIVE_CLAIM_PENDING_REVIEW
+    - **external_publication:** PROHIBITED
+    - **required_reviewer:** Independent issuer-artifact verifier and scope-qualified exact-wording reviewer; an internal reviewer cannot issue the artifact.
+    - **unresolved_blockers:** Verified current authentic issuer artifact for exact legal subject, edition, scope, dates and revocation/expiry basis is absent.
+- **claim_dispositions**
+  - **1**
+    - **claim_id:** CL-FACT-TA-C01
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C01
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C01
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **2**
+    - **claim_id:** CL-FACT-TA-C02
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C02
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C02
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **3**
+    - **claim_id:** CL-FACT-TA-C03
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C03
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C03
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **4**
+    - **claim_id:** CL-FACT-TA-C04
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C04
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C04
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **5**
+    - **claim_id:** CL-FACT-TA-C05
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C05
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C05
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **6**
+    - **claim_id:** CL-FACT-TA-C06
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C06
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C06
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **7**
+    - **claim_id:** CL-FACT-TA-C07
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C07
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C07
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **8**
+    - **claim_id:** CL-FACT-TA-C08
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C08
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C08
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **9**
+    - **claim_id:** CL-FACT-TA-C09
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C09
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C09
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **10**
+    - **claim_id:** CL-FACT-TA-C10
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C10
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C10
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **11**
+    - **claim_id:** CL-FACT-TA-C11
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C11
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-REF-NIST-1.0-GOVERN-1.6
+      - **8:** G-REF-NIST-1.0-MEASURE-2.4
+      - **9:** G-REF-EU-OJ-20240712-ART-11
+      - **10:** G-REF-EU-OJ-20240712-ART-12
+      - **11:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **12:** G-APPLICABILITY
+      - **13:** G-SUFFICIENCY
+      - **14:** G-REVIEWER
+      - **15:** G-EXECUTION
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **12**
+    - **claim_id:** CL-FACT-TA-C12
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C12
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-REF-NIST-1.0-GOVERN-1.6
+      - **8:** G-REF-NIST-1.0-MEASURE-2.4
+      - **9:** G-REF-EU-OJ-20240712-ART-11
+      - **10:** G-REF-EU-OJ-20240712-ART-12
+      - **11:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **12:** G-APPLICABILITY
+      - **13:** G-SUFFICIENCY
+      - **14:** G-REVIEWER
+      - **15:** G-EXECUTION
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **13**
+    - **claim_id:** CL-FACT-TA-C13
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C13
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C13
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **14**
+    - **claim_id:** CL-FACT-TA-C14
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C14
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C14
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **15**
+    - **claim_id:** CL-FACT-TA-C15
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C15
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C15
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **16**
+    - **claim_id:** CL-FACT-TA-C16
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C16
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C16
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **17**
+    - **claim_id:** CL-FACT-TA-C17
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C17
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C17
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **18**
+    - **claim_id:** CL-FACT-TA-C18
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C18
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C18
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **19**
+    - **claim_id:** CL-FACT-TA-C19
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C19
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C19
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **20**
+    - **claim_id:** CL-FACT-TA-C20
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C20
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C20
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **21**
+    - **claim_id:** CL-FACT-TA-C21
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C21
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C21
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **22**
+    - **claim_id:** CL-FACT-TA-C22
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C22
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C22
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **23**
+    - **claim_id:** CL-FACT-TA-C23
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C23
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C23
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **24**
+    - **claim_id:** CL-FACT-TA-C24
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C24
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C24
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **25**
+    - **claim_id:** CL-FACT-TA-C25
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C25
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C25
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **26**
+    - **claim_id:** CL-FACT-TA-C26
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C26
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-REF-NIST-1.0-GOVERN-1.6
+      - **8:** G-REF-NIST-1.0-MEASURE-2.4
+      - **9:** G-REF-EU-OJ-20240712-ART-11
+      - **10:** G-REF-EU-OJ-20240712-ART-12
+      - **11:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **12:** G-APPLICABILITY
+      - **13:** G-SUFFICIENCY
+      - **14:** G-REVIEWER
+      - **15:** G-EXECUTION
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **27**
+    - **claim_id:** CL-FACT-TA-C27
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C27
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-REF-NIST-1.0-GOVERN-1.6
+      - **8:** G-REF-NIST-1.0-MEASURE-2.4
+      - **9:** G-REF-EU-OJ-20240712-ART-11
+      - **10:** G-REF-EU-OJ-20240712-ART-12
+      - **11:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **12:** G-APPLICABILITY
+      - **13:** G-SUFFICIENCY
+      - **14:** G-REVIEWER
+      - **15:** G-EXECUTION
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **28**
+    - **claim_id:** CL-FACT-TA-C28
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C28
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-REF-NIST-1.0-GOVERN-1.6
+      - **8:** G-REF-NIST-1.0-MEASURE-2.4
+      - **9:** G-REF-EU-OJ-20240712-ART-11
+      - **10:** G-REF-EU-OJ-20240712-ART-12
+      - **11:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **12:** G-APPLICABILITY
+      - **13:** G-SUFFICIENCY
+      - **14:** G-REVIEWER
+      - **15:** G-EXECUTION
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **29**
+    - **claim_id:** CL-FACT-TA-C29
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C29
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C29
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **30**
+    - **claim_id:** CL-FACT-TA-C30
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C30
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C30
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **31**
+    - **claim_id:** CL-FACT-TA-C31
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C31
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C31
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-CI
+      - **17:** G-DEPLOYMENT
+      - **18:** G-OPERATING
+      - **19:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **32**
+    - **claim_id:** CL-FACT-TA-C32
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C32
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C32
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **33**
+    - **claim_id:** CL-FACT-TA-C33
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C33
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C33
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **34**
+    - **claim_id:** CL-FACT-TA-C34
+    - **claim_class:** FACTUAL_CAPABILITY
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** DRAFT_NOT_APPROVED
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **capability_ids**
+      - **1:** TA-C34
+    - **gap_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C34
+      - **8:** G-REF-NIST-1.0-GOVERN-1.6
+      - **9:** G-REF-NIST-1.0-MEASURE-2.4
+      - **10:** G-REF-EU-OJ-20240712-ART-11
+      - **11:** G-REF-EU-OJ-20240712-ART-12
+      - **12:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **13:** G-APPLICABILITY
+      - **14:** G-SUFFICIENCY
+      - **15:** G-REVIEWER
+      - **16:** G-EXECUTION
+      - **17:** G-CI
+      - **18:** G-DEPLOYMENT
+      - **19:** G-OPERATING
+      - **20:** G-FRESHNESS
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Known missing independent wording/publication and exposure review. UNKNOWN freshness is not current evidence. Any stronger interpretation is barred.
+  - **35**
+    - **claim_id:** CL-ALIGN-TA-C11
+    - **claim_class:** EVIDENCE_BACKED_ALIGNMENT
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **capability_ids**
+      - **1:** TA-C11
+    - **gap_ids**
+      - **1:** G-REVIEWER
+      - **2:** G-APPLICABILITY
+      - **3:** G-SUFFICIENCY
+      - **4:** G-FRESHNESS
+      - **5:** G-EXECUTION
+      - **6:** G-DEPLOYMENT
+      - **7:** G-OPERATING
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Draft Codex correspondence only. Independent mapping review, scoped applicability, evidence sufficiency/currency and presentation review are missing. Candidate ceiling never grants publication.
+  - **36**
+    - **claim_id:** CL-ALIGN-TA-C12
+    - **claim_class:** EVIDENCE_BACKED_ALIGNMENT
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **capability_ids**
+      - **1:** TA-C12
+    - **gap_ids**
+      - **1:** G-REVIEWER
+      - **2:** G-APPLICABILITY
+      - **3:** G-SUFFICIENCY
+      - **4:** G-FRESHNESS
+      - **5:** G-EXECUTION
+      - **6:** G-DEPLOYMENT
+      - **7:** G-OPERATING
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Draft Codex correspondence only. Independent mapping review, scoped applicability, evidence sufficiency/currency and presentation review are missing. Candidate ceiling never grants publication.
+  - **37**
+    - **claim_id:** CL-ALIGN-TA-C26
+    - **claim_class:** EVIDENCE_BACKED_ALIGNMENT
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **capability_ids**
+      - **1:** TA-C26
+    - **gap_ids**
+      - **1:** G-REVIEWER
+      - **2:** G-APPLICABILITY
+      - **3:** G-SUFFICIENCY
+      - **4:** G-FRESHNESS
+      - **5:** G-EXECUTION
+      - **6:** G-DEPLOYMENT
+      - **7:** G-OPERATING
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Draft Codex correspondence only. Independent mapping review, scoped applicability, evidence sufficiency/currency and presentation review are missing. Candidate ceiling never grants publication.
+  - **38**
+    - **claim_id:** CL-ALIGN-TA-C27
+    - **claim_class:** EVIDENCE_BACKED_ALIGNMENT
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **capability_ids**
+      - **1:** TA-C27
+    - **gap_ids**
+      - **1:** G-REVIEWER
+      - **2:** G-APPLICABILITY
+      - **3:** G-SUFFICIENCY
+      - **4:** G-FRESHNESS
+      - **5:** G-EXECUTION
+      - **6:** G-DEPLOYMENT
+      - **7:** G-OPERATING
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Draft Codex correspondence only. Independent mapping review, scoped applicability, evidence sufficiency/currency and presentation review are missing. Candidate ceiling never grants publication.
+  - **39**
+    - **claim_id:** CL-ALIGN-TA-C28
+    - **claim_class:** EVIDENCE_BACKED_ALIGNMENT
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** Draft review only; no approved assertion
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **capability_ids**
+      - **1:** TA-C28
+    - **gap_ids**
+      - **1:** G-REVIEWER
+      - **2:** G-APPLICABILITY
+      - **3:** G-SUFFICIENCY
+      - **4:** G-FRESHNESS
+      - **5:** G-EXECUTION
+      - **6:** G-DEPLOYMENT
+      - **7:** G-OPERATING
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** Draft Codex correspondence only. Independent mapping review, scoped applicability, evidence sufficiency/currency and presentation review are missing. Candidate ceiling never grants publication.
+  - **40**
+    - **claim_id:** CL-READINESS-01
+    - **claim_class:** READINESS_STATEMENT
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** REJECTED_PROPOSAL
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** PROHIBITED; negative audit example only
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** NO_READINESS_CLAIM
+    - **capability_ids**
+      - **1:** TA-C11
+      - **2:** TA-C12
+      - **3:** TA-C26
+      - **4:** TA-C27
+      - **5:** TA-C28
+    - **gap_ids**
+      - **1:** G-APPLICABILITY
+      - **2:** G-SUFFICIENCY
+      - **3:** G-REVIEWER
+      - **4:** G-FRESHNESS
+      - **5:** G-DEPLOYMENT
+      - **6:** G-OPERATING
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** READY, complete applicable scope, reviewed sufficiency/current evidence and absence of unresolved scope gaps are not established; no V0 readiness claim is approved.
+  - **41**
+    - **claim_id:** CL-CERTIFICATION-01
+    - **claim_class:** EXTERNAL_CERTIFICATION
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** REJECTED_PROPOSAL
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** PROHIBITED; negative audit example only
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** NO_EXTERNAL_CERTIFICATION_CLAIM
+    - **capability_ids**
+      - **1:** TA-C35
+    - **gap_ids**
+      - **1:** G-CERTIFICATION
+      - **2:** G-LEGACY-L02
+      - **3:** G-SOURCE-01
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** No verified current externally issued certification artifact with exact subject/scope/edition is established. Repository heuristic E089 is counterevidence only. State remains NOT_ASSERTED.
+  - **42**
+    - **claim_id:** CL-ATTESTATION-01
+    - **claim_class:** EXTERNAL_ATTESTATION
+    - **eligibility:** INELIGIBLE
+    - **record_disposition:** REJECTED_PROPOSAL
+    - **use_state:** INTERNAL_ONLY
+    - **affirmative_internal_use:** PROHIBITED; negative audit example only
+    - **controlled_demo_affirmation:** PROHIBITED
+    - **external_publication:** PROHIBITED
+    - **claim_ceiling:** NO_EXTERNAL_ATTESTATION_CLAIM
+    - **capability_ids**
+      - **1:** TA-C35
+    - **gap_ids**
+      - **1:** G-ATTESTATION
+      - **2:** G-LEGACY-L02
+    - **required_reviewer:** Named independent scope-qualified reviewer must approve exact wording, input versions, currency and presentation/exclusion boundary. Alignment additionally requires independent mapping, applicable scope and reviewed sufficiency; readiness needs READY/no unresolved scope gaps. No review may override missing prerequisites.
+    - **unresolved_blockers:** No verified current externally issued attestation artifact with exact subject/scope/edition is established. Tests and reviews cannot create an external attestation.
+- **ceiling_review**
+  - **1**
+    - **capability_id:** TA-C01
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **2**
+    - **capability_id:** TA-C02
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **3**
+    - **capability_id:** TA-C03
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **4**
+    - **capability_id:** TA-C04
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **5**
+    - **capability_id:** TA-C05
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **6**
+    - **capability_id:** TA-C06
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **7**
+    - **capability_id:** TA-C07
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **8**
+    - **capability_id:** TA-C08
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **9**
+    - **capability_id:** TA-C09
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **10**
+    - **capability_id:** TA-C10
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **11**
+    - **capability_id:** TA-C11
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **12**
+    - **capability_id:** TA-C12
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **13**
+    - **capability_id:** TA-C13
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **14**
+    - **capability_id:** TA-C14
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **15**
+    - **capability_id:** TA-C15
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **16**
+    - **capability_id:** TA-C16
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **17**
+    - **capability_id:** TA-C17
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **18**
+    - **capability_id:** TA-C18
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **19**
+    - **capability_id:** TA-C19
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **20**
+    - **capability_id:** TA-C20
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **21**
+    - **capability_id:** TA-C21
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **22**
+    - **capability_id:** TA-C22
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **23**
+    - **capability_id:** TA-C23
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **24**
+    - **capability_id:** TA-C24
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **25**
+    - **capability_id:** TA-C25
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **26**
+    - **capability_id:** TA-C26
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **27**
+    - **capability_id:** TA-C27
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **28**
+    - **capability_id:** TA-C28
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **29**
+    - **capability_id:** TA-C29
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **30**
+    - **capability_id:** TA-C30
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **31**
+    - **capability_id:** TA-C31
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **32**
+    - **capability_id:** TA-C32
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **33**
+    - **capability_id:** TA-C33
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **34**
+    - **capability_id:** TA-C34
+    - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+    - **max_defensible_external_class:** FACTUAL_CAPABILITY
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **35**
+    - **capability_id:** TA-C35
+    - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+    - **max_defensible_external_class:** null
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **36**
+    - **capability_id:** TA-C36
+    - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+    - **max_defensible_external_class:** null
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **37**
+    - **capability_id:** TA-C37
+    - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+    - **max_defensible_external_class:** null
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+  - **38**
+    - **capability_id:** TA-C38
+    - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+    - **max_defensible_external_class:** null
+    - **draft_alignment_ceiling:** null
+    - **publication_eligibility:** INELIGIBLE
+    - **use_state:** INTERNAL_ONLY
+    - **semantic_state:** UNCHANGED
+- **wording_guide**
+  - **1**
+    - **category:** SAFE INTERNAL FACTUAL LANGUAGE
+    - **copy:** The bounded V0 documentary pack contains seven version-pinned artifacts. Its 61 gaps remain OPEN and its 42 claim drafts remain INELIGIBLE.
+    - **boundary:** Document delivery and register observation only; no certification or customer conclusion.
+  - **2**
+    - **category:** SAFE INTERNAL FACTUAL LANGUAGE
+    - **copy:** At implementation commit acb95f84036b9bd5759c8afa04460bf1a004595f, the inventory records implementation evidence and exact historical local-test limits. It does not establish present CI, deployment or operating effectiveness.
+    - **boundary:** Use original per-capability proof/limitation; never imply all 38 capabilities were executed.
+  - **3**
+    - **category:** SAFE CONTROLLED DEMO LANGUAGE
+    - **copy:** This document walkthrough shows version-pinned references and unresolved states. A mapping identifies a bounded correspondence; it does not establish requirement satisfaction, legal compliance or certification.
+    - **boundary:** Template only after separate excerpt/wording/access/exposure review. No draft claim or live product journey is cleared here.
+  - **4**
+    - **category:** SAFE CONTROLLED DEMO LANGUAGE
+    - **copy:** These are count definitions. No customer KPI result or operational assurance evaluation is shown.
+    - **boundary:** Documentary excerpt only; no live tenant data or legacy percentages.
+  - **5**
+    - **category:** PROHIBITED EXTERNAL LANGUAGE
+    - **copy:** GovIA is ISO 42001 compliant; GovIA is EU AI Act compliant; GovIA is certified; GovIA guarantees compliance; 100% governance coverage; award-ready; award-winning; customer is compliant; controls are effective.
+    - **boundary:** Negative examples only. No current V0 basis permits these statements. Broad legal/absolute claims have no V0 approval route.
+  - **6**
+    - **category:** REQUIRES INDEPENDENT REVIEW
+    - **copy:** Any exact factual capability or alignment wording requires review of its original assertion, version, evidence limits, current scope/currency and actual presentation exposure.
+    - **boundary:** Human review records publication metadata; it cannot repair missing evidence or create compliance truth.
+  - **7**
+    - **category:** REQUIRES EXTERNAL ARTIFACT
+    - **copy:** Certification, attestation, nomination, finalist or winner language requires its exact independently issued and authenticated artifact, subject, scope, edition and validity basis.
+    - **boundary:** No such artifact is supplied; no future certification basis alone grants a broad legal compliance guarantee.
+- **legacy_review_scope:** L01-L05 retain S0/S1 classifications. No tracked M18 pre-draft document was located in this snapshot; additional requested findings are bounded read-only locator observations below, not reconstructed M18 decisions or an audit of hosted reachability. These metadata IDs add no S2 gap and authorize no containment.
+- **legacy_gates**
+  - **1**
+    - **surface_id:** L01
+    - **surface:** CompliancePanel and agent/system API flag scores
+    - **classification:** NEEDS_CONTAINMENT
+    - **evidence_ids**
+      - **1:** E095
+      - **2:** E093
+      - **3:** E094
+      - **4:** E096
+      - **5:** E097
+      - **6:** E098
+      - **7:** E099
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Separately authorized legacy presentation containment and actual journey exposure acceptance; no implementation here.
+    - **safe_scope:** No SAFE finding. Exclusion is not containment; hosted reachability UNKNOWN.
+  - **2**
+    - **surface_id:** L02
+    - **surface:** Scanner certifySystem / UnifiedScanner
+    - **classification:** NEEDS_CONTAINMENT
+    - **evidence_ids**
+      - **1:** E089
+      - **2:** E100
+      - **3:** E101
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Separately authorized legacy presentation containment and actual journey exposure acceptance; no implementation here.
+    - **safe_scope:** No SAFE finding. Exclusion is not containment; hosted reachability UNKNOWN.
+  - **3**
+    - **surface_id:** L03
+    - **surface:** Extension compliance scanners / reports
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **evidence_ids**
+      - **1:** E091
+      - **2:** E102
+      - **3:** E103
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Separately authorized legacy presentation containment and actual journey exposure acceptance; no implementation here.
+    - **safe_scope:** No SAFE finding. Exclusion is not containment; hosted reachability UNKNOWN.
+  - **4**
+    - **surface_id:** L04
+    - **surface:** graphos-complete remnants
+    - **classification:** NEEDS_CONTAINMENT
+    - **evidence_ids**
+      - **1:** E104
+      - **2:** E105
+      - **3:** E106
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Separately authorized legacy presentation containment and actual journey exposure acceptance; no implementation here.
+    - **safe_scope:** No SAFE finding. Exclusion is not containment; hosted reachability UNKNOWN.
+  - **5**
+    - **surface_id:** L05
+    - **surface:** Dashboard regulatory report export guard
+    - **classification:** SAFE
+    - **evidence_ids**
+      - **1:** E107
+      - **2:** E108
+      - **3:** E109
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** NO_FOR_INSPECTED_GUARD_ONLY
+    - **blocks_external_presentation:** NO_FOR_INSPECTED_GUARD_ONLY
+    - **required_containment_slice:** None for inspected export guard; full dashboard/deployment still unreviewed.
+    - **safe_scope:** Inspected regulatory export rejection guard only.
+  - **6**
+    - **surface_id:** LX01
+    - **surface:** legacy agents / ai_systems business surfaces
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **source**
+      - **path:** apps/dashboard/repositories/agents.ts
+      - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+      - **last_change_commit:** df6d1ea0b9cc63798c2c9e22cc4122317fa8b384
+      - **git_blob:** add5dde5fa42e650b0199312b6369e9220a3e90a
+      - **sha256_lf_utf8:** 2ea90e199d8f5b2d3da06bb77d88655707d00ee6538290ece12bb493f0d101db
+      - **line:** 13
+      - **anchor:** .from("agents")
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Separate business inventory from governed canonical objects and assurance populations.
+    - **safe_scope:** No SAFE finding; narrow repository observation only, hosted reachability/exposure not audited.
+    - **related_sources**
+      - **1**
+        - **path:** apps/dashboard/repositories/systems.ts
+        - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+        - **last_change_commit:** df6d1ea0b9cc63798c2c9e22cc4122317fa8b384
+        - **git_blob:** 8a6eba1f8ee1466e7d4f7cd0ac6106389c75a7bf
+        - **sha256_lf_utf8:** 56e635c908dc622f58b1461dce7bd04d312752f7db69cda587f2dcd9daa95d08
+        - **line:** 13
+        - **anchor:** .from("ai_systems")
+        - **note:** Legacy business systems, not canonical governed objects.
+  - **7**
+    - **surface_id:** LX02
+    - **surface:** legacy home percentage
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **source**
+      - **path:** apps/dashboard/app/(dashboard)/page.tsx
+      - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+      - **last_change_commit:** cea72cc35d49bfccf5b830b55b75440496a59f1e
+      - **git_blob:** bda72381f6b3767fcfff58656aaa55fb11ac8112
+      - **sha256_lf_utf8:** 6eaf1d756b390c4fdff7684c3eab654de455a9d5ed233aae5976d70eaaffaefd
+      - **line:** 112
+      - **anchor:** subtitle={data.complianceRate === null ? "No agents to assess" : "Indicative legacy control coverage"}
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Exclude legacy percentage panels from the assurance demonstration journey.
+    - **safe_scope:** No SAFE finding; narrow repository observation only, hosted reachability/exposure not audited.
+  - **8**
+    - **surface_id:** LX03
+    - **surface:** legacy graph/search/Talk paths
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **source**
+      - **path:** apps/dashboard/services/talk.ts
+      - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+      - **last_change_commit:** 5eb9b2aea9b01ff28450dd7c69cb06f0163a2357
+      - **git_blob:** 97b8f34538dc731133f94d5a8bc4ec6f01abf381
+      - **sha256_lf_utf8:** 8abe3d6afba8aeceaaac6aa497a40a59e085380007b5ad1a508cd2a0d5a30ba9
+      - **line:** 102
+      - **anchor:** confidence_rationale: `LLM-generated answer based on ${evidence.length} governance records from agents, systems, incidents, and compliance gaps.`,
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Review each selected route and source; a governed Graph path does not clear legacy graph/search/Talk consumers.
+    - **safe_scope:** No SAFE finding; narrow repository observation only, hosted reachability/exposure not audited.
+    - **related_sources**
+      - **1**
+        - **path:** apps/dashboard/repositories/search.ts
+        - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+        - **last_change_commit:** cea72cc35d49bfccf5b830b55b75440496a59f1e
+        - **git_blob:** 91dcf42c6ca0853a97b4b22782ea5a91d6c1aa0e
+        - **sha256_lf_utf8:** 643770e81aba6bbfaeb281e2bf71af4544c4ae092dc6d65677ccd94392170b49
+        - **line:** 25
+        - **anchor:** .from("agents")
+        - **note:** Search reads legacy agents, systems and incidents.
+      - **2**
+        - **path:** apps/dashboard/repositories/talk.ts
+        - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+        - **last_change_commit:** cea72cc35d49bfccf5b830b55b75440496a59f1e
+        - **git_blob:** ea5723b3ba47b850c4f4cafc01a3537ac05674b2
+        - **sha256_lf_utf8:** 6bf05128603badc56de60fba1d0b01f19e6a9fdb9ef637d974fa81c10d62e6d9
+        - **line:** 152
+        - **anchor:** const graph = await getUnifiedGraph(orgId);
+        - **note:** Talk still consumes the legacy graph path.
+      - **3**
+        - **path:** apps/dashboard/services/knowledge-graph.ts
+        - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+        - **last_change_commit:** cea72cc35d49bfccf5b830b55b75440496a59f1e
+        - **git_blob:** bdac116989b3158e65125641a41459f5a8c1266d
+        - **sha256_lf_utf8:** 8c3f269b0c1e5e897c75fb41e690bd5263247aca74328feec50366519d233acf
+        - **line:** 266
+        - **anchor:** export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
+        - **note:** Legacy graph joins preserve a separate presentation boundary.
+      - **4**
+        - **path:** apps/dashboard/app/(dashboard)/graph/page.tsx
+        - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+        - **last_change_commit:** df6d1ea0b9cc63798c2c9e22cc4122317fa8b384
+        - **git_blob:** 95c43a1a98fa628a6c12642466429b28d74b1af9
+        - **sha256_lf_utf8:** 7b024cde3dfb1093b060accbbe9d49f08ea4964425b35ab7ea47adfd04179286
+        - **line:** 5
+        - **anchor:** const graph = await getGovernedGraph();
+        - **note:** The primary Graph page uses governed projection; this is not clearance of legacy graph/search/Talk paths.
+  - **9**
+    - **surface_id:** LX04
+    - **surface:** heuristic cost estimates
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **source**
+      - **path:** apps/extension/src/intelligence/orchestrator.ts
+      - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+      - **last_change_commit:** a99a01ba20319f013a3f8dc6890d81ff77437a0d
+      - **git_blob:** abbd52375c391d46b75dbbf6f74ac3075989de31
+      - **sha256_lf_utf8:** b42c08146014952effdf741616b26a1d92a64e4874d182e4a76c90e249baf3cc
+      - **line:** 287
+      - **anchor:** const actualCost = scanRouting.estimatedCost * batches.length;
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Label/exclude estimates; never represent estimated cost as runtime-observed usage or customer results.
+    - **safe_scope:** No SAFE finding; narrow repository observation only, hosted reachability/exposure not audited.
+  - **10**
+    - **surface_id:** LX05
+    - **surface:** extension budget defaults
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **source**
+      - **path:** apps/extension/src/dashboard/cost-analytics.ts
+      - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+      - **last_change_commit:** a99a01ba20319f013a3f8dc6890d81ff77437a0d
+      - **git_blob:** 5252732fc2159b778c7a196a6b70a0b767b84b37
+      - **sha256_lf_utf8:** 34db25f0df18436baaf60f7dc0c3d8f4ecb94b80098a5c0a9c10fe65aaccbfb8
+      - **line:** 47
+      - **anchor:** private budgetLimit: number = 1000; // $1000 default
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Exclude default budget/usage displays from measured tenant assurance; review persisted defaults separately.
+    - **safe_scope:** No SAFE finding; narrow repository observation only, hosted reachability/exposure not audited.
+  - **11**
+    - **surface_id:** LX06
+    - **surface:** legacy ict_incidents
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **source**
+      - **path:** apps/dashboard/repositories/dashboard.ts
+      - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+      - **last_change_commit:** cea72cc35d49bfccf5b830b55b75440496a59f1e
+      - **git_blob:** 77595f7c3b292bb1e10ce69383f221076795966a
+      - **sha256_lf_utf8:** bfe253081d1a66d1daa6e52cbfe0f8a97528ee369ae99b2610035467a8fdc35d
+      - **line:** 203
+      - **anchor:** .from("ict_incidents")
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** Exclude legacy incident counts from canonical assurance/customer effectiveness populations.
+    - **safe_scope:** No SAFE finding; narrow repository observation only, hosted reachability/exposure not audited.
+  - **12**
+    - **surface_id:** LX07
+    - **surface:** legacy oversight default
+    - **classification:** LEGACY_NON_AUTHORITATIVE
+    - **source**
+      - **path:** packages/scanner/src/core/classifier.ts
+      - **selection_commit:** 38df55d8b1b1009adbb76faed63f3b7c622f914e
+      - **last_change_commit:** a99a01ba20319f013a3f8dc6890d81ff77437a0d
+      - **git_blob:** 2de767f9c57f84b5748c7e7874a8c64f597b9656
+      - **sha256_lf_utf8:** b306cbd89e782f1127ee9d74b04a199609378caf1363405a7f57e16a53693987
+      - **line:** 71
+      - **anchor:** let oversightLevel: AgentClassification['oversightLevel'] = 'l1_automated';
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** EXPOSED_SURFACE
+    - **blocks_external_presentation:** EXPOSED_SURFACE
+    - **required_containment_slice:** A classifier default is not a reviewed oversight/control decision; trace actual consumer exposure before acceptance.
+    - **safe_scope:** No SAFE finding; narrow repository observation only, hosted reachability/exposure not audited.
+- **award_boundary**
+  - **discovery_records:** 12
+  - **admitted_programs:** 6
+  - **events:** 25
+  - **eligibility_UNKNOWN:** 6
+  - **readiness**
+    - **ELIGIBILITY_UNKNOWN:** 4
+    - **SOURCE_PENDING:** 2
+  - **INTERNALLY_USABLE:** true
+  - **DEMO_USABLE:** false
+  - **EXTERNALLY_PUBLISHABLE:** false
+  - **use_state:** INTERNAL_ONLY
+  - **meaning:** Internal research/reference planning only. No positive readiness or applicant eligibility, nomination/finalist/winner implication. No approved application wording or submission. Document-only excerpt requires separate selection and exposure approval.
+  - **records**
+    - **1**
+      - **edition_id:** WITSA-AI-2026
+      - **eligibility:** UNKNOWN
+      - **readiness:** ELIGIBILITY_UNKNOWN
+      - **submission:** NOT_SUBMITTED
+      - **external_award_state:** NOT_ASSERTED
+      - **source_issues**
+        - (empty)
+    - **2**
+      - **edition_id:** APDSI-TD-2026-6
+      - **eligibility:** UNKNOWN
+      - **readiness:** ELIGIBILITY_UNKNOWN
+      - **submission:** NOT_SUBMITTED
+      - **external_award_state:** NOT_ASSERTED
+      - **source_issues**
+        - **1:** Arts.11-13 give January/February 2026 stages before the September-December 2026 application period; do not infer 2027 corrections. Application dates agree with announcement.
+    - **3**
+      - **edition_id:** EAIF-AI-2026
+      - **eligibility:** UNKNOWN
+      - **readiness:** SOURCE_PENDING
+      - **submission:** NOT_SUBMITTED
+      - **external_award_state:** NOT_ASSERTED
+      - **source_issues**
+        - **1:** Page Timeline: 5-31 October 2026; terms Section 1(4): duration 1 July-15 October 2026. Section 3(5) refers to website deadlines; operative timeline still requires independent resolution, not assumed extension.
+        - **2:** Page and terms differ in geographic wording; narrower page cannot be waived by inference.
+    - **4**
+      - **edition_id:** DMI-EUROPE-2026
+      - **eligibility:** UNKNOWN
+      - **readiness:** ELIGIBILITY_UNKNOWN
+      - **submission:** NOT_SUBMITTED
+      - **external_award_state:** NOT_ASSERTED
+      - **source_issues**
+        - **1:** Nomination dates not published in retrieved entry page. CLOSED is inferred from organizer reporting voting completed, not a verified exact entry deadline. 2027 reminder is not a verified 2027 edition/window.
+    - **5**
+      - **edition_id:** CYBER-2027
+      - **eligibility:** UNKNOWN
+      - **readiness:** SOURCE_PENDING
+      - **submission:** NOT_SUBMITTED
+      - **external_award_state:** NOT_ASSERTED
+      - **source_issues**
+        - **1:** 2027 timeline explicitly published alongside 2026 content. No 2026 category or undated methodology is imported as 2027 criteria. General methodology SRC-CM is discovery context only.
+    - **6**
+      - **edition_id:** PNI-9-2025-26
+      - **eligibility:** UNKNOWN
+      - **readiness:** ELIGIBILITY_UNKNOWN
+      - **submission:** NOT_SUBMITTED
+      - **external_award_state:** NOT_ASSERTED
+      - **source_issues**
+        - **1:** Section 8 retains 21 November 2025 23:59 Brasília; Section 13 lists 5 December 2025 without time/zone. Preserve both historical assertions; exact effective cutoff UNKNOWN.
+        - **2:** Amendment removes voting and revises stages. Forthcoming edition on home page has no verified year/identity.
+  - **calendar_boundary:** All 25 events retain original precision/timezone UNKNOWN and source assertions. APDSI chronology, EAIF deadline/geography and PNI cutoff conflicts remain; DMI exact nomination deadline UNKNOWN; CYBER 2027 criteria/source limits remain. No invented end-of-day, annual recurrence or deadline repair.
+- **kpi_boundary**
+  - **definitions:** 11
+  - **product:** 5
+  - **tenant:** 6
+  - **DEFINITION_ONLY:** 7
+  - **PRODUCT_DOCUMENTARY_ONLY:** 4
+  - **operationally_executable:** 0
+  - **executed_results:** 0
+  - **types**
+    - **1:** COUNT
+    - **2:** PARTITIONED_COUNT
+  - **labels_review:** All titles/units and count predicates inspected: no compliance/coverage percentage, customer result or effectiveness measure. No result examples supplied. Requirements-with-evidence and governed-supporting-decisions labels are usable only with availability-not-satisfaction and count-not-quality qualifiers; isolated labels must fail closed before presentation.
+  - **execution:** Zero operational execution or result instances; checking documentary registry cardinality is not execution of a KPI.
+  - **unknown:** Missing/denied/partial/un-enumerable population yields UNKNOWN/null, never zero/false/NOT_APPLICABLE. Known categorical UNKNOWN rows may be counted only in a complete declared population.
+  - **scope:** PRODUCT metadata never supplies tenant facts. All six TENANT definitions and product freshness are DEFINITION_ONLY. SCOPE_V1 immutable membership/selection and same-cutoff authorized projections are prerequisites.
+  - **freshness:** No approved policy: freshness_policy_ref remains null; UNKNOWN currency is not STALE.
+- **closure_matrix**
+  - **1**
+    - **dimension:** ARCHITECTURE CONSISTENCY
+    - **state:** PASS
+    - **basis:** ADR neutral read/projection, frozen kinds/edges/facts and existing authority preserved.
+  - **2**
+    - **dimension:** ID / LINEAGE INTEGRITY
+    - **state:** PASS
+    - **basis:** All exact S0-S4 identities, input versions, parent chain and unchanged semantics resolve.
+  - **3**
+    - **dimension:** SOURCE BOUNDARY
+    - **state:** PASS
+    - **basis:** Seven identities; five pending populations; bounded NIST/original EU observations and access limits remain explicit.
+  - **4**
+    - **dimension:** EVIDENCE BOUNDARY
+    - **state:** PASS
+    - **basis:** 109 immutable references retain original authority; local/CI/deployment/effectiveness stay separate.
+  - **5**
+    - **dimension:** GAP TRACEABILITY
+    - **state:** PASS
+    - **basis:** 61 OPEN gaps route to impact buckets without closure or new governed truth.
+  - **6**
+    - **dimension:** CLAIM CEILINGS
+    - **state:** PASS
+    - **basis:** 42 INELIGIBLE drafts and all 38 ceilings unchanged; zero eligible or demo-approved claims.
+  - **7**
+    - **dimension:** AWARD BOUNDARY
+    - **state:** PASS
+    - **basis:** 12 discovery/6 admitted; applicant UNKNOWN; no readiness or award status promotion.
+  - **8**
+    - **dimension:** KPI BOUNDARY
+    - **state:** PASS
+    - **basis:** 11 count definitions; PRODUCT 5/TENANT 6; zero operational execution.
+  - **9**
+    - **dimension:** LEGACY EXCLUSION
+    - **state:** PASS
+    - **basis:** Unresolved surfaces excluded as affirmative evidence; no containment/safety promotion.
+  - **10**
+    - **dimension:** PUBLICATION SAFETY
+    - **state:** HOLD
+    - **basis:** No independent publication/exposure/currency approval; external publication and live demo remain barred. Fail-closed documentation is complete.
+- **v1_boundary:** Future work only. Projection-only means the content can be derived from existing pinned metadata without changing canonical truth; it does not assert an existing Hub/UI/API. Serving tenant content requires separately authorized implementation and verification. No storage, cache, route or UI is selected here.
+- **v1_prerequisites**
+  - **1**
+    - **capability:** Capability -> evidence -> framework navigation
+    - **projection_only:** Static product navigation over the exact V0 metadata is derivable now, retaining proof/source limitations.
+    - **additive_work:** Hub UI/API routing, access/licensing and version-selection contracts require implementation; tenant links require org-bound read adapters.
+  - **2**
+    - **capability:** Tenant-scoped assurance projections
+    - **projection_only:** No new governance truth or fact families; project existing upstream governed references only.
+    - **additive_work:** Bind verified principal, SCOPE_V1 manifest, every source/state/decision/evidence/version and authorization/policy pin, existing authorized reads, atomic cutoff and deny/partial behavior. Concrete additive read projection/database/API/UI work is not yet designed.
+  - **3**
+    - **capability:** Requirement -> evidence -> governed object/decision drill-down
+    - **projection_only:** Product locators are navigable without claiming tenant sufficiency.
+    - **additive_work:** Same-tenant typed immutable target resolution and permission checks at every hop; no direct-table/service-role bypass. Establish missing normalized links/read projections before any tenant drill-down.
+  - **4**
+    - **capability:** Framework/readiness coverage and gap views
+    - **projection_only:** Show categorical mappings, evidence availability, explicit pending/UNKNOWN and the 61 documentary gaps; never a score or percentage.
+    - **additive_work:** Complete scoped requirement populations/licensed access where selected, reviewed applicability/sufficiency/freshness, source cutoff and tenant gap read models. Missing full-framework sources remain UNKNOWN.
+  - **5**
+    - **capability:** Certification/attestation and award views
+    - **projection_only:** Display NOT_ASSERTED, UNKNOWN, source conflicts and current absence of approved claims.
+    - **additive_work:** Versioned authenticated issuer references, exact subjects/scopes, expiry/revocation and reviewer workflow before positive claims. Applicant dossier and organizer conflict review before award readiness; no application implied.
+  - **6**
+    - **capability:** Commercial proof-point views
+    - **projection_only:** Project 42 INELIGIBLE drafts and all 38 ceilings internally.
+    - **additive_work:** Independent exact-wording, currency, eligibility and actual exposure acceptance; permission/validity/invalidation controls and UI/API fail-closed rendering before external use.
+  - **7**
+    - **capability:** European Assurance Profile
+    - **projection_only:** Expose source-pinned EU base-text references and separate mapping, evidence, gap, reviewed NOT_APPLICABLE, UNKNOWN, internal readiness and external certification axes.
+    - **additive_work:** Qualified operative-law/version and applicability review, lawful source populations and tenant evidence drill-down. Certification-ready is an internal scoped readiness presentation only after sufficiency; certified requires verified issuer artifact. Neither is EU legal compliance.
+  - **8**
+    - **capability:** KPI observability and M18 Pillar 8 consumption
+    - **projection_only:** Reuse definition/version, authority/source class, exact/known/UNKNOWN population, as-of, limitations and authorized drill-down metadata; M18 consumes the same projections.
+    - **additive_work:** Operational evaluators, freshness policy, org-scope manifest, complete atomic reads and authorization are new work. No alternative persona truth, aggregation engine, numeric assurance or M18 implementation is authorized.
+- **next_slice:** Proposed M17.5-V1-S0: Trust & Assurance Hub read-contract and exposure-boundary design, documentation only, after separate Carlos authorization. Bind concrete existing tenant read resolvers and missing additive projections, SCOPE_V1/cutoff/error/permission contracts, Hub view acceptance and European Profile states; enumerate separate implementation and legacy-containment slices. No runtime implementation, tenant execution, publication, hosted mutation, M18 or Normative Intelligence in that proposal.
+- **delta**
+  - **runtime:** 0
+  - **database:** 0
+  - **migrations:** 0
+  - **API:** 0
+  - **UI:** 0
+  - **hosted_mutations:** 0
+  - **deployments:** 0
+  - **PRs:** 0
+  - **tenant_KPI_executions:** 0
+  - **award_submissions:** 0
+  - **commercial_publications:** 0
+- **blockers:** No material documentary lineage/architecture contradiction found. Publication/demo/tenant/certification HOLDs are explicit delivered boundaries, not hidden V0 documentary blockers.

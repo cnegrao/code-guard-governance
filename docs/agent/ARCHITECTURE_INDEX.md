@@ -1,5 +1,8 @@
 # Architecture index
 
+- [M17.5-S5 V0 closure review](../trust-assurance/v0-closure-review.md) / [JSON](../trust-assurance/v0-closure-review.json) — bounded documentary closure PASS; live demo, external publication, tenant assurance and certification HOLD. All 61 gaps OPEN and 42 claims INELIGIBLE; overall M17.5 remains open.
+- [M17.5-S5 handoff](../codex/evidence/2026-10-20-m17.5-s5-v0-closure.md) — exact S0–S4 lineage, source and publication boundaries, twelve legacy exposure gates and proposed V1-S0 design; V1/M18 not started.
+
 Pointers only. Section and acceptance identifiers below refer to the canonical M17 ADR.
 
 - [M17.5-S4 Product / Customer KPI Framework](../trust-assurance/kpi-framework-v0.md) / [JSON](../trust-assurance/kpi-framework-v0.json) — 11 versioned count definitions, five PRODUCT and six TENANT; seven DEFINITION_ONLY, four offline documentary predicates, zero operational evaluators or results.
