@@ -1,0 +1,679 @@
+# V0 Award Calendar
+
+Version 1 · frozen cutoff 2026-10-20 (America/Sao_Paulo). No live availability or submission authorization.
+
+Dates retain organizer precision. UNKNOWN timezone never means local time or an invented end-of-day. Conflicting effective dates stay UNKNOWN while original published assertions remain visible. Programme events are not GovIA status; an organizer announcement never makes GovIA a nominee, finalist or winner.
+
+| Event | Type | Opens / event begins | Closes / event ends | Precision | Timezone | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| WITSA-AI-2026-GLOBAL | GLOBAL_SUBMISSION_DEADLINE | UNKNOWN / not supplied | 2026-07-10 | DAY | UNKNOWN | CLOSED |
+| WITSA-AI-2026-OPEN | NOMINATIONS_OPEN | 2026-04-22 | 2026-04-22 | DAY | UNKNOWN | CLOSED |
+| WITSA-AI-2026-LOCAL | NATIONAL_NOMINATION_PERIOD | 2026-05 | 2026-06 | MONTH | UNKNOWN | CLOSED |
+| WITSA-AI-2026-LOCAL-DEADLINE | NATIONAL_NOMINATION_DEADLINE | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | UNKNOWN |
+| WITSA-AI-2026-JUDGING | JUDGING_PERIOD | 2026-07-10 | 2026-07-25 | DAY | UNKNOWN | CLOSED |
+| WITSA-AI-2026-NOTICE | CONFIDENTIAL_WINNER_NOTIFICATION | 2026-07-25 | 2026-07-25 | DAY | UNKNOWN | CLOSED |
+| WITSA-AI-2026-CEREMONY | CEREMONY | 2026-09-01 | 2026-09-01 | DAY | UNKNOWN | CLOSED |
+| APDSI-TD-2026-6-APPLICATION | APPLICATION_WINDOW | 2026-09-14 | 2026-12-18 | DAY | UNKNOWN | OPEN |
+| APDSI-TD-2026-6-JUDGING | JUDGING_PERIOD | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | UNKNOWN |
+| APDSI-TD-2026-6-FINALISTS | FINALIST_ANNOUNCEMENT | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | UNKNOWN |
+| APDSI-TD-2026-6-CEREMONY | CEREMONY | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | UNKNOWN |
+| EAIF-AI-2026-APPLICATION | APPLICATION_WINDOW | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | UNKNOWN |
+| EAIF-AI-2026-ANNOUNCEMENT | WINNER_ANNOUNCEMENT | 2026-12 | 2026-12 | MONTH | UNKNOWN | FUTURE |
+| DMI-EUROPE-2026-NOMINATION | NOMINATION_DEADLINE | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | CLOSED |
+| DMI-EUROPE-2026-ANNOUNCEMENT | WINNER_ANNOUNCEMENT | 2026-12-02 | 2026-12-02 | DAY | UNKNOWN | FUTURE |
+| DMI-EUROPE-2026-CEREMONY | CEREMONY | 2026-12-02 | 2026-12-02 | DAY | UNKNOWN | FUTURE |
+| CYBER-2027-APPLICATION | APPLICATION_WINDOW | 2026-12-01 | 2027-02-28 | DAY | UNKNOWN | FUTURE |
+| CYBER-2027-SHORTLIST | FINALIST_ANNOUNCEMENT | 2027-03-15 | 2027-03-15 | DAY | UNKNOWN | FUTURE |
+| CYBER-2027-JUDGING | JUDGING_PERIOD | 2027-03-15 | 2027-04-15 | DAY | UNKNOWN | FUTURE |
+| CYBER-2027-ANNOUNCEMENT | WINNER_ANNOUNCEMENT | 2027-04-28 | 2027-04-28 | DAY | UNKNOWN | FUTURE |
+| PNI-9-2025-26-APPLICATION | APPLICATION_DEADLINE | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | CLOSED |
+| PNI-9-2025-26-JUDGING | JUDGING_PERIOD | 2025-12 | 2025-12 | MONTH | UNKNOWN | CLOSED |
+| PNI-9-2025-26-VALIDATION | EVIDENCE_VALIDATION_PERIOD | 2026-01 | 2026-02 | MONTH | UNKNOWN | CLOSED |
+| PNI-9-2025-26-FINALISTS | FINALIST_ANNOUNCEMENT | UNKNOWN / not supplied | UNKNOWN / not supplied | UNKNOWN | UNKNOWN | CLOSED |
+| PNI-9-2025-26-CEREMONY | CEREMONY | 2026-03-26 | 2026-03-26 | DAY | UNKNOWN | CLOSED |
+
+## Source and status details
+
+### WITSA-AI-2026-GLOBAL
+
+
+- **event_id**: WITSA-AI-2026-GLOBAL
+- **award_program_id**: AW-WITSA
+- **edition_id**: WITSA-AI-2026
+- **event_type**: GLOBAL_SUBMISSION_DEADLINE
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: 2026-07-10
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-W
+  - **locator**: Key Dates / global submission deadline
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### WITSA-AI-2026-OPEN
+
+
+- **event_id**: WITSA-AI-2026-OPEN
+- **award_program_id**: AW-WITSA
+- **edition_id**: WITSA-AI-2026
+- **event_type**: NOMINATIONS_OPEN
+- **opens_at**: 2026-04-22
+- **closes_at**: 2026-04-22
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-W
+  - **locator**: Key Dates / awards open
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### WITSA-AI-2026-LOCAL
+
+
+- **event_id**: WITSA-AI-2026-LOCAL
+- **award_program_id**: AW-WITSA
+- **edition_id**: WITSA-AI-2026
+- **event_type**: NATIONAL_NOMINATION_PERIOD
+- **opens_at**: 2026-05
+- **closes_at**: 2026-06
+- **timezone**: UNKNOWN
+- **date_precision**: MONTH
+- **source_locator**:
+  - **source_id**: SRC-W
+  - **locator**: Key Dates / national nomination period
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### WITSA-AI-2026-LOCAL-DEADLINE
+
+
+- **event_id**: WITSA-AI-2026-LOCAL-DEADLINE
+- **award_program_id**: AW-WITSA
+- **edition_id**: WITSA-AI-2026
+- **event_type**: NATIONAL_NOMINATION_DEADLINE
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-W
+  - **locator**: How to Apply / local dates may precede global deadline
+- **retrieved_at**: 2026-10-20
+- **status**: UNKNOWN
+- **source_reliability**: MISSING
+- **status_basis**: Country-specific deadline not published here; global cutoff cannot substitute.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### WITSA-AI-2026-JUDGING
+
+
+- **event_id**: WITSA-AI-2026-JUDGING
+- **award_program_id**: AW-WITSA
+- **edition_id**: WITSA-AI-2026
+- **event_type**: JUDGING_PERIOD
+- **opens_at**: 2026-07-10
+- **closes_at**: 2026-07-25
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-W
+  - **locator**: Key Dates / global judging
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### WITSA-AI-2026-NOTICE
+
+
+- **event_id**: WITSA-AI-2026-NOTICE
+- **award_program_id**: AW-WITSA
+- **edition_id**: WITSA-AI-2026
+- **event_type**: CONFIDENTIAL_WINNER_NOTIFICATION
+- **opens_at**: 2026-07-25
+- **closes_at**: 2026-07-25
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-W
+  - **locator**: Key Dates / winners notified
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### WITSA-AI-2026-CEREMONY
+
+
+- **event_id**: WITSA-AI-2026-CEREMONY
+- **award_program_id**: AW-WITSA
+- **edition_id**: WITSA-AI-2026
+- **event_type**: CEREMONY
+- **opens_at**: 2026-09-01
+- **closes_at**: 2026-09-01
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-W
+  - **locator**: Key Dates / ceremony
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### APDSI-TD-2026-6-APPLICATION
+
+
+- **event_id**: APDSI-TD-2026-6-APPLICATION
+- **award_program_id**: AW-APDSI
+- **edition_id**: APDSI-TD-2026-6
+- **event_type**: APPLICATION_WINDOW
+- **opens_at**: 2026-09-14
+- **closes_at**: 2026-12-18
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-AR
+  - **locator**: Art.10, PDF p.7
+- **retrieved_at**: 2026-10-20
+- **status**: OPEN
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### APDSI-TD-2026-6-JUDGING
+
+
+- **event_id**: APDSI-TD-2026-6-JUDGING
+- **award_program_id**: AW-APDSI
+- **edition_id**: APDSI-TD-2026-6
+- **event_type**: JUDGING_PERIOD
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-AR
+  - **locator**: Art.11, PDF p.7
+- **retrieved_at**: 2026-10-20
+- **status**: UNKNOWN
+- **source_reliability**: CONFLICTING
+- **status_basis**: Published stage predates application opening; no correction to 2027 inferred.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**:
+  - **1**:
+    - **reference**:
+      - **source_id**: SRC-AR
+      - **locator**: Art.11, PDF p.7
+    - **published_opens_at**: UNKNOWN / not supplied
+    - **published_closes_at**: 2026-01-20
+    - **timezone**: UNKNOWN
+    - **date_precision**: DAY
+    - **role**: CONFLICTING_PUBLISHED_STAGE
+
+### APDSI-TD-2026-6-FINALISTS
+
+
+- **event_id**: APDSI-TD-2026-6-FINALISTS
+- **award_program_id**: AW-APDSI
+- **edition_id**: APDSI-TD-2026-6
+- **event_type**: FINALIST_ANNOUNCEMENT
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-AR
+  - **locator**: Art.12, PDF p.7
+- **retrieved_at**: 2026-10-20
+- **status**: UNKNOWN
+- **source_reliability**: CONFLICTING
+- **status_basis**: Published stage predates application opening; no correction to 2027 inferred.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**:
+  - **1**:
+    - **reference**:
+      - **source_id**: SRC-AR
+      - **locator**: Art.12, PDF p.7
+    - **published_opens_at**: UNKNOWN / not supplied
+    - **published_closes_at**: 2026-01-27
+    - **timezone**: UNKNOWN
+    - **date_precision**: DAY
+    - **role**: CONFLICTING_PUBLISHED_STAGE
+
+### APDSI-TD-2026-6-CEREMONY
+
+
+- **event_id**: APDSI-TD-2026-6-CEREMONY
+- **award_program_id**: AW-APDSI
+- **edition_id**: APDSI-TD-2026-6
+- **event_type**: CEREMONY
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-AR
+  - **locator**: Art.13, PDF p.7
+- **retrieved_at**: 2026-10-20
+- **status**: UNKNOWN
+- **source_reliability**: CONFLICTING
+- **status_basis**: Published stage predates application opening; no correction to 2027 inferred.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**:
+  - **1**:
+    - **reference**:
+      - **source_id**: SRC-AR
+      - **locator**: Art.13, PDF p.7
+    - **published_opens_at**: UNKNOWN / not supplied
+    - **published_closes_at**: 2026-02-18
+    - **timezone**: UNKNOWN
+    - **date_precision**: DAY
+    - **role**: CONFLICTING_PUBLISHED_STAGE
+
+### EAIF-AI-2026-APPLICATION
+
+
+- **event_id**: EAIF-AI-2026-APPLICATION
+- **award_program_id**: AW-EAIF
+- **edition_id**: EAIF-AI-2026
+- **event_type**: APPLICATION_WINDOW
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-E
+  - **locator**: Timeline
+- **retrieved_at**: 2026-10-20
+- **status**: UNKNOWN
+- **source_reliability**: CONFLICTING
+- **status_basis**: Timeline and terms duration conflict; effective window requires independent source resolution.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**:
+  - **1**:
+    - **reference**:
+      - **source_id**: SRC-E
+      - **locator**: Timeline
+    - **published_opens_at**: 2026-10-05
+    - **published_closes_at**: 2026-10-31
+    - **timezone**: UNKNOWN
+    - **date_precision**: DAY
+    - **role**: PUBLISHED_APPLICATION_WINDOW
+  - **2**:
+    - **reference**:
+      - **source_id**: SRC-ER
+      - **locator**: Section 1(4), PDF p.1
+    - **published_opens_at**: 2026-07-01
+    - **published_closes_at**: 2026-10-15
+    - **timezone**: UNKNOWN
+    - **date_precision**: DAY
+    - **role**: CONFLICTING_PROGRAMME_DURATION
+
+### EAIF-AI-2026-ANNOUNCEMENT
+
+
+- **event_id**: EAIF-AI-2026-ANNOUNCEMENT
+- **award_program_id**: AW-EAIF
+- **edition_id**: EAIF-AI-2026
+- **event_type**: WINNER_ANNOUNCEMENT
+- **opens_at**: 2026-12
+- **closes_at**: 2026-12
+- **timezone**: UNKNOWN
+- **date_precision**: MONTH
+- **source_locator**:
+  - **source_id**: SRC-E
+  - **locator**: Timeline
+- **retrieved_at**: 2026-10-20
+- **status**: FUTURE
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### DMI-EUROPE-2026-NOMINATION
+
+
+- **event_id**: DMI-EUROPE-2026-NOMINATION
+- **award_program_id**: AW-DMI-EU
+- **edition_id**: DMI-EUROPE-2026
+- **event_type**: NOMINATION_DEADLINE
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-D
+  - **locator**: Voting closed / analysing results
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: MISSING
+- **status_basis**: Entry stage inferred completed from voting closure; exact deadline remains UNKNOWN.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### DMI-EUROPE-2026-ANNOUNCEMENT
+
+
+- **event_id**: DMI-EUROPE-2026-ANNOUNCEMENT
+- **award_program_id**: AW-DMI-EU
+- **edition_id**: DMI-EUROPE-2026
+- **event_type**: WINNER_ANNOUNCEMENT
+- **opens_at**: 2026-12-02
+- **closes_at**: 2026-12-02
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-D
+  - **locator**: Winners Announced
+- **retrieved_at**: 2026-10-20
+- **status**: FUTURE
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### DMI-EUROPE-2026-CEREMONY
+
+
+- **event_id**: DMI-EUROPE-2026-CEREMONY
+- **award_program_id**: AW-DMI-EU
+- **edition_id**: DMI-EUROPE-2026
+- **event_type**: CEREMONY
+- **opens_at**: 2026-12-02
+- **closes_at**: 2026-12-02
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-D
+  - **locator**: London event date
+- **retrieved_at**: 2026-10-20
+- **status**: FUTURE
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### CYBER-2027-APPLICATION
+
+
+- **event_id**: CYBER-2027-APPLICATION
+- **award_program_id**: AW-CYBER
+- **edition_id**: CYBER-2027
+- **event_type**: APPLICATION_WINDOW
+- **opens_at**: 2026-12-01
+- **closes_at**: 2027-02-28
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-C
+  - **locator**: Key dates 2027
+- **retrieved_at**: 2026-10-20
+- **status**: FUTURE
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### CYBER-2027-SHORTLIST
+
+
+- **event_id**: CYBER-2027-SHORTLIST
+- **award_program_id**: AW-CYBER
+- **edition_id**: CYBER-2027
+- **event_type**: FINALIST_ANNOUNCEMENT
+- **opens_at**: 2027-03-15
+- **closes_at**: 2027-03-15
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-C
+  - **locator**: Key dates 2027 / shortlist
+- **retrieved_at**: 2026-10-20
+- **status**: FUTURE
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### CYBER-2027-JUDGING
+
+
+- **event_id**: CYBER-2027-JUDGING
+- **award_program_id**: AW-CYBER
+- **edition_id**: CYBER-2027
+- **event_type**: JUDGING_PERIOD
+- **opens_at**: 2027-03-15
+- **closes_at**: 2027-04-15
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-C
+  - **locator**: Key dates 2027 / judging
+- **retrieved_at**: 2026-10-20
+- **status**: FUTURE
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### CYBER-2027-ANNOUNCEMENT
+
+
+- **event_id**: CYBER-2027-ANNOUNCEMENT
+- **award_program_id**: AW-CYBER
+- **edition_id**: CYBER-2027
+- **event_type**: WINNER_ANNOUNCEMENT
+- **opens_at**: 2027-04-28
+- **closes_at**: 2027-04-28
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-C
+  - **locator**: Key dates 2027 / winners
+- **retrieved_at**: 2026-10-20
+- **status**: FUTURE
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: false
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### PNI-9-2025-26-APPLICATION
+
+
+- **event_id**: PNI-9-2025-26-APPLICATION
+- **award_program_id**: AW-PNI
+- **edition_id**: PNI-9-2025-26
+- **event_type**: APPLICATION_DEADLINE
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-PR
+  - **locator**: Sections 8 and 13, PDF pp.15,24
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: CONFLICTING
+- **status_basis**: Both published assertions are past at cutoff; effective exact deadline unresolved. Not a 2026/2027 opportunity.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**:
+  - **1**:
+    - **reference**:
+      - **source_id**: SRC-PR
+      - **locator**: Section 8, PDF p.15
+    - **published_opens_at**: UNKNOWN / not supplied
+    - **published_closes_at**: 2025-11-21T23:59
+    - **timezone**: Brasília (as published)
+    - **date_precision**: MINUTE
+    - **role**: HISTORICAL_DEADLINE_ASSERTION
+  - **2**:
+    - **reference**:
+      - **source_id**: SRC-PR
+      - **locator**: Section 13, PDF p.24
+    - **published_opens_at**: UNKNOWN / not supplied
+    - **published_closes_at**: 2025-12-05
+    - **timezone**: UNKNOWN
+    - **date_precision**: DAY
+    - **role**: CONFLICTING_HISTORICAL_SCHEDULE
+
+### PNI-9-2025-26-JUDGING
+
+
+- **event_id**: PNI-9-2025-26-JUDGING
+- **award_program_id**: AW-PNI
+- **edition_id**: PNI-9-2025-26
+- **event_type**: JUDGING_PERIOD
+- **opens_at**: 2025-12
+- **closes_at**: 2025-12
+- **timezone**: UNKNOWN
+- **date_precision**: MONTH
+- **source_locator**:
+  - **source_id**: SRC-PR
+  - **locator**: Section 13, PDF p.24
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### PNI-9-2025-26-VALIDATION
+
+
+- **event_id**: PNI-9-2025-26-VALIDATION
+- **award_program_id**: AW-PNI
+- **edition_id**: PNI-9-2025-26
+- **event_type**: EVIDENCE_VALIDATION_PERIOD
+- **opens_at**: 2026-01
+- **closes_at**: 2026-02
+- **timezone**: UNKNOWN
+- **date_precision**: MONTH
+- **source_locator**:
+  - **source_id**: SRC-PR
+  - **locator**: Section 13, PDF p.24
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+### PNI-9-2025-26-FINALISTS
+
+
+- **event_id**: PNI-9-2025-26-FINALISTS
+- **award_program_id**: AW-PNI
+- **edition_id**: PNI-9-2025-26
+- **event_type**: FINALIST_ANNOUNCEMENT
+- **opens_at**: UNKNOWN / not supplied
+- **closes_at**: UNKNOWN / not supplied
+- **timezone**: UNKNOWN
+- **date_precision**: UNKNOWN
+- **source_locator**:
+  - **source_id**: SRC-PR
+  - **locator**: Amendment section 5; Section 13, PDF p.24
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Published as second week of March 2026, not converted to invented day bounds.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+- **published_period**: Second week of March 2026
+
+### PNI-9-2025-26-CEREMONY
+
+
+- **event_id**: PNI-9-2025-26-CEREMONY
+- **award_program_id**: AW-PNI
+- **edition_id**: PNI-9-2025-26
+- **event_type**: CEREMONY
+- **opens_at**: 2026-03-26
+- **closes_at**: 2026-03-26
+- **timezone**: UNKNOWN
+- **date_precision**: DAY
+- **source_locator**:
+  - **source_id**: SRC-PR
+  - **locator**: Section 13, PDF p.24
+- **retrieved_at**: 2026-10-20
+- **status**: CLOSED
+- **source_reliability**: VERIFIED
+- **status_basis**: Comparison of published calendar dates with 2026-10-20 cutoff; no exact time assumed.
+- **historical**: true
+- **supersedes_event_id**: UNKNOWN / not supplied
+- **source_assertions**: (empty list)
+
+## Version and counting metadata
+
+
+- **schema_version**: 1.0
+- **record_version**: 1
+- **recorded_at**: 2026-10-20
+- **recorded_by**: Codex / owner-authorized S3 source research; no independent approval
+- **supersedes_record_version**: UNKNOWN / not supplied
+- **repository**: cnegrao/code-guard-governance
+- **starting_head**: c354691e8dc24e771c4887a999f57f2165dc14ac
+- **cutoff**: 2026-10-20
+- **cutoff_timezone**: America/Sao_Paulo
+- **organisation_id**: UNKNOWN / not supplied
+- **scope**: GovIA / IA4ALL product repository reference metadata; applicant legal entity UNKNOWN
+- **status**: INTERNAL_REFERENCE_ONLY_PUBLICATION_AND_SUBMISSION_PROHIBITED
+- **matrix_record_version**: 1
+- **matrix_path**: docs/trust-assurance/award-readiness-matrix-v0.json
+- **date_policy**: Date-only and month values are not timestamps. Timezone UNKNOWN means unpublished. Status is a frozen 2026-10-20 observation, never a live deadline service. Single-day events repeat the published date without inventing time. Conflicting effective dates stay null with original assertions preserved. No organizer recurrence inferred.
+- **counts_by_status**:
+  - **CLOSED**: 12
+  - **FUTURE**: 7
+  - **OPEN**: 1
+  - **UNKNOWN**: 5
+- **deadline_count_semantics**: One record per distinguished event/window, including unknown and historical events; not a count of unique closing instants. Submission windows counted separately in matrix.
+- **submission_window_counts**:
+  - **CLOSED**: 3
+  - **FUTURE**: 1
+  - **OPEN**: 1
+  - **UNKNOWN**: 1
