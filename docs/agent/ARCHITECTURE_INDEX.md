@@ -2,6 +2,11 @@
 
 Pointers only. Section and acceptance identifiers below refer to the canonical M17 ADR.
 
+- [M17.5-S1 source catalog](../trust-assurance/framework-source-catalog-v0.json) — seven publisher-verified version identities, bounded public reference gate and immutable source/version policy; licensed requirement populations stay pending.
+- [M17.5-S1 draft crosswalk](../trust-assurance/framework-crosswalk-v0.md) and [credibility matrix](../trust-assurance/external-credibility-matrix-v0.md) — 38 S0 capability dispositions, limited repository correspondences and explicit claim ceilings.
+- [M17.5-S1 evidence index](../trust-assurance/evidence-index-v0.md) and [legacy containment](../trust-assurance/legacy-containment-register-v0.md) — 109 immutable S0 references and unresolved presentation gates.
+- [M17.5-S1 handoff](../codex/evidence/2026-10-20-m17.5-s1-source-crosswalk.md) — source/access decisions, verification, gaps and proposed S2; documentation only.
+
 - [M17.5 Trust & Assurance contract](../architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md) — S0 read/projection boundary, neutral model, separate status axes, source provenance, claims and KPI semantics.
 - [M17.5-S0 verified inventory](../codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.md) — current implementation evidence, machine-readable inventory, legacy containment and proposed S1.
 
