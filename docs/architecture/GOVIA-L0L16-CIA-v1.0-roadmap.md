@@ -432,6 +432,9 @@ M14 close
 - **M17-S7B exposure / Vector / LLM boundaries and Passport overlay: CLOSED / MERGED via PR #79.** Canonical main after PR #79:
   `d803c0711afc68c4b110767177d7bc04e5429852`. O69-O72 focused proofs PASS;
   [S7B evidence](../codex/evidence/2026-10-19-m17-s7b-exposure-passport-overlay.md).
+- **M17-S7C final catalog/security correction: CLOSED LOCALLY.** Assertion-only final PostgreSQL 17 proof closes the exact
+  36-definer S7A/S7B inventory and classifies all five numeric L15 columns under the additive
+  [O31 clarification](ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md); Category 4 is empty and runtime semantics are unchanged.
 - **M17 formal closure: CLOSED / READY FOR M17.5 — O01-O91: 91 / 91 PASS.** Closure branch
   `chore/m17-final-closure` starts from canonical main `d803c0711afc68c4b110767177d7bc04e5429852`;
   [closure evidence](../codex/evidence/2026-10-19-m17-closure.md). M17.5 remains **NOT STARTED**.

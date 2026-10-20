@@ -126,3 +126,19 @@ export const L15_S6_PHASE_B_DEFINER_DELTA: readonly DefinerInventoryEntry[] = [
     "owner": "postgres"
   }
 ];
+
+/** M17-S7A/S7B: read-only projection definers measured from the final disposable PostgreSQL 17 catalog. */
+export const L15_S7_DEFINER_INVENTORY: readonly DefinerInventoryEntry[] = [
+  {
+    sig: 'gov_repo.l15_read_risk_projections_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,text,text,text,uuid,timestamp with time zone,timestamp with time zone)',
+    owner: 'postgres',
+    sha: '2e9de73461b30f67b98019658cd6fba77ccc05dda8c7c8ba3ba898c2c726bc26',
+    cfg: CFG,
+  },
+  {
+    sig: 'gov_repo.l15_read_passport_risk_overlay_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,timestamp with time zone,timestamp with time zone)',
+    owner: 'postgres',
+    sha: 'd5933d65d5fce751cb98d85dbb7a98da15c6f21fdf166775da472f952941bb20',
+    cfg: CFG,
+  },
+];
