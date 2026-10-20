@@ -432,12 +432,18 @@ M14 close
 - **M17-S7B exposure / Vector / LLM boundaries and Passport overlay: CLOSED / MERGED via PR #79.** Canonical main after PR #79:
   `d803c0711afc68c4b110767177d7bc04e5429852`. O69-O72 focused proofs PASS;
   [S7B evidence](../codex/evidence/2026-10-19-m17-s7b-exposure-passport-overlay.md).
-- **M17-S7C final catalog/security correction: CLOSED LOCALLY.** Assertion-only final PostgreSQL 17 proof closes the exact
-  36-definer S7A/S7B inventory and classifies all five numeric L15 columns under the additive
-  [O31 clarification](ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md); Category 4 is empty and runtime semantics are unchanged.
-- **M17 formal closure: CLOSED / READY FOR M17.5 — O01-O91: 91 / 91 PASS.** Closure branch
-  `chore/m17-final-closure` starts from canonical main `d803c0711afc68c4b110767177d7bc04e5429852`;
-  [closure evidence](../codex/evidence/2026-10-19-m17-closure.md). M17.5 remains **NOT STARTED**.
+- **PR #80: MERGED — original M17 formal closure.** Merge commit
+  `1914e7e2e18591000588ffab4325e61911fc2189`; historical
+  [closure evidence](../codex/evidence/2026-10-19-m17-closure.md).
+- **Post-merge ACP adversarial review: M17 closure REOPENED.** F-M17-C1 found that the final O61 inventory stopped at S6 and
+  omitted the S7A/S7B SECURITY DEFINER routines. F-M17-C2 found that O31's literal wording contradicted legitimate
+  non-authoritative/structural numeric columns.
+- **M17-S7C: CORRECTIVE CANDIDATE / CLOSED LOCALLY / NOT MERGED.** The assertion-only PostgreSQL 17 proof closes the exact
+  36-definer inventory and classifies all five numeric L15 columns under the additive
+  [O31 clarification](ADR-GOVIA-RISK-INTELLIGENCE-O31-CLARIFICATION-v1.md); Category 4 is empty, runtime semantics are unchanged,
+  and the [corrective evidence](../codex/evidence/2026-10-19-m17-closure-corrective.md) records **O01-O91 = 91 / 91 PASS**.
+- **M17 canonical status: HOLD FOR S7C MERGE.** Do not state canonical M17 is re-closed until the corrective PR is merged.
+  **M17.5: NOT STARTED / HOLD.**
 - Hosted (Supabase / Vercel / deployment): **NOT TOUCHED** by M17.
 - **H1: CLOSED ON EQUIVALENT HOSTED EVIDENCE.** `B0_HTTP_MANUAL_ACCEPTANCE = PASS`;
   `REAL_HTTP_H1_PASS = NOT EMITTED` because the frozen canonical runner was not
