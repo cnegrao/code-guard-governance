@@ -1,4 +1,10 @@
-import type { CertificationResult, SourceAnalysis, DetectedRisk, ComplianceAnalysis, PackageAnalysis } from './types';
+// LEGACY_NON_AUTHORITATIVE: frozen test oracle from starting HEAD 8a10a99.
+// Never imported by src or exposed as a product API. Preserves regression provenance only.
+type CertificationResult = {
+  overall: 'bronze' | 'silver' | 'gold' | 'platinum' | 'none';
+  levels: Record<'bronze' | 'silver' | 'gold' | 'platinum', { pass: boolean; evidence: string[]; fail: string[] }>;
+};
+import type { SourceAnalysis, DetectedRisk, ComplianceAnalysis, PackageAnalysis } from '../../../src/core/types';
 
 export function certifySystem(
   source: SourceAnalysis,
