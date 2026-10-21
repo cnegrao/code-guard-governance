@@ -1,5 +1,6 @@
 import * as talkRepo from "@/repositories/talk";
-import { db } from "@/lib/db";
+import type { GovernanceWritePrincipal } from "@/lib/auth/governance-write-principal";
+import { appendLedgerEvent, LedgerWriteUnavailableError } from "@/lib/governance/ledger-write";
 import { getLLMProvider, GOVERNANCE_SYSTEM_PROMPT } from "@/lib/llm";
 import { generateGovernanceAnswer } from "@/lib/runtime/openai-governance-answer-producer";
 import { semanticSearch } from "@/services/coding-memory";
@@ -11,22 +12,15 @@ function getSessionId(): string {
   return `t2g_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function logToLedger(orgId: string, userId: string, event: string, payload: Record<string, unknown>) {
-  try {
-    await db.write.rpc("ledger_append", {
-      p_event_type: event,
-      p_event_desc: (payload.query as string)?.slice(0, 100) ?? event,
-      p_subject_type: "governance_query",
-      p_subject_id: userId,
-      p_actor_user_id: userId,
-      p_actor_ip: null,
-      p_organisation_id: orgId,
-      p_payload: payload,
-    });
-  } catch {}
+async function logToLedger(principal: GovernanceWritePrincipal, event: string, payload: Record<string, unknown>) {
+  await appendLedgerEvent(principal, {
+    type: event, description: (payload.query as string)?.slice(0, 100) ?? event,
+    subjectType: "governance_query", subjectId: principal.actorUserId, payload,
+  });
 }
 
-export async function ask(orgId: string, userId: string, query: string): Promise<GovernanceAnswer> {
+export async function ask(principal: GovernanceWritePrincipal, query: string): Promise<GovernanceAnswer> {
+  const orgId = principal.organisationId;
   const sessionId = getSessionId();
   const history = MEMORY.get(sessionId) ?? [];
 
@@ -34,7 +28,7 @@ export async function ask(orgId: string, userId: string, query: string): Promise
     ? `Previous: ${history.map((h) => h.query).join(" | ")}. Now: ${query}`
     : query;
 
-  await logToLedger(orgId, userId, "talk_to_governance.query", { query: query.slice(0, 500), history_length: history.length });
+  await logToLedger(principal, "talk_to_governance.query", { query: query.slice(0, 500), history_length: history.length });
 
   const llm = getLLMProvider();
 
@@ -45,7 +39,7 @@ export async function ask(orgId: string, userId: string, query: string): Promise
     if (history.length > 10) history.shift();
     MEMORY.set(sessionId, history);
 
-    await logToLedger(orgId, userId, "talk_to_governance.response", {
+    await logToLedger(principal, "talk_to_governance.response", {
       query: query.slice(0, 200),
       intent: match.intent,
       confidence: match.confidence,
@@ -108,7 +102,7 @@ if (llm.available) {
         if (history.length > 10) history.shift();
         MEMORY.set(sessionId, history);
 
-        await logToLedger(orgId, userId, "talk_to_governance.response", {
+        await logToLedger(principal, "talk_to_governance.response", {
           query: query.slice(0, 200),
           intent: "llm_generated",
           confidence: 78,
@@ -121,7 +115,9 @@ if (llm.available) {
 
         return answer;
       }
-    } catch {}
+    } catch (error) {
+      if (error instanceof LedgerWriteUnavailableError) throw error;
+    }
   }
 
   const citations = evidence.slice(0, 3).map((e) => ({
@@ -153,7 +149,7 @@ if (llm.available) {
   if (history.length > 10) history.shift();
   MEMORY.set(sessionId, history);
 
-  await logToLedger(orgId, userId, "talk_to_governance.response", {
+  await logToLedger(principal, "talk_to_governance.response", {
     query: query.slice(0, 200),
     intent: match.intent,
     confidence: answer.confidence,

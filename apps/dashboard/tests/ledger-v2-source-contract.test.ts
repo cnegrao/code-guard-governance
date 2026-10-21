@@ -22,7 +22,7 @@ test('121 historical Git blobs unchanged; 100 executable files fully reconciled 
   const canonical=entries.filter(e=>e.path.startsWith('supabase/migrations/')).map(e=>e.path);
   assert.equal(canonical.length,99);assert.deepEqual(replay.applied,[...canonical,`supabase/migrations/${ledgerMigration}`]);
   assert.equal(replay.applied.length,100);
-  assert.deepEqual(readdirSync(join(ledgerRepo,'supabase/migrations')).sort(),replay.applied.map(p=>p.split('/').at(-1)).sort());
+  assert.deepEqual(readdirSync(join(ledgerRepo,'supabase/migrations')).filter(p=>p<=ledgerMigration).sort(),replay.applied.map(p=>p.split('/').at(-1)).sort());
   const manifest=JSON.parse(readFileSync(join(ledgerRepo,'docs/architecture/m16-noncanonical-migration-roots.manifest.json'),'utf8'));
   assert.equal(manifest.canonicalMigrationAuthority,'supabase/migrations');
   assert.deepEqual(replay.excluded.map(e=>e.path),entries.filter(e=>!canonical.includes(e.path)).map(e=>e.path));
@@ -40,7 +40,9 @@ test('original 41 vectors and independent oracle preserved; app/writers/Audit/au
   // No serialized bytes or expected vector digest is regenerated or changed.
   for(const [file,sha] of Object.entries(original))assert.equal(createHash('sha256')
     .update(Buffer.from(readFileSync(join(ledgerRepo,file)).toString('latin1').replace(/\r\n/g,'\n'),'latin1')).digest('hex'),sha,file);
-  const changed=git(['diff','--name-only',replay.base,'--','apps/dashboard/app','apps/dashboard/services','apps/dashboard/repositories',
+  // Frozen foundation receipt. Later separately authorized writer migrations
+  // have their own source/PG tests; they do not rewrite the foundation proof.
+  const changed=git(['diff','--name-only',replay.base,'6cafd6cfcf4a3f1467bfb1a71a7ef0d9b421baa8','--','apps/dashboard/app','apps/dashboard/services','apps/dashboard/repositories',
     'apps/dashboard/components','packages/canonical-contracts','packages/governance-review','docs/architecture']);
   assert.equal(changed,'','no runtime, API, UI, governance truth or architecture change');
   const migration=readFileSync(join(ledgerRepo,'supabase/migrations',ledgerMigration),'utf8').replace(/^\s*--.*$/gm,'');

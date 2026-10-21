@@ -1,0 +1,985 @@
+{
+  "slice": "M17.5-V1-S1A1-2A",
+  "base": "6cafd6cfcf4a3f1467bfb1a71a7ef0d9b421baa8",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "sessionId": "296c94bd-b370-44a8-86af-ed3c8e6508f9",
+  "migration": {
+    "path": "supabase/migrations/20261021134359_m175_v1_s1a1_2a_ledger_v2_write_cutover.sql",
+    "sha256LF": "a29bc7d3d0fc81264ebddc177c0aaa9cc274a7bf605aab1f6d20a4f97833292d"
+  },
+  "foundationReplay": 100,
+  "canonicalWithPreparation": 101,
+  "golden": {
+    "count": 41,
+    "fixtureSha256LF": "9d2ed82e965c9297796e11e70b117f01d8ee0daa4f51f76625eabc1237793f11"
+  },
+  "gates": [
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-foundation.test.ts",
+      "profile": "focused",
+      "status": "passed",
+      "run": "bf9527b0-8a2d-488c-a6f9-402750972f9e",
+      "candidate": "bea6a15a40aaf66c8bb14c6eeddc21e85aeee855a2631e6105471d131574b4c7",
+      "durationMs": 34291.871499999994,
+      "log": ".artifacts\\agent\\bf9527b0-8a2d-488c-a6f9-402750972f9e-0.log",
+      "tests": 9,
+      "pass": 9
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-write-cutover.test.ts",
+      "profile": "focused",
+      "status": "passed",
+      "run": "280d4dc7-1416-48e1-9c8a-848b819e23d4",
+      "candidate": "f7972010a50cde6e9b5f2b22e8f42f3956c668e376ada59ce097b624840c001a",
+      "durationMs": 46767.184499999996,
+      "log": ".artifacts\\agent\\280d4dc7-1416-48e1-9c8a-848b819e23d4-0.log",
+      "tests": 15,
+      "pass": 15
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-writers-integration.test.ts",
+      "profile": "integration",
+      "status": "passed",
+      "run": "6a7bc113-a172-4da1-ba8a-7751f2d0bbb2",
+      "candidate": "3063ce6fb9410c21406c7a0c04dbe606446106858248f00259ae411d74973d54",
+      "durationMs": 19355.287500000002,
+      "log": ".artifacts\\agent\\6a7bc113-a172-4da1-ba8a-7751f2d0bbb2-0.log",
+      "tests": 1,
+      "pass": 1
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-inactive-integration.test.ts",
+      "profile": "integration",
+      "status": "passed",
+      "run": "6a7bc113-a172-4da1-ba8a-7751f2d0bbb2",
+      "candidate": "3063ce6fb9410c21406c7a0c04dbe606446106858248f00259ae411d74973d54",
+      "durationMs": 19753.398100000002,
+      "log": ".artifacts\\agent\\6a7bc113-a172-4da1-ba8a-7751f2d0bbb2-1.log",
+      "tests": 1,
+      "pass": 1
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/l14-definer-surface-functional.test.ts",
+      "profile": "integration",
+      "status": "passed",
+      "run": "6a7bc113-a172-4da1-ba8a-7751f2d0bbb2",
+      "candidate": "3063ce6fb9410c21406c7a0c04dbe606446106858248f00259ae411d74973d54",
+      "durationMs": 35027.04989999999,
+      "log": ".artifacts\\agent\\6a7bc113-a172-4da1-ba8a-7751f2d0bbb2-2.log",
+      "tests": 14,
+      "pass": 14
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/transactional-eligibility.test.ts",
+      "profile": "integration",
+      "status": "passed",
+      "run": "6a7bc113-a172-4da1-ba8a-7751f2d0bbb2",
+      "candidate": "3063ce6fb9410c21406c7a0c04dbe606446106858248f00259ae411d74973d54",
+      "durationMs": 56182.24010000001,
+      "log": ".artifacts\\agent\\6a7bc113-a172-4da1-ba8a-7751f2d0bbb2-3.log",
+      "tests": 33,
+      "pass": 33
+    },
+    {
+      "label": "apps/dashboard/tests/verified-governance-principal.test.ts",
+      "profile": "integration",
+      "status": "passed",
+      "run": "6a7bc113-a172-4da1-ba8a-7751f2d0bbb2",
+      "candidate": "3063ce6fb9410c21406c7a0c04dbe606446106858248f00259ae411d74973d54",
+      "durationMs": 788.5255000000179,
+      "log": ".artifacts\\agent\\6a7bc113-a172-4da1-ba8a-7751f2d0bbb2-4.log",
+      "tests": 102,
+      "pass": 102
+    },
+    {
+      "label": "apps/dashboard/tests/ledger-v2-source-contract.test.ts",
+      "profile": "integration",
+      "status": "passed",
+      "run": "6a7bc113-a172-4da1-ba8a-7751f2d0bbb2",
+      "candidate": "3063ce6fb9410c21406c7a0c04dbe606446106858248f00259ae411d74973d54",
+      "durationMs": 606.3706999999995,
+      "log": ".artifacts\\agent\\6a7bc113-a172-4da1-ba8a-7751f2d0bbb2-5.log",
+      "tests": 3,
+      "pass": 3
+    },
+    {
+      "label": "apps/dashboard/tests/ledger-v2-write-source-contract.test.ts",
+      "profile": "integration",
+      "status": "passed",
+      "run": "6a7bc113-a172-4da1-ba8a-7751f2d0bbb2",
+      "candidate": "3063ce6fb9410c21406c7a0c04dbe606446106858248f00259ae411d74973d54",
+      "durationMs": 520.805400000012,
+      "log": ".artifacts\\agent\\6a7bc113-a172-4da1-ba8a-7751f2d0bbb2-6.log",
+      "tests": 2,
+      "pass": 2
+    },
+    {
+      "label": "apps/dashboard/tests/pre-demo-discovery.test.ts",
+      "profile": "final",
+      "status": "passed",
+      "run": "56690213-aa86-4954-88e2-593f06f01797",
+      "candidate": "f7972010a50cde6e9b5f2b22e8f42f3956c668e376ada59ce097b624840c001a",
+      "durationMs": 570.232,
+      "log": ".artifacts\\agent\\56690213-aa86-4954-88e2-593f06f01797-0.log",
+      "tests": 2,
+      "pass": 2
+    },
+    {
+      "label": "apps/dashboard/tests/talk-runtime-producer.test.ts",
+      "profile": "final",
+      "status": "passed",
+      "run": "56690213-aa86-4954-88e2-593f06f01797",
+      "candidate": "f7972010a50cde6e9b5f2b22e8f42f3956c668e376ada59ce097b624840c001a",
+      "durationMs": 847.5002999999997,
+      "log": ".artifacts\\agent\\56690213-aa86-4954-88e2-593f06f01797-1.log",
+      "tests": 6,
+      "pass": 6
+    },
+    {
+      "label": "apps/dashboard:test:m17-s0-legacy",
+      "profile": "integration",
+      "status": "passed",
+      "run": "21f0e01f-e3a9-46b4-9e4d-0e6735205d2a",
+      "candidate": "c54c4495281ccb519c7d210abc1a41a4200753c1c823d6ceb240ff3cfcea0fa9",
+      "durationMs": 2197.6593000000003,
+      "log": ".artifacts\\agent\\21f0e01f-e3a9-46b4-9e4d-0e6735205d2a-0.log",
+      "tests": 12,
+      "pass": 12
+    },
+    {
+      "label": ".:typecheck:dashboard",
+      "profile": "integration",
+      "status": "passed",
+      "run": "67cdbb02-576d-435b-9c01-aa0ac8f3b5a8",
+      "candidate": "8e4fe4b34f806f508ea600467feb1a0136568811eb3d08e6fb827dc221d3aa6b",
+      "durationMs": 2588.4345999999996,
+      "log": ".artifacts\\agent\\67cdbb02-576d-435b-9c01-aa0ac8f3b5a8-0.log",
+      "tests": 0,
+      "pass": 0
+    }
+  ],
+  "failedAttempts": [
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-write-cutover.test.ts",
+      "run": "8b81a9bb-cc48-43cb-b83c-255b94ef215c",
+      "status": "failed",
+      "log": ".artifacts\\agent\\8b81a9bb-cc48-43cb-b83c-255b94ef215c-0.log",
+      "durationMs": 50629.4478
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-write-cutover.test.ts",
+      "run": "06d7e3bc-f0dc-4ae3-9c12-44830129e991",
+      "status": "failed",
+      "log": ".artifacts\\agent\\06d7e3bc-f0dc-4ae3-9c12-44830129e991-0.log",
+      "durationMs": 44489.725900000005
+    },
+    {
+      "label": ".:typecheck:dashboard",
+      "run": "21f0e01f-e3a9-46b4-9e4d-0e6735205d2a",
+      "status": "failed",
+      "log": ".artifacts\\agent\\21f0e01f-e3a9-46b4-9e4d-0e6735205d2a-1.log",
+      "durationMs": 10392.4038
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-writers-integration.test.ts",
+      "run": "67cdbb02-576d-435b-9c01-aa0ac8f3b5a8",
+      "status": "failed",
+      "log": ".artifacts\\agent\\67cdbb02-576d-435b-9c01-aa0ac8f3b5a8-1.log",
+      "durationMs": 18128.446600000003
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-write-cutover.test.ts",
+      "run": "f93d282a-4d3f-47f7-b9f1-fc3357357517",
+      "status": "failed",
+      "log": ".artifacts\\agent\\f93d282a-4d3f-47f7-b9f1-fc3357357517-0.log",
+      "durationMs": 46214.7216
+    }
+  ],
+  "measuredCommandMs": 441119.61329999997,
+  "catalog": {
+    "server": "170011",
+    "tables": [
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres",
+          "service_role=rm/postgres"
+        ],
+        "rls": true,
+        "owner": "postgres",
+        "table": "governance_ledger",
+        "columns": [
+          {
+            "acl": [
+              "govia_ledger_executor=r/postgres"
+            ],
+            "name": "entry_sequence"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=r/postgres"
+            ],
+            "name": "entry_id"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "event_type"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "event_description"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "subject_type"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "subject_id"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "actor_user_id"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "actor_ip"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=r/postgres"
+            ],
+            "name": "actor_session_id"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "organisation_id"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "event_timestamp"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "recorded_at"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "previous_hash"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "entry_hash"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=ar/postgres"
+            ],
+            "name": "payload"
+          },
+          {
+            "acl": null,
+            "name": "qes_anchor"
+          },
+          {
+            "acl": null,
+            "name": "qes_anchor_at"
+          }
+        ]
+      },
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres",
+          "govia_ledger_executor=r/postgres"
+        ],
+        "rls": true,
+        "owner": "postgres",
+        "table": "ledger_integrity_epochs_v2",
+        "columns": [
+          {
+            "acl": null,
+            "name": "activation_id"
+          },
+          {
+            "acl": null,
+            "name": "algorithm"
+          },
+          {
+            "acl": null,
+            "name": "algorithm_version"
+          },
+          {
+            "acl": null,
+            "name": "serialization_version"
+          },
+          {
+            "acl": null,
+            "name": "migration_identifier"
+          },
+          {
+            "acl": null,
+            "name": "activated_at"
+          },
+          {
+            "acl": null,
+            "name": "legacy_high_watermark"
+          },
+          {
+            "acl": null,
+            "name": "legacy_tip_hash"
+          },
+          {
+            "acl": null,
+            "name": "is_active"
+          }
+        ]
+      },
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres",
+          "govia_ledger_executor=r/postgres"
+        ],
+        "rls": true,
+        "owner": "postgres",
+        "table": "ledger_global_append_head_v2",
+        "columns": [
+          {
+            "acl": null,
+            "name": "singleton"
+          },
+          {
+            "acl": null,
+            "name": "activation_id"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=w/postgres"
+            ],
+            "name": "last_global_sequence"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=w/postgres"
+            ],
+            "name": "last_global_hash"
+          }
+        ]
+      },
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres",
+          "govia_ledger_executor=ar/postgres"
+        ],
+        "rls": true,
+        "owner": "postgres",
+        "table": "ledger_tenant_genesis_v2",
+        "columns": [
+          {
+            "acl": null,
+            "name": "organisation_id"
+          },
+          {
+            "acl": null,
+            "name": "chain_id"
+          },
+          {
+            "acl": null,
+            "name": "activation_id"
+          },
+          {
+            "acl": null,
+            "name": "algorithm_version"
+          },
+          {
+            "acl": null,
+            "name": "serialization_version"
+          },
+          {
+            "acl": null,
+            "name": "activated_at"
+          },
+          {
+            "acl": null,
+            "name": "first_entry_recorded_at"
+          },
+          {
+            "acl": null,
+            "name": "genesis_hash"
+          }
+        ]
+      },
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres",
+          "govia_ledger_executor=ar/postgres"
+        ],
+        "rls": true,
+        "owner": "postgres",
+        "table": "ledger_tenant_heads_v2",
+        "columns": [
+          {
+            "acl": null,
+            "name": "organisation_id"
+          },
+          {
+            "acl": null,
+            "name": "chain_id"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=w/postgres"
+            ],
+            "name": "last_tenant_sequence"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=w/postgres"
+            ],
+            "name": "last_tenant_hash"
+          },
+          {
+            "acl": [
+              "govia_ledger_executor=w/postgres"
+            ],
+            "name": "committed_count"
+          }
+        ]
+      },
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres",
+          "govia_ledger_executor=ar/postgres"
+        ],
+        "rls": true,
+        "owner": "postgres",
+        "table": "ledger_tenant_entries_v2",
+        "columns": [
+          {
+            "acl": null,
+            "name": "organisation_id"
+          },
+          {
+            "acl": null,
+            "name": "chain_id"
+          },
+          {
+            "acl": null,
+            "name": "activation_id"
+          },
+          {
+            "acl": null,
+            "name": "algorithm_version"
+          },
+          {
+            "acl": null,
+            "name": "serialization_version"
+          },
+          {
+            "acl": null,
+            "name": "tenant_sequence"
+          },
+          {
+            "acl": null,
+            "name": "tenant_entry_id"
+          },
+          {
+            "acl": null,
+            "name": "source_entry_sequence"
+          },
+          {
+            "acl": null,
+            "name": "source_entry_id"
+          },
+          {
+            "acl": null,
+            "name": "previous_tenant_hash"
+          },
+          {
+            "acl": null,
+            "name": "tenant_hash"
+          },
+          {
+            "acl": null,
+            "name": "event_type"
+          },
+          {
+            "acl": null,
+            "name": "event_description"
+          },
+          {
+            "acl": null,
+            "name": "subject_type"
+          },
+          {
+            "acl": null,
+            "name": "subject_id"
+          },
+          {
+            "acl": null,
+            "name": "actor_user_id"
+          },
+          {
+            "acl": null,
+            "name": "actor_ip"
+          },
+          {
+            "acl": null,
+            "name": "actor_session_id"
+          },
+          {
+            "acl": null,
+            "name": "event_timestamp"
+          },
+          {
+            "acl": null,
+            "name": "recorded_at"
+          },
+          {
+            "acl": null,
+            "name": "payload"
+          }
+        ]
+      },
+      {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "rls": true,
+        "owner": "postgres",
+        "table": "ledger_tenant_legacy_refs_v2",
+        "columns": [
+          {
+            "acl": null,
+            "name": "legacy_ref_id"
+          },
+          {
+            "acl": null,
+            "name": "organisation_id"
+          },
+          {
+            "acl": null,
+            "name": "source_entry_sequence"
+          }
+        ]
+      }
+    ],
+    "vector": "0.8.7",
+    "policies": [
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_global_append_head_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_select",
+        "schemaname": "gov_repo",
+        "with_check": null
+      },
+      {
+        "cmd": "UPDATE",
+        "qual": "true",
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_global_append_head_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_update",
+        "schemaname": "gov_repo",
+        "with_check": "true"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_integrity_epochs_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_select",
+        "schemaname": "gov_repo",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_tenant_entries_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_select",
+        "schemaname": "gov_repo",
+        "with_check": null
+      },
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_tenant_entries_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_insert",
+        "schemaname": "gov_repo",
+        "with_check": "true"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_tenant_genesis_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_select",
+        "schemaname": "gov_repo",
+        "with_check": null
+      },
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_tenant_genesis_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_insert",
+        "schemaname": "gov_repo",
+        "with_check": "true"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_tenant_heads_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_select",
+        "schemaname": "gov_repo",
+        "with_check": null
+      },
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_tenant_heads_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_insert",
+        "schemaname": "gov_repo",
+        "with_check": "true"
+      },
+      {
+        "cmd": "UPDATE",
+        "qual": "true",
+        "roles": [
+          "govia_ledger_executor"
+        ],
+        "tablename": "ledger_tenant_heads_v2",
+        "permissive": "PERMISSIVE",
+        "policyname": "ledger_v2_executor_update",
+        "schemaname": "gov_repo",
+        "with_check": "true"
+      }
+    ],
+    "routines": [
+      {
+        "acl": [
+          "govia_ledger_executor=X/govia_ledger_executor",
+          "postgres=X/govia_ledger_executor"
+        ],
+        "kind": "f",
+        "owner": "govia_ledger_executor",
+        "config": [
+          "search_path=pg_catalog, pg_temp",
+          "lock_timeout=5s"
+        ],
+        "sha256": "cbbae64a240966fa61c4d182d7b56e49c1570ae4ba393642f053ffe9029e8252",
+        "signature": "gov_repo.ledger_append(character varying,text,character varying,uuid,uuid,inet,uuid,jsonb)",
+        "volatility": "v",
+        "securityDefiner": true
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp",
+          "lock_timeout=5s"
+        ],
+        "sha256": "545dd508a7c9f6bf57d00533f9e8e7c4cf7602c429bfa19070a548263cb64310",
+        "signature": "gov_repo.ledger_append_v2(uuid,uuid,bigint,bigint,timestamp with time zone,character varying,text,character varying,uuid,uuid,jsonb,inet)",
+        "volatility": "v",
+        "securityDefiner": true
+      },
+      {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "kind": "p",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp",
+          "lock_timeout=5s"
+        ],
+        "sha256": "9c2954ae5d976ddee8fc9dfdb0c7ae10ce4ac842a01efcf3770df33473a6873c",
+        "signature": "gov_repo.ledger_v2_activate(text[])",
+        "volatility": "v",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "9b340a37ae81e1054dfdad99506318446e7c9db31eb53db9d7668f850a16ec6b",
+        "signature": "gov_repo.ledger_v2_capture()",
+        "volatility": "v",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "6196dec9c478d8f513f8231246228b08679e0b3072a9274798cb6a3ddc10a336",
+        "signature": "gov_repo.ledger_v2_coverage()",
+        "volatility": "v",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "91c5bcc8f5f85bb1965815569a710b156d424fa8379b8a038ef946240ec3a9bd",
+        "signature": "gov_repo.ledger_v2_decimal(numeric)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "dbaf0f61e064e3231243be1de2b78e0fef8ebe81a1420da12f22faf821d55778",
+        "signature": "gov_repo.ledger_v2_entry_bytes(uuid,uuid,uuid,bigint,uuid,bytea,uuid,text,text,text,uuid,uuid,inet,uuid,timestamp with time zone,timestamp with time zone,jsonb,integer,integer)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "be012dfbd01be391901b1cd5eab6a545dce65cc87f4f6c2ab10a01dda193b567",
+        "signature": "gov_repo.ledger_v2_entry_structure()",
+        "volatility": "v",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "73a08921d579a39f4ad26fccccc849aafc7385389ff43488c5f82d8557a93f3d",
+        "signature": "gov_repo.ledger_v2_frame(integer,bytea)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "3cb2a60aa64dbd65edf83a1216ddc0aea013b05264aa4b4c13771a2e34db70f4",
+        "signature": "gov_repo.ledger_v2_genesis_bytes(uuid,uuid,uuid,timestamp with time zone,integer,integer)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "f440024a0771dfb3cf47fe7abca0fe3eb3ecfa20f8fab8624dcfcd9f7702bea9",
+        "signature": "gov_repo.ledger_v2_head_identity()",
+        "volatility": "v",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "3153eff1cb073f7055f471911323bff739afed38cb429b3d55453878a07e5716",
+        "signature": "gov_repo.ledger_v2_immutable()",
+        "volatility": "v",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "610e51612ef2ece3853a57d00f8959740bbe9e6ebd67de3e93cba977e5f1faff",
+        "signature": "gov_repo.ledger_v2_integer(bigint)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "211beaf5cd0c0631047b2c3d2ad5c07ab2ee0c2b94716c79e751bceb984615c7",
+        "signature": "gov_repo.ledger_v2_ip(inet)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "c62b1be7a92d90d1bc07b4b176d7f07d0df9f98ff78838128d91d379673680fc",
+        "signature": "gov_repo.ledger_v2_json(jsonb)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "38c5d97abe20d6f433912e7c7099d085d2e67f1b44bbf1d9b76ed2ce38ac8312",
+        "signature": "gov_repo.ledger_v2_source_immutable()",
+        "volatility": "v",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "govia_ledger_executor=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp"
+        ],
+        "sha256": "420c2bc0c845925f335bcd3ab9f653de1317ee3581006dfbe60aacb399e2f983",
+        "signature": "gov_repo.ledger_v2_timestamp(timestamp with time zone)",
+        "volatility": "i",
+        "securityDefiner": false
+      },
+      {
+        "acl": [
+          "govia_ledger_executor=X/govia_ledger_executor",
+          "postgres=X/govia_ledger_executor"
+        ],
+        "kind": "f",
+        "owner": "govia_ledger_executor",
+        "config": [
+          "search_path=pg_catalog, extensions, pg_temp"
+        ],
+        "sha256": "d52b7bc1d274cb11dd7ef4d3424d4056deba1df9846eb1195007f3695e091ec4",
+        "signature": "gov_repo.ledger_verify(bigint,bigint)",
+        "volatility": "v",
+        "securityDefiner": true
+      }
+    ]
+  }
+}
