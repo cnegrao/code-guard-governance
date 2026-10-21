@@ -12,6 +12,8 @@
 import 'dotenv/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ReportGenerator } from '../src/report/generator';
+import type { PlanType } from '../src/license/manager';
 import { ShadowAPIScanner } from '../src/scanner/shadowApi';
 import { LicenseManager } from '../src/license/LicenseManager';
 
@@ -141,49 +143,40 @@ async function runAudit() {
 }
 
 async function runReport() {
-    const { CompliancePDFGenerator } = require('../src/reports/pdf-generator');
+    const { TechnicalScanPDFGenerator } = require('../src/reports/pdf-generator');
 
-    console.log(`[CodeGuard] Generating Compliance Report...`);
+    console.log(`[CodeGuard] Generating Technical Scan Report...`);
 
     // 1. Scan first
     const files = walkSync(targetPath);
     const violations = [];
+    let hasNonEmptyInput = false;
     for (const file of files) {
         const content = fs.readFileSync(file, 'utf-8');
+        hasNonEmptyInput ||= content.trim().length > 0;
         const v = ShadowAPIScanner.scan(content);
         v.forEach(x => (x as any).file = file);
         violations.push(...v);
     }
 
-    // 2. Aggregate Data
-    const critical = violations.filter(v => v.severity === 'CRITICAL').length;
-    const high = violations.filter(v => v.severity === 'HIGH').length;
-    const score = Math.max(0, 100 - (critical * 10) - (high * 3));
-
-    const scanResult = {
-        score,
-        grade: score > 90 ? 'A' : score > 70 ? 'B' : 'C',
-        issues: {
-            critical,
-            high,
-            medium: violations.filter(v => v.severity === 'MEDIUM').length,
-            low: violations.filter(v => v.severity === 'LOW').length
-        },
-        violations
-    };
+    // Export the bounded technical contract; detector selection is unchanged.
+    const license = LicenseManager.validate();
+    const plan = (license.plan === 'PRO' ? 'PROFESSIONAL' : license.plan) as PlanType;
+    const technicalReport = ReportGenerator.generate(violations, plan, files, {
+        acquisition: files.length === 0 ? 'NO_FILES' : hasNonEmptyInput ? 'INPUT_PROVIDED' : 'EMPTY_INPUT',
+        detectors_run: ['Shadow API'],
+    });
 
     const config = {
         companyInfo: {
             name: process.env.COMPANY_NAME || 'My Company',
-            repository: path.basename(path.resolve(targetPath)),
-            framework: flags.region === 'EU' ? 'GDPR' : 'LGPD'
-        },
-        template: 'basic'
+            repository: path.basename(path.resolve(targetPath))
+        }
     };
 
     // 3. Generate PDF
     try {
-        const generator = new CompliancePDFGenerator(scanResult, config);
+        const generator = new TechnicalScanPDFGenerator(technicalReport, config);
         const buffer = await generator.generate();
         const outputPath = 'report.pdf';
         fs.writeFileSync(outputPath, buffer);

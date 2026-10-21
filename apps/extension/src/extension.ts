@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { reloadEnvConfig } from './core/llm-config';
 import { LicenseManager } from './license/manager';
-import { ComplianceEngine } from './scanner/compliance';
+import { TechnicalScanEngine } from './scanner/compliance';
 import { getWebviewContent, getComplianceAuditWebviewContent } from './ui/dashboard';
 import { RepoIntelligence } from './intelligence/ril';
 import { PatchEngine } from './intelligence/patch';
@@ -94,10 +94,9 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             const licenseStatus = await LicenseManager.checkLicense(licenseKey, context.globalState);
-            const report = ComplianceEngine.scanCode(editor!.document.getText(), licenseStatus, creditBalance > 0);
-            (report as any).creditBalance = creditBalance;
+            const report = TechnicalScanEngine.scanCode(editor!.document.getText(), licenseStatus, creditBalance > 0, editor!.document.uri.toString());
 
-            const panel = vscode.window.createWebviewPanel('codeGuardCompliance', 'Compliance Risk Report', vscode.ViewColumn.Two, { enableScripts: true });
+            const panel = vscode.window.createWebviewPanel('codeGuardTechnicalScan', 'Technical Scan Report', vscode.ViewColumn.Two, { enableScripts: true });
             panel.webview.html = getWebviewContent(report);
             
             panel.webview.onDidReceiveMessage(message => {
@@ -232,7 +231,7 @@ export function activate(context: vscode.ExtensionContext) {
     // 8. Show Menu
     let menuDisposable = vscode.commands.registerCommand('codeguard.showMenu', async () => {
         const choice = await vscode.window.showQuickPick([
-            { label: '$(search) Quick Scan', detail: 'Local/Free' },
+            { label: '$(search) Quick Technical Scan', detail: 'Local/Free - heuristic technical findings' },
             { label: '$(hubot) Deep Audit', detail: 'Consolidated AI Engine' },
             { label: '$(credit-card) Credits', detail: 'Balance & Buy' }
         ]);

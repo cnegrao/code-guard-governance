@@ -10,22 +10,22 @@ export class AIActScanner {
         const heuristics = [
             {
                 pattern: /(creditScore|riskScore|socialScore|trustScore)/i,
-                message: 'Scoring/Profiling detected. Social Scoring is BANNED under AI Act. Credit scoring is HIGH RISK.',
+                message: 'Scoring/profiling-related identifier detected. Review its actual purpose and use.',
                 rule: 'AI_ACT_SOCIAL_SCORING'
             },
             {
                 pattern: /(biometric|facial|fingerprint|retina|emotion)/i,
-                message: 'Biometric data processing detected. Strict categorization required under AI Act.',
+                message: 'Biometric-related identifier detected. Review whether biometric data is processed.',
                 rule: 'AI_ACT_BIOMETRICS'
             },
             {
                 pattern: /(predict|approve|reject|decide)\s*\(.*(loan|hire|fire|exclude|grant).*\)/i,
-                message: 'Automated decision making detected in critical sector (employment/finance). High Risk System.',
+                message: 'Potential automated-decision call pattern detected. Review its purpose and affected subjects.',
                 rule: 'AI_ACT_AUTOMATED_DECISION'
             },
             {
                 pattern: /(race|religion|political|union|genetic|orient)/i,
-                message: 'Processing sensitive categories (Art. 9 GDPR) for AI training/inference is heavily restricted.',
+                message: 'Potential sensitive-category identifier detected. Review its actual data context.',
                 rule: 'AI_ACT_SENSITIVE_DATA'
             }
         ];
@@ -40,7 +40,7 @@ export class AIActScanner {
                         severity: 'LOW', // Always warn/low/info for Preview
                         line: index + 1,
                         match: match[0],
-                        message: `[PREVIEW] ${heuristic.message} (This is an early risk signal, not a compliance verdict).`
+                        message: `[PREVIEW] ${heuristic.message} (Heuristic technical pattern; review required).`
                     });
                 }
             }

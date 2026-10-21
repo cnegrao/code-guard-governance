@@ -1,5 +1,5 @@
 
-import { ComplianceReport } from '../report/types';
+import type { TechnicalScanReport } from '../report/types';
 
 /**
  * SECURITY: HTML escaping utility to prevent XSS attacks
@@ -21,265 +21,74 @@ function getNonce(): string {
     return out;
 }
 
-export function getWebviewContent(report: ComplianceReport): string {
-    const isPaid = report.plan !== 'FREE';
-    const effectivePlan = (report.plan === 'PROFESSIONAL' && (report as any).creditBalance > 0) ? 'CREDIT' : report.plan;
+export function getWebviewContent(report: TechnicalScanReport): string {
     const nonce = getNonce();
-
-    // Calculate Score (Mock logic based on violation density for now, or use real if available)
-    const violationCount = report.violations.length;
-    const score = Math.max(0, 100 - (violationCount * 5));
-    const scoreColor = score > 80 ? 'text-success' : (score > 50 ? 'text-warning' : 'text-danger');
-    const scoreGradient = score > 80 ? 'from-success to-primary' : (score > 50 ? 'from-warning to-danger' : 'from-danger to-purple-900');
-
-    // Safe serialization
-    const safeReport = JSON.stringify(report).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
-
+    const isPaid = report.detector_access !== 'FREE';
+    const counts = report.summary_counts;
     return `<!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; script-src 'nonce-${nonce}' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com;">
-    <title>CodeGuard AI Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
-    <script nonce="${nonce}" src="https://cdn.tailwindcss.com"></script>
-    <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script nonce="${nonce}">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#1337ec",
-                        "accent-cyan": "#00f2ff",
-                        "accent-purple": "#7c3aed",
-                        "surface-dark": "#111111",
-                        "border-dark": "#232948",
-                        "background-dark": "#0a0a0a",
-                        "danger": "#ef4444",
-                        "warning": "#f59e0b",
-                        "success": "#10b981",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"],
-                        "mono": ["JetBrains Mono", "monospace"],
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .glass-panel {
-            background: rgba(17, 17, 17, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(35, 41, 72, 0.5);
-        }
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #232948; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #1337ec; }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+<title>Technical Scan Report</title>
+<style>
+body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 28px; background: #141820; color: #e2e8f0; }
+header, .metrics { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; }
+h1 { margin: 0; font-size: 24px; } h2 { font-size: 18px; }
+section, .metric { background: #1d2430; border: 1px solid #394457; border-radius: 8px; padding: 18px; margin-top: 20px; }
+.metrics { gap: 12px; } .metric { flex: 1; min-width: 100px; } .metric strong { display: block; font-size: 26px; }
+.muted { color: #b7c3d5; } .limitations { border-left: 4px solid #8aa3c7; } .neutral { color: #cbd5e1; }
+table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: 12px; border-bottom: 1px solid #394457; vertical-align: top; }
+.table { overflow-x: auto; } code { overflow-wrap: anywhere; } button { background: #253e68; color: #fff; border: 1px solid #8aa3c7; border-radius: 5px; padding: 8px; cursor: pointer; }
+.critical { color: #fda4af; } .high { color: #fdba74; } .medium { color: #fde68a; }
+</style>
 </head>
-
-<body class="bg-background-dark text-white font-display antialiased overflow-hidden h-screen flex">
-    <!-- Sidebar -->
-    <aside class="w-20 lg:w-64 border-r border-border-dark flex flex-col bg-surface-dark/50 hidden md:flex">
-        <div class="h-16 flex items-center gap-3 px-6 border-b border-border-dark">
-            <span class="material-symbols-outlined text-primary text-2xl">shield_lock</span>
-            <span class="font-bold text-lg hidden lg:block">CodeGuard</span>
-        </div>
-        <nav class="flex-1 py-6 px-3 space-y-1">
-            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium">
-                <span class="material-symbols-outlined">dashboard</span>
-                <span class="hidden lg:block">Overview</span>
-            </a>
-            <div class="mt-auto p-4 border-t border-border-dark">
-                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent-purple flex items-center justify-center text-xs font-bold">U</div>
-                    <div class="hidden lg:block">
-                        <div class="text-sm font-medium">${effectivePlan} Plan</div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden relative">
-        <!-- Header -->
-        <header class="h-16 border-b border-border-dark flex items-center justify-between px-8 bg-background-dark/80 backdrop-blur-md z-10">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <span class="material-symbols-outlined md:hidden text-primary">shield_lock</span>
-                Compliance Overview
-            </h1>
-            <div class="flex items-center gap-4">
-               ${!isPaid ?
-            `<button data-action="upgrade" class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:shadow-lg transition-all">
-                    <span class="material-symbols-outlined text-lg">rocket_launch</span>
-                    Upgrade Plan
-                </button>` :
-            `<span class="text-xs text-success bg-success/10 px-2 py-1 rounded border border-success/20">PRO ACTIVE</span>`
-        }
-            </div>
-        </header>
-
-        <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-8">
-
-            <!-- Top Metrics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <!-- Compliance Score -->
-                <div class="glass-panel p-6 rounded-xl relative overflow-hidden group">
-                    <div class="text-sm text-gray-400 mb-1">Overall Security Score</div>
-                    <div class="flex items-end gap-3">
-                        <span class="text-4xl font-bold ${scoreColor}">${score}</span>
-                        <span class="text-sm text-gray-400 mb-1">/ 100</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-gray-800 rounded-full mt-4 overflow-hidden">
-                        <div class="h-full bg-gradient-to-r ${scoreGradient}" style="width: ${score}%"></div>
-                    </div>
-                </div>
-
-                <!-- Critical Issues -->
-                <div class="glass-panel p-6 rounded-xl relative overflow-hidden">
-                    <div class="text-sm text-gray-400 mb-1">Critical Issues</div>
-                    <div class="flex items-end gap-3">
-                        <span class="text-4xl font-bold text-danger">${report.summaryCounts.critical}</span>
-                    </div>
-                    <div class="text-xs text-gray-500 mt-2">Requires immediate attention</div>
-                </div>
-
-                 <!-- Total Issues -->
-                <div class="glass-panel p-6 rounded-xl relative overflow-hidden">
-                    <div class="text-sm text-gray-400 mb-1">Total Violations</div>
-                    <div class="flex items-end gap-3">
-                        <span class="text-4xl font-bold text-white">${report.violations.length}</span>
-                    </div>
-                     <div class="text-xs text-gray-500 mt-2">Across scanned files</div>
-                </div>
-
-                <!-- Coverage -->
-                <div class="glass-panel p-6 rounded-xl relative overflow-hidden">
-                    <div class="text-sm text-gray-400 mb-1">Regulations Checked</div>
-                    <div class="flex items-end gap-3">
-                         <div class="flex gap-1 mt-2">
-                            <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-900/30 text-blue-400 border border-blue-800">GDPR</span>
-                            <span class="px-1.5 py-0.5 rounded text-[10px] bg-purple-900/30 text-purple-400 border border-purple-800">LGPD</span>
-                             <span class="px-1.5 py-0.5 rounded text-[10px] bg-green-900/30 text-green-400 border border-green-800">AI Act</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Violations Table -->
-            <div class="glass-panel rounded-xl overflow-hidden">
-                <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between">
-                    <h3 class="font-bold text-lg">Active Violations</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-400">
-                        <thead class="text-xs text-gray-500 uppercase bg-surface-dark border-b border-border-dark">
-                            <tr>
-                                <th class="px-6 py-3">Severity</th>
-                                <th class="px-6 py-3">Rule</th>
-                                <th class="px-6 py-3">Message</th>
-                                <th class="px-6 py-3">Location</th>
-                                <th class="px-6 py-3 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${report.violations.map((v, i) => `
-                            <tr class="bg-surface-dark/20 border-b border-border-dark/50 hover:bg-surface-dark/40 transition-colors">
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold ${v.severity === 'CRITICAL' ? 'bg-danger/10 text-danger border border-danger/20' : (v.severity === 'HIGH' ? 'bg-warning/10 text-warning border border-warning/20' : 'bg-success/10 text-success border border-success/20')}">${v.severity}</span>
-                                </td>
-                                <td class="px-6 py-4 font-mono text-xs text-white">${escapeHtml(v.rule)}</td>
-                                <td class="px-6 py-4 font-medium">${escapeHtml(v.message)}</td>
-                                <td class="px-6 py-4 font-mono text-xs opacity-70">Ln ${v.line}</td>
-                                <td class="px-6 py-4 text-right">
-                                    ${v.suggestedFix ?
-                `<button data-action="applyFix" data-fix="${encodeURIComponent(v.suggestedFix)}" class="text-primary hover:text-white font-medium hover:underline bg-primary/10 px-3 py-1.5 rounded border border-primary/30 transition-all hover:bg-primary hover:border-primary">Auto-Fix</button>` :
-                `<span class="text-gray-600 italic">Manual</span>`
-            }
-                                </td>
-                            </tr>
-                            `).join('')}
-                             
-                            ${report.violations.length === 0 ? `
-                            <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                                    <span class="material-symbols-outlined text-4xl mb-2 text-success">check_circle</span>
-                                    <p>Great job! No violations detected.</p>
-                                </td>
-                            </tr>
-                            ` : ''}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Footer Upgrade Call -->
-            ${!isPaid ? `
-            <div class="mt-8 bg-gradient-to-r from-surface-dark to-purple-900/20 border border-border-dark rounded-xl p-8 text-center">
-                <h2 class="text-2xl font-bold text-white mb-2">Detailed Compliance Reports</h2>
-                <p class="text-gray-400 mb-6 max-w-xl mx-auto">Upgrade to Professional to export PDF audit reports, unlock AI-powered automated fixes for complex issues, and access full history.</p>
-                <div class="flex justify-center gap-4">
-                     <button data-action="upgrade" class="bg-primary hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-lg shadow-blue-900/30">
-                         Start 14-Day Free Trial
-                     </button>
-                </div>
-            </div>
-            ` : ''}
-
-        </div>
-    </main>
-
-    <script nonce="${nonce}">
-        const vscode = acquireVsCodeApi();
-
-        document.addEventListener('click', (e) => {
-            const target = e.target;
-            const btn = target && target.closest ? target.closest('button[data-action]') : null;
-            if (!btn) return;
-
-            const action = btn.getAttribute('data-action');
-            if (action === 'upgrade') {
-                vscode.postMessage({ command: 'upgrade' });
-            }
-
-            if (action === 'applyFix') {
-                const fixEnc = btn.getAttribute('data-fix') || '';
-                const fixCode = decodeURIComponent(fixEnc);
-                vscode.postMessage({ command: 'fixViolation', id: fixCode });
-            }
-        });
-    </script>
-</body>
-</html>`;
-}
-
-
-function renderComplianceItem(name: string, status: string): string {
-    const isRisk = status.includes('risk');
-    const isAligned = status.includes('aligned');
-
-    let icon = '⚪'; // Default/Not Applicable
-    if (isRisk) icon = '⚠️';
-    if (isAligned) icon = '✅';
-
-    // Clean up status text
-    const cleanStatus = status.replace('risk detected', 'Risk').replace('aligned', 'Aligned').replace('not applicable', 'N/A');
-
-    return `
-        <div class="compliance-item" style="border-left: 4px solid ${isRisk ? '#d32f2f' : (isAligned ? '#4caf50' : '#bdbdbd')}">
-            <strong>${name}</strong>
-            <span class="status-icon" title="${status}">${icon} <small>${cleanStatus}</small></span>
-        </div>
-    `;
+<body>
+<header><div><h1>Technical Scan</h1><div class="muted">Heuristic - Non-authoritative - Scanned input only</div></div>
+<div>${escapeHtml(report.plan)} plan / ${escapeHtml(report.detector_access)} detector access
+${!isPaid ? '<button data-action="upgrade">Upgrade Plan</button>' : ''}</div></header>
+<section class="limitations" aria-label="Analysis Limitations">
+<h2>Analysis Limitations</h2>
+<p>${escapeHtml(report.summary)}</p>
+${report.limitations.map(l => `<p>${escapeHtml(l)}</p>`).join('')}
+<div class="muted">Acquisition: ${escapeHtml(report.acquisition)} | Scope: SCANNED_INPUT_ONLY</div>
+</section>
+<div class="metrics">
+<div class="metric">Detected Findings<strong>${counts.total}</strong></div>
+<div class="metric">Critical<strong>${counts.critical}</strong></div>
+<div class="metric">High<strong>${counts.high}</strong></div>
+<div class="metric">Medium<strong>${counts.medium}</strong></div>
+<div class="metric">Low<strong>${counts.low}</strong></div>
+</div>
+<section><h2>Scanned Input</h2>
+<ul>${report.files_analyzed.map(f => `<li><code>${escapeHtml(f)}</code></li>`).join('')}</ul>
+<p>Detectors run: ${report.detectors_run.map(escapeHtml).join(', ') || 'Not recorded'}. Detector labels do not establish framework satisfaction.</p>
+<p>Findings shown: ${report.reported_counts.total}; omitted by display limit: ${report.findings_omitted}.</p>
+<div class="muted">${escapeHtml(report.timestamp)}</div></section>
+<section><h2>Detected Findings</h2><div class="table"><table>
+<thead><tr><th>Severity</th><th>Source / Rule</th><th>Detected Pattern</th><th>Location</th><th>Recommendation / Fixability</th></tr></thead>
+<tbody>${report.findings.map((f, i) => `<tr>
+<td class="${f.severity.toLowerCase()}">${escapeHtml(f.severity)}</td>
+<td>${escapeHtml(f.category)}<br><code>${escapeHtml(f.rule)}</code></td>
+<td>${escapeHtml(f.message)}</td>
+<td><code>${escapeHtml(f.file || report.files_analyzed.join(', '))}</code><br>Line ${f.line}</td>
+<td>${escapeHtml(report.recommendations[i]?.text || 'Review detected pattern in context.')}<br>
+${f.suggestedFix ? `<button data-action="applyFix" data-fix="${encodeURIComponent(f.suggestedFix)}">Suggested Fix</button>` : 'Manual review'}</td>
+</tr>`).join('')}
+${report.findings.length === 0 ? `<tr><td colspan="5" class="neutral">${escapeHtml(report.summary)}<p>${escapeHtml(report.limitations[0])}</p></td></tr>` : ''}
+</tbody></table></div></section>
+<script nonce="${nonce}">
+const vscode = acquireVsCodeApi();
+document.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest('button[data-action]') : null;
+    if (!btn) return;
+    const action = btn.getAttribute('data-action');
+    if (action === 'upgrade') vscode.postMessage({ command: 'upgrade' });
+    if (action === 'applyFix') vscode.postMessage({ command: 'fixViolation', id: decodeURIComponent(btn.getAttribute('data-fix') || '') });
+});
+</script>
+</body></html>`;
 }
 
 /**

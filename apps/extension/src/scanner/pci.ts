@@ -12,7 +12,7 @@ export class PCIScanner {
                 // Visa, MasterCard, Amex, Discover
                 regex: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})\b/,
                 severity: 'CRITICAL',
-                message: 'Potential Credit Card Number detected (PCI-DSS Violation).',
+                message: 'Potential credit-card number pattern detected by the PCI detector.',
                 rule: 'PCI_PAN_EXPOSED'
             },
             {
@@ -24,7 +24,7 @@ export class PCIScanner {
             {
                 regex: /track2|magnetic/i,
                 severity: 'CRITICAL',
-                message: 'References to Track2 data detected. Strictly prohibited storage.',
+                message: 'Track2-related term detected. Review whether sensitive track data is stored.',
                 rule: 'PCI_TRACK_DATA'
             }
         ];

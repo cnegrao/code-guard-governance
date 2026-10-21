@@ -1,0 +1,52 @@
+{
+  "record_version": 1,
+  "date": "2026-10-21",
+  "timezone": "America/Sao_Paulo",
+  "slice": "M17.5-V1-S1B C2B-1 - L03 EXTENSION DETERMINISTIC SCAN / REPORT EXPOSURE CONTAINMENT",
+  "slice_status": "CLOSED / PASS",
+  "starting_head": "3cf22805a9b23582da4c2a4bc7c7b7a89da1680d",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "evidence": "docs/codex/evidence/2026-10-21-m17.5-v1-s1b-c2b1-l03-extension-deterministic-containment.md",
+  "verification_scope": "LOCAL_DETERMINISTIC_QUICK_SCAN_REPORT_WEBVIEW_AND_CLI_PDF_EXPORT",
+  "l03_deterministic_report_surface": "CONTAINED / PASS - LOCAL",
+  "l03_overall": "NEEDS_CONTAINMENT",
+  "reason": "Active LLM/deep-audit result, prompts, consumers and certificate/share renderer still require C2B-2.",
+  "historical_records_modified": false,
+  "database_delta": 0,
+  "migration_delta": 0,
+  "hosted_delta": 0,
+  "hosted_verified": false,
+  "validation": {
+    "deterministic_behavior_and_renderer_tests": 16,
+    "source_and_type_guard_tests": 3,
+    "pdf_cli_export_tests": 2,
+    "l02_regression_tests": 14,
+    "extension_global_typecheck": "BASELINE_TS2589_UNCHANGED",
+    "global_typecheck_diagnostic": "apps/extension/src/mcp-server.ts:47 TS2589, reproduced against exact starting HEAD",
+    "active_graph_typecheck": "typecheck:l03 includes extension.ts, CLI, scanner/report, webview, PDF and negative type fixtures",
+    "final_status_guard_tests": 1
+  },
+  "preserved_local_classifications": {
+    "L01": "CONTAINED / PASS - LOCAL",
+    "LX02": "CONTAINED / PASS - LOCAL",
+    "L02": "CONTAINED / PASS - LOCAL",
+    "LX08": "CONTAINED / PASS - LOCAL"
+  },
+  "v1_s1b_status": "OPEN",
+  "m17_5_status": "OPEN",
+  "readiness": {
+    "controlled_demo": "HOLD",
+    "external_publication": "HOLD",
+    "tenant_assurance": "HOLD",
+    "certification": "HOLD",
+    "m18": "HOLD"
+  },
+  "next_micro_phase": "M17.5-V1-S1B C2B-2 - L03 LLM / DEEP-AUDIT SEMANTIC CONTAINMENT",
+  "next_micro_phase_started": false,
+  "limitations": [
+    "No hosted or VS Code Extension Host acceptance run; source/runtime and local export fixtures only.",
+    "Global extension typecheck remains blocked by its reproduced pre-existing MCP generic-instantiation diagnostic. The affected runtime graph is typechecked separately.",
+    "Package main points to index.js, absent from the tracked source tree; no packaging or deployment repair is authorized or claimed.",
+    "Independent raw Shadow API CLI/dispatcher paths do not consume this report contract and are not certified or declared fully remediated by this checkpoint."
+  ]
+}

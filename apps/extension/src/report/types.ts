@@ -1,15 +1,8 @@
+import type { Violation } from '../scanner/gdpr';
+import type { PlanType } from '../license/manager';
 
-import { Violation } from '../scanner/gdpr';
-import { PlanType } from '../license/manager';
-
-export { Violation };
-
-export interface ScanResult {
-    score: number;
-    grade: string;
-    issues: SummaryCounts;
-    violations: Violation[];
-}
+/** Source rule IDs/categories are traceability metadata, never framework results. */
+export type TechnicalFinding = Violation & { file?: string };
 
 export interface SummaryCounts {
     total: number;
@@ -19,26 +12,35 @@ export interface SummaryCounts {
     low: number;
 }
 
-export interface ComplianceMapping {
-    GDPR: 'aligned' | 'partially aligned' | 'risk detected';
-    LGPD: 'aligned' | 'partially aligned' | 'risk detected';
-    // Keeping scope focused on user request (GDPR/LGPD/AI_ACT), but adding placeholders for others as per prompt
-    PCI_DSS: 'not assessed' | 'risk detected' | 'aligned';
-    CCPA: 'aligned' | 'partially aligned' | 'risk detected' | 'not applicable';
-    HIPAA: 'aligned' | 'partially aligned' | 'risk detected' | 'not applicable';
-    OWASP: string[];
-    ISO27001: 'not assessed' | 'best-practice indicators present';
-    AI_ACT: 'early alignment signals' | 'risk detected' | 'not applicable' | 'aligned';
-}
+export const ANALYSIS_BOUNDARY = Object.freeze({
+    kind: 'TECHNICAL_SCAN',
+    source: 'DETERMINISTIC_TECHNICAL_SCAN',
+    authority: 'HEURISTIC_NON_AUTHORITATIVE',
+    scope: 'SCANNED_INPUT_ONLY',
+    compliance_determination: false,
+    legal_conclusion: false,
+    certification: false,
+    assurance: false,
+} as const);
 
-export interface ComplianceReport {
-    executiveSummary: string;
-    violations: Violation[];
-    summaryCounts: SummaryCounts;
-    complianceMapping: ComplianceMapping;
-    recommendations: string;
-    humanValidationRequired: boolean;
+export const ANALYSIS_LIMITATION = 'This does not establish legal compliance, framework satisfaction, control effectiveness, certification or completeness. It is not a legal conclusion or assurance.';
+export type AcquisitionState = 'INPUT_PROVIDED' | 'EMPTY_INPUT' | 'NO_FILES' | 'PARTIAL_INPUT' | 'UNKNOWN';
+
+export interface TechnicalScanReport {
+    analysis_boundary: typeof ANALYSIS_BOUNDARY;
+    findings: TechnicalFinding[];
+    /** Counts include detected findings hidden by an existing plan limit. */
+    summary_counts: SummaryCounts;
+    reported_counts: SummaryCounts;
+    findings_omitted: number;
+    detection_state: 'DETECTED' | 'NO_FINDINGS_DETECTED_IN_SCANNED_INPUT' | 'NOT_ASSESSED';
+    summary: string;
+    recommendations: { rule: string; line: number; file?: string; text: string }[];
+    files_analyzed: string[];
+    acquisition: AcquisitionState;
+    detectors_run: string[];
     plan: PlanType;
-    filesAnalyzed: string[];
+    detector_access: 'FREE' | 'PAID' | 'CREDITS';
     timestamp: string;
+    limitations: string[];
 }

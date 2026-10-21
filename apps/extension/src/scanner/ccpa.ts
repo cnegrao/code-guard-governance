@@ -11,14 +11,14 @@ export class CCPAScanner {
                 // Social Security Number (Sensitive PII)
                 regex: /ssn|social_security|socialsecurity/i,
                 severity: 'HIGH',
-                message: 'Social Security Number (SSN) reference detected. Requires strict encryption and access control (CPRA Highly Sensitive).',
+                message: 'Potential SSN reference detected. Review data handling and access controls.',
                 rule: 'CCPA_SENSITIVE_PII_SSN'
             },
             {
                 // Driver's License (Sensitive PII)
                 regex: /driver.*license|dl_number/i,
                 severity: 'HIGH',
-                message: 'Driver License number detected. Requires encryption (CPRA Sensitive PII).',
+                message: 'Potential driver-license field detected. Review data handling and encryption.',
                 rule: 'CCPA_SENSITIVE_PII_DL'
             },
             {
@@ -32,14 +32,14 @@ export class CCPAScanner {
                 // Precise Geolocation (CPRA Specific)
                 regex: /gps|latitude|longitude|precise_location/i,
                 severity: 'MEDIUM',
-                message: 'Precise Geolocation data detected. Does not track without explicit Opt-In (CPRA).',
+                message: 'Geolocation-related identifier detected. Review its actual collection and use.',
                 rule: 'CPRA_SENSITIVE_GEOLOCATION'
             },
             {
                 // Biometrics
                 regex: /face_id|fingerprint|biometric|retina/i,
                 severity: 'HIGH',
-                message: 'Biometric data collection detected. Requires explicit notice at collection.',
+                message: 'Biometric-related identifier detected. Review whether data is collected.',
                 rule: 'CCPA_BIOMETRIC_DATA'
             }
         ];

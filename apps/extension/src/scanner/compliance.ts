@@ -1,29 +1,21 @@
 
-import { LicenseStatus, PlanType } from '../license/manager';
+import type { LicenseStatus } from '../license/manager';
 import { GDPRScanner } from './gdpr';
 import { LGPDScanner } from './lgpd';
 import { CCPAScanner } from './ccpa';
 import { AIActScanner } from './ai_act_preview';
 import { Violation } from './gdpr';
 
-export interface AnalysisResult {
-    violations: Violation[];
-    totalViolationsFound: number;
-    shownViolations: number;
-    plan: PlanType;
-    summary: string;
-}
-
 import { ReportGenerator } from '../report/generator';
-import { ComplianceReport } from '../report/types';
+import type { TechnicalScanReport } from '../report/types';
 
 import { PCIScanner } from './pci';
 import { HIPAAScanner } from './hipaa';
 import { OWASPScanner } from './owasp';
 import { ShadowAPIScanner } from './shadowApi';
 
-export class ComplianceEngine {
-    static scanCode(content: string, license: LicenseStatus, hasCredits: boolean = false): ComplianceReport {
+export class TechnicalScanEngine {
+    static scanCode(content: string, license: LicenseStatus, hasCredits: boolean = false, fileName = 'scanned input'): TechnicalScanReport {
         let violations: Violation[] = [];
 
         // 1. Run Scanners
@@ -34,7 +26,7 @@ export class ComplianceEngine {
         violations = [...gdprViolations, ...shadowApiViolations];
 
         // Unlock advanced scanners if Paid License OR Has Credits
-        const isUnlocked = license.plan !== PlanType.Free || hasCredits;
+        const isUnlocked = license.plan !== 'FREE' || hasCredits;
 
         if (isUnlocked) {
             const lgpdViolations = LGPDScanner.scan(content);
@@ -55,17 +47,11 @@ export class ComplianceEngine {
             ];
         }
 
-        // 2. Enforce Limits strictly for the returned report
-        // If Unlocked (Credits or License), show all.
-        let shownViolations = violations;
-        if (!isUnlocked && violations.length > license.maxViolations) {
-            shownViolations = violations.slice(0, license.maxViolations);
-        }
-
-        // 3. Generate Full Report using the NEW Generator
-        // Treat Credits as Professional Plan for reporting purposes
-        const effectivePlan = (hasCredits && license.plan === PlanType.Free) ? PlanType.Professional : license.plan;
-
-        return ReportGenerator.generate(shownViolations, effectivePlan, ['activeFile.ts']);
+        return ReportGenerator.generate(violations.map(f => ({ ...f, file: fileName })), license.plan, [fileName], {
+            acquisition: content.trim().length === 0 ? 'EMPTY_INPUT' : 'INPUT_PROVIDED',
+            detectors_run: ['GDPR', 'Shadow API', ...(isUnlocked ? ['LGPD', 'CCPA', 'AI Act', 'PCI', 'HIPAA', 'OWASP'] : [])],
+            detector_access: license.plan !== 'FREE' ? 'PAID' : hasCredits ? 'CREDITS' : 'FREE',
+            finding_limit: isUnlocked ? violations.length : license.maxViolations,
+        });
     }
 }

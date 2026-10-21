@@ -46,7 +46,7 @@
 
       {
         "command": "codeguard.scan",
-        "title": "CodeGuard: Quick Scan (Local/Free)"
+        "title": "CodeGuard: Quick Technical Scan (Local/Free)"
       },
       {
         "command": "codeguard.fix",
@@ -161,6 +161,9 @@
     "vscode:prepublish": "npm run compile",
     "build": "npm run compile",
     "compile": "tsc -p ./ && node -e \"require('fs').cpSync('.well-known', 'out/.well-known', {recursive: true})\"",
+    "typecheck": "tsc --noEmit -p ./",
+    "test:l03": "tsx --test test/l03/*.test.ts",
+    "typecheck:l03": "tsc --noEmit -p tsconfig.l03.json",
     "watch": "tsc -watch -p ./",
     "start:mcp": "node out/src/mcp-server.js",
     "test": "mocha out/test/api.test.js --timeout 10000",

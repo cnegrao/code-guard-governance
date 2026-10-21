@@ -48,7 +48,7 @@ export class GDPRScanner {
                 // Logging Personal Data - Critical/High
                 regex: /console\.log\s*\(\s*.*(email|user|password|token|creds).*\)/,
                 severity: 'CRITICAL',
-                message: 'Logging sensitive user data triggers GDPR violation risks.',
+                message: 'Potential sensitive-data logging pattern detected. Review the logged fields.',
                 rule: 'GDPR_LOGGING_SENSITIVE'
             }
         ];
