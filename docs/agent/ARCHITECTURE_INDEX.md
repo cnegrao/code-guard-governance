@@ -1,5 +1,8 @@
 # Architecture index
 
+- [M17.5-V1-S0 Hub ADR](../architecture/ADR-GOVIA-TRUST-ASSURANCE-HUB-v1.md) / [read contract](../trust-assurance/v1-hub-read-contract.md) / [JSON](../trust-assurance/v1-hub-read-contract.json) — documentary architecture closure: D-V1-01–15, 40 read categories, V1-A1 denominator and V1-A2 security decisions, 11 views and W-V1-01–20. No Hub implementation or exposure granted; all readiness HOLDs and M18 HOLD remain.
+- [M17.5-V1-S0 handoff](../codex/evidence/2026-10-20-m17.5-v1-s0-hub-read-contract.md) — pinned V0/E1 sources, documentation-only verification and proposed separately authorized V1-S1A LX08 audit security containment; no implementation started.
+
 - [M17.5-V0-E1 adversarial errata](../trust-assurance/v0-closure-errata-v1.md) / [JSON](../trust-assurance/v0-closure-errata-v1.json) — append-only corrections to the closed V0 pack: separate record access/affirmative use, S2 controlling ceilings, separate exposure population including audit/PDF/package inputs, and unresolved mandatory V1-A1/V1-A2. All readiness HOLDs remain; V1-S0/M18 not started.
 - [M17.5-V0-E1 handoff](../codex/evidence/2026-10-20-m17.5-v0-e1-adversarial-errata.md) — owner-supplied external review provenance, immutable S0–S5 artifacts, verification and next action.
 

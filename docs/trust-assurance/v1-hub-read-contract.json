@@ -1,0 +1,3747 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "M17.5-V1-S0",
+  "record_version": 1,
+  "recorded_at": "2026-10-20",
+  "timezone": "America/Sao_Paulo",
+  "repository": "cnegrao/code-guard-governance",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "starting_head": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+  "status": "ARCHITECTURE_CONTRACT_ONLY",
+  "author": "Codex / owner-authorized documentary V1-S0",
+  "supersedes": null,
+  "decisions": {
+    "V0_READINESS_PACK": "CLOSED / PASS",
+    "V0_E1": "CLOSED / PASS",
+    "V1_S0": "CLOSED / PASS",
+    "M17_5_OVERALL": "OPEN",
+    "CONTROLLED_DEMO_READINESS": "HOLD",
+    "EXTERNAL_PUBLICATION_READINESS": "HOLD",
+    "TENANT_ASSURANCE_READINESS": "HOLD",
+    "CERTIFICATION_READINESS": "HOLD",
+    "M18": "HOLD"
+  },
+  "frozen": {
+    "canonical_object_kinds": 11,
+    "governed_relationship_types": 12,
+    "passport_families": 16,
+    "new_canonical_authority": false,
+    "new_authority_permissions": 0,
+    "authoritative_families": "M16 and M17 unchanged; L14/L15 authority and shared Authority Policy unchanged",
+    "trust_vocabulary": "UNCHANGED",
+    "historical_decisions": "IMMUTABLE"
+  },
+  "historical_inputs": [
+    {
+      "path": "docs/architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "9ad77374aa9c392013c911415f5d9cd6188a73cb",
+      "sha256_lf_utf8": "2ce903ea6e88bf6d78c9e7d3a70ab2f6959935d6f66d30baefc2b2a27586df1e"
+    },
+    {
+      "path": "docs/architecture/GOVIA-L0L16-CIA-v1.0-roadmap.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "09673d1ca3979c30269be719a161b45ad4ca67b3",
+      "sha256_lf_utf8": "ad1a71dca174209e3bc2982d6c0a666bdf18d82cc0742169cd67f390a7af7f5b"
+    },
+    {
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "e8316db57f39a6bce03b41a09f871ffbd8e1eb43",
+      "sha256_lf_utf8": "74d949895f23f7f53499c00f07e287d42f7c92acdeda001c5608ae6059ad8b0f"
+    },
+    {
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "da2a247c464809c392a5fd03b2cea3da85110f7b",
+      "sha256_lf_utf8": "699f19874477652181153308a5bab0ca53ad1e4432dcda4c4bf0f86c7b39b02a"
+    },
+    {
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s1-source-crosswalk.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "0c8553a55a7b912bebadcecd9a72244bb9edb14e",
+      "sha256_lf_utf8": "2d6dd5bb7eeaf88f402fdbfc7b3a225f509a1e4f9a40d704ef5d227f4b99e8f4"
+    },
+    {
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s2-gaps-claims.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "0c5932752750e9e69ef3f5717afc07a01e23dc94",
+      "sha256_lf_utf8": "d1889b774bfaebca4f086ce8f323370e55d1dfc9a000e1b7fb88c5f198c76a2c"
+    },
+    {
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s3-award-readiness.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "3c06033cc26033a6d3af4f2c895f3de37903da7e",
+      "sha256_lf_utf8": "38b26e8c5cc8f6c64268a0730940abd3e77711bff009934e83747c0cc086f17d"
+    },
+    {
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s4-kpi-framework.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "3ab1afb6798c23b305bdef472a5d9d6a06670553",
+      "sha256_lf_utf8": "f6b8ba376d754add59bce12ced81a274ab27e0bb1fdd90088da556bd2c539f34"
+    },
+    {
+      "path": "docs/trust-assurance/award-calendar-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "fae65ee8b37d95073e7f6db38a663cfa1d702921",
+      "sha256_lf_utf8": "98a1d631b52c67507903e917c556829add35a02b8e24356c499bc9bb5fd44f19"
+    },
+    {
+      "path": "docs/trust-assurance/award-calendar-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "1f4832b80db8b64afe9ea0b2f628a61ab72557b0",
+      "sha256_lf_utf8": "aace88bf943fe0feee4ad1cb71fd0a70c2fe03c0d0999367b6f25f55522f5f24"
+    },
+    {
+      "path": "docs/trust-assurance/award-readiness-matrix-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "fefcdf820d8d182fb1e29b958922faaba6c8785e",
+      "sha256_lf_utf8": "f2337cbd6ef6b07cc2a23c5e28aae90ef16a11d34bd24765abae0c1cccb38bba"
+    },
+    {
+      "path": "docs/trust-assurance/award-readiness-matrix-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "95706c8d4cef022f4f1b7905d038f5fd0303441f",
+      "sha256_lf_utf8": "4e439f0d3450cbfe42e915bca11203cd65cb9ee38a3b57b911bcc472fa261299"
+    },
+    {
+      "path": "docs/trust-assurance/award-render-v0.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "766404b14ff0ab8ed15b9f81e83f4373675ea425",
+      "sha256_lf_utf8": "b7a9659e5cc18b6eb661b85877c418a3117a848db5e22ba4b31dab6015310a71"
+    },
+    {
+      "path": "docs/trust-assurance/closure-render-v0.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "c62e1ee479f2a17084ca3e3e4ed4a554f4528959",
+      "sha256_lf_utf8": "0b7b13b6ac37575901f3a8a8eba8d94d555be3c5653bbad3c64e2b842a89c178"
+    },
+    {
+      "path": "docs/trust-assurance/commercial-claims-register-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "9b55194733c824b6d5d19246c2f1aca155fd57cf",
+      "sha256_lf_utf8": "eaf3208146f151bf17ce8390628faadd94cd46e1a11cc10c08c3ff81de3e4107"
+    },
+    {
+      "path": "docs/trust-assurance/commercial-claims-register-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "5559cab90d49b84780ba0ef93db1efd83bdc874f",
+      "sha256_lf_utf8": "06907c6b0f00ba082bce7cab2e5ef367ab274cf4129464aaf4e8099b24452dc6"
+    },
+    {
+      "path": "docs/trust-assurance/errata-render-v1.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "be61264cfcc643759d60597f06711486e6c40932",
+      "sha256_lf_utf8": "d6e1c2830ca1eb5c72de637768e5ff58abfd65446f511a91d3143156bb9ba752"
+    },
+    {
+      "path": "docs/trust-assurance/evidence-index-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "95f8a4572373ca6fefcf58bbc95580f63a8e3b43",
+      "sha256_lf_utf8": "84f273f365c2721434e7b54c28f8ffe27a5e5ecc8e79037dca2fb09ade33a12f"
+    },
+    {
+      "path": "docs/trust-assurance/evidence-index-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "4f691d2892c502aaac09bbb468e790401e7c113a",
+      "sha256_lf_utf8": "991e718b0c03cd15e9be5d5da56287301faa6729c017e368e2a0747576bf2938"
+    },
+    {
+      "path": "docs/trust-assurance/external-credibility-matrix-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "ef40ea61692eb03dde4e47e0234ef0356d83de7e",
+      "sha256_lf_utf8": "6a46bf1bddef532ad10f0af9a4d22647dc1fd402e7c47e709119245250e9b3ed"
+    },
+    {
+      "path": "docs/trust-assurance/framework-crosswalk-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "24ae2be21f517077ef0ec640f4b4b8fb8be572a9",
+      "sha256_lf_utf8": "a701d10decebc4a7b81c33b84f4412d1f33d5261b43b6f7a7055649b66b8a816"
+    },
+    {
+      "path": "docs/trust-assurance/framework-crosswalk-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "49e31439714965c32630c9df254f7467ee231ef5",
+      "sha256_lf_utf8": "f1b652d5cdd250f9b7e58705d0232362fcdedf0707b91984cc85e2c1057facde"
+    },
+    {
+      "path": "docs/trust-assurance/framework-source-catalog-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "32e24e96d78f3dd1483256d6b5a2c72b506e657d",
+      "sha256_lf_utf8": "d220b50f8943e337bcf20622692175165998d5cf818ca979496658bae44bfa40"
+    },
+    {
+      "path": "docs/trust-assurance/gap-register-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "d257548ae81c4bc5ec6c01fd5b461e2271ea8caa",
+      "sha256_lf_utf8": "d3abd41ccbbe777966d6c30deba22026ff8475b9c6d3b686203fd0495d25af46"
+    },
+    {
+      "path": "docs/trust-assurance/gap-register-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "efda50263253d690b4db7698d5195b4efa34facf",
+      "sha256_lf_utf8": "83a449f3502bf6c0a3d066d24d0aa2ccfebacd5ee5a56fd34132ef25dd36b1fd"
+    },
+    {
+      "path": "docs/trust-assurance/kpi-framework-v0.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+      "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69"
+    },
+    {
+      "path": "docs/trust-assurance/kpi-framework-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "ca417d8825464c20d764be8ae8e058f0b0aa169e",
+      "sha256_lf_utf8": "5670e68b5a4b69c5fef7336ee3cd6f4cb30fdc3323fb606c2f1b3a0d5ac166b9"
+    },
+    {
+      "path": "docs/trust-assurance/kpi-render-v0.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "fd630017383967639a4c18cb42c39b448774376f",
+      "sha256_lf_utf8": "844e77d6c57d7b98ac3a1eec57fa04f4506224a525980b82de261488472e6f94"
+    },
+    {
+      "path": "docs/trust-assurance/legacy-containment-register-v0.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "5763ca02ca74689e8c831b45271dfd728ea4799c",
+      "sha256_lf_utf8": "d20001d94f1cca7c5d24c64ac427a0a3f949bb826b57772a68dd2d92c6285623"
+    },
+    {
+      "path": "docs/trust-assurance/v0-closure-errata-v1.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "2a772366b2d60a08dc183b7816bf77ebf68be975",
+      "sha256_lf_utf8": "7085113dbe5d92574987880e5078a001de3cc350f04bc780e7abc0ddaccc2e2c"
+    },
+    {
+      "path": "docs/trust-assurance/v0-closure-errata-v1.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "fed8b0b229bb2943c8a728d2c3a9318190cc75c1",
+      "sha256_lf_utf8": "41544ec9a9c1ae0bc1a6f71afa75b9f637dcf2ef1288a1342989629d27a2acae"
+    },
+    {
+      "path": "docs/trust-assurance/v0-closure-review.json",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+      "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603"
+    },
+    {
+      "path": "docs/trust-assurance/v0-closure-review.md",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "d6fbf6dafd7249e20ea594abfc4c0ae2c2282890",
+      "sha256_lf_utf8": "267b5070855579e7fbb4ad2f7f135ad02b78e11e4d76e810b022334c1c1a5b7d"
+    },
+    {
+      "path": "docs/trust-assurance/verify-e1-final.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "bda8a608ad3d688f349857d3d9a5282dba0b40df",
+      "sha256_lf_utf8": "4c2ea1934848cefcc558842c3a2adb26843cf25ef5f7f02956664f1897c15a6f"
+    },
+    {
+      "path": "docs/trust-assurance/verify-e1.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "eede530b3b09ebeb605235b59ecaf50804ab2d86",
+      "sha256_lf_utf8": "048a674c1abc6fb382ed7e92f0873200bc9dfbfebcca1a57a780f47c777167f5"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s2-final.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "d144bf3492a2c982051378a26c8d2bdae84c113c",
+      "sha256_lf_utf8": "ccf51c88c65f888bd7bed06085aa28555c4b2f8d36fa8747d22b0ca5ed9eb6e2"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s2.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "251c0a71e8265a6c913aff340b57af160fd69170",
+      "sha256_lf_utf8": "df82d2378875d7c89317b2d1ed39382b958db3a3cae90c4c905c0b282dc82c06"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s3-final.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "be926149c98a76f39dde149d48bff7286cb4d58f",
+      "sha256_lf_utf8": "06ddbc18072f45e0a628b42fd0d1dca739a4879aea16a228b7bb5aff221e531d"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s3.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "2d8277ddfb7229ae3bf269d9f3ab03a848c7e750",
+      "sha256_lf_utf8": "e42a7360e157f387f165e1ad2d29d1df01c4c79247c7fca305040fab3eac9c71"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s4-final.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "f51196ce99eda866ff0e88c539a9c1960bf7c701",
+      "sha256_lf_utf8": "9adc4bc748e804a22daedfd33391a991337fd4bf7396dae659182f1a2f72a53c"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s4.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "1ebd6f171e0f7627e0fdc02f3fd901f8456f293d",
+      "sha256_lf_utf8": "cf86b801e93b1421b1256594022c0c43401e8011801675a52a8f864499e7a757"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s5-final.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "2d93a9a04195727234a2629644e8b883f9a79095",
+      "sha256_lf_utf8": "1372fa67728410ef92c287ec958ae3ed2d8c460a9c2d4f7e93d1db37e283c04e"
+    },
+    {
+      "path": "docs/trust-assurance/verify-s5.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "f08d24e738b9105d3edfa31614aaad7d50482a9e",
+      "sha256_lf_utf8": "2681f2e9a0263a43bf0432d0550d652ce8c2a8f0d8fb2f0867a71b7d287a8cc3"
+    },
+    {
+      "path": "docs/trust-assurance/verify-v0.test.mjs",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "f079f37581b2bfee35d81e0e742ead81b8389579",
+      "sha256_lf_utf8": "83735970d72a34d59ff9d42783893cb248b5f942320ffa1273987deed3ebe8cd"
+    },
+    {
+      "path": "packages/canonical-contracts/src/contracts.ts",
+      "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+      "git_blob": "f44dd97a0fba469d40286b69e2eabc909374867f",
+      "sha256_lf_utf8": "f3c113e2d0853f1062fe3116bf55a86f41deb2e99774cf5833589e0b2803dab6"
+    }
+  ],
+  "implementation_classes": [
+    "PROJECTION_ONLY_METADATA",
+    "ADDITIVE_READ_PROJECTION_REQUIRED",
+    "API_REQUIRED",
+    "UI_REQUIRED",
+    "REVIEW_WORKFLOW_REQUIRED",
+    "EXTERNAL_ARTIFACT_REQUIRED",
+    "LEGACY_CONTAINMENT_REQUIRED",
+    "SOURCE_OR_LICENSE_REQUIRED"
+  ],
+  "modes": {
+    "PRODUCT_ASSURANCE": {
+      "organisation_id": null,
+      "source": "Pinned repository/product V0/E1 metadata and evidence; not tenant operating effectiveness",
+      "allowed_read_classes": [
+        "PINNED_PRODUCT_METADATA",
+        "PINNED_EXTERNAL_REFERENCE"
+      ],
+      "mix_with_tenant": false
+    },
+    "TENANT_ASSURANCE": {
+      "organisation_id": "Exactly one verified-principal organisation; never caller-selected authority",
+      "source": "Customer estate within immutable scope manifest, only after all authorized typed read hops exist",
+      "execution_available": false,
+      "mix_with_product": false,
+      "mutates_product_claims": false
+    }
+  },
+  "architecture_decisions": [
+    {
+      "decision_id": "D-V1-01",
+      "title": "Hub source-of-truth boundary",
+      "decision": "The Hub reads canonical governance truth -> existing evidence -> capability -> source-pinned framework/reference -> assurance projection -> gap/claim/certification state -> controlled presentation. It owns only disposable projection/execution metadata, never governance truth, a compliance engine, scoring or certification authority. Keep original authority on every hop.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-02",
+      "title": "Product vs Tenant Assurance",
+      "decision": "Require an explicit mode on every request, projection, filter, cache key, export and drill-down. PRODUCT has organisation_id=null; TENANT has one verified-principal organisation and a scope manifest. No combined totals, evidence promotion or silent mode fallback. Product proof does not prove tenant assurance; tenant evidence cannot alter product claims.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-03",
+      "title": "Tenant scope manifest",
+      "decision": "Adopt the S4 SCOPE_V1 concept as immutable projection/execution metadata, not a canonical object. Fix requirements and governed subject populations before evidence evaluation. Preserve reviewed NOT_APPLICABLE members. Unknown membership or unenumerable full-framework sources block complete execution.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-04",
+      "title": "Read security classes",
+      "decision": "Classify source, wrapper and internal dependency separately. Positive tenant use requires verified-principal DB authorization, exact same-tenant identities and explicit cutoff support. Repository metadata and public bibliographic sources have their own non-tenant classes. No unlisted read hop is allowed.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-05",
+      "title": "service_role / privileged transport boundary",
+      "decision": "service_role is technical transport only. Existing M16/M17 SECURITY DEFINER RPCs revalidate the verified session and enforce organisation/target binding in PostgreSQL; the privilege itself grants no governance authority. Application-only organisation filters are ineligible for tenant assurance. Internal owner-only resolvers remain internal; no new grants or permissions are designed here.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-06",
+      "title": "Atomic cutoff semantics",
+      "decision": "A shared timestamp is necessary but insufficient. Require an attested one-snapshot read transaction (REPEATABLE READ or equivalent proven snapshot) for all mutable DB dependencies, plus immutable external/source version vector. Existing independent RPC calls and Passport null/null defaults do not prove atomicity. Fail closed as NON_ATOMIC/UNKNOWN until additive composition proves it.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-07",
+      "title": "UNKNOWN/error rendering",
+      "decision": "Separate acquisition, authorization, dependency, axis and assessment state. UNKNOWN is first-class. Denial never means absence, missing row never means BROKEN, complete empty population never means compliant. Invalid/unrecognized states fail closed without green defaults or unauthorized existence/count disclosures.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-08",
+      "title": "KPI denominator hazard",
+      "decision": "Recommend a typed non-composable COUNT/PARTITIONED_COUNT projection (option B), with separately authorized audit population identity metadata (option A safeguard). Do not transport historical known_population or equivalent denominator in generic Hub data. Conservation uses exact member/partition audit proof. No ratio/percentage/score operator or renderer; definitions remain definitions.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-09",
+      "title": "Claim ceiling precedence",
+      "decision": "S2_COMMERCIAL_CLAIMS_REGISTER capability_ceilings.current_claim_ceiling controls, with E1 access/affirmative-use overlay. S1 EVIDENCE_BACKED_ALIGNMENT_CANDIDATE is historical mapping metadata only. Missing/inconsistent S2 fails closed. 42 INELIGIBLE/INTERNAL_ONLY/PROHIBITED records remain so. No publication approval is granted.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-10",
+      "title": "Gap vs exposure-gate populations",
+      "decision": "ASSURANCE_GAPS is the historical S2 set of 61 OPEN members. PRESENTATION_EXPOSURE_GATES is the separate E1 open-universe population of 14 known members (L04 package compatibility expands one member). Neither is exhaustive global gap truth. No mixed total or label 61 total gaps.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-11",
+      "title": "Certification external-artifact contract",
+      "decision": "Keep NOT_ASSERTED. A positive state requires an independently issued, authenticated artifact matching exact issuer, subject, scope, framework/version, validity and current verification/revocation basis. No artifact currently exists in the pack. Readiness, mappings, ledger integrity and internal reviews cannot infer it.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-12",
+      "title": "European Assurance Profile",
+      "decision": "Projection only: preserve source/version, applicability, mapping, availability, sufficiency, internal readiness and external artifact axes. The original OJ base-text reference is not an operative-law conclusion. Qualified current-law/applicability review is a separate prerequisite; unresolved source/scope yields UNKNOWN. No generic EU AI Act compliant state.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-13",
+      "title": "LLM explanation boundary",
+      "decision": "Governed truth stays upstream; graph traversal remains ANALYTICAL and vector similarity non-authoritative. An LLM may explain a deterministic, authorized projection with exact citations and limitations. It cannot create mappings, applicability, sufficiency, certification, eligibility or publication approval. Strip numerical confidence/score as assurance proof.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-14",
+      "title": "Legacy containment dependency",
+      "decision": "Consume all L01-L05 and LX01-LX09 E1 exposure inputs. Exclusion in a design document does not prove containment in runtime/navigation/packages/exports. Affected demo/publication/tenant paths remain blocked until separately authorized containment and independent exposure acceptance. LX08 also requires a security review.",
+      "status": "DECIDED_DESIGN_ONLY"
+    },
+    {
+      "decision_id": "D-V1-15",
+      "title": "Future consumer interface / M18 neutrality",
+      "decision": "Define consumer-neutral projection metadata only. M18 Pillar 8 is forward-looking planning terminology, not canonical architecture. No M18 API, formalization, implementation, persona truth or Normative Intelligence is introduced.",
+      "status": "DECIDED_DESIGN_ONLY"
+    }
+  ],
+  "read_security_classes": [
+    {
+      "id": "PINNED_PRODUCT_METADATA",
+      "meaning": "Immutable repository artifact with original provenance and repository access; no tenant assurance authorization."
+    },
+    {
+      "id": "PINNED_EXTERNAL_REFERENCE",
+      "meaning": "Exact publisher/issuer metadata and lawful source entitlement; not tenant truth or legal applicability."
+    },
+    {
+      "id": "PRINCIPAL_BOUND_AUTHORIZED",
+      "meaning": "DB revalidates principal and same-tenant exact key; original governed resolver semantics retained."
+    },
+    {
+      "id": "PRINCIPAL_BOUND_PROJECTION",
+      "meaning": "DB-authorized composition of exact reads; no new authority; needs proven snapshot/completeness for assurance."
+    },
+    {
+      "id": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ",
+      "meaning": "Observed technical transport facet of principal-bound DB reads; never an independent authorization class or bypass."
+    },
+    {
+      "id": "PRIVILEGED_APP_FILTERED",
+      "meaning": "Server privilege plus application org/subject filtering; disallowed for tenant assurance despite verified ingress."
+    },
+    {
+      "id": "UNSAFE_FOR_V1",
+      "meaning": "Known unsafe assurance semantics, absent org/principal binding, legacy inference or unproved boundary."
+    },
+    {
+      "id": "NO_READ_SURFACE",
+      "meaning": "Required tenant projection/artifact/resolver not established at the starting HEAD; fail closed."
+    }
+  ],
+  "read_inventory": [
+    {
+      "read_id": "R-PRODUCT",
+      "source_projection": "S0 inventory, S1 crosswalk/evidence/credibility and S2-S5/E1 documentary pack",
+      "data_class": "PRODUCT_REPOSITORY_METADATA",
+      "tenant_bound": false,
+      "subject_scope": "PRODUCT",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Existing repository read permission; no tenant data",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "PRODUCT_GIT_SNAPSHOT with original date precision",
+      "recorded_cutoff_support": "Exact Git artifact/version vector",
+      "atomic_support": "IMMUTABLE_PINNED_VECTOR",
+      "fail_closed": "UNKNOWN; no substitute read or positive assertion",
+      "usable_by_v1": "PRODUCT_METADATA_ONLY",
+      "additive_projection_required": false,
+      "security_class": "PINNED_PRODUCT_METADATA",
+      "sources": [
+        {
+          "path": "docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "e8316db57f39a6bce03b41a09f871ffbd8e1eb43",
+          "sha256_lf_utf8": "74d949895f23f7f53499c00f07e287d42f7c92acdeda001c5608ae6059ad8b0f",
+          "line": 62,
+          "anchor": "\"capabilities\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.json#L62"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-errata-v1.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "2a772366b2d60a08dc183b7816bf77ebf68be975",
+          "sha256_lf_utf8": "7085113dbe5d92574987880e5078a001de3cc350f04bc780e7abc0ddaccc2e2c",
+          "line": 889,
+          "anchor": "\"claim_ceiling_precedence\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-errata-v1.json#L889"
+        }
+      ]
+    },
+    {
+      "read_id": "R-FRAMEWORK",
+      "source_projection": "FrameworkVersion / bounded requirement-reference catalog",
+      "data_class": "EXTERNAL_PUBLIC_OR_LICENSED_REFERENCE",
+      "tenant_bound": false,
+      "subject_scope": "EXTERNAL",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Repository access for existing bibliographic metadata; any licensed content requires separately verified entitlement",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "Exact original edition, not operative applicability",
+      "recorded_cutoff_support": "Pinned catalog record/version",
+      "atomic_support": "IMMUTABLE_PINNED_VECTOR",
+      "fail_closed": "UNKNOWN; no substitute read or positive assertion",
+      "usable_by_v1": "BOUNDED_REFERENCE_METADATA_ONLY",
+      "additive_projection_required": false,
+      "security_class": "PINNED_EXTERNAL_REFERENCE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/framework-source-catalog-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "32e24e96d78f3dd1483256d6b5a2c72b506e657d",
+          "sha256_lf_utf8": "d220b50f8943e337bcf20622692175165998d5cf818ca979496658bae44bfa40",
+          "line": 33,
+          "anchor": "\"framework_versions\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/framework-source-catalog-v0.json#L33"
+        }
+      ]
+    },
+    {
+      "read_id": "R-SESSION",
+      "source_projection": "passportPrincipal -> verified session -> GovernanceWritePrincipal",
+      "data_class": "AUTHENTICATION_CONTEXT",
+      "tenant_bound": true,
+      "subject_scope": "ONE_ORGANISATION",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "Verified cookie at ingress; each DB hop must independently revalidate org/actor/iat/exp/exact credentialEpoch",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "ACCESS_DENIED; no user-supplied organisation/actor or rounded credential epoch",
+      "usable_by_v1": "IDENTITY_INPUT_ONLY",
+      "additive_projection_required": false,
+      "security_class": "PRINCIPAL_BOUND_AUTHORIZED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-session.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "6a6dbfa1ac4f2a1421819211870f7cc2fddc0d03",
+          "sha256_lf_utf8": "ecd838438a62f1d019262aa78c6176c3e1bcc76f1aaa0d75bba6394d1b80a32f",
+          "line": 19,
+          "anchor": "export async function passportPrincipal",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-session.ts#L19"
+        },
+        {
+          "path": "apps/dashboard/lib/auth/governance-write-principal.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "f38a11594ad44913673bfdd5e65e0318d2102577",
+          "sha256_lf_utf8": "e935a219ba56a715d42ac763795750dbc3e194622a28d579080c237ed8b52f3f",
+          "line": 12,
+          "anchor": "export interface GovernanceWritePrincipal",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/auth/governance-write-principal.ts#L12"
+        }
+      ]
+    },
+    {
+      "read_id": "R-IDENTITY",
+      "source_projection": "Canonical subject identity and typed source mappings",
+      "data_class": "TENANT_GOVERNED_OR_SUPPORTING_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_SUBJECT_OR_ID",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Verified ingress then application .eq organisation + ID filters and row tenant check; no DB principal revalidation in this read surface",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Mixed application Date.now/valid_from checks; no general explicit effective_at",
+      "recorded_cutoff_support": "No shared recorded_cutoff API or snapshot",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Current query errors/tenant mismatch throw; missing support may be omitted. V1 rejects this route, never treats omitted support as absence.",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-read-store.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "b919b03f00847458ac1a27b33346805cf787a9f5",
+          "sha256_lf_utf8": "9a987ae4fda1b8d0df851ac1831b3afbfc75323e760bdb42a04bfa8665eb2ef6",
+          "line": 105,
+          "anchor": "export function passportReader",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-read-store.ts#L105"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5f86fe04d74428a37fa615bb3da97e1d204cc5c0",
+          "sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+          "line": 20,
+          "anchor": "const readAt = Date.now()",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-query.ts#L20"
+        }
+      ],
+      "underlying_tables": [
+        "canonical_objects",
+        "canonical_normalized_object_mappings",
+        "canonical_object_source_mappings"
+      ]
+    },
+    {
+      "read_id": "R-RELATIONSHIP",
+      "source_projection": "Exact relationship identity/state/endpoints",
+      "data_class": "TENANT_GOVERNED_OR_SUPPORTING_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_SUBJECT_OR_ID",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Verified ingress then application .eq organisation + ID filters and row tenant check; no DB principal revalidation in this read surface",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Mixed application Date.now/valid_from checks; no general explicit effective_at",
+      "recorded_cutoff_support": "No shared recorded_cutoff API or snapshot",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Current query errors/tenant mismatch throw; missing support may be omitted. V1 rejects this route, never treats omitted support as absence.",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-read-store.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "b919b03f00847458ac1a27b33346805cf787a9f5",
+          "sha256_lf_utf8": "9a987ae4fda1b8d0df851ac1831b3afbfc75323e760bdb42a04bfa8665eb2ef6",
+          "line": 105,
+          "anchor": "export function passportReader",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-read-store.ts#L105"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5f86fe04d74428a37fa615bb3da97e1d204cc5c0",
+          "sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+          "line": 20,
+          "anchor": "const readAt = Date.now()",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-query.ts#L20"
+        }
+      ],
+      "underlying_tables": [
+        "canonical_relationships"
+      ]
+    },
+    {
+      "read_id": "R-PROFILE",
+      "source_projection": "Profile and assertion/evidence junctions",
+      "data_class": "TENANT_GOVERNED_OR_SUPPORTING_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_SUBJECT_OR_ID",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Verified ingress then application .eq organisation + ID filters and row tenant check; no DB principal revalidation in this read surface",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Mixed application Date.now/valid_from checks; no general explicit effective_at",
+      "recorded_cutoff_support": "No shared recorded_cutoff API or snapshot",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Current query errors/tenant mismatch throw; missing support may be omitted. V1 rejects this route, never treats omitted support as absence.",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-read-store.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "b919b03f00847458ac1a27b33346805cf787a9f5",
+          "sha256_lf_utf8": "9a987ae4fda1b8d0df851ac1831b3afbfc75323e760bdb42a04bfa8665eb2ef6",
+          "line": 105,
+          "anchor": "export function passportReader",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-read-store.ts#L105"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5f86fe04d74428a37fa615bb3da97e1d204cc5c0",
+          "sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+          "line": 20,
+          "anchor": "const readAt = Date.now()",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-query.ts#L20"
+        }
+      ],
+      "underlying_tables": [
+        "agent_version_technical_profiles",
+        "agent_version_technical_profile_field_assertions",
+        "agent_version_technical_profile_field_evidence"
+      ]
+    },
+    {
+      "read_id": "R-RECONCILIATION",
+      "source_projection": "Decision and reconciliation support lineage",
+      "data_class": "TENANT_GOVERNED_OR_SUPPORTING_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_SUBJECT_OR_ID",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Verified ingress then application .eq organisation + ID filters and row tenant check; no DB principal revalidation in this read surface",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Mixed application Date.now/valid_from checks; no general explicit effective_at",
+      "recorded_cutoff_support": "No shared recorded_cutoff API or snapshot",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Current query errors/tenant mismatch throw; missing support may be omitted. V1 rejects this route, never treats omitted support as absence.",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-read-store.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "b919b03f00847458ac1a27b33346805cf787a9f5",
+          "sha256_lf_utf8": "9a987ae4fda1b8d0df851ac1831b3afbfc75323e760bdb42a04bfa8665eb2ef6",
+          "line": 105,
+          "anchor": "export function passportReader",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-read-store.ts#L105"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5f86fe04d74428a37fa615bb3da97e1d204cc5c0",
+          "sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+          "line": 20,
+          "anchor": "const readAt = Date.now()",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-query.ts#L20"
+        }
+      ],
+      "underlying_tables": [
+        "reconciliation_decisions",
+        "reconciliation_decision_assertions",
+        "reconciliation_decision_evidence",
+        "reconciliation_invocations",
+        "review_subjects"
+      ]
+    },
+    {
+      "read_id": "R-EVIDENCE",
+      "source_projection": "Evidence, assertions and acquisition-run metadata",
+      "data_class": "TENANT_GOVERNED_OR_SUPPORTING_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_SUBJECT_OR_ID",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Verified ingress then application .eq organisation + ID filters and row tenant check; no DB principal revalidation in this read surface",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Mixed application Date.now/valid_from checks; no general explicit effective_at",
+      "recorded_cutoff_support": "No shared recorded_cutoff API or snapshot",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Current query errors/tenant mismatch throw; missing support may be omitted. V1 rejects this route, never treats omitted support as absence. Runtime/cross-signal typed support has separately classified R-RUNTIME-EXACT/R-CROSS-SIGNAL paths, also ineligible as-is.",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-read-store.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "b919b03f00847458ac1a27b33346805cf787a9f5",
+          "sha256_lf_utf8": "9a987ae4fda1b8d0df851ac1831b3afbfc75323e760bdb42a04bfa8665eb2ef6",
+          "line": 105,
+          "anchor": "export function passportReader",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-read-store.ts#L105"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5f86fe04d74428a37fa615bb3da97e1d204cc5c0",
+          "sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+          "line": 20,
+          "anchor": "const readAt = Date.now()",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-query.ts#L20"
+        }
+      ],
+      "underlying_tables": [
+        "source_assertions",
+        "discovery_evidence",
+        "acquisition_runs"
+      ]
+    },
+    {
+      "read_id": "R-TECHNICAL",
+      "source_projection": "Technical governed fields and policy/observation lineage",
+      "data_class": "TENANT_GOVERNED_OR_SUPPORTING_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_SUBJECT_OR_ID",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Verified ingress then application .eq organisation + ID filters and row tenant check; no DB principal revalidation in this read surface",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Mixed application Date.now/valid_from checks; no general explicit effective_at",
+      "recorded_cutoff_support": "No shared recorded_cutoff API or snapshot",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Current query errors/tenant mismatch throw; missing support may be omitted. V1 rejects this route, never treats omitted support as absence.",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-read-store.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "b919b03f00847458ac1a27b33346805cf787a9f5",
+          "sha256_lf_utf8": "9a987ae4fda1b8d0df851ac1831b3afbfc75323e760bdb42a04bfa8665eb2ef6",
+          "line": 105,
+          "anchor": "export function passportReader",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-read-store.ts#L105"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5f86fe04d74428a37fa615bb3da97e1d204cc5c0",
+          "sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+          "line": 20,
+          "anchor": "const readAt = Date.now()",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-query.ts#L20"
+        }
+      ],
+      "underlying_tables": [
+        "technical_field_states",
+        "technical_fact_proposals",
+        "technical_field_decisions",
+        "technical_field_policy_heads",
+        "technical_fact_observations",
+        "technical_fact_observation_assertions",
+        "technical_fact_observation_evidence"
+      ]
+    },
+    {
+      "read_id": "R-LOOKUP",
+      "source_projection": "getCanonicalObjectForMatch canonical lookup",
+      "data_class": "TENANT_CANONICAL_IDENTITY",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_ORG_KIND_ID",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Application organisation/kind/ID filter; not DB principal-bound",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "UNKNOWN; no substitute read or positive assertion",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/canonical-object-lookup.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "cc42c7ce2b4c46556250ace3fc7bcf157c7a62ac",
+          "sha256_lf_utf8": "8300086b113a8b3dd19c2d5a3d5a4046dba2f2fb375e12514617b801e0e63b68",
+          "line": 123,
+          "anchor": "export async function getCanonicalObjectForMatch",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/canonical-object-lookup.ts#L123"
+        }
+      ],
+      "underlying_tables": [
+        "canonical_objects",
+        "canonical_object_source_mappings"
+      ]
+    },
+    {
+      "read_id": "R-EXECUTION",
+      "source_projection": "executionRows / readExecutionReview / readExecutionDecision",
+      "data_class": "TENANT_EXECUTION_FIELD_SUPPORT",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_AGENT_VERSION_SNAPSHOT_FIELD",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Application org filter and tenant row checks, snapshot/policy/decision consistency checks; no DB verified-principal read authorization",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Application readAt filtering; mutable heads also read",
+      "recorded_cutoff_support": "No complete historical snapshot API",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Query/limit/shape failures throw; Hub must not reuse application-only access as tenant assurance",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/execution-context-read.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5cd66ce17e84d0e5aca0ffb3040559b50d7cacea",
+          "sha256_lf_utf8": "979d31883528031fb5d2ddaab0a4314217c4aeab41bcaf2267f04ead5005e0a0",
+          "line": 22,
+          "anchor": "export async function executionRows",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/execution-context-read.ts#L22"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-execution-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "6d036f6762885e0dbecb13918c5890360b03dae1",
+          "sha256_lf_utf8": "c62cb168ddf4ee7e0ff7f5d3378979d2751540f327179050c8ce82f812c2dfeb",
+          "line": 6,
+          "anchor": "export async function readPassportExecution",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-execution-query.ts#L6"
+        }
+      ],
+      "underlying_tables": [
+        "execution_source_snapshots",
+        "execution_source_heads",
+        "execution_source_facts",
+        "execution_field_policies",
+        "execution_field_policy_heads",
+        "execution_field_decisions",
+        "execution_field_states",
+        "canonical_normalized_object_mappings",
+        "canonical_objects"
+      ]
+    },
+    {
+      "read_id": "R-M16-PASSPORT",
+      "source_projection": "l14_read_passport_governance_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_AGENT_AND_OPTIONAL_AGENT_VERSION",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "9c053d08c7a61d24e520872ae54d05687f168dfc",
+          "sha256_lf_utf8": "b57000d32e92f14ba1653d9e4be3e1589fd4c3e00b34b0b4c7ba074dc837551a",
+          "line": 202,
+          "anchor": "FUNCTION gov_repo.l14_read_passport_governance_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql#L202"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ"
+    },
+    {
+      "read_id": "R-M16-CONFLICT",
+      "source_projection": "l14_read_fact_conflict_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_LOGICAL_FACT_KEY",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "9c053d08c7a61d24e520872ae54d05687f168dfc",
+          "sha256_lf_utf8": "b57000d32e92f14ba1653d9e4be3e1589fd4c3e00b34b0b4c7ba074dc837551a",
+          "line": 349,
+          "anchor": "FUNCTION gov_repo.l14_read_fact_conflict_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql#L349"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ"
+    },
+    {
+      "read_id": "R-M16-POLICY",
+      "source_projection": "l14_read_policy_descriptors_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "ORG_SCOPED_OR_EXACT_POLICY",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "NO_EXPLICIT_AS_OF_PARAMETER",
+      "recorded_cutoff_support": "NO_EXPLICIT_CUTOFF_PARAMETER",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "NO_TENANT_AS_OF_USE",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261008120000_m16_s1b4_policy_version_validation_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "22c4f9a0363eacaccf3482d662d5a1d2d7679918",
+          "sha256_lf_utf8": "8889f887b33bce41baf9fd90ff70f9c8b0145cb74179a76d87918623388266be",
+          "line": 969,
+          "anchor": "FUNCTION gov_repo.l14_read_policy_descriptors_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261008120000_m16_s1b4_policy_version_validation_v1.sql#L969"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ"
+    },
+    {
+      "read_id": "R-M17-RISK",
+      "source_projection": "l15_read_governed_risk_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_CANONICAL_OR_RELATIONSHIP_STATE_AND_SCENARIO",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_AUTHORIZED",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "694c236335ec1465d8a118ce35641c72302f5d3f",
+          "sha256_lf_utf8": "66adbc52947fd70d4b143976232bd9952dd920d907fdd74aff718356074652bf",
+          "line": 1937,
+          "anchor": "FUNCTION gov_repo.l15_read_governed_risk_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql#L1937"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/l15-governed-risk-persistence.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "d1b3e4c31ad8f02a70399f0a49d289b49db51ce9",
+          "sha256_lf_utf8": "c1b495ee16ff1ce9e4763d118b2e7e51f22c0b1f8b8fd6bbcd8f1a21a2038fee",
+          "line": 169,
+          "anchor": "export async function readGovernedRisk",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/l15-governed-risk-persistence.ts#L169"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ",
+      "adapter_boundary": "Existing adapter forwards request effectiveAt/recordedCutoff and verified principal; V1 must reject nullable/default selection, validate exact closed returned shape/lineage and preserve original precision. Independent calls still not atomic."
+    },
+    {
+      "read_id": "R-M17-ASSESSMENT-V1",
+      "source_projection": "l15_read_risk_assessment_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_RISK_STATE_INHERENT",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_AUTHORIZED",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261013160000_m17_s4_inherent_risk_assessment_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "03add55f2ccf8c3b47ac8b0c8c90c0b0aefc2e56",
+          "sha256_lf_utf8": "83aa0529fb7d2367496d40e7e76280135fbbd0db2ad22cc579cd77583b5b8d3e",
+          "line": 1888,
+          "anchor": "FUNCTION gov_repo.l15_read_risk_assessment_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261013160000_m17_s4_inherent_risk_assessment_v1.sql#L1888"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/l15-risk-assessment-persistence.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "d69dd32437acf5ba313bae03fb174ce668c59817",
+          "sha256_lf_utf8": "4ccd3f7a3fd06b023e29898ab71e782165901e4e1bc6329d46e66333afc111db",
+          "line": 156,
+          "anchor": "export async function readRiskAssessment",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/l15-risk-assessment-persistence.ts#L156"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ",
+      "adapter_boundary": "Existing adapter forwards request effectiveAt/recordedCutoff and verified principal; V1 must reject nullable/default selection, validate exact closed returned shape/lineage and preserve original precision. Independent calls still not atomic."
+    },
+    {
+      "read_id": "R-M17-ASSESSMENT-V2",
+      "source_projection": "l15_read_risk_assessment_v2",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_RISK_STATE_AND_INHERENT_OR_RESIDUAL",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_AUTHORIZED",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5699254ae8c5a943fa32d80e5bfb9b2a5e49c720",
+          "sha256_lf_utf8": "6af42e459c463bd1055410b81a1cc62fb947ccfbc81a869a8b06c7df6e322a73",
+          "line": 1102,
+          "anchor": "FUNCTION gov_repo.l15_read_risk_assessment_v2(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql#L1102"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/l15-residual-risk-assessment-persistence.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "033f090ba09cea64fecd6913b53b9b8743b0f0ad",
+          "sha256_lf_utf8": "2a52e3e584b5a81189e8c4d01476c21b75963d76fe9e1bcacdcb79e35ad6d40d",
+          "line": 144,
+          "anchor": "export async function readResidualRiskAssessment",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/l15-residual-risk-assessment-persistence.ts#L144"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ",
+      "adapter_boundary": "Existing adapter forwards request effectiveAt/recordedCutoff and verified principal; V1 must reject nullable/default selection, validate exact closed returned shape/lineage and preserve original precision. Independent calls still not atomic."
+    },
+    {
+      "read_id": "R-M17-TREATMENT",
+      "source_projection": "l15_read_risk_treatment_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_RISK_STATE_OPTION_ORDINAL",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_AUTHORIZED",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261015122639_m17_s5_risk_treatment_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "b2056dd430bbc25ff2300f04d7e96ce22e7fb1a8",
+          "sha256_lf_utf8": "78bdd6f3954ea85890a8a45cff5f2e0abea9ed2fc2c01e7ef187e762a3798177",
+          "line": 993,
+          "anchor": "FUNCTION gov_repo.l15_read_risk_treatment_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261015122639_m17_s5_risk_treatment_v1.sql#L993"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/l15-risk-treatment-persistence.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "da5ba6d3a9b12c0dbd24a6c1d65b15844d196954",
+          "sha256_lf_utf8": "101fadb33b701f1b339831c5706467227d6893cfcc83ec8fd11c0e109586934b",
+          "line": 56,
+          "anchor": "export async function readRiskTreatment",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/l15-risk-treatment-persistence.ts#L56"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ",
+      "adapter_boundary": "Existing adapter forwards request effectiveAt/recordedCutoff and verified principal; V1 must reject nullable/default selection, validate exact closed returned shape/lineage and preserve original precision. Independent calls still not atomic."
+    },
+    {
+      "read_id": "R-M17-ACCEPTANCE",
+      "source_projection": "l15_read_risk_acceptance_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_RESIDUAL_STATE",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_AUTHORIZED",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5699254ae8c5a943fa32d80e5bfb9b2a5e49c720",
+          "sha256_lf_utf8": "6af42e459c463bd1055410b81a1cc62fb947ccfbc81a869a8b06c7df6e322a73",
+          "line": 1891,
+          "anchor": "FUNCTION gov_repo.l15_read_risk_acceptance_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql#L1891"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/l15-risk-acceptance-persistence.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "154843522d075b613b9206dccc16dc1de30a1521",
+          "sha256_lf_utf8": "50c228dcc67a6dd99ae36afbf64bbbca52aa64135e4ef76fcd1a7d1f529c0bfb",
+          "line": 53,
+          "anchor": "export async function readRiskAcceptance",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/l15-risk-acceptance-persistence.ts#L53"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ",
+      "adapter_boundary": "Existing adapter forwards request effectiveAt/recordedCutoff and verified principal; V1 must reject nullable/default selection, validate exact closed returned shape/lineage and preserve original precision. Independent calls still not atomic."
+    },
+    {
+      "read_id": "R-M17-LIFECYCLE",
+      "source_projection": "l15_read_risk_projections_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_SUBJECT_AND_SCENARIO",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "e5fbb1dc8059d140b6b97af1760289b0c8447805",
+          "sha256_lf_utf8": "bdaff50da45aa549fa90eb6f310354cb751475187cd7d447d1018a4384789a62",
+          "line": 33,
+          "anchor": "FUNCTION gov_repo.l15_read_risk_projections_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql#L33"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/l15-read-projections-persistence.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "67a1a17d8009b6052616eeecf13c0f4f1c4bfcb4",
+          "sha256_lf_utf8": "dc4f5f9240ca1a8983491945ed10eb87ed553b4e29e16e7fdfb16f10097f4806",
+          "line": 8,
+          "anchor": "export async function readRiskProjections",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/l15-read-projections-persistence.ts#L8"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ",
+      "adapter_boundary": "Existing adapter forwards request effectiveAt/recordedCutoff and verified principal; V1 must reject nullable/default selection, validate exact closed returned shape/lineage and preserve original precision. Independent calls still not atomic."
+    },
+    {
+      "read_id": "R-M17-OVERLAY",
+      "source_projection": "l15_read_passport_risk_overlay_v1",
+      "data_class": "TENANT_GOVERNED_READ",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_AGENT_OR_AGENT_VERSION",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "recorded_cutoff_support": "Explicit SQL parameter; V1 requires non-null pinned value",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification",
+      "usable_by_v1": "CONDITIONAL_COMPONENT_ONLY",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261019130000_m17_s7b_passport_risk_overlay_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "db39482594537a7b6f8564c1711f33575a86c359",
+          "sha256_lf_utf8": "2ccdecb40e9de781edc292f11d87dbc27ee5eed02eb75e8a0c28cb4d36f3b677",
+          "line": 27,
+          "anchor": "FUNCTION gov_repo.l15_read_passport_risk_overlay_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261019130000_m17_s7b_passport_risk_overlay_v1.sql#L27"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ"
+    },
+    {
+      "read_id": "R-M17-SIGNALS",
+      "source_projection": "l15_read_signals_v1",
+      "data_class": "TENANT_NON_AUTHORITATIVE_ANALYSIS",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_L15_SUBJECT",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "NO_EXPLICIT_AS_OF_PARAMETER",
+      "recorded_cutoff_support": "NO_EXPLICIT_CUTOFF_PARAMETER",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification; LIMIT 1000 is not a complete population or pagination proof; strip hint_confidence from Hub assurance measures",
+      "usable_by_v1": "NO_TENANT_AS_OF_USE",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "aae82c8b02bc57fbcdc7880163b74b876937cb68",
+          "sha256_lf_utf8": "a638fb364f80974b5a8067201415b59fde22d9e3e9c740018d9e5383b24ab01c",
+          "line": 1055,
+          "anchor": "FUNCTION gov_repo.l15_read_signals_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql#L1055"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ"
+    },
+    {
+      "read_id": "R-M17-HYPOTHESES",
+      "source_projection": "l15_read_hypothesis_dispositions_v1",
+      "data_class": "TENANT_NON_AUTHORITATIVE_ANALYSIS",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_L15_SUBJECT",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "PostgreSQL session/member basis revalidation and same-organisation exact subject/key selection; internal resolvers remain owner-only",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "NO_EXPLICIT_AS_OF_PARAMETER",
+      "recorded_cutoff_support": "NO_EXPLICIT_CUTOFF_PARAMETER",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "DB invalid-session/key error -> ACCESS_DENIED or DEPENDENCY_INVALID; resolver UNKNOWN/absent stays explicit; never infer readiness/certification; LIMIT 1000 is not a complete population or pagination proof; strip hint_confidence from Hub assurance measures",
+      "usable_by_v1": "NO_TENANT_AS_OF_USE",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "7ede2eb2f86a49cb62e4c6b28789854a81deed53",
+          "sha256_lf_utf8": "868b5f331ba9c8ad19b4e20bfb09beb5af2518ce02ef1d99d6a7f1c1d0a5c5f0",
+          "line": 99,
+          "anchor": "FUNCTION gov_repo.l15_read_hypothesis_dispositions_v1(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql#L99"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ"
+    },
+    {
+      "read_id": "R-PASSPORT-ADAPTERS",
+      "source_projection": "readPassportGovernedFacts / readFactConflict / readPassportRiskOverlay",
+      "data_class": "TENANT_GOVERNED_PRESENTATION",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_AGENT_OR_FACT_KEY",
+      "verified_principal_bound": true,
+      "authorization_enforcement": "DB principal-bound RPCs + app exact target/closed vocabulary checks",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Adapters hard-code null; SQL supports pins",
+      "recorded_cutoff_support": "Adapters hard-code null; overlay adapter does not retain output cutoff in returned object",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Exceptions on malformed rows; V1 needs additive pinned adapter preserving time/provenance",
+      "usable_by_v1": "NO_CROSS_SOURCE_ASSURANCE_AS_IS",
+      "additive_projection_required": true,
+      "security_class": "PRINCIPAL_BOUND_PROJECTION",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-governance-read.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "17397d471f7a52de98b68fab2a78579b92385456",
+          "sha256_lf_utf8": "aa7bd258ad6bf9f80648760117229304f8367f4d5f067ebc599b00590894947c",
+          "line": 92,
+          "anchor": "p_effective_at: null, p_recorded_cutoff: null",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-governance-read.ts#L92"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/passport-risk-overlay-read.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "9fbb8110d4806d56e575e0dabfec177e823e0885",
+          "sha256_lf_utf8": "8bb2e492a4199950ebfe76bbc1c8a5c2a00542ea30572c59110b05fb72acb3c1",
+          "line": 23,
+          "anchor": "p_subject_canonical_object_id: subjectCanonicalObjectId, p_effective_at: null",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-risk-overlay-read.ts#L23"
+        }
+      ],
+      "transport_class": "PRIVILEGED_TRANSPORT_WITH_DB_AUTHZ"
+    },
+    {
+      "read_id": "R-PASSPORT-COMPOSITE",
+      "source_projection": "getAgentPassport",
+      "data_class": "MIXED_TENANT_READ_COMPOSITION",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_AGENT_AND_SELECTED_VERSION",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Mixed app-filtered identity/fields/execution/support and principal-bound M16/M17 RPCs; verified ingress does not upgrade all children",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Date.now plus independent RPC null/null instants",
+      "recorded_cutoff_support": "No cross-source snapshot proof",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Hub cannot treat existing 16-family Passport composition as authorized atomic assurance or completeness proof",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/passport-query.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "5f86fe04d74428a37fa615bb3da97e1d204cc5c0",
+          "sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+          "line": 17,
+          "anchor": "export async function getAgentPassport",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/passport-query.ts#L17"
+        }
+      ]
+    },
+    {
+      "read_id": "R-INTERNAL-RESOLVERS",
+      "source_projection": "M16/M17 owner-only current/valid-state/dependency/support resolvers",
+      "data_class": "INTERNAL_GOVERNED_DEPENDENCIES",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_FACT_STATE_AND_ORG",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Owner-only internal components behind authorized RPC; not an application read entry point; SQL current/valid-state/support helpers use invoker context where defined, not their own verified-principal entry point. Retain each helper security mode; the outer RPC supplies the authorized owner context.",
+      "security_definer": "ROUTINE_SPECIFIC_OWNER_ONLY",
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "Internal exact arguments where defined",
+      "recorded_cutoff_support": "Internal exact arguments where defined",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "No direct service-role invocation/grant expansion; additive authorized projection must expose only admissible exact lineage",
+      "usable_by_v1": "INTERNAL_ONLY_BEHIND_AUTHORIZED_COMPOSITION",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "9c053d08c7a61d24e520872ae54d05687f168dfc",
+          "sha256_lf_utf8": "b57000d32e92f14ba1653d9e4be3e1589fd4c3e00b34b0b4c7ba074dc837551a",
+          "line": 749,
+          "anchor": "service_role-only; every other l14 routine",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql#L749"
+        },
+        {
+          "path": "supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "e5fbb1dc8059d140b6b97af1760289b0c8447805",
+          "sha256_lf_utf8": "bdaff50da45aa549fa90eb6f310354cb751475187cd7d447d1018a4384789a62",
+          "line": 19,
+          "anchor": "gov_repo.l15_risk_assessment_valid_state_v1",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql#L19"
+        }
+      ],
+      "internal_subhop_rule": "No internal helper is a direct Hub read. Each future authorized composition must pin the concrete helper dependency graph and security mode; do not blanket-classify internal resolvers as SECURITY DEFINER or grant service_role access."
+    },
+    {
+      "read_id": "R-AUDIT",
+      "source_projection": "audit.getIntegrity -> ledger_verify",
+      "data_class": "LEGACY_TENANT_AUDIT_TRANSPORT",
+      "tenant_bound": true,
+      "subject_scope": "MIXED_ORG_FILTERED_COUNTS_AND_UNSCOPED_CHAIN",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "App org filters on counts; ledger_verify sequence walk lacks organisation filter and verified-principal binding",
+      "security_definer": true,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Reject Hub consumption: empty returns true and missing row defaults false/BROKEN; future scoped authorized projection must preserve UNKNOWN and explicit EMPTY independently of legacy payload truth",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "UNSAFE_FOR_V1",
+      "sources": [
+        {
+          "path": "apps/dashboard/repositories/audit.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "21f8e4bab5e1aa4d8f1c6f5a8acad30b82fe0b0d",
+          "sha256_lf_utf8": "fbdf0d00e89fc7136b0cc8464ae21546d28ab98895599446d60d7a4ef463033c",
+          "line": 180,
+          "anchor": "db.write.rpc(\"ledger_verify\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/repositories/audit.ts#L180"
+        },
+        {
+          "path": "supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "256da82fa8cf4513101fdcfe06ba876b4a33e234",
+          "sha256_lf_utf8": "9b6ba4639abc6ff25d33792c904064f82bf90e8c0e3ea5ea67fca503b3631be0",
+          "line": 147,
+          "anchor": "for r in select entry_sequence",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql#L147"
+        }
+      ]
+    },
+    {
+      "read_id": "R-LEGACY",
+      "source_projection": "Legacy agents/ai_systems, home, graph/search/Talk, incident/cost/oversight, reports, extension, graphos-complete/package compatibility",
+      "data_class": "LEGACY_NON_AUTHORITATIVE",
+      "tenant_bound": true,
+      "subject_scope": "LEGACY_OR_UNPROVEN_SCOPE",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Mixed path-specific app/server access; no admissible Hub assurance boundary",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "No legacy bridge, name matching, flags/scores/defaults or payload-based assurance truth; affected exposure remains blocked",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "UNSAFE_FOR_V1",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4217,
+          "anchor": "\"legacy_gates\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4217"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-errata-v1.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "2a772366b2d60a08dc183b7816bf77ebf68be975",
+          "sha256_lf_utf8": "7085113dbe5d92574987880e5078a001de3cc350f04bc780e7abc0ddaccc2e2c",
+          "line": 1473,
+          "anchor": "\"exposure_scope_expansions\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-errata-v1.json#L1473"
+        }
+      ]
+    },
+    {
+      "read_id": "R-TENANT-SCOPE",
+      "source_projection": "Scope manifest / complete governed subject and acquisition population",
+      "data_class": "TENANT_EXECUTION_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "ONE_ORG_ENUMERATED_SUBJECT_SET",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-TENANT-MAPPING",
+      "source_projection": "Requirement -> mapping -> evidence -> subject normalized tenant links",
+      "data_class": "TENANT_ASSURANCE_PROJECTION",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_REQUIREMENT_SCOPE_AND_SUBJECT",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-TENANT-LINEAGE",
+      "source_projection": "Full exact evidence/support target and decision/state/policy/authority lineage not exposed by bounded existing RPCs",
+      "data_class": "TENANT_SUPPORTING_LINEAGE",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_TYPED_TARGET_AND_ORG",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-TENANT-REGISTRY",
+      "source_projection": "M16 party/domain/control and M17 scenario/methodology exact admitted validated version descriptors beyond existing returned pins",
+      "data_class": "TENANT_GOVERNED_REFERENCE_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_REGISTRY_VERSION_AND_VALIDATED_STATE",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-TENANT-GAPS",
+      "source_projection": "Normalized scoped tenant assurance gaps and applicability/sufficiency review metadata",
+      "data_class": "TENANT_ASSURANCE_PROJECTION",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_MANIFEST_AND_REQUIREMENT",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-TENANT-KPI",
+      "source_projection": "Operational count evaluator / population audit projection",
+      "data_class": "TENANT_EXECUTION_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_DEFINITION_VERSION_AND_MANIFEST",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-REVIEW",
+      "source_projection": "Claim wording/exposure, applicability/sufficiency, freshness and publication review workflow",
+      "data_class": "REVIEW_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_VERSIONED_SCOPE_AND_AUDIENCE",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-EXTERNAL-ARTIFACT",
+      "source_projection": "Authenticated certification/attestation or nomination/finalist/winner artifact resolution",
+      "data_class": "EXTERNAL_ARTIFACT_REFERENCE",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_ISSUER_SUBJECT_FRAMEWORK_SCOPE",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-ATOMIC",
+      "source_projection": "Cross-source read transaction and completeness/snapshot attestation",
+      "data_class": "TENANT_EXECUTION_METADATA",
+      "tenant_bound": true,
+      "subject_scope": "ONE_ORGANISATION_ONE_SNAPSHOT",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "No tenant authorization established",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "NONE",
+      "recorded_cutoff_support": "NONE",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "SOURCE_PENDING / NOT_ASSESSED / UNKNOWN as appropriate; no runtime surface or positive result invented in S0",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "NO_READ_SURFACE",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/kpi-framework-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "0bd96efa393d9306a1eb332a5e7b0df80f69c4c3",
+          "sha256_lf_utf8": "98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69",
+          "line": 276,
+          "anchor": "\"availability\": \"NOT_ESTABLISHED",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/kpi-framework-v0.json#L276"
+        },
+        {
+          "path": "docs/trust-assurance/v0-closure-review.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "428c487c7d4086a3c9667de36495646f676a9459",
+          "sha256_lf_utf8": "6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603",
+          "line": 4634,
+          "anchor": "\"v1_prerequisites\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/v0-closure-review.json#L4634"
+        }
+      ]
+    },
+    {
+      "read_id": "R-AWARDS",
+      "source_projection": "Award edition records and calendar events",
+      "data_class": "PRODUCT_AWARD_REFERENCE_METADATA",
+      "tenant_bound": false,
+      "subject_scope": "PRODUCT",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Repository access to pinned public organizer metadata; no applicant dossier authorization supplied",
+      "security_definer": false,
+      "direct_table": false,
+      "service_role": false,
+      "effective_at_support": "Original edition/date precision/timezone retained",
+      "recorded_cutoff_support": "Pinned award/calendar versions",
+      "atomic_support": "IMMUTABLE_PINNED_VECTOR",
+      "fail_closed": "Eligibility UNKNOWN, source conflicts/pending stay explicit; no probability, award-ready or outcome without external artifact",
+      "usable_by_v1": "PRODUCT_METADATA_ONLY",
+      "additive_projection_required": false,
+      "security_class": "PINNED_PRODUCT_METADATA",
+      "sources": [
+        {
+          "path": "docs/trust-assurance/award-readiness-matrix-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "fefcdf820d8d182fb1e29b958922faaba6c8785e",
+          "sha256_lf_utf8": "f2337cbd6ef6b07cc2a23c5e28aae90ef16a11d34bd24765abae0c1cccb38bba",
+          "line": 447,
+          "anchor": "\"awards\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/award-readiness-matrix-v0.json#L447"
+        },
+        {
+          "path": "docs/trust-assurance/award-calendar-v0.json",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "fae65ee8b37d95073e7f6db38a663cfa1d702921",
+          "sha256_lf_utf8": "98a1d631b52c67507903e917c556829add35a02b8e24356c499bc9bb5fd44f19",
+          "line": 30,
+          "anchor": "\"events\"",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/docs/trust-assurance/award-calendar-v0.json#L30"
+        }
+      ]
+    },
+    {
+      "read_id": "R-RUNTIME-EXACT",
+      "source_projection": "readPersistedRuntimeObservation -> read_runtime_observation_exact",
+      "data_class": "TENANT_RUNTIME_SUPPORTING_OBSERVATION",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_ORG_CONNECTION_OBSERVATION",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "SQL exact org/connection/observation filtering and app identity validation, but no verified session/principal parameters or DB session authorization; scoped lookup is not principal authorization",
+      "security_definer": true,
+      "direct_table": false,
+      "service_role": true,
+      "effective_at_support": "Immutable observation identity, no generic explicit as-of read contract",
+      "recorded_cutoff_support": "No explicit shared cutoff/snapshot API",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "Not eligible for Hub tenant assurance as-is; add principal-bound exact supporting-evidence projection; runtime admission never governance authority",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "UNSAFE_FOR_V1",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/cross-signal-read.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "e1862dfe1a9b0067a2733a0b7df8370276b34af1",
+          "sha256_lf_utf8": "190e6912114f4ac30eabffa59973bc156e59cb17c326893f9c06a0ba4e02dd7d",
+          "line": 170,
+          "anchor": "export async function readPersistedRuntimeObservation",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/cross-signal-read.ts#L170"
+        },
+        {
+          "path": "supabase/migrations/20260923060000_cross_signal_persistence_v1.sql",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "3ab9f3c0e0b0b21f5ab82add234d220a8d5433c2",
+          "sha256_lf_utf8": "ae3a2787633a6eea822c9fb02939212bccb1f8d0ea495dbc507c48bb6dd6e8d6",
+          "line": 68,
+          "anchor": "create function gov_repo.read_runtime_observation_exact(",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/supabase/migrations/20260923060000_cross_signal_persistence_v1.sql#L68"
+        }
+      ]
+    },
+    {
+      "read_id": "R-CROSS-SIGNAL",
+      "source_projection": "readCrossSignalComparisonResult and trusted design-time adapters",
+      "data_class": "TENANT_ANALYTICAL_COMPARISON_SUPPORT",
+      "tenant_bound": true,
+      "subject_scope": "EXACT_ORG_COMPARISON_AND_RELATIONSHIP_STATE",
+      "verified_principal_bound": false,
+      "authorization_enforcement": "Application org and exact typed key/lineage checks; runtime child uses R-RUNTIME-EXACT and canonical/execution children use app-filtered executionRows",
+      "security_definer": false,
+      "direct_table": true,
+      "service_role": true,
+      "effective_at_support": "Exact historical dependency identities but no complete explicit bitemporal projection",
+      "recorded_cutoff_support": "No shared cross-source snapshot",
+      "atomic_support": "NOT_ESTABLISHED",
+      "fail_closed": "No upgrade of ANALYTICAL comparison into requirement satisfaction or governed truth; missing/mismatched support fails closed; additive principal-bound projection required",
+      "usable_by_v1": "NO",
+      "additive_projection_required": true,
+      "security_class": "PRIVILEGED_APP_FILTERED",
+      "sources": [
+        {
+          "path": "apps/dashboard/lib/governance/cross-signal-persistence.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "f1f7b496176ea388420ff40b988f1f5ee970649e",
+          "sha256_lf_utf8": "827afef19652fed9336dca39ac797ded64c960d77468f947cde96415427fb8f9",
+          "line": 110,
+          "anchor": "export async function readCrossSignalComparisonResult",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/cross-signal-persistence.ts#L110"
+        },
+        {
+          "path": "apps/dashboard/lib/governance/cross-signal-read.ts",
+          "selection_commit": "a85f97225777e1dd1fd67109a349c3be6e45d0ad",
+          "git_blob": "e1862dfe1a9b0067a2733a0b7df8370276b34af1",
+          "sha256_lf_utf8": "190e6912114f4ac30eabffa59973bc156e59cb17c326893f9c06a0ba4e02dd7d",
+          "line": 38,
+          "anchor": "export async function resolveTrustedAgentVersionSubject",
+          "locator": "https://github.com/cnegrao/code-guard-governance/blob/a85f97225777e1dd1fd67109a349c3be6e45d0ad/apps/dashboard/lib/governance/cross-signal-read.ts#L38"
+        }
+      ],
+      "underlying_tables": [
+        "cross_signal_comparison_results",
+        "cross_signal_comparison_left_relationship_states",
+        "canonical_relationships"
+      ]
+    }
+  ],
+  "scope_manifest": {
+    "concept": "SCOPE_V1 / immutable V1 projection execution metadata",
+    "canonical_object": false,
+    "fields": {
+      "scope_ref": "Opaque metadata identity + exact version + content digest; supersedes ref if restated",
+      "mode": "TENANT_ASSURANCE",
+      "organisation_id": "Derived only from verified principal, revalidated at every mutable source hop",
+      "intended_assurance_use": "Exact purpose, audience and requested exposure level; never permission grant",
+      "selected_framework_versions": "Exact catalog/framework version IDs and lawful access/source pins",
+      "requirement_population_mode": [
+        "EXPLICIT_REFERENCE_SET",
+        "FULL_FRAMEWORK"
+      ],
+      "requirement_population": "Explicit exact (framework_version_id, requirement_id/reference_id, record_version) tuples, or proven complete authoritative enumerable full-edition population",
+      "governed_subject_population": "Exact org+kind+canonical ID set, relationship ID+state+typed endpoints, or immutable enumerable membership rule at cutoff; all 11 kinds remain possible, no evidence-based membership filter",
+      "allowed_source_connections": "Exact tenant connection identities and allowed versioned scope; no automatic all-connections acquisition",
+      "evidence_source_versions": "Exact typed target/version, run/snapshot/assertion/evidence IDs, handling and permitted digest",
+      "effective_at": "Explicit upstream-precision instant",
+      "recorded_cutoff": "Explicit upstream-precision instant and snapshot attestation",
+      "access_permission_context": "Verified org/actor/session claim pins, credential epoch and existing authorization/policy context; no credentials persisted in projection; access checked now even for historical as-of",
+      "acquisition_completeness_state": [
+        "COMPLETE_FOR_MANIFEST",
+        "PARTIAL_ACQUISITION",
+        "UNKNOWN"
+      ],
+      "excluded_sources": "Exact exclusions with rationale, review and limitation; never hidden from completeness statement",
+      "population_limitations": "Bounded estate/reference population, source/licensing and paging constraints",
+      "UNKNOWN_conditions": "Unavailable source/license, denied access, unknown membership/cardinality, partial paging, unproved snapshot, unresolved validity/version or unsupported as-of"
+    },
+    "membership_rule": "Freeze membership before axis evaluation; retain NOT_APPLICABLE. Complete means complete for manifest only. No unknown source silently excluded. Fail closed on conflicting duplicate tuple versions."
+  },
+  "temporal_contract": {
+    "effective_at": "Required, explicit; preserve PostgreSQL precision and source interval semantics",
+    "recorded_cutoff": "Required, explicit; same cutoff for every selected dependency; never replace with generated_at",
+    "generated_at": "Separate projection production timestamp; not evidence currency or effective time",
+    "source_versions": "Immutable framework, mapping, evidence, state, decision, policy/authorization, resolver and projection algorithm vector",
+    "latest_rule": "PROHIBITED unless a future versioned, explicit deterministic selection rule is approved; none supplied here",
+    "atomicity": {
+      "required": "ATOMIC",
+      "database": "One proven consistent transaction snapshot across all mutable dependency reads (REPEATABLE READ or equivalent); explicit effective/cutoff pair passed to every resolver; current session eligibility revalidated before release",
+      "external_sources": "Exact immutable versions/digests acquired and authorized for the same manifest; no mutable external latest",
+      "proof": "Opaque snapshot/transaction attestation, exact dependency-version vector, completeness proof and resolver versions; token alone without proven binding insufficient",
+      "existing_support": "Individual principal-bound RPCs support selected exact reads; independent requests and matching timestamp strings do not establish atomicity",
+      "failure": "NON_ATOMIC -> UNKNOWN / INCOMPLETE_TEMPORAL_CUTOFF; internal diagnostic source panels may disclose NON_ATOMIC but may not produce a combined tenant assurance result"
+    },
+    "dependency_validity": "Preserve expiry, revocation, support degradation, supersession, conflict and original validity basis; invalid pin -> DEPENDENCY_INVALID",
+    "restatement": "Append new immutable projection with supersedes/restatement-reason and new source vector; retain old as-of result as historical and explicitly invalidated for present use where needed. Never rewrite upstream decisions.",
+    "cache": "Disposable, recomputable; key includes mode, org, scope/version, subject/version, both time coordinates, source vector, access/entitlement context and projection version; revalidate access on reads/drill-down; no cross-tenant or cross-mode cache reuse"
+  },
+  "failure_contract": [
+    {
+      "state": "UNKNOWN",
+      "rendering": "Unestablished axis/population/dependency; show reason and authorized limitations; null measure, never zero or green."
+    },
+    {
+      "state": "NOT_MAPPED",
+      "rendering": "Known missing mapping within a verified evaluated reference set; not a failed requirement or compliance verdict."
+    },
+    {
+      "state": "NOT_APPLICABLE",
+      "rendering": "Reviewed rationale for exact scoped requirement/version; preserve membership and review; no automatic READY."
+    },
+    {
+      "state": "NOT_ASSESSED",
+      "rendering": "Workflow/sufficiency assessment not performed; no inferred favorable or unfavorable outcome; not a new authority axis."
+    },
+    {
+      "state": "INSUFFICIENT_EVIDENCE",
+      "rendering": "Known evaluated dependency or resolver lacks sufficient support; display exact limitation, never equate availability with sufficiency."
+    },
+    {
+      "state": "SOURCE_PENDING",
+      "rendering": "Missing authoritative source/license or source population; unknown cardinality stays unknown, no empty full-framework count."
+    },
+    {
+      "state": "ACCESS_DENIED",
+      "rendering": "Authorization failed; disclose no unauthorized target existence/content/count. Never convert to not found or absence in assurance semantics."
+    },
+    {
+      "state": "PARTIAL_ACQUISITION",
+      "rendering": "Any page/source/connection incomplete; combined result UNKNOWN. Authorized diagnostic rows labelled partial cannot be presented as a complete count."
+    },
+    {
+      "state": "DEPENDENCY_INVALID",
+      "rendering": "Conflicting identities, invalid policy/state pins, revocation/expiry or unsupported shapes; no current affirmative result. Preserve exact historical record."
+    },
+    {
+      "state": "NOT_ASSERTED",
+      "rendering": "No certification/attestation assertion in this scope; neither proof of absence nor an invitation to infer certification."
+    }
+  ],
+  "kpi_denominator_decision": {
+    "acceptance_id": "V1-A1",
+    "status": "RESOLVED_ARCHITECTURALLY_ONLY",
+    "decision_id": "D-V1-08",
+    "selected": "B_TYPED_NON_COMPOSABLE_COUNTS_WITH_AUDIT_IDENTITY_SEPARATION",
+    "historical_framework_modified": false,
+    "alternatives": [
+      {
+        "id": "A",
+        "assessment": "Audit-only population metadata reduces accidental reuse but lacks a typed client/operator prohibition by itself."
+      },
+      {
+        "id": "B",
+        "assessment": "Chosen: closed measure and renderer semantics plus separate audit membership proof bind conservation and prevent ratio composition in conforming Hub clients."
+      },
+      {
+        "id": "C",
+        "assessment": "Partitions retain UNKNOWN but a generic sum of all buckets still becomes a denominator. Partitioning alone does not resolve the hazard."
+      }
+    ],
+    "current_scope": "KPI_DEFINITION catalogue only; 11 definitions, five PRODUCT and six TENANT, COUNT/PARTITIONED_COUNT only. No execution or results introduced.",
+    "generic_projection": {
+      "type": "COUNT_OBSERVATION_V1 (future design, no runtime schema)",
+      "fields": [
+        "definition_ref/version",
+        "predicate_version",
+        "mode",
+        "scope_ref/version",
+        "measure_semantics",
+        "evaluation_state",
+        "display_count OR closed named display partitions when KNOWN, otherwise null",
+        "population_audit_ref",
+        "source_version_refs",
+        "effective_at",
+        "recorded_cutoff",
+        "generated_at",
+        "limitations",
+        "reason_codes"
+      ],
+      "absent_fields": [
+        "known_population",
+        "denominator",
+        "total_population",
+        "coverage",
+        "percentage",
+        "ratio",
+        "score",
+        "numeric_completeness"
+      ],
+      "allowed_operations": [
+        "DISPLAY_INTEGER",
+        "DISPLAY_CLOSED_PARTITIONS",
+        "FILTER_DECLARED_DIMENSION",
+        "DRILL_DOWN_AUTHORIZED"
+      ],
+      "prohibited_operations": [
+        "DIVIDE",
+        "RATIO",
+        "PERCENT",
+        "WEIGHT",
+        "NORMALIZE",
+        "RANK_ASSURANCE",
+        "SUM_ACROSS_AXES",
+        "SUM_ACROSS_KPIS",
+        "SUM_PARTITIONS_AS_DENOMINATOR"
+      ],
+      "renderers": [
+        "COUNT",
+        "PARTITIONED_COUNT",
+        "STATE",
+        "DEFINITION"
+      ],
+      "unknown": "Unenumerated/unavailable source or predicate dependency => whole result UNKNOWN and all displayed measures null; known UNKNOWN-category members may have an integer only within a complete evaluated partition."
+    },
+    "audit_projection": {
+      "access": "Separately authorized auditor drill-down using existing permissions; no new permission. Generic clients receive only an opaque audit reference, no arithmetic endpoint or denominator scalar.",
+      "content": "Explicit manifest population selection rule/version; authorized exact evaluated member identities and member/partition digests; excluded/unknown conditions, deduplication keys, input versions, completeness and predicate decision per member; no inaccessible member count.",
+      "conservation": "Prove exact selected member set equals disjoint union of all named state partitions, including known UNKNOWN-state members. Unknown/unacquired membership invalidates completeness; null is never zero. Proof is a reproducible set-membership check, not a numeric percentage denominator.",
+      "no_hidden_denominator": "No denominator maintained or transmitted under a renamed field; the audit population proof is openly documented here and cannot be composed into generic assurance arithmetic."
+    },
+    "enforcement": "Future API serialization allowlist rejects forbidden arithmetic fields/operators; client view schema and export/LLM tools accept only closed renderers. Reject on both server and presentation boundaries, including malicious query/visualization templates. Never rely only on explanatory labels.",
+    "limit": "Authorized people can count accessible records outside the Hub. This design prevents prohibited composition in conforming Hub clients; it does not claim to prevent arbitrary off-system arithmetic. No raw historical KPI result envelope may be forwarded."
+  },
+  "claim_contract": {
+    "controlling_source": "S2_COMMERCIAL_CLAIMS_REGISTER",
+    "controlling_field": "capability_ceilings.current_claim_ceiling",
+    "s1_alignment_candidate_role": "HISTORICAL_MAPPING_METADATA_ONLY",
+    "s1_effective_publication_ceiling": false,
+    "claim_ids": [
+      "CL-FACT-TA-C01",
+      "CL-FACT-TA-C02",
+      "CL-FACT-TA-C03",
+      "CL-FACT-TA-C04",
+      "CL-FACT-TA-C05",
+      "CL-FACT-TA-C06",
+      "CL-FACT-TA-C07",
+      "CL-FACT-TA-C08",
+      "CL-FACT-TA-C09",
+      "CL-FACT-TA-C10",
+      "CL-FACT-TA-C11",
+      "CL-FACT-TA-C12",
+      "CL-FACT-TA-C13",
+      "CL-FACT-TA-C14",
+      "CL-FACT-TA-C15",
+      "CL-FACT-TA-C16",
+      "CL-FACT-TA-C17",
+      "CL-FACT-TA-C18",
+      "CL-FACT-TA-C19",
+      "CL-FACT-TA-C20",
+      "CL-FACT-TA-C21",
+      "CL-FACT-TA-C22",
+      "CL-FACT-TA-C23",
+      "CL-FACT-TA-C24",
+      "CL-FACT-TA-C25",
+      "CL-FACT-TA-C26",
+      "CL-FACT-TA-C27",
+      "CL-FACT-TA-C28",
+      "CL-FACT-TA-C29",
+      "CL-FACT-TA-C30",
+      "CL-FACT-TA-C31",
+      "CL-FACT-TA-C32",
+      "CL-FACT-TA-C33",
+      "CL-FACT-TA-C34",
+      "CL-ALIGN-TA-C11",
+      "CL-ALIGN-TA-C12",
+      "CL-ALIGN-TA-C26",
+      "CL-ALIGN-TA-C27",
+      "CL-ALIGN-TA-C28",
+      "CL-READINESS-01",
+      "CL-CERTIFICATION-01",
+      "CL-ATTESTATION-01"
+    ],
+    "capability_ceilings": [
+      {
+        "capability_id": "TA-C01",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C02",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C03",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C04",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C05",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C06",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C07",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C08",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C09",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C10",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C11",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C12",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C13",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C14",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C15",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C16",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C17",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C18",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C19",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C20",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C21",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C22",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C23",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C24",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C25",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C26",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C27",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C28",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C29",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C30",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C31",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C32",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C33",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C34",
+        "current_claim_ceiling": "FACTUAL_CAPABILITY_ONLY"
+      },
+      {
+        "capability_id": "TA-C35",
+        "current_claim_ceiling": "NO_AFFIRMATIVE_CLAIM"
+      },
+      {
+        "capability_id": "TA-C36",
+        "current_claim_ceiling": "NO_AFFIRMATIVE_CLAIM"
+      },
+      {
+        "capability_id": "TA-C37",
+        "current_claim_ceiling": "NO_AFFIRMATIVE_CLAIM"
+      },
+      {
+        "capability_id": "TA-C38",
+        "current_claim_ceiling": "NO_AFFIRMATIVE_CLAIM"
+      }
+    ],
+    "required_projection_fields": [
+      "claim_id/version",
+      "exact_wording",
+      "claim_class",
+      "eligibility",
+      "controlling_ceiling_and_source_version",
+      "record_access_state",
+      "affirmative_use_state",
+      "required_reviewers",
+      "unresolved_gap_refs",
+      "validity",
+      "invalidation_triggers",
+      "scope",
+      "evidence_and_mapping_refs",
+      "exposure_state"
+    ],
+    "current_counts": {
+      "INELIGIBLE": 42,
+      "INTERNAL_ONLY": 42,
+      "PROHIBITED": 42
+    },
+    "failure": "Missing/inconsistent S2 or E1 -> no affirmative claim; do not fall back to S1",
+    "reviews": "Named independent scope-qualified reviewer of exact wording, source vector, freshness, sufficiency where required, publication and actual exposed surfaces. Review cannot override a ceiling or prerequisite.",
+    "invalidation_triggers": [
+      "Input/version change",
+      "Source correction/supersession",
+      "Evidence expiry/revocation/degraded support",
+      "Mapping/applicability/wording/presentation change",
+      "Access or review validity loss"
+    ],
+    "e1_correction": "CL-CERTIFICATION-01 scoped mapping UNKNOWN for ISO-IEC-42001-2023-ED1; historical S2 record remains unchanged; no external artifact."
+  },
+  "populations": {
+    "ASSURANCE_GAPS": {
+      "source": "docs/trust-assurance/gap-register-v0.json",
+      "member_ids": [
+        "G-SOURCE-01",
+        "G-SOURCE-02",
+        "G-SOURCE-03",
+        "G-SOURCE-04",
+        "G-SOURCE-05",
+        "G-EU-OPERATIVE",
+        "G-MAP-TA-C01",
+        "G-MAP-TA-C02",
+        "G-MAP-TA-C03",
+        "G-MAP-TA-C04",
+        "G-MAP-TA-C05",
+        "G-MAP-TA-C06",
+        "G-MAP-TA-C07",
+        "G-MAP-TA-C08",
+        "G-MAP-TA-C09",
+        "G-MAP-TA-C10",
+        "G-MAP-TA-C13",
+        "G-MAP-TA-C14",
+        "G-MAP-TA-C15",
+        "G-MAP-TA-C16",
+        "G-MAP-TA-C17",
+        "G-MAP-TA-C18",
+        "G-MAP-TA-C19",
+        "G-MAP-TA-C20",
+        "G-MAP-TA-C21",
+        "G-MAP-TA-C22",
+        "G-MAP-TA-C23",
+        "G-MAP-TA-C24",
+        "G-MAP-TA-C25",
+        "G-MAP-TA-C29",
+        "G-MAP-TA-C30",
+        "G-MAP-TA-C31",
+        "G-MAP-TA-C32",
+        "G-MAP-TA-C33",
+        "G-MAP-TA-C34",
+        "G-MAP-TA-C35",
+        "G-MAP-TA-C36",
+        "G-MAP-TA-C37",
+        "G-MAP-TA-C38",
+        "G-REF-NIST-1.0-GOVERN-1.6",
+        "G-REF-NIST-1.0-MEASURE-2.4",
+        "G-REF-EU-OJ-20240712-ART-11",
+        "G-REF-EU-OJ-20240712-ART-12",
+        "G-REF-EU-OJ-20240712-ANNEX-IV",
+        "G-APPLICABILITY",
+        "G-SUFFICIENCY",
+        "G-REVIEWER",
+        "G-EXECUTION",
+        "G-CI",
+        "G-DEPLOYMENT",
+        "G-OPERATING",
+        "G-CERTIFICATION",
+        "G-ATTESTATION",
+        "G-FRESHNESS",
+        "G-LEGACY-L01",
+        "G-LEGACY-L02",
+        "G-LEGACY-L03",
+        "G-LEGACY-L04",
+        "G-REACHABILITY-L04",
+        "G-EMBEDDING-POPULATION",
+        "G-KPI-EXECUTION"
+      ],
+      "count": 61,
+      "state": "OPEN",
+      "label": "Historical S2 assurance gaps: 61 OPEN"
+    },
+    "PRESENTATION_EXPOSURE_GATES": {
+      "source": "docs/trust-assurance/v0-closure-errata-v1.json",
+      "member_ids": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "LX01",
+        "LX02",
+        "LX03",
+        "LX04",
+        "LX05",
+        "LX06",
+        "LX07",
+        "LX08_AUDIT_TRAIL",
+        "LX09_DORMANT_PDF_GENERATORS"
+      ],
+      "known_member_count": 14,
+      "completeness": "OPEN_UNIVERSE_NOT_EXHAUSTIVE",
+      "scope_expansion": "L04_PACKAGE_COMPATIBILITY expands L04; not a fifteenth member"
+    },
+    "cross_population_sum": false,
+    "prohibited_label": "61 total gaps"
+  },
+  "certification_contract": {
+    "current_state": "NOT_ASSERTED",
+    "external_artifacts_in_pack": 0,
+    "positive_requires": [
+      "independent_issuer",
+      "authenticated_issuer_source",
+      "exact_subject_identity_and_legal_entity",
+      "framework_version",
+      "bounded_scope",
+      "valid_from",
+      "valid_until_or_explicit_issuer_validity_semantics",
+      "artifact_identity_and_version",
+      "verification_state_and_basis_at_cutoff",
+      "revocation_and_expiry_status_basis"
+    ],
+    "states": "Preserve parent NOT_ASSERTED/CERTIFIED/ATTESTED/UNKNOWN vocabulary and independent artifact verification states; expired/revoked stays historical, never current positive.",
+    "cannot_infer_from": [
+      "mapping",
+      "evidence_availability",
+      "internal_readiness",
+      "tests",
+      "ledger_chain_status",
+      "claim_review",
+      "award_status"
+    ],
+    "read_requirement": "R-EXTERNAL-ARTIFACT plus reviewed exact scope and exposure; no self-issued artifact"
+  },
+  "european_profile": {
+    "mode": "Projection only, explicitly PRODUCT or TENANT",
+    "base_reference": "EU-AI-ACT-2024-1689-OJ-20240712",
+    "reference_ids": [
+      "EU-OJ-20240712-ART-11",
+      "EU-OJ-20240712-ART-12",
+      "EU-OJ-20240712-ANNEX-IV"
+    ],
+    "axes": [
+      "source_version_status",
+      "applicability",
+      "mapping",
+      "evidence_availability",
+      "evidence_sufficiency",
+      "internal_readiness",
+      "external_certification_attestation"
+    ],
+    "operative_law_state": "UNKNOWN",
+    "applicability_state": "UNKNOWN",
+    "sufficiency_state": "NOT_ASSESSED",
+    "external_certification_attestation": "NOT_ASSERTED",
+    "qualified_review": "Qualified legal/current-law source and applicability reviewer must establish operative version, amendments/corrigenda/consolidation/transitional applicability, jurisdiction, role, intended use and scope at the effective/cutoff pair. Source metadata alone cannot supply this conclusion.",
+    "unknown_rule": "If operative source or applicability is unestablished, corresponding axes remain UNKNOWN; preserve bounded OJ reference separately; no inferred legal satisfaction, readiness or certification.",
+    "aggregate_legal_compliance_state": false,
+    "prohibited_output": "EU AI Act compliant",
+    "no_legal_research_in_s0": true
+  },
+  "exposure_levels": [
+    {
+      "level": "INTERNAL_REVIEW",
+      "audience": "Owner and scope-authorized architecture/assurance reviewers",
+      "data_class": "Repository metadata; tenant diagnostics only after verified read contracts",
+      "publication_requirement": "No affirmative publication; claim records INTERNAL_ONLY",
+      "independent_review": "Scope-qualified internal review; no exposure permission granted",
+      "granted_by_s0": false
+    },
+    {
+      "level": "CONTROLLED_DOCUMENT_WALKTHROUGH",
+      "audience": "Named invited reviewers under separately approved document scope",
+      "data_class": "Approved redacted pinned documents only; no live tenant data or claim affirmation",
+      "publication_requirement": "Exact artifact/wording/audience and limitations approval outside S0",
+      "independent_review": "Independent wording/source/exposure reviewer",
+      "granted_by_s0": false
+    },
+    {
+      "level": "CONTROLLED_PRODUCT_DEMO",
+      "audience": "Separately approved controlled demonstration audience",
+      "data_class": "Approved bounded product fixture/read projection only",
+      "publication_requirement": "CONTROLLED_DEMO_READINESS HOLD; complete surface inventory and containment acceptance",
+      "independent_review": "Independent demo/exposure and security review",
+      "granted_by_s0": false
+    },
+    {
+      "level": "EXTERNAL_PUBLICATION",
+      "audience": "Approved public/external audience",
+      "data_class": "Only expressly approved exact redacted data and eligible wording",
+      "publication_requirement": "EXTERNAL_PUBLICATION_READINESS HOLD; S2 ceiling and exact wording approval mandatory",
+      "independent_review": "Independent publication/scope/freshness/exposure review",
+      "granted_by_s0": false
+    },
+    {
+      "level": "TENANT_ASSURANCE",
+      "audience": "Verified authorized members of exactly one tenant",
+      "data_class": "Only scope-authorized same-tenant evidence and governed projections",
+      "publication_requirement": "TENANT_ASSURANCE_READINESS HOLD; all typed/atomic/principal reads and applicable reviews required",
+      "independent_review": "Independent tenant read-security, population and sufficiency review",
+      "granted_by_s0": false
+    },
+    {
+      "level": "EXTERNAL_CERTIFICATION_ASSERTION",
+      "audience": "Approved audience for authenticated exact issuer artifact",
+      "data_class": "Only artifact/subject/scope approved for that audience",
+      "publication_requirement": "CERTIFICATION_READINESS HOLD; verified current artifact plus claim/publication/exposure approval",
+      "independent_review": "Independent artifact authenticity/scope/validity and publication review",
+      "granted_by_s0": false
+    }
+  ],
+  "legacy_dependencies": [
+    {
+      "surface_id": "L01",
+      "blocked_view_ids": [
+        "A",
+        "B",
+        "C",
+        "E",
+        "G",
+        "H",
+        "K"
+      ],
+      "boundary": "CompliancePanel and API flag percentages cannot support assurance; contain naming/manual flag exposure.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "L02",
+      "blocked_view_ids": [
+        "A",
+        "B",
+        "G",
+        "H",
+        "K"
+      ],
+      "boundary": "Scanner certification tiers are heuristic; isolate labels/exports from certification and readiness.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "L03",
+      "blocked_view_ids": [
+        "A",
+        "C",
+        "G",
+        "H",
+        "K"
+      ],
+      "boundary": "Extension compliance reports are local heuristics; review wording and incomplete/empty scan semantics.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "L04",
+      "blocked_view_ids": [
+        "A",
+        "B",
+        "C",
+        "G",
+        "H",
+        "K"
+      ],
+      "boundary": "graphos-complete plus package compatibility ISO 42001 Readiness / AI Act Technical File / SOC2 Control Pack / Certification Readiness surfaces; no assurance authority, hosted reachability UNKNOWN.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1C"
+    },
+    {
+      "surface_id": "L05",
+      "blocked_view_ids": [
+        "G",
+        "H",
+        "K"
+      ],
+      "boundary": "SAFE only for inspected export rejection guard; no inherited SAFE for any report generator, dashboard or deployment.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX01",
+      "blocked_view_ids": [
+        "A",
+        "B",
+        "C",
+        "E",
+        "K"
+      ],
+      "boundary": "Legacy agents/ai_systems are not canonical subjects. No name join or legacy registry bridge.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX02",
+      "blocked_view_ids": [
+        "A",
+        "J",
+        "K"
+      ],
+      "boundary": "Legacy home percentage cannot become overview state or KPI result.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX03",
+      "blocked_view_ids": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "K"
+      ],
+      "boundary": "Legacy graph/search/Talk traversal cannot resolve authoritative tenant joins; LLM/graph output stays non-authoritative.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX04",
+      "blocked_view_ids": [
+        "A",
+        "B",
+        "J"
+      ],
+      "boundary": "Heuristic cost estimates cannot become authoritative evidence, financial measures or assurance KPIs.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX05",
+      "blocked_view_ids": [
+        "B",
+        "C",
+        "J"
+      ],
+      "boundary": "Extension budget defaults cannot substitute for observed/validated values or evidence.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX06",
+      "blocked_view_ids": [
+        "A",
+        "C",
+        "E",
+        "K"
+      ],
+      "boundary": "ict_incidents remains legacy; no silent canonical incident/evidence bridge.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX07",
+      "blocked_view_ids": [
+        "A",
+        "B",
+        "C",
+        "E",
+        "K"
+      ],
+      "boundary": "Legacy oversight l1_automated default cannot establish governance, applicability or sufficiency; ledger payload presence does not upgrade it.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1B"
+    },
+    {
+      "surface_id": "LX08_AUDIT_TRAIL",
+      "blocked_view_ids": [
+        "A",
+        "C",
+        "E",
+        "G",
+        "H",
+        "K"
+      ],
+      "boundary": "Unscoped ledger_verify and VALID/BROKEN defaults require separate security review; no audit-chain consumption until exact org scope, principal authorization, explicit empty population/UNKNOWN/missing-row semantics. Payload contents never create assurance truth.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1A"
+    },
+    {
+      "surface_id": "LX09_DORMANT_PDF_GENERATORS",
+      "blocked_view_ids": [
+        "A",
+        "G",
+        "H",
+        "K"
+      ],
+      "boundary": "Dormant Compliance Rate %, AI Act Exposure and DORA Status generators remain an exposure risk; do not re-enable or inherit L05 SAFE.",
+      "scope": "Blocks affected consumption/drill-down, navigation/demo/export/presentation if exposed; all runtime exposure remains unapproved in S0",
+      "implemented": false,
+      "independent_review_required": true,
+      "containment_priority": "V1-S1C"
+    }
+  ],
+  "views": [
+    {
+      "view_id": "A",
+      "name": "Assurance Overview",
+      "purpose": "Bounded product state and, later, a separately selected tenant manifest",
+      "authoritative_projection_inputs": [
+        "R-PRODUCT",
+        "R-FRAMEWORK",
+        "R-TENANT-SCOPE",
+        "R-ATOMIC"
+      ],
+      "filters": "mode, scope/version, capability, framework edition, named axis",
+      "allowed_aggregations": "Distinct capability/record counts partitioned within one declared population only",
+      "unknown_behavior": "UNKNOWN per axis; no aggregate compliance state",
+      "drill_down": "B,C,D,E,F,G,H,I,J,K",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "LX01",
+        "LX02",
+        "LX03",
+        "LX04",
+        "LX06",
+        "LX07",
+        "LX08_AUDIT_TRAIL",
+        "LX09_DORMANT_PDF_GENERATORS"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "B",
+      "name": "Capabilities",
+      "purpose": "Display 38 bounded implementation claims, proof status and evidence availability",
+      "authoritative_projection_inputs": [
+        "R-PRODUCT"
+      ],
+      "filters": "capability ID, layer, authority class, proof status, immutable commit",
+      "allowed_aggregations": "Counts by closed proof status only",
+      "unknown_behavior": "NOT_PROVEN/UNKNOWN remain distinct; product proof cannot establish tenant assurance",
+      "drill_down": "C,D,E,F,G",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "L01",
+        "L02",
+        "L04",
+        "LX01",
+        "LX03",
+        "LX04",
+        "LX05",
+        "LX07"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "C",
+      "name": "Evidence",
+      "purpose": "Resolve typed immutable references without copying source payloads or upgrading authority",
+      "authoritative_projection_inputs": [
+        "R-PRODUCT",
+        "R-EVIDENCE",
+        "R-TENANT-LINEAGE",
+        "R-EXTERNAL-ARTIFACT",
+        "R-ATOMIC"
+      ],
+      "filters": "mode, exact typed target/version, source class, access, currency",
+      "allowed_aggregations": "Distinct admissible reference versions within one scope only",
+      "unknown_behavior": "Denied/unavailable reference UNKNOWN; no inaccessible count; availability != sufficiency",
+      "drill_down": "Exact source/subject/state/decision/policy/support versions",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "L01",
+        "L03",
+        "L04",
+        "LX01",
+        "LX03",
+        "LX05",
+        "LX06",
+        "LX07",
+        "LX08_AUDIT_TRAIL"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED",
+        "SOURCE_OR_LICENSE_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "D",
+      "name": "Frameworks",
+      "purpose": "Seven pinned editions and lawful source/population access state",
+      "authoritative_projection_inputs": [
+        "R-FRAMEWORK"
+      ],
+      "filters": "framework version, publisher, access/license, population status",
+      "allowed_aggregations": "Bibliographic edition counts; bounded public references separately",
+      "unknown_behavior": "Pending licensed/full populations not an empty satisfied set",
+      "drill_down": "E,C",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "PINNED_FRAMEWORK_REFERENCE_METADATA",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "LX03"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "SOURCE_OR_LICENSE_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "E",
+      "name": "Requirements / References",
+      "purpose": "Capability -> evidence -> framework/reference mapping and future exact tenant subject/decision traversal",
+      "authoritative_projection_inputs": [
+        "R-FRAMEWORK",
+        "R-PRODUCT",
+        "R-TENANT-MAPPING",
+        "R-TENANT-LINEAGE",
+        "R-M16-PASSPORT",
+        "R-M16-CONFLICT",
+        "R-M17-RISK",
+        "R-M17-ASSESSMENT-V2",
+        "R-M17-TREATMENT",
+        "R-M17-ACCEPTANCE",
+        "R-M17-LIFECYCLE",
+        "R-M17-OVERLAY",
+        "R-TENANT-REGISTRY",
+        "R-ATOMIC"
+      ],
+      "filters": "exact framework/version/reference, mode/manifest, mapping, separate applicability/availability/sufficiency axes",
+      "allowed_aggregations": "Named state partitions within a declared reference set; no full-framework coverage arithmetic",
+      "unknown_behavior": "MAPPED != satisfied; pending populations UNKNOWN, reviewed NOT_APPLICABLE retained",
+      "drill_down": "Exact mapping -> evidence -> subject -> governed decision/support with authority/version/as-of",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "L01",
+        "LX01",
+        "LX03",
+        "LX06",
+        "LX07",
+        "LX08_AUDIT_TRAIL"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED",
+        "SOURCE_OR_LICENSE_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "F",
+      "name": "Gaps",
+      "purpose": "Keep historical assurance gaps and presentation/exposure gates as separate tabs/populations",
+      "authoritative_projection_inputs": [
+        "R-PRODUCT",
+        "R-TENANT-GAPS",
+        "R-ATOMIC"
+      ],
+      "filters": "population ID/version, gap ID/kind, mode/manifest, named state",
+      "allowed_aggregations": "Distinct count per declared compatible population only; never cross-population sum",
+      "unknown_behavior": "Historical 61 OPEN; known exposure membership is not exhaustive; inaccessible tenant gap set UNKNOWN",
+      "drill_down": "Source gap and controlling claim/exposure gate",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "G",
+      "name": "Claims",
+      "purpose": "Show class, eligibility, S2 ceiling, E1 record access/affirmative use, reviewers and invalidation",
+      "authoritative_projection_inputs": [
+        "R-PRODUCT",
+        "R-REVIEW"
+      ],
+      "filters": "claim ID/class, capability, eligibility, access/use, ceiling",
+      "allowed_aggregations": "42 INELIGIBLE records; separate categorical record counts only",
+      "unknown_behavior": "Missing S2/E1 fails closed to no affirmation; no S1 ceiling fallback",
+      "drill_down": "Exact wording -> S2 ceiling -> evidence/mapping -> gaps -> reviewer/exposure",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "LX08_AUDIT_TRAIL",
+        "LX09_DORMANT_PDF_GENERATORS"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "H",
+      "name": "Certification & Attestation",
+      "purpose": "Display NOT_ASSERTED and later independently authenticated artifacts",
+      "authoritative_projection_inputs": [
+        "R-PRODUCT",
+        "R-EXTERNAL-ARTIFACT",
+        "R-REVIEW"
+      ],
+      "filters": "artifact kind/issuer, exact subject/framework/scope/version and validity",
+      "allowed_aggregations": "Distinct artifact identities by kind/state only when population known",
+      "unknown_behavior": "NOT_ASSERTED now; unverified UNKNOWN, expired/revoked never current positive",
+      "drill_down": "Issuer-authenticated artifact and exact validity/revocation basis",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "LX08_AUDIT_TRAIL",
+        "LX09_DORMANT_PDF_GENERATORS"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "EXTERNAL_ARTIFACT_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "I",
+      "name": "Awards",
+      "purpose": "Display six edition records and 25 source-pinned events with conflicts",
+      "authoritative_projection_inputs": [
+        "R-AWARDS",
+        "R-EXTERNAL-ARTIFACT",
+        "R-REVIEW"
+      ],
+      "filters": "organizer/edition, source status, eligibility/readiness, calendar precision/timezone/conflict",
+      "allowed_aggregations": "Edition/event counts within one source-pinned population only",
+      "unknown_behavior": "Eligibility UNKNOWN, source pending/conflicts explicit; no likelihood/probability/award-ready",
+      "drill_down": "Organizer edition/source/event; outcome requires external artifact",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "PINNED_PRODUCT_AWARD_METADATA",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "EXTERNAL_ARTIFACT_REQUIRED",
+        "SOURCE_OR_LICENSE_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "J",
+      "name": "KPI Definitions",
+      "purpose": "Catalogue 11 definitions; never turn definitions into results",
+      "authoritative_projection_inputs": [
+        "R-PRODUCT",
+        "R-TENANT-KPI",
+        "R-ATOMIC"
+      ],
+      "filters": "definition/version, PRODUCT/TENANT, COUNT/PARTITIONED_COUNT, execution status",
+      "allowed_aggregations": "Definition catalogue counts only now; future count results obey D-V1-08",
+      "unknown_behavior": "DEFINITION_ONLY/offline documentary predicates do not imply executed tenant results",
+      "drill_down": "Definition predicate/source/population/permission/audit preconditions",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "LX02",
+        "LX04",
+        "LX05"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ]
+    },
+    {
+      "view_id": "K",
+      "name": "European Assurance Profile",
+      "purpose": "Project bounded OJ references and seven independent axes, never legal truth",
+      "authoritative_projection_inputs": [
+        "R-FRAMEWORK",
+        "R-PRODUCT",
+        "R-TENANT-MAPPING",
+        "R-TENANT-LINEAGE",
+        "R-REVIEW",
+        "R-EXTERNAL-ARTIFACT",
+        "R-ATOMIC"
+      ],
+      "filters": "mode/manifest, exact original edition, operative-review status and each named axis",
+      "allowed_aggregations": "Bounded reference counts only; no legal-compliance/coverage aggregate",
+      "unknown_behavior": "Operative source/applicability UNKNOWN; sufficiency NOT_ASSESSED; external NOT_ASSERTED",
+      "drill_down": "Original OJ source and qualified review basis separately; exact evidence/subject lineage",
+      "exposure_boundary": {
+        "internal_audience": "Scope-authorized internal reviewers of documentary contract only; no Hub execution granted",
+        "allowed_data_class": "Mode-explicit pinned product metadata; tenant data only after principal/scope/atomic contracts",
+        "publication_requirement": "No exposure granted; all six level-specific requirements apply; exact wording/source/redaction/exposure approval required before external use",
+        "independent_review_required": true,
+        "exposure_levels": [
+          "INTERNAL_REVIEW",
+          "CONTROLLED_DOCUMENT_WALKTHROUGH",
+          "CONTROLLED_PRODUCT_DEMO",
+          "EXTERNAL_PUBLICATION",
+          "TENANT_ASSURANCE",
+          "EXTERNAL_CERTIFICATION_ASSERTION"
+        ]
+      },
+      "required_read_contract": "Closed read allowlist + typed mode/scope/identity/source pins + same-tenant principal authorization for every tenant hop + ATOMIC as-of + failure contract; rejected existing routes require additive projection first",
+      "legacy_blockers": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "LX01",
+        "LX02",
+        "LX03",
+        "LX06",
+        "LX07",
+        "LX08_AUDIT_TRAIL",
+        "LX09_DORMANT_PDF_GENERATORS"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "EXTERNAL_ARTIFACT_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED",
+        "SOURCE_OR_LICENSE_REQUIRED"
+      ]
+    }
+  ],
+  "slices": [
+    {
+      "slice_id": "V1-S1A",
+      "depends_on": [],
+      "title": "LX08 audit security containment prerequisite",
+      "scope": "Separate owner-authorized org/principal-bound read security and explicit EMPTY/UNKNOWN/missing-result semantics review; prevent legacy payload assurance truth.",
+      "gate": "R-AUDIT; no audit fixes in S0",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S1B",
+      "depends_on": [
+        "V1-S1A"
+      ],
+      "title": "Live legacy assurance exposure containment",
+      "scope": "L01-L03, LX01-LX07: contain percentages/tiers/defaults, prevent legacy bridges, inventory navigation and extension paths; scoped independent acceptance.",
+      "gate": "All affected live demo paths",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S1C",
+      "depends_on": [
+        "V1-S1B"
+      ],
+      "title": "Package, dormant export and compatibility containment",
+      "scope": "L04 graphos-complete + package compatibility, LX09 dormant generators; preserve narrow L05 guard; verify real exposure without asserting hosted reachability.",
+      "gate": "No deployment authorized",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S2",
+      "depends_on": [
+        "V1-S1C"
+      ],
+      "title": "Shared projection/read metadata contracts",
+      "scope": "Typed identities/mode/scope/errors, immutable version vector, D-V1-08 serialization/operator/renderer contract and no-denominator audit proof.",
+      "gate": "No new governance authority or permission",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S3",
+      "depends_on": [
+        "V1-S2"
+      ],
+      "title": "Tenant principal-bound additive reads",
+      "scope": "Bind exact subject inventory, evidence/lineage/registry links and missing M16/M17 wrappers through existing authorization; preserve explicit times and prove cross-source snapshot/completeness.",
+      "gate": "No app-filter fallback or internal resolver grant expansion",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S4",
+      "depends_on": [
+        "V1-S2"
+      ],
+      "title": "Product Hub projections",
+      "scope": "Project immutable V0/E1 metadata with claim precedence and separate gap populations; no tenant evidence, claims or runtime exposure approval.",
+      "gate": "Can be built independently of S3 after common contracts",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S5",
+      "depends_on": [
+        "V1-S3",
+        "V1-S4"
+      ],
+      "title": "Tenant assurance projections",
+      "scope": "Execute only under separate authorization after complete scoped lawful sources, applicability/sufficiency reviews, exact pins and atomic reads; add missing metadata-only projection links.",
+      "gate": "Incomplete sources/read contracts keep tenant HOLD",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S6",
+      "depends_on": [
+        "V1-S4",
+        "V1-S5"
+      ],
+      "title": "European Assurance Profile",
+      "scope": "Qualified source/current-law/applicability review and independent axes; product reference panel may precede tenant execution.",
+      "gate": "No legal-compliance aggregate or certification inference",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S7",
+      "depends_on": [
+        "V1-S1C",
+        "V1-S4",
+        "V1-S5",
+        "V1-S6"
+      ],
+      "title": "Hub API/UI",
+      "scope": "Server/client/export allowlists, authorized drill-down and accessible fail-closed views, exposure gates on actual navigation and presentation.",
+      "gate": "Internal candidate only; demo/publication remain separately gated",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    },
+    {
+      "slice_id": "V1-S8",
+      "depends_on": [
+        "V1-S7"
+      ],
+      "title": "Adversarial closure",
+      "scope": "Cross-tenant/forged-principal/paging/as-of/empty/unknown/denominator/claim precedence/legacy exposure and artifact invalidation adversarial acceptance.",
+      "gate": "Independent review once; closure does not automatically release HOLDs",
+      "status": "PROPOSED_NOT_STARTED",
+      "requires_separate_owner_authorization": true
+    }
+  ],
+  "acceptance": [
+    {
+      "acceptance_id": "W-V1-01",
+      "title": "No canonical authority",
+      "predicate": "Frozen 11/12/16 catalogs, M16/M17 families, shared Authority Policy, trust vocabulary and decisions unchanged; new kinds/edges/families/facts/permissions = 0.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-02",
+      "title": "Mode isolation",
+      "predicate": "PRODUCT organisation=null; TENANT exactly one verified org+manifest; reject mixed cache/request/result/drill-down/export and tenant changes to product claims.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-03",
+      "title": "Complete read inventory",
+      "predicate": "Each admitted hop has one read ID, pinned code or explicit absent-surface basis, data class, org/subject binding, DB principal/authorization, definer/table/transport, both time coordinates, failure and additive decision. Reject unlisted hops.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-04",
+      "title": "No app-filter-only tenant route",
+      "predicate": "R-IDENTITY/R-RELATIONSHIP/R-PROFILE/R-RECONCILIATION/R-EVIDENCE/R-TECHNICAL/R-LOOKUP/R-EXECUTION and mixed Passport cannot establish tenant assurance until additive DB-authorized reads replace these hops.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-05",
+      "title": "Transport is not authority",
+      "predicate": "Forged/revoked/expired principal denied even with service_role; owner-only resolvers never exposed or granted as generic tenant read authority.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-06",
+      "title": "Exact same-tenant traversal",
+      "predicate": "Every mapping/evidence/subject/relationship-state/decision/support hop checks exact typed ID and organisation; no name joins, implicit parent inheritance or legacy bridge.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-07",
+      "title": "Atomic as-of",
+      "predicate": "Both explicit time coordinates and immutable source vector required; separate successful RPCs at same timestamps without consistent snapshot proof produce NON_ATOMIC/UNKNOWN.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-08",
+      "title": "UNKNOWN and failure",
+      "predicate": "Denied access cannot reveal existence/count or become absence; source/page failure yields UNKNOWN, not zero; invalid state fails closed; complete empty population cannot become green.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-09",
+      "title": "No percentage/ratio/score",
+      "predicate": "API/client/export/LLM contracts contain no arithmetic division/ratio/percentage/score renderer or denominator scalar; reject hidden denominator aliases and cross-axis/KPI totals.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-10",
+      "title": "V1-A1 architecture resolution",
+      "predicate": "D-V1-08 chooses B + audit identity separation, documents A/C rejection reasons, set-conservation/UNKNOWN and enforcement; historical KPI framework unchanged; no execution.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-11",
+      "title": "V1-A2 architecture resolution",
+      "predicate": "All read categories classified; principal-bound SQL and null-default/mixed app wrappers distinguished; missing additive projections explicit; no app filtering equivalence.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-12",
+      "title": "Claim ceilings",
+      "predicate": "All 38 S2 ceilings preserved; 42 claims remain INELIGIBLE/INTERNAL_ONLY/PROHIBITED; S1 candidate never controls; missing/inconsistent S2 fails closed.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-13",
+      "title": "Separate populations",
+      "predicate": "61 OPEN S2 assurance gaps separate from 14 known open-universe E1 exposure members; L04 scope expansion not a member; no 61 total gaps label or incompatible sum.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-14",
+      "title": "External artifact",
+      "predicate": "NOT_ASSERTED until independently authenticated scope-matched artifact with issuer/subject/framework/version/validity/identity/verification/revocation basis; expiry/revocation invalidate positive present use.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-15",
+      "title": "European profile",
+      "predicate": "Original OJ edition != operative law; qualified review missing => UNKNOWN applicability/operative axis; no generic EU AI Act compliant or aggregate legal state.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-16",
+      "title": "Exposure and legacy",
+      "predicate": "All L01-L05/LX01-LX09 inputs map to blocked view paths; LX08 scoped principal-bound/empty/missing/UNKNOWN/payload conditions explicit; L05 SAFE narrow. No exposure granted; all HOLDs preserved.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-17",
+      "title": "Neutral future consumer",
+      "predicate": "M18 remains HOLD, noncanonical/unimplemented; no M18 API or Normative Intelligence; consumer contract exposes authority/scope/known/UNKNOWN/as-of/limitations/drill-down/exposure.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-18",
+      "title": "LLM/graph/vector",
+      "predicate": "LLM explanation cites deterministic projection only; cannot create mapping/applicability/sufficiency/claim/certification/publication authority; graph ANALYTICAL, vector non-authoritative.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-19",
+      "title": "Definitions and awards",
+      "predicate": "11 KPI definitions stay definitions (COUNT/PARTITIONED_COUNT); award source/edition/calendar conflicts and UNKNOWN stay explicit; no probability/award-ready/outcome without external artifact.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    },
+    {
+      "acceptance_id": "W-V1-20",
+      "title": "Documentary delta",
+      "predicate": "Required starting branch/HEAD exact; all parent V0/E1 bytes unchanged; every referenced source/member ID resolves; no runtime/DB/migration/API/UI delta; git diff --check; commit/push only after S0 gates PASS, no PR or next-slice implementation.",
+      "verification": "DOCUMENTARY_DESIGN_GATE; future runtime adversarial evidence required in authorized implementation slice"
+    }
+  ],
+  "future_consumer_interface": {
+    "name": "FUTURE_CONSUMER_INTERFACE_REQUIREMENTS",
+    "fields": [
+      "projection identity/version",
+      "authority/source class",
+      "mode PRODUCT_ASSURANCE or TENANT_ASSURANCE",
+      "exact typed subject/scope/organisation binding",
+      "exact known state or UNKNOWN with reasons",
+      "effective_at and recorded_cutoff",
+      "generated_at separately",
+      "source/dependency validity pins",
+      "limitations and acquisition/snapshot status",
+      "authorized drill-down refs",
+      "exposure state",
+      "controlling ceiling/access/affirmative-use state where relevant"
+    ],
+    "M18_canonical": false,
+    "M18_started": false,
+    "M18_specific_API": false,
+    "graph": "ANALYTICAL traversal only",
+    "vector": "Non-authoritative similarity only",
+    "LLM": "Explain deterministic authorized Hub projection, cite exact projection/input refs; no authority or percentage renderer"
+  },
+  "delta": {
+    "runtime": 0,
+    "database": 0,
+    "migrations": 0,
+    "API": 0,
+    "UI": 0,
+    "hosted_mutations": 0,
+    "deployments": 0,
+    "PRs": 0,
+    "tenant_assurance_executions": 0,
+    "KPI_executions": 0,
+    "publications": 0,
+    "M18_implementation": 0,
+    "Normative_Intelligence": 0
+  },
+  "typed_traversal": {
+    "capability_path": [
+      "Capability exact ID + inventory version",
+      "CapabilityEvidenceLink exact capability/evidence versions",
+      "EvidenceReference tagged locator preserving original authority",
+      "FrameworkVersion exact edition/catalog record",
+      "FrameworkRequirement or bounded public reference exact ID + record version",
+      "Mapping exact ID/version and reviewed limitation"
+    ],
+    "tenant_path": [
+      "FrameworkRequirement/reference version + manifest membership",
+      "Tenant mapping version + requirement/evidence/subject tuple",
+      "Admissible evidence reference typed identity/version",
+      "Exact governed subject identity/state",
+      "Original governed decision and typed support/dependency references",
+      "Original authority/policy/version and effective_at/recorded_cutoff"
+    ],
+    "subject_union": {
+      "CANONICAL_OBJECT": [
+        "organisation_id",
+        "one of 11 frozen kinds",
+        "canonical_object_id",
+        "exact selected state/version and creating decision"
+      ],
+      "RELATIONSHIP_STATE": [
+        "organisation_id",
+        "relationship_id",
+        "relationship_state_id",
+        "one of 12 frozen relationship types",
+        "typed exact source and target canonical identities"
+      ]
+    },
+    "evidence_union": "Parent ADR section 4 locator union only: REPOSITORY_ARTIFACT, VERIFICATION_ARTIFACT, GOVERNED_REFERENCE, UPSTREAM_EVIDENCE_REFERENCE, EXTERNAL_ARTIFACT_REFERENCE. These are metadata tags, not new canonical kinds/support targets.",
+    "evidence_required_fields": [
+      "reference_id/version",
+      "locator_kind",
+      "original_authority_class",
+      "original_trust_state",
+      "mode/org/scope",
+      "exact typed source target/version",
+      "decision/state/support identities where relevant",
+      "source connection/run/snapshot identity where relevant",
+      "permitted digest/version",
+      "effective_at",
+      "recorded_cutoff",
+      "access",
+      "currency",
+      "dependency_validity",
+      "limitations"
+    ],
+    "join_rule": "Resolve by exact tagged identities through allowlisted authorized reads. Every tenant-bearing endpoint and junction must match principal organisation and manifest; reject multiple/conflicting versions, unresolved type/ID or unauthorized hop. Never guess, match by name or substitute a legacy agents/ai_systems registry ID. M16/M17 owner-target support matrices and acyclicity stay frozen.",
+    "failure": "Any unresolved, denied, non-atomic or invalid hop makes the dependent projection UNKNOWN/ACCESS_DENIED/DEPENDENCY_INVALID as appropriate; no guessed join or evidence-free green."
+  },
+  "additional_capabilities": [
+    {
+      "id": "AUDIT_CHAIN_INPUT",
+      "read_ids": [
+        "R-AUDIT"
+      ],
+      "implementation_classification": [
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ],
+      "rule": "Optional supporting input only after LX08 security/empty/missing/org/principal semantics; never proof of payload truth."
+    },
+    {
+      "id": "POPULATION_AUDIT_DRILLDOWN",
+      "read_ids": [
+        "R-TENANT-SCOPE",
+        "R-TENANT-KPI",
+        "R-ATOMIC"
+      ],
+      "implementation_classification": [
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED"
+      ],
+      "rule": "Exact set conservation, separate authorized identities; no generic denominator endpoint."
+    },
+    {
+      "id": "ATOMIC_AUTHORIZED_COMPOSITION",
+      "read_ids": [
+        "R-SESSION",
+        "R-ATOMIC",
+        "R-TENANT-LINEAGE"
+      ],
+      "implementation_classification": [
+        "ADDITIVE_READ_PROJECTION_REQUIRED"
+      ],
+      "rule": "Reuse existing authorization rules, no new permission/authority; snapshot attestation mandatory."
+    },
+    {
+      "id": "EXPOSURE_REVIEW",
+      "read_ids": [
+        "R-REVIEW",
+        "R-LEGACY"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ],
+      "rule": "Exact surface/wording/version/audience review; S0 grants no exposure."
+    },
+    {
+      "id": "FUTURE_CONSUMER_INTERFACE_REQUIREMENTS",
+      "read_ids": [
+        "R-PRODUCT",
+        "R-TENANT-MAPPING"
+      ],
+      "implementation_classification": [
+        "PROJECTION_ONLY_METADATA",
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED"
+      ],
+      "rule": "Consumer-neutral only; M18 remains noncanonical/unimplemented."
+    },
+    {
+      "id": "OPTIONAL_LLM_EXPLANATION",
+      "read_ids": [
+        "R-PRODUCT",
+        "R-TENANT-MAPPING"
+      ],
+      "implementation_classification": [
+        "ADDITIVE_READ_PROJECTION_REQUIRED",
+        "API_REQUIRED",
+        "UI_REQUIRED",
+        "REVIEW_WORKFLOW_REQUIRED",
+        "LEGACY_CONTAINMENT_REQUIRED"
+      ],
+      "rule": "Future separately authorized explanation consumes deterministic projection and cites exact authorized refs; no vector/graph/LLM-created authority."
+    }
+  ]
+}
