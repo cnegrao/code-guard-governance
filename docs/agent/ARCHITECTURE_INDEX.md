@@ -1,5 +1,8 @@
 # Architecture index
 
+- [M17.5-V0-E1 adversarial errata](../trust-assurance/v0-closure-errata-v1.md) / [JSON](../trust-assurance/v0-closure-errata-v1.json) — append-only corrections to the closed V0 pack: separate record access/affirmative use, S2 controlling ceilings, separate exposure population including audit/PDF/package inputs, and unresolved mandatory V1-A1/V1-A2. All readiness HOLDs remain; V1-S0/M18 not started.
+- [M17.5-V0-E1 handoff](../codex/evidence/2026-10-20-m17.5-v0-e1-adversarial-errata.md) — owner-supplied external review provenance, immutable S0–S5 artifacts, verification and next action.
+
 - [M17.5-S5 V0 closure review](../trust-assurance/v0-closure-review.md) / [JSON](../trust-assurance/v0-closure-review.json) — bounded documentary closure PASS; live demo, external publication, tenant assurance and certification HOLD. All 61 gaps OPEN and 42 claims INELIGIBLE; overall M17.5 remains open.
 - [M17.5-S5 handoff](../codex/evidence/2026-10-20-m17.5-s5-v0-closure.md) — exact S0–S4 lineage, source and publication boundaries, twelve legacy exposure gates and proposed V1-S0 design; V1/M18 not started.
 
