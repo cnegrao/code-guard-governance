@@ -1,3 +1,5 @@
+import type { LegacyControlEnvelope } from "@/lib/legacy-control-dto";
+
 export type ControlState = "not_assessed" | "passed" | "failed" | "waived";
 
 export interface AISystem {
@@ -18,14 +20,6 @@ export interface AISystem {
   ai_officer_id: string | null;
   gpai_tier: string | null;
   annex_iii_exception_claimed: boolean | null;
-  cg_sys_001_registered: ControlState;
-  cg_sys_002_owner: ControlState;
-  cg_sys_003_risk_classified: ControlState;
-  cg_sys_004_tech_doc: ControlState;
-  cg_sys_005_risk_mgmt: ControlState;
-  cg_sys_006_human_oversight: ControlState;
-  cg_sys_007_conformity: ControlState;
-  cg_sys_008_post_market: ControlState;
   changes_log: string | null;
   known_limitations: string | null;
   risk_mgmt_system_desc: string | null;
@@ -41,7 +35,6 @@ export interface AISystem {
   accuracy_metrics: string | null;
   fairness_metrics: string | null;
   qms_documented: boolean | null;
-  external_refs: Record<string, unknown> | null;
   eu_ai_db_registered: boolean;
   eu_ai_db_ref: string | null;
   conformity_assessment_id: string | null;
@@ -50,11 +43,24 @@ export interface AISystem {
   updated_at: string;
 }
 
-export interface SystemDetail extends AISystem {
+/** Internal persisted legacy row; never serialize as a public response. */
+export interface AISystemRecord extends AISystem {
+  cg_sys_001_registered: ControlState;
+  cg_sys_002_owner: ControlState;
+  cg_sys_003_risk_classified: ControlState;
+  cg_sys_004_tech_doc: ControlState;
+  cg_sys_005_risk_mgmt: ControlState;
+  cg_sys_006_human_oversight: ControlState;
+  cg_sys_007_conformity: ControlState;
+  cg_sys_008_post_market: ControlState;
+  external_refs: Record<string, unknown> | null;
+}
+
+export interface SystemDetail extends LegacyControlEnvelope {
+  system: AISystem;
   owner_name: string;
   owner_email: string;
   agent_count: number;
-  compliance_score: number;
 }
 
 export interface SystemFilters {

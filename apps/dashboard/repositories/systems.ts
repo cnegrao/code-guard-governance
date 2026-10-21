@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
-import type { AISystem, SystemFilters, ControlState } from "@/types/systems";
+import type { AISystemRecord, SystemFilters, ControlState } from "@/types/systems";
 
 export async function getSystems(
   orgId: string,
   filters?: SystemFilters
-): Promise<{ systems: AISystem[]; total: number }> {
+): Promise<{ systems: AISystemRecord[]; total: number }> {
   const page = filters?.page ?? 1;
   const limit = filters?.limit ?? 20;
   const offset = (page - 1) * limit;
@@ -23,13 +23,13 @@ export async function getSystems(
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
-  return { systems: (data as AISystem[]) ?? [], total: count ?? 0 };
+  return { systems: (data as AISystemRecord[]) ?? [], total: count ?? 0 };
 }
 
 export async function getSystemById(
   orgId: string,
   systemId: string
-): Promise<AISystem | null> {
+): Promise<AISystemRecord | null> {
   const { data } = await db.write
     .from("ai_systems")
     .select("*")
@@ -37,13 +37,13 @@ export async function getSystemById(
     .eq("system_id", systemId)
     .throwOnError().maybeSingle();
 
-  return (data as AISystem) ?? null;
+  return (data as AISystemRecord) ?? null;
 }
 
 export async function getSystemWithOwner(
   orgId: string,
   systemId: string
-): Promise<Record<string, unknown> | null> {
+): Promise<{ system: AISystemRecord; agent_count: number; owner_name: string; owner_email: string } | null> {
   const system = await getSystemById(orgId, systemId);
   if (!system) return null;
 
@@ -72,7 +72,7 @@ export async function createSystem(
   orgId: string,
   userId: string,
   input: Record<string, unknown>
-): Promise<AISystem> {
+): Promise<AISystemRecord> {
   const { data, error } = await db.write
     .from("ai_systems")
     .insert({
@@ -96,14 +96,14 @@ export async function createSystem(
     .single();
 
   if (error) throw new Error(`Failed to create system: ${error.message}`);
-  return data as AISystem;
+  return data as AISystemRecord;
 }
 
 export async function updateSystem(
   orgId: string,
   systemId: string,
   input: Record<string, unknown>
-): Promise<AISystem> {
+): Promise<AISystemRecord> {
   const { data, error } = await db.write
     .from("ai_systems")
     .update(input)
@@ -113,7 +113,7 @@ export async function updateSystem(
     .single();
 
   if (error) throw new Error(`Failed to update system: ${error.message}`);
-  return data as AISystem;
+  return data as AISystemRecord;
 }
 
 export async function getSystemCompliance(

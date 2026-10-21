@@ -78,7 +78,7 @@ test('agent_graph_traverse: same-organisation root runs through the service clie
   assert.deepEqual(rpcCalls(), []);
 });
 
-test('ledger_verify (audit integrity) and agent_compliance_gaps use the service client with the bound organisation', async () => {
+test('quarantined ledger_verify uses service client; Agent detail no longer reads aggregate gap RPC', async () => {
   reset();
   rpcResult = call => (call.name === 'ledger_verify'
     ? { data: [{ is_valid: true, entries_checked: 0, first_break_at: null, break_reason: null }], error: null } : { data: [], error: null });
@@ -88,8 +88,7 @@ test('ledger_verify (audit integrity) and agent_compliance_gaps use the service 
   reset();
   fromResult = call => (call.ops.some(op => op[0] === 'single' || op[0] === 'maybeSingle') ? { data: null, error: null } : { data: [], count: 0, error: null });
   await agents.getAgentWithOwner(ORG, AGENT);
-  assert.deepEqual(rpcCalls().map(({ client, name, args }) => ({ client, name, args })), [
-    { client: 'write', name: 'agent_compliance_gaps', args: { p_organisation_id: ORG } }]);
+  assert.deepEqual(rpcCalls(), []);
 });
 
 test('audit integrity reads hash_chain_valid from the ledger_verify row set and event types from the tenant ledger', async () => {
@@ -135,7 +134,7 @@ test('static: no tracked consumer calls a service_role-only definer through the 
     for (const rpc of SERVICE_ONLY_RPCS) assert.doesNotMatch(text, new RegExp(`db\\.read\\s*\\.rpc\\(\\s*["']${rpc}["']`), `${path} ${rpc}`);
   }
   assert.equal((source('repositories/talk.ts').match(/db\.write\.rpc\("agent_semantic_search"/g) ?? []).length, 1);
-  assert.equal((source('repositories/dashboard.ts').match(/db\.write\.rpc\("agent_compliance_gaps"/g) ?? []).length, 3);
+  assert.equal((source('repositories/dashboard.ts').match(/db\.write\.rpc\("agent_compliance_gaps"/g) ?? []).length, 2);
 });
 
 test('static: every route reaching these RPCs binds the organisation from the verified governance principal', () => {

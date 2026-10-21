@@ -1,5 +1,7 @@
 # Architecture index
 
+- [M17.5-V1-S1B C1 L01/LX02 containment](../codex/evidence/2026-10-21-m17.5-v1-s1b-c1-l01-lx02-containment.md) / [additive current classification](../trust-assurance/l01-lx02-containment-status-v1.json) - legacy control API/UI aggregates removed; public Agent/System allowlists and explicit non-authoritative manual envelope. L01/LX02 CONTAINED / PASS locally. V1-S1B and M17.5 OPEN; all readiness HOLDs and M18 HOLD remain. Proposed next checkpoint: S1B C2 L02/L03 containment, NOT STARTED.
+
 - [M17.5-V1-S1A1-3 Audit surface / LX08 closure](../codex/evidence/2026-10-21-m17.5-v1-s1a1-3-audit-surface-lx08-closure.md) / [current additive status v2](../trust-assurance/lx08-audit-containment-status-v2.json) ? active Audit uses the committed principal-bound V2 read contract; LX08 CONTAINED / PASS locally, not hosted. Historical STOP/E1 records remain unchanged. M17.5 OPEN; all readiness HOLDs and M18 HOLD remain. Exact proposed next slice: V1-S1B live legacy assurance exposure containment, NOT STARTED.
 
 - [M17.5-V1-S1A0 tenant ledger integrity V2 ADR](../architecture/ADR-GOVIA-TENANT-LEDGER-INTEGRITY-v2.md) — accepted documentary decision: dual-chain V2 in normalized tenant tables; global history retained, tenant proof starts at explicit cutover, no reconstruction. S1A stopped / architecture resolved / implementation not resumed; LX08 NEEDS_CONTAINMENT and all HOLDs unchanged.

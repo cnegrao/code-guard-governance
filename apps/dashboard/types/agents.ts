@@ -1,3 +1,5 @@
+import type { LegacyControlEnvelope } from "@/lib/legacy-control-dto";
+
 export interface Agent {
   agent_id: string;
   agent_code: string;
@@ -23,6 +25,13 @@ export interface Agent {
   deployment_type: string;
   status: string;
   approved_for_production: boolean;
+  organisation_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Internal persisted legacy row; never serialize as a public response. */
+export interface AgentRecord extends Agent {
   cg_ag_001_registered: boolean;
   cg_ag_002_owner: boolean;
   cg_ag_003_model_reg: boolean;
@@ -35,16 +44,13 @@ export interface Agent {
   cg_ag_010_classified: boolean;
   cg_ag_011_compliant?: boolean;
   cg_ag_012_autonomous_governed: boolean;
-  organisation_id: string;
-  created_at: string;
-  updated_at: string;
+  external_refs: Record<string, unknown> | null;
 }
 
-export interface AgentDetail extends Agent {
+export interface AgentDetail extends LegacyControlEnvelope {
+  agent: Agent;
   owner_name: string;
   owner_email: string;
-  compliance_score: number;
-  compliance_gaps: string[];
 }
 
 export type ControlState = "not_assessed" | "passed" | "failed" | "waived";

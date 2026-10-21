@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
 import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
+import { LEGACY_CONTROL_LIMITATION } from "@/lib/legacy-control-dto";
 import { Spinner } from "@/components/ui/Spinner";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +14,6 @@ import { useAuth } from "@/hooks/useAuth";
 interface DashboardData {
   totalAgents: number;
   totalSystems: number;
-  complianceRate: number | null;
   openFindings: number;
   openIncidents: number;
   upcomingReviews: number;
@@ -22,7 +22,7 @@ interface DashboardData {
   systemsWithoutAgents: number;
   highRiskSystems: number;
   openDoraIncidents: number;
-  totalGovernanceGaps: number;
+  totalLegacyControlGaps: number;
   riskDistribution: { critical: number; high: number; medium: number; low: number };
   recentIncidents: Array<{
     incident_code: string;
@@ -31,7 +31,7 @@ interface DashboardData {
     status: string;
     occurred_at: string;
   }>;
-  topGaps: Array<{
+  legacyControlGaps: Array<{
     agent_code: string;
     agent_name: string;
     risk_level: string;
@@ -43,13 +43,6 @@ interface DashboardData {
   agentsDiscovered: number;
   repositoriesWithAI: number;
   governancePriorityCritical: number;
-}
-
-function cColor(rate: number | null): "green" | "yellow" | "red" | "blue" {
-  if (rate === null) return "blue";
-  if (rate >= 85) return "green";
-  if (rate >= 50) return "yellow";
-  return "red";
 }
 
 function riskColor(v: number): "blue" | "yellow" | "red" {
@@ -102,15 +95,9 @@ export default function DashboardPage() {
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
           Estate Overview
         </h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <StatCard label="Total Agents" value={data.totalAgents} color="blue" />
           <StatCard label="Total AI Systems" value={data.totalSystems} color="blue" />
-          <StatCard
-            label="Legacy Control Coverage"
-            value={data.complianceRate === null ? "NO_DATA" : `${data.complianceRate}%`}
-            color={cColor(data.complianceRate)}
-            subtitle={data.complianceRate === null ? "No agents to assess" : "Indicative legacy control coverage"}
-          />
         </div>
       </div>
 
@@ -240,18 +227,18 @@ export default function DashboardPage() {
             </div>
           ) : (
             <StatCard
-              label="Total Governance Gaps"
-              value={data.totalGovernanceGaps}
-              color={riskColor(data.totalGovernanceGaps)}
-              subtitle="All CG-AG controls"
+              label="Legacy Control Gap Records"
+              value={data.totalLegacyControlGaps}
+              color={riskColor(data.totalLegacyControlGaps)}
+              subtitle={LEGACY_CONTROL_LIMITATION}
             />
           )}
           {isDora && (
             <StatCard
-              label="Total Governance Gaps"
-              value={data.totalGovernanceGaps}
-              color={riskColor(data.totalGovernanceGaps)}
-              subtitle="All CG-AG controls"
+              label="Legacy Control Gap Records"
+              value={data.totalLegacyControlGaps}
+              color={riskColor(data.totalLegacyControlGaps)}
+              subtitle={LEGACY_CONTROL_LIMITATION}
             />
           )}
         </div>
@@ -291,13 +278,14 @@ export default function DashboardPage() {
 
         <Card>
           <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
-            Top Compliance Gaps
+            Recorded Legacy Control Gaps
           </h3>
-          {data.topGaps.length === 0 ? (
+          <p className="text-xs text-gray-400 mb-3">{LEGACY_CONTROL_LIMITATION}</p>
+          {data.legacyControlGaps.length === 0 ? (
             <p className="text-sm text-gray-500">No gap records returned. This does not establish compliance.</p>
           ) : (
             <div className="space-y-2">
-              {data.topGaps.map((gap) => (
+              {data.legacyControlGaps.map((gap) => (
                 <div
                   key={gap.agent_code}
                   className="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-dark/50 border border-border-dark/30"

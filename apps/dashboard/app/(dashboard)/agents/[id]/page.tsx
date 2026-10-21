@@ -8,14 +8,13 @@ import { Badge } from "@/components/ui/Badge";
 import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
-import { CompliancePanel } from "@/components/agents/CompliancePanel";
+import { LegacyControlRecordsPanel } from "@/components/agents/LegacyControlRecordsPanel";
 import type { Agent } from "@/types/agents";
 
 export default function AgentDetailPage() {
   const params = useParams();
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [compliance, setCompliance] = useState<Record<string, import("@/types/agents").ControlState>>({});
-  const [score, setScore] = useState<number | null>(null);
+  const [legacyStates, setLegacyStates] = useState<Record<string, import("@/types/agents").ControlState>>({});
   const [gaps, setGaps] = useState<string[]>([]);
   const [ownerName, setOwnerName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -29,9 +28,8 @@ export default function AgentDetailPage() {
       })
       .then((data) => {
         setAgent(data.agent);
-        setCompliance(data.compliance ?? {});
-        setScore(data.compliance_score ?? null);
-        setGaps(data.compliance_gaps ?? []);
+        setLegacyStates(data.legacy_control_states ?? {});
+        setGaps(data.legacy_control_gaps ?? []);
         setOwnerName(data.owner_name ?? "");
       })
       .catch((err) => setError(err.message))
@@ -135,9 +133,9 @@ export default function AgentDetailPage() {
         <div>
           <Card>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
-              Compliance
+              Legacy Control Records
             </h3>
-            <CompliancePanel compliance={compliance} score={score} gaps={gaps} />
+            <LegacyControlRecordsPanel states={legacyStates} gaps={gaps} />
           </Card>
         </div>
       </div>
