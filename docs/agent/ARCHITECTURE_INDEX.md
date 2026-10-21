@@ -1,5 +1,8 @@
 # Architecture index
 
+- [M17.5-V1-S1A0 tenant ledger integrity V2 ADR](../architecture/ADR-GOVIA-TENANT-LEDGER-INTEGRITY-v2.md) — accepted documentary decision: dual-chain V2 in normalized tenant tables; global history retained, tenant proof starts at explicit cutover, no reconstruction. S1A stopped / architecture resolved / implementation not resumed; LX08 NEEDS_CONTAINMENT and all HOLDs unchanged.
+- [M17.5-V1-S1A0 handoff](../codex/evidence/2026-10-20-m17.5-v1-s1a0-ledger-architecture.md) / [preserved S1A STOP evidence](../codex/evidence/2026-10-20-m17.5-v1-s1a-lx08-audit-containment.md) — chain-model evidence, options, concurrency, principal/privilege boundary and future test matrix. Exact next slice S1A1 requires separate authorization; no implementation started.
+
 - [M17.5-V1-S0 Hub ADR](../architecture/ADR-GOVIA-TRUST-ASSURANCE-HUB-v1.md) / [read contract](../trust-assurance/v1-hub-read-contract.md) / [JSON](../trust-assurance/v1-hub-read-contract.json) — documentary architecture closure: D-V1-01–15, 40 read categories, V1-A1 denominator and V1-A2 security decisions, 11 views and W-V1-01–20. No Hub implementation or exposure granted; all readiness HOLDs and M18 HOLD remain.
 - [M17.5-V1-S0 handoff](../codex/evidence/2026-10-20-m17.5-v1-s0-hub-read-contract.md) — pinned V0/E1 sources, documentation-only verification and proposed separately authorized V1-S1A LX08 audit security containment; no implementation started.
 
