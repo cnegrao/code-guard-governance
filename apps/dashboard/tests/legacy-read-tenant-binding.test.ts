@@ -139,11 +139,17 @@ test('static: no tracked consumer calls a service_role-only definer through the 
 });
 
 test('static: every route reaching these RPCs binds the organisation from the verified governance principal', () => {
-  for (const path of ['app/api/agents/[id]/route.ts', 'app/api/agents/route.ts', 'app/api/audit/integrity/route.ts', 'app/api/dashboard/summary/route.ts',
+  // Current Audit retains the whole principal; audit-v2-source-contract covers
+  // its stronger boundary. Other legacy routes still use org-only binding.
+  for (const path of ['app/api/agents/[id]/route.ts', 'app/api/agents/route.ts', 'app/api/dashboard/summary/route.ts',
     'app/api/graph/estate/route.ts', 'app/api/graph/node/[id]/route.ts', 'app/api/graph/risk/[agentId]/route.ts', 'app/api/reports/ai-act/route.ts',
     'app/api/reports/dora/route.ts', 'app/api/reports/executive/route.ts', 'app/api/talk-to-governance/route.ts']) {
     const text = source(path);
-    assert.match(text, /const \{ organisationId: orgId(?:, [^}]*)? \} = await requireVerifiedGovernancePrincipal\(\)/, path);
+    // 2A already strengthened Talk to forward the verified write principal.
+    if (path === 'app/api/talk-to-governance/route.ts') {
+      assert.match(text, /const principal = toGovernanceWritePrincipal\(await requireVerifiedGovernancePrincipal\(\)\)/);
+      assert.match(text, /talkService\.ask\(principal, query\)/);
+    } else assert.match(text, /const \{ organisationId: orgId(?:, [^}]*)? \} = await requireVerifiedGovernancePrincipal\(\)/, path);
     assert.doesNotMatch(text, /(searchParams|body|params)[^\n]*organisation_?[iI]d/, `${path} takes no client-supplied organisation`);
   }
   const node = source('app/api/graph/node/[id]/route.ts');

@@ -23,11 +23,14 @@ test('2A write inventory exactly discovery/Talk; no raw application ledger appen
   }
 });
 test('2A is a single additive migration; historical foundation and all tenant read/Audit/authority surfaces untouched',()=>{
-  const names=readdirSync(join(ledgerRepo,'supabase/migrations')).sort();
+  // Frozen 2A scope receipt, as in the foundation test. Later authorized read
+  // and Audit slices have their own current-path source contracts.
+  const end='a8a72f2df1d57196e83cd512525e6dd10e6611de';
+  const names=execFileSync('git',['ls-tree','--name-only',end+':supabase/migrations'],{cwd:ledgerRepo,encoding:'utf8'}).trim().split(/\r?\n/).sort();
   assert.deepEqual(names,[...replay.applied.map(p=>p.split('/').at(-1)!),migration]);
   const paths=['supabase/migrations/'+ledgerMigration,'apps/dashboard/app/api/audit','apps/dashboard/repositories/audit.ts',
     'apps/dashboard/app/(dashboard)/audit','apps/dashboard/components/audit','docs/architecture','packages/canonical-contracts','packages/governance-review'];
-  assert.equal(execFileSync('git',['diff','--name-only',base,'--',...paths],{cwd:ledgerRepo,encoding:'utf8'}).trim(),'');
+  assert.equal(execFileSync('git',['diff','--name-only',base,end,'--',...paths],{cwd:ledgerRepo,encoding:'utf8'}).trim(),'');
   const sql=readFileSync(join(ledgerRepo,'supabase/migrations',migration),'utf8');
   assert.doesNotMatch(sql,/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+gov_repo\.ledger_tenant_(?:verify|events|event)_v2/i);
   assert.doesNotMatch(sql,/^\s*CALL\s+gov_repo\.ledger_v2_activate/im,'migration alone never activates');

@@ -1,0 +1,224 @@
+{
+  "slice": "M17.5-V1-S1A1-3",
+  "starting_head": "af5657213aec858c4896063c271621d12327849a",
+  "session_id": "a668065b-fe69-48f5-8c3d-d1c20d9529dc",
+  "selected_distinct_passing_test_nodes": 220,
+  "final_typecheck": "PASS",
+  "active_working_time": "NOT_AVAILABLE",
+  "operational_target_minutes": 90,
+  "measured_command_ms_including_failed_attempts": 272986.45450000005,
+  "hosted_delta": 0,
+  "migration_delta": 0,
+  "results": [
+    {
+      "run": "bfeca152-4e51-4e76-ada0-4c53054d2ab6",
+      "profile": "focused",
+      "label": "apps/dashboard:test:audit-ui",
+      "candidate": "39883f5a3d47335dda6f8091510eb2ca671633e3b9d98e9442f69a2798fa1cf0",
+      "result": "passed",
+      "duration_ms": 1078.3305,
+      "log": ".artifacts\\agent\\bfeca152-4e51-4e76-ada0-4c53054d2ab6-0.log",
+      "hypothesis": ""
+    },
+    {
+      "run": "bfeca152-4e51-4e76-ada0-4c53054d2ab6",
+      "profile": "focused",
+      "label": ".:typecheck:dashboard",
+      "candidate": "39883f5a3d47335dda6f8091510eb2ca671633e3b9d98e9442f69a2798fa1cf0",
+      "result": "passed",
+      "duration_ms": 13535.996500000001,
+      "log": ".artifacts\\agent\\bfeca152-4e51-4e76-ada0-4c53054d2ab6-1.log",
+      "hypothesis": ""
+    },
+    {
+      "run": "bfeca152-4e51-4e76-ada0-4c53054d2ab6",
+      "profile": "focused",
+      "label": "apps/dashboard/tests/audit-v2-routes.test.ts",
+      "candidate": "39883f5a3d47335dda6f8091510eb2ca671633e3b9d98e9442f69a2798fa1cf0",
+      "result": "passed",
+      "duration_ms": 809.1229999999996,
+      "log": ".artifacts\\agent\\bfeca152-4e51-4e76-ada0-4c53054d2ab6-2.log",
+      "hypothesis": ""
+    },
+    {
+      "run": "bfeca152-4e51-4e76-ada0-4c53054d2ab6",
+      "profile": "focused",
+      "label": "apps/dashboard/tests/audit-v2-source-contract.test.ts",
+      "candidate": "39883f5a3d47335dda6f8091510eb2ca671633e3b9d98e9442f69a2798fa1cf0",
+      "result": "failed",
+      "duration_ms": 1037.4185000000034,
+      "log": ".artifacts\\agent\\bfeca152-4e51-4e76-ada0-4c53054d2ab6-3.log",
+      "hypothesis": ""
+    },
+    {
+      "run": "aac28b0b-5a41-43af-ac9b-9adf97a1712a",
+      "profile": "focused",
+      "label": "apps/dashboard/tests/audit-v2-source-contract.test.ts",
+      "candidate": "02b36a53c4804f4e5c77a25b28cf3edb949af7ef9827a56a40c56916ea95294f",
+      "result": "passed",
+      "duration_ms": 950.2451000000001,
+      "log": ".artifacts\\agent\\aac28b0b-5a41-43af-ac9b-9adf97a1712a-0.log",
+      "hypothesis": "The failed source assertion expected literal authority labels, but UI renders the committed event authority fields; assert field use and retain SSR label tests. Freeze prior slice scope receipts at committed endpoints as foundation precedent."
+    },
+    {
+      "run": "aac28b0b-5a41-43af-ac9b-9adf97a1712a",
+      "profile": "focused",
+      "label": "apps/dashboard/tests/ledger-v2-read-source-contract.test.ts",
+      "candidate": "02b36a53c4804f4e5c77a25b28cf3edb949af7ef9827a56a40c56916ea95294f",
+      "result": "passed",
+      "duration_ms": 527.7808,
+      "log": ".artifacts\\agent\\aac28b0b-5a41-43af-ac9b-9adf97a1712a-1.log",
+      "hypothesis": "The failed source assertion expected literal authority labels, but UI renders the committed event authority fields; assert field use and retain SSR label tests. Freeze prior slice scope receipts at committed endpoints as foundation precedent."
+    },
+    {
+      "run": "aac28b0b-5a41-43af-ac9b-9adf97a1712a",
+      "profile": "focused",
+      "label": "apps/dashboard/tests/ledger-v2-write-source-contract.test.ts",
+      "candidate": "02b36a53c4804f4e5c77a25b28cf3edb949af7ef9827a56a40c56916ea95294f",
+      "result": "passed",
+      "duration_ms": 484.15729999999985,
+      "log": ".artifacts\\agent\\aac28b0b-5a41-43af-ac9b-9adf97a1712a-2.log",
+      "hypothesis": "The failed source assertion expected literal authority labels, but UI renders the committed event authority fields; assert field use and retain SSR label tests. Freeze prior slice scope receipts at committed endpoints as foundation precedent."
+    },
+    {
+      "run": "aac28b0b-5a41-43af-ac9b-9adf97a1712a",
+      "profile": "focused",
+      "label": "apps/dashboard/tests/legacy-read-tenant-binding.test.ts",
+      "candidate": "02b36a53c4804f4e5c77a25b28cf3edb949af7ef9827a56a40c56916ea95294f",
+      "result": "failed",
+      "duration_ms": 404.27189999999973,
+      "log": ".artifacts\\agent\\aac28b0b-5a41-43af-ac9b-9adf97a1712a-3.log",
+      "hypothesis": "The failed source assertion expected literal authority labels, but UI renders the committed event authority fields; assert field use and retain SSR label tests. Freeze prior slice scope receipts at committed endpoints as foundation precedent."
+    },
+    {
+      "run": "41c21877-b142-4646-ae9f-226b787d3488",
+      "profile": "focused",
+      "label": "apps/dashboard/tests/legacy-read-tenant-binding.test.ts",
+      "candidate": "cb60f6a27f7e77639cbdb2d4d4c7561cd0e9ab12798230e99b4170c07156f343",
+      "result": "passed",
+      "duration_ms": 467.65560000000005,
+      "log": ".artifacts\\agent\\41c21877-b142-4646-ae9f-226b787d3488-0.log",
+      "hypothesis": "Existing Talk route had already changed in committed 2A to forward the full verified write principal; accept that exact stronger binding while retaining org-only checks on unchanged legacy routes."
+    },
+    {
+      "run": "1a8d0df4-58a2-44d6-8921-d7bef8d8689f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/postgres-m16/audit-v2-routes-integration.test.ts",
+      "candidate": "c9919720af5994fc279990a40391945ffdaebf480eba5da8c57deec7c2c7f196",
+      "result": "failed",
+      "duration_ms": 19058.286,
+      "log": ".artifacts\\agent\\1a8d0df4-58a2-44d6-8921-d7bef8d8689f-0.log",
+      "hypothesis": ""
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/postgres-m16/audit-v2-routes-integration.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 23718.1959,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-0.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-tenant-read.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 40393.361999999994,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-1.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-write-cutover.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 49744.47020000001,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-2.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-foundation.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 35299.52710000001,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-3.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-writers-integration.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 21315.45259999999,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-4.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/postgres-m16/transactional-eligibility.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 59146.4602,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-5.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/verified-governance-principal.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 717.831600000005,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-6.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/ledger-v2-source-contract.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 432.1551000000036,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-7.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "c9e15365-146f-4f59-b034-82572132783f",
+      "profile": "integration",
+      "label": "apps/dashboard/tests/ledger-v2-read-adapter.test.ts",
+      "candidate": "dce4a654489ebb1f791a60f639741816dc972b98478ff38786292967253c6d05",
+      "result": "passed",
+      "duration_ms": 269.4719000000041,
+      "log": ".artifacts\\agent\\c9e15365-146f-4f59-b034-82572132783f-8.log",
+      "hypothesis": "New signed-cookie PG fixture used timestamptz::text with shortened +00 offset, rejected by the strict session parser; use PostgreSQL JSON output matching PostgREST +00:00 while preserving DB-authored microseconds. No production change."
+    },
+    {
+      "run": "1982061e-a89a-4748-93ff-d4e205d0ca10",
+      "profile": "final",
+      "label": ".:typecheck:dashboard",
+      "candidate": "6c4192868e0c07d9c2bf5d9c71bdb07035847ba658efad6e218b3b94fd0a2647",
+      "result": "passed",
+      "duration_ms": 3241.5089,
+      "log": ".artifacts\\agent\\1982061e-a89a-4748-93ff-d4e205d0ca10-0.log",
+      "hypothesis": ""
+    },
+    {
+      "run": "1982061e-a89a-4748-93ff-d4e205d0ca10",
+      "profile": "final",
+      "label": "docs/trust-assurance/verify-v1-s1a1-3.test.mjs",
+      "candidate": "6c4192868e0c07d9c2bf5d9c71bdb07035847ba658efad6e218b3b94fd0a2647",
+      "result": "passed",
+      "duration_ms": 354.7538000000004,
+      "log": ".artifacts\\agent\\1982061e-a89a-4748-93ff-d4e205d0ca10-1.log",
+      "hypothesis": ""
+    }
+  ]
+}

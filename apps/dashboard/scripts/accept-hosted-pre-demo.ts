@@ -1,3 +1,7 @@
+/** QUARANTINED historical pre-V2 acceptance runner. Not acceptance of current Audit.
+ * Retained only for the old deployment contract and regression fixtures.
+ * Never invoked by the product or as a V2 fallback. All readiness HOLDs remain.
+ */
 /** Read-only real HTTP acceptance. Never seeds or changes hosted configuration. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

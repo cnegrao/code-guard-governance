@@ -22,14 +22,17 @@ test('verifier integrity reads reside in one CTE statement; bounded full populat
   assert.doesNotMatch(verifier,/FOR UPDATE|SKIP LOCKED/);
 });
 test('Audit routes/repository/pages and historical migrations unchanged; adapter isolated and no legacy/global fallback',()=>{
+  // Preserve the historical 2B isolation receipt at its committed endpoint.
+  // audit-v2-source-contract.test.ts checks the authorized current Audit graph.
+  const end='af5657213aec858c4896063c271621d12327849a';
   const paths=['apps/dashboard/app/api/audit','apps/dashboard/app/(dashboard)/audit','apps/dashboard/repositories/audit.ts',
     'apps/dashboard/components/audit','docs/architecture','packages/canonical-contracts','packages/governance-review'];
-  assert.equal(execFileSync('git',['diff','--name-only','a8a72f2df1d57196e83cd512525e6dd10e6611de','--',...paths],{cwd:ledgerRepo,encoding:'utf8'}).trim(),'');
-  const changes=execFileSync('git',['diff','--name-only','a8a72f2df1d57196e83cd512525e6dd10e6611de','--','supabase/migrations'],{cwd:ledgerRepo,encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);
+  assert.equal(execFileSync('git',['diff','--name-only','a8a72f2df1d57196e83cd512525e6dd10e6611de',end,'--',...paths],{cwd:ledgerRepo,encoding:'utf8'}).trim(),'');
+  const changes=execFileSync('git',['diff','--name-only','a8a72f2df1d57196e83cd512525e6dd10e6611de',end,'--','supabase/migrations'],{cwd:ledgerRepo,encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);
   assert.ok(changes.every(p=>p.endsWith(migration)));
   const adapter=readFileSync(join(ledgerRepo,'apps/dashboard/lib/governance/ledger-read.ts'),'utf8');
   assert.match(adapter,/import "server-only"/);assert.match(adapter,/VerifiedGovernancePrincipal/);
   assert.doesNotMatch(adapter,/ledger_verify|governance_ledger|repositories\/audit|db\.read|\.from\(/);
-  const consumers=spawnSync('rg',['-l','ledger-read','apps/dashboard/app','apps/dashboard/repositories','apps/dashboard/services'],{cwd:ledgerRepo,encoding:'utf8'});
+  const consumers=spawnSync('git',['grep','-l','ledger-read',end,'--','apps/dashboard/app','apps/dashboard/repositories','apps/dashboard/services'],{cwd:ledgerRepo,encoding:'utf8'});
   assert.equal(consumers.status,1);assert.equal(consumers.stdout.trim(),'');
 });
