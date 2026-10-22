@@ -1,0 +1,233 @@
+# ADR — C3-SR2 typed technical and operational semantic parity V1
+
+Date: 2026-10-22, America/Sao_Paulo. Repository: `cnegrao/code-guard-governance`.
+Branch: `feat/m17.5-trust-assurance-v0`. Inspected baseline: `698dc6fbd31c1ffa10258812b30c78964df3520c`.
+Status: **C3-SR2-A0 CLOSED / ARCHITECTURE PASS — documentation only**.
+
+This refines [SR0 §§10–12](ADR-GOVIA-M175-C3-SEMANTIC-RETRIEVAL-V1.md), preserving SR1 unchanged. The [forensic inventory](../trust-assurance/c3-sr2-semantic-parity-inventory-v1.json) and [evidence](../codex/evidence/2026-10-22-m17.5-v1-s1b-c3-sr2-a0-typed-semantic-parity.md) are part of this decision. Architecture PASS approves the documented target, not implementation, operational parity, hosted safety or legacy disconnection.
+
+## 1. Product obligation and findings that control the design
+
+Security containment must preserve semantic enrichment as a primary Talk capability. Build, populate and prove a safe replacement before disconnecting an unsafe legacy caller. No intentional interval without semantic enrichment is admitted. SR1 supplies governance subject references, not rich repository/code or all legacy operational context. A0 does not disconnect anything.
+
+The actual dashboard chain is governance page → `/api/talk-to-governance` → `services/talk.ts:ask`. `executeQuery` runs first. A returned confidence ≥80 bypasses the semantic composer; otherwise `buildGovernanceContext` loads direct operational context. When the selected chat provider is available, two independently caught enrichments run: `repositories/talk.ts:semanticSearch` over `agent_semantic_search`, and `services/coding-memory.ts:semanticSearch` over `coding_memory_search`. Both feed `generateGovernanceAnswer`; SR1 is not called. Semantic coverage is therefore conditional, not universal. Current confidence routing is a defect to contain, not an acceptance oracle for the replacement.
+
+The agent RPC returns agent identity/type, legacy risk/oversight, system ID, owner name, numeric similarity and the first 300 characters of embedding content. It filters embedding tenant but joins agent and owner by ID alone; independent foreign keys do not prove tenant consistency. Talk supplies no `p_model_name`, so even the optional legacy model filter is absent. The embedding table has content/hash/model metadata, but no demonstrated production writer, exact projection/query recipe or immutable operational observation. Its existence is not provenance completeness or currentness.
+
+Coding memory expects repository summary, domain, service, module, agent, dependency, entrypoint, agent-code descriptor and code-snippet chunks. Code snippets are 50-line windows whose stored summary is only the first 200 characters. Module `symbols` are filenames, not a symbol index. Scanner dependencies are filename heuristics; their versions are deliberately undefined. The generated summary can assert legal applicability. M17 strips heuristic risk text/keys, but leaves numeric confidence, legal wording, arbitrary metadata and untrusted text concerns. Neither this wording nor confidence is a function that must survive.
+
+`coding_memory` and its search RPC are defined in a noncanonical dashboard setup script; canonical migrations do not create that table and M16 explicitly rejects the RPC. Active caller code is not proof the dependency executes on a canonical deployment. Failure currently becomes an empty string. Preserve repository understanding and code explanation; never install the missing RPC to recover them. No hosted availability or population is inferred.
+
+Graph-based repository intents use legacy `agents.external_refs.discovery.repo_intelligence`, not coding-memory retrieval. The scan currently stops writing risk-bearing legacy agents, so a new scan's returned graph is not proof Talk's persisted graph updated. `/api/search` is literal operational search; M12 is a canonical anchor/vector reader; neither is a hidden Talk semantic caller. Other Graphos/extension RAG implementations are independent surfaces, not fallback providers for dashboard Talk.
+
+## 2. Authority boundaries and closed dispositions
+
+Both new domains always carry `authority: DERIVED_ANALYTICAL_NON_AUTHORITATIVE`, `derivation: SEMANTIC_MATCH`, `canonical_decision: false`, `governed_relationships: false`, `assurance: false`. Their descriptive source material does not gain authority from that label, an embedding, stored source trust or an LLM explanation.
+
+Zero new CanonicalObjectKinds, GovernedRelationshipTypes, M16/M17 fact families, Authority Policy actions or Passport families/authority. No similarity-driven identity resolution, relationship creation, canonical materialization, risk/compliance/assurance/certification conclusion or numeric confidence/probability in Talk/model/public output. Counts, line numbers and ordinal ranks remain descriptive values. Canonical and candidate IDs remain their existing families; a legacy UUID with the same text has no canonical bridge.
+
+Inventory disposition is one of exactly:
+
+| Disposition | Meaning |
+| --- | --- |
+| `MUST_PRESERVE_FUNCTION` | Required product behavior with an explicit safe target; implementation parity remains pending. |
+| `REPLACE_UNSAFE_IMPLEMENTATION` | Existing mechanism is not a target/fallback; linked required capabilities survive. |
+| `LEGACY_ONLY_NO_PRODUCT_DEPENDENCY` | No inspected dashboard Talk dependency; not permission to delete another product's code. |
+| `NONCANONICAL_ABSENT` | Absent from the admitted canonical chain; source artifact/caller may still exist. No claim about hosted state. |
+| `REQUIRES_PRODUCT_DECISION` | Optional extension beyond evidenced parity; excluded from the mandatory cutover denominator until separately scoped. |
+
+Dispositions classify functions separately from mechanisms. Unsafe code does not make its useful function expendable. All inventory rows retain source, consumer, tenant mechanism, payload, raw/numeric exposure, provenance, revision, executability, defects, value, replacement and cutover dependency.
+
+## 3. Technical identity — three subject families, typed facets
+
+Keep SR0's closed analytical union: `REPOSITORY_SNAPSHOT`, `CODE_SYMBOL`, `REPOSITORY_CHUNK`. They are technical subjects, never canonical kinds. No generic document/object/ANYTHING family. File, configuration, documentation and technical memory use typed chunks; modules, services, dependencies and domain observations are closed projection facets rooted in a snapshot or exact file region. This preserves discovery without creating a table/family for every keyword.
+
+| Investigated concept | Placement / required grounding |
+| --- | --- |
+| Repository | Tenant-bound repository root with configured source connection, provider instance and immutable provider repository identifier. Display owner/name/URL are labels only. |
+| Revision/commit | Snapshot root: revision scheme + full immutable commit/object identity + captured manifest fingerprint. Branch/tag is only the requested label, resolved once before capture. |
+| File | `REPOSITORY_CHUNK / FILE_DESCRIPTOR`, exact relative path and source blob fingerprint. |
+| Code chunk | `REPOSITORY_CHUNK / CODE_REGION`, deterministic byte/line region and chunker version in the exact source blob. |
+| Symbol | `CODE_SYMBOL`, parser/language version, qualified symbol key, source blob and span; unknown/ambiguous parser output uses CODE_REGION, never a fabricated symbol. |
+| Module/package | `MODULE_DESCRIPTOR` facet with exact manifest/directory/member locators; filename grouping remains a declared heuristic. |
+| Service/component | `SERVICE_DESCRIPTOR` facet with grounded config/entrypoint paths and derivation method; no inferred governed relationship. |
+| Dependency | `DEPENDENCY_DESCRIPTOR` facet with manifest/lockfile locator and version only when observed; filename-only inference is labelled, never upgraded to verified dependency/version. |
+| Configuration | `CONFIGURATION_DESCRIPTOR` facet; structural keys/types and safe enumerated values only, no credentials or arbitrary values. |
+| Documentation | `DOCUMENTATION_REGION` chunk; bounded protected projection, exact doc span/hash; comments/docs remain untrusted. |
+| Derived technical memory | `TECHNICAL_SUMMARY` facet over an explicit complete bounded source set within one snapshot; extractor/method identity, source-set fingerprint and limitations. No freeform memory upload. |
+| Domain / agent / entrypoint observations | `DOMAIN_OBSERVATION`, `AGENT_DESCRIPTOR`, `ENTRYPOINT_DESCRIPTOR` facets; code-grounded analytical observations, not business-context assignment or operational AGENT identity. |
+
+The facet list above is closed for V1. A new facet requires a versioned contract review. Not all facets imply a separate chunk kind or table: typed projection children encode selected facets, with concrete scalar/list schemas. `CODE_SYMBOL` has a symbol payload; `REPOSITORY_SNAPSHOT` has a bounded summary/source manifest descriptor; `REPOSITORY_CHUNK` has exactly one FILE_DESCRIPTOR, CODE_REGION or DOCUMENTATION_REGION locator plus admitted facets. No arbitrary `{type, metadata}` escape hatch.
+
+Identity is a versioned, length-framed hash, not concatenation of display paths: tenant + repository root + revision scheme/full revision + source blob/manifest fingerprint + subject family + exact locator/parser/chunker identity. Snapshot summaries fingerprint their complete source set. Representation identity adds subject ID + safe projection fingerprint/schema + exact embedding space. The source fingerprint, safe projection fingerprint and representation ID are different concepts. Changing redaction/projection creates a new representation; changing source revision creates a new subject snapshot. Generation/record times and provenance capture records do not invent a new semantic identity for an otherwise exact replay.
+
+Persist dedicated columns for tenant, root/subject/representation IDs, discriminators, full revision, source/projection fingerprints, exact space and generated/record times: these enforce selection/FKs. Structured locator and facet children hold only applicable fields; no nullable column per imagined concept. Human labels are bounded nonidentity fields. Capture/index timestamps and provenance links belong in separate capture/support records. Secrets, provider credentials and raw repository documents belong in none of these tables.
+
+Existing `technical_source_connections` has tenant-inclusive uniqueness and REPOSITORY family, so reuse its configured identity as a foreign-key anchor. Its associated technical source snapshots are external-object snapshot membership for governed DATA_ASSET/DATA_ELEMENT field reviews; they do not enforce repository commit/blob/span grounding. Do not reinterpret their heads, widen governed field kinds or add semantic authority to field policies. Add a minimal **analytical repository snapshot root** alongside them. A provider repository ID must be verified under the configured connection; no browser-supplied path/repository string establishes ownership.
+
+## 4. Storage strategy decision
+
+Select **dedicated, separately typed technical and operational stores**, sharing SR1's validation/space/session principles. Leave `semantic_representations` and its two-family governance union untouched.
+
+| Strategy | Tenant / identity / revision / provenance | Migration, M16 and query cost | Population, hydration and legacy removal |
+| --- | --- | --- | --- |
+| Widen existing foundation | Composite keys reusable, but code/legacy subjects require new union branches, FKs and revision/content semantics in core readers | Changes contracts, M12 and SR1 validation/catalog assumptions; generic subject filters become tempting | Existing vectors lack original text; reuse would not solve content or legacy operational parity. Reject. |
+| Dedicated typed stores — selected | Explicit snapshot roots, disjoint operational identities, tenant-inclusive support/projection FKs; independent revision rules | Additive schema, two exact read admissions later; more joins/orchestration, but existing governance readers stay stable | Reacquire verified sources; protected projections hydrate exact hits. Domains can be cut over by tested capability with no legacy alias. |
+| Generic vector/JSON store or external untyped search | Cannot enforce source families, same-revision hydration and tenant consistency structurally | Apparently simple insertion, broad query/filter/dependency admission and additional trust boundary | Raw payload and retrieval authority risks; names do not prove parity. Reject. |
+| Reuse legacy stores/RPCs | Existing tenant/model/revision defects and absent coding dependency remain | Historical frozen contracts cannot be edited; M16 rejects coding RPC | No safe target or acceptable fallback. Reject. |
+
+Logical components (design names, not SQL declarations): technical repository roots → immutable snapshots → typed subjects/locators → immutable safe projections and provenance; technical representations reference subjects and **exact projection identity**. Operational subject roots/observations → safe operational projections/provenance → operational representations. All tenant-owned PK/FK/join edges include organisation. A representation stores vector/space/fingerprints/links, never arbitrary document text. Safe projections hold admitted structured content separately; source capture manifests contain hashes/locators, not raw source dumps.
+
+Default search is bounded exact cosine with no ANN. Start with SR1's 10,000 compatible-version scan bound per domain/request, ≤20 hits, ≤100 complete support refs/hit, ≤256 KiB per-domain response and 5s SQL deadline; exceeding these is unavailable. Tenant/revision/space B-trees are expected for the new roots/joins, with precise indexes selected from A1/A2 local plans. No capacity claim. Technical scans across one resolved revision per repository can use a bounded explicit internal snapshot set; more than 20 repository snapshots requires scope refinement, not arbitrary-prefix scoring. No caller-defined dynamic filters, arbitrary subject selector, cross-domain SQL union or generic JSON query language.
+
+## 5. Safe content projection and hydration
+
+Closed exposure classes: `METADATA_ONLY_V1` or `PROTECTED_CONTEXT_V1`. Absence of an admitted protected projection is metadata-only with `CONTENT_WITHHELD`; it cannot satisfy a rich-explanation parity test. A subject's descriptor never implies access to its source body.
+
+`PROTECTED_CONTEXT_V1` contains a typed structural summary, admitted facets, safe signatures/call/import/dependency descriptors, bounded sanitized explanatory fragments and trustworthy source locators. Code explanation uses parsed/reconstructed signatures and structural statements with literal/identifier handling from the projection recipe; it does not return the original raw code blob or an arbitrary source substring. Documentation fragments may be quoted only after handling/policy admission. This refines SR0's protected-projection rule without admitting unrestricted raw code/Prompt content. Preserve the ability to explain a located code region and cite the immutable source; exact source viewing remains a separately authorized operation. If a required explanation cannot be preserved through this projection, parity fails and the cutover stays blocked.
+
+Projection admission occurs **before embedding**, and again at hydration under current handling policy. Both provider input and Talk output use only admitted projection content. Retrieval score is computed against that exact projection; never embed unreviewed raw source then return an unrelated clean description as if it were the vector input. No live repository fetch or arbitrary URL hydration during a read. Hydration joins the selected representation to its immutable projection by tenant/subject/revision/projection ID/hash in the same database snapshot. A missing/mismatched projection cannot fall back to newer source text, an older representation or raw provenance envelopes.
+
+| Content hazard | Required handling / failure |
+| --- | --- |
+| Secrets, credentials, API keys, secret-bearing paths/identifiers | Deny secret-file categories, remove literal values through typed extraction, scan remaining fields, reject uncertain output. Regex alone is not proof. Never embed/export the rejected material. |
+| PII / owner name / customer data | Exclude personal names/email/contact and customer literal values; use safe tenant-local opaque references and structural descriptions. Unknown handling yields metadata-only or unavailable. |
+| Customer-confidential code | Tenant isolation alone does not authorize external transmission. Require server-governed content/egress handling for selected provider and Talk audience; otherwise withhold. Local GPU does not imply authorization. |
+| Comments/docs/tickets/instruction text | Untrusted data envelope (§10), bounded protected fragments only; suspicious instruction content may be withheld, never executed. Freeform tickets are not a new SR2 subject family. |
+| Oversized sources | Per-source capture ≤512 KiB decoded UTF-8; larger files metadata-only/exclusion with reason, never silently claim complete code coverage. Bounded deterministic source partitions need a later reviewed recipe. |
+| Binary / generated / minified / unsupported encoding | Exclude bodies; detect before parsing; UTF-8 strict decoding only for V1. Record closed exclusion reason and manifest coverage; no lossy decoding or binary-to-text fallback. |
+| License / policy restrictions | Enforce admissible existing governed configuration if represented. Missing/unresolved permission means no excerpt/embedding. A0 creates no license inference or new Authority Policy action. |
+
+Bounds are V1 policy ceilings, not performance claims: scalar ≤512 UTF-8 bytes; sanitized path ≤1024; protected fragment ≤1024; at most four fragments and ≤4096 content bytes per hit; lists ≤20 items; summary ≤1024 bytes; question ≤8192 bytes. Complete provenance must fit its bounds or the hit/domain is unavailable, never silently truncated. The future multi-domain composer accepts at most 20 hits total and ≤16 KiB admitted textual context; domain quotas and bounded selection are visible. Mark a projected fragment `CONTENT_PROJECTED`, not a verbatim-original quotation; it retains its own fingerprint and links to original source span. Exact code access is not granted by retrieval.
+
+## 6. Operational semantic domain and minimum parity
+
+Require semantic discovery over `LEGACY_AGENT_RECORD` because the actual agent RPC searches operational agents absent from canonical/candidate populations. An immutable operational observation contains `(organisation, record family, source record ID, observation fingerprint, observed_at, recorded_at, projection recipe)`. Record identity is never a display code/name, and observations never mutate the source row. Mandatory read-time revalidation checks the current record's tenant and eligible status; missing, moved or decommissioned source is unavailable for current operational context, not resurrected from old vectors.
+
+`LEGACY_SYSTEM_RECORD` is the second and final operational family admitted by this design. It preserves current direct system contextualization and can provide a typed related-system descriptor where ownership is proven. **There is no existing system-vector search established by the inventory.** Standalone semantic system population/query use is an optional product extension, not a mandatory legacy parity claim. A3 need not populate it merely because the union permits it; direct safe system context plus tenant-checked related references satisfies the current system requirement.
+
+Add tenant-inclusive unique keys on source `(organisation_id, agent_id)` / `(organisation_id, system_id)` only in a separately authorized additive A3 migration where absent; use family-specific roots/FKs rather than polymorphic UUID joins. Validate tenant consistency for owner/system references independently. Default owner projection is ownership-record-present/unknown, not PII. An agent's foreign/inconsistent system/owner reference invalidates required linked context; do not leak that row or silently assert a valid link. No automatic ID mapping into SR1.
+
+| Operational concept found | Ontological disposition / target |
+| --- | --- |
+| Legacy agents / owners / oversight / lifecycle | Legacy-only operational state; derived descriptive projection, with canonical/governed ownership/oversight UNKNOWN. No numeric confidence; no control-flag-as-effectiveness. |
+| Legacy systems / agent system ID | Legacy-only operational state; direct typed system descriptor/related reference. No AI_SYSTEM canonical kind invented; risk class/conformity do not prove applicability. |
+| Existing canonical AGENT / other frozen kinds | Already canonical identity elsewhere; use unchanged SR1 references. Retrieval is still derived, not a canonical fact reader. |
+| Discovery candidates | Normalized candidate when actually persisted as such; unchanged SR1, not a synonym for every scanner/legacy agent. |
+| Scanner agent/service/domain/code observations | Derived analytical technical context, grounded under §3; not canonical or normalized merely by embedding. |
+| Incidents, findings, legacy control gaps | Direct/graph operational context currently exists; preserve safe labelled direct behavior through C3. No evidence of their own Talk vector population. Incident semantic expansion unsupported in V1; separately reviewed future work, LX06 remains OPEN. |
+| Third parties / regulation/evidence/control graph nodes | Context of legacy graph intents, not an observed semantic source. C3 must contain inferred links and authority wording; SR2 does not turn them into semantic facts. |
+| Numeric similarity/confidence, inferred compliance/legal certainty, zero embeddings | Unsafe representation/authority artifacts, not product value; exclude from replacement. |
+
+Operational protected projections contain safe code/name, source type/status, approved structural description, observed agent type and optional safe related-system descriptor. Legacy risk/control labels, where a direct C3 use must retain them, use its explicit legacy label contract; do not put them into SR2's embedding document as governance truth. The new agent descriptor must preserve semantic discoverability and useful explanation, not copy arbitrary `content_text`. Reacquire typed current source content under ownership; legacy embedding text with no admissible provenance is not a population source.
+
+## 7. Tenant and principal boundary
+
+Future flow: `VerifiedGovernancePrincipal` → five-field persisted-session revalidation → persisted actor-derived organisation → tenant-safe typed selection → exact semantic space and resolved revision/observation → bounded safe hydration. Browser question/scope hints are untrusted selectors only; tenant, provider, recipe and content entitlement come from trusted server configuration. No target-tenant override. Revalidate before source resolution/provider egress as well as within the SQL read; a revoked principal must not trigger an external query embedding.
+
+Follow SR1's actor lookup then unchanged `l14_session_basis_v1`, exact credential epoch, ORG → USER → ROLES lock order and post-lock revalidation. Maintain explicit tenant predicates for every alias and tenant-inclusive joins even if a UUID is globally unique. Root, snapshot, subject, representation, projection, support, connection and each operational source/related source must agree. Corrupt cross-tenant fixtures must never produce content. No RLS-only argument under postgres/BYPASSRLS. `service_role` is transport capability only, not product authority. DB validates forwarded verified session basis, not a fabricated signature; trusted server/transport compromise remains a limitation.
+
+Keep authorization failure outside acquisition/no-match results. Inactive/revoked/stale sessions, invalid tenant, unresolved actor/roles and eligibility lock failure deny the operation without disclosing foreign existence. Resource/transport/provider/source failure is unavailable with a closed reason. No fallback to either legacy RPC, direct vector table or a different provider/space.
+
+## 8. Exact embedding space and provider boundary
+
+Exact space key remains `(projection_schema_version, provider_id, model_id, model_version, dimension)`, bytewise equality. Technical document recipe: `GOVIA_TECHNICAL_CONTEXT_V1`, paired only with `TECHNICAL_CONTEXT_QUERY_V1`; operational recipe: `GOVIA_OPERATIONAL_CONTEXT_V1`, paired only with `OPERATIONAL_CONTEXT_QUERY_V1`. These are new design identifiers, not configured embeddings. They differ from SR1's `GOVIA_SEMANTIC_CONTENT_V1` / `GOVERNANCE_SUBJECT_QUERY_V1` and from one another. Reusing a provider/model never permits cross-recipe comparison. Projection schema versions include extractor/redaction/format semantics; recipe behavior changes require a new version and regeneration.
+
+Trusted configuration pins the document/query pair, actual provider revision and implementation/model artifacts; no `latest`, `default`, `unknown`, model alias resolution, padding/truncation or synthetic zero vector. Validate finite nonzero vector, actual dimension and full identity at both adapter and DB. Similarity sorts/filters only inside the selected exact domain space. Return ordinal per-domain rank; never return vector, raw score, numeric confidence or probability to Talk/model/users. Do not average ranks/cosines across governance, technical and operational domains; use explicit quotas and source labels.
+
+A0 chooses no provider and calls none. Local GPU, cloud and enterprise-controlled modes are candidates for separately authorized qualification. RTX 4050 / CUDA is an owner-supplied future candidate, not an inspected hardware capability or provider selection. A4 must pin artifacts/versions, test document/query pairing and drift, content egress, quality, resource bounds, optional reranker behavior and reproducibility before population. Reranker output remains internal relevance, never confidence. GPU benchmarking, production population and hosted/provider activation require separate scope/authorization.
+
+## 9. Revision, currentness and provenance semantics
+
+Resolve a requested branch/tag to one full immutable revision under the verified tenant/repository before acquisition. Fetch listing and every blob by that revision, validate manifest/blob hashes and provider repository identity, and reject mixed or ambiguous captures. No defaulting an unavailable commit to branch HEAD. Non-Git sources need a separately qualified immutable revision scheme; until then unavailable. No name-only revision identities. Multi-repository results carry a separate selected immutable revision per repository; never combine two revisions of the same repository as one current context.
+
+Technical selection is `EXACT_SNAPSHOT_LATEST_PROJECTION_IN_SPACE_V1`: resolve snapshot first, then exact space, group exact subject, choose generated_at DESC / recorded_at DESC / representation_id bytewise ASC before ranking. No older more-similar representative or newest-invalid fallback. Operational selection is `LATEST_VALID_OBSERVATION_IN_EXACT_SPACE_V1`, with current tenant/status/source-descriptor fingerprint checked in the same read snapshot. Invalid newest observation does not select older content.
+
+| State/event | Deterministic meaning / behavior |
+| --- | --- |
+| Repository revision | Full immutable identity of captured source; not embedding generation time. |
+| Source currentness | `CURRENT_AT_VERIFIED_CAPTURE`, `HISTORICAL_AT_REQUESTED_REVISION`, or `UNKNOWN`; carry checked_at, selected revision and comparison target where applicable. Never unqualified CURRENT/NOW. |
+| Newer source after embedding | Explicit old-snapshot result only for a historical request; a current request must resolve/reacquire the requested current revision or report unavailable. No recent-embedding freshness inference. |
+| Generated_at / recorded_at | Provider generation and durable record instants, separately returned, finite and not future. Neither certifies source currentness. |
+| Deleted source / moved file | Historical locator remains historical if policy allows; missing current revision/location is unavailable. Move creates a new path identity; same blob hash does not authorize automatic entity-resolution/rename continuity. |
+| Superseded chunk/symbol | New revision/parser/locator creates a distinct identity. It cannot be merged with the old span; unavailable parser identity uses admitted chunk fallback, never fake symbol provenance. |
+| Unavailable revision / incomplete manifest | `REVISION_UNAVAILABLE` / `CAPTURE_INCOMPLETE`; no substitute revision, guessed line numbers or unmarked partial currentness. |
+| Operational row changed after indexing | Fingerprint mismatch → `SOURCE_CHANGED`; regenerate observation under a separate population operation. The read does not write. |
+
+Minimum technical provenance: tenant-checked repository/connection identity internally; safe repository label/reference; revision scheme/full immutable revision; source path and blob/manifest fingerprint; trustworthy line/byte/symbol/chunk locator; extraction/projection recipe/version and protected projection fingerprint; capture/observed/index/generated/record times; complete source support references and handling decision. Exact line numbers are allowed only when verified against the original blob and decoding; otherwise explicit locator unavailable. Derived summary lists its source manifest, not manufactured per-file citations. Source locators may themselves be confidential and must pass the projection allowlist.
+
+Minimum operational provenance: family/source record ID, immutable observation fingerprint, source descriptor fingerprint, observed/recorded/index/generated times, acquisition method/version, tenant-safe related references and safe projection identity/handling. A created/updated timestamp alone is not an immutable revision. Do not claim historical reconstruction from today's mutable row. Current direct hydration, if used, must be labelled as its own observation and cannot be passed off as the original embedding input.
+
+Source/policy revocation is checked at hydration; append-only storage does not imply perpetual disclosure rights. Do not import inadmissible legacy text/hashes as proven source identity, or convert historical source timestamps into invented current capture evidence.
+
+## 10. Future composer and prompt-injection boundary
+
+Closed source labels: existing SR1 `SEMANTIC_GOVERNANCE_CONTEXT`, new `REPOSITORY_TECHNICAL_CONTEXT` and `OPERATIONAL_SEMANTIC_CONTEXT`, alongside C3's `DIRECT_OPERATIONAL_CONTEXT` and `LLM_EXPLANATION`. Each context item includes its typed subject, fixed authority/derivation, rank-only relevance, content class, provenance, freshness and explicit limitations. C3's composer must be updated under A5; no runtime change here.
+
+All retrieved strings — repository content/comments/docs, operational descriptions, names, tickets where separately admitted and projected fragments — are **quoted untrusted data, never instructions**. The product-owned envelope precedes the data and cannot be supplied or overridden by a source. Retrieved material cannot change system/developer policy, authorize tools/actions, change tenant, modify Authority Policy, create canonical facts, choose retrieval/provider/configuration, or override provenance/authority labels. Render source text with fixed delimiters/escaping or structured data fields, never concatenate it into a system/developer instruction. Hidden HTML/Markdown links and source URLs grant no network fetch/tool authority.
+
+Use a closed validated context DTO and product-owned response/citation contract. No arbitrary supportingData/JSON envelope, raw source body, vector, score, Prompt content or model-supplied authority label. The deterministic composer validates response citations against admitted hits, source provenance and revision. Unsupported authoritative claims must be blocked/returned UNKNOWN by a structured product mechanism; a system prompt alone does not establish containment. Retrieved text and prior generated answers cannot become evidence of governance truth. Tools/actions, if any, stay behind their independent verified authorization; retrieved text cannot invoke them. Test hostile content and malicious model output separately.
+
+Per-domain acquisition is `SEMANTIC_CONTEXT_AVAILABLE`, `NO_MATCHES_IN_QUERIED_SEMANTIC_SPACE`, or `SEMANTIC_CONTEXT_UNAVAILABLE`; authorization errors remain distinct. Closed reason set for the future target: `PROVIDER_NOT_CONFIGURED`, `PROVIDER_FAILURE`, `INVALID_QUERY_EMBEDDING`, `NO_COMPATIBLE_REPRESENTATIONS`, `SCOPE_REQUIRED`, `REVISION_UNAVAILABLE`, `REVISION_AMBIGUOUS`, `CAPTURE_INCOMPLETE`, `SOURCE_CHANGED`, `SOURCE_UNAVAILABLE`, `CONTENT_WITHHELD`, `INVALID_SOURCE_SUPPORT`, `SCAN_BOUND`, `PROVENANCE_BOUND`, `CONTENT_BOUND`, `RESPONSE_BOUND`, `QUERY_TIMEOUT`, `TRANSPORT_ERROR`. C3/A2 must freeze exact transport/error mapping before implementation; no free-text reason/payload. Empty validated matches mean only no matches in that bounded recorded space. Missing/unpopulated/failing sources are unavailable, never proof of no risk or no relevant repository context. A failure in one domain is visible alongside other domains; no success completeness claim for the whole estate.
+
+## 11. M16 successor and capability admission
+
+**Expected successor: YES, two separately admitted read capabilities**, one technical in A2 and one operational in A3. Do not overload/alter `semantic_context_search_v1` or any historical agent RPC. Technical read takes verified session basis, exact query space/vector, bounded internal resolved snapshot selection and fixed retrieval policy. Operational read takes the same basis/space with fixed typed family-specific logic; no arbitrary family/table selector. One read should perform exact protected hydration in the same snapshot; no generic second content RPC. A2/A3 freeze final argument identities and all dependencies before creating migrations, not at A0.
+
+Each future read is static read/lock-only, service-role application EXECUTE only, zero PUBLIC/anon/authenticated execution, explicit tenant predicates and transactional create/revoke/grant. Match SR1's consciously documented owner `postgres` broad-power exception pending a separately reviewed role replacement. This is not a read-only owner. Freeze body, identity, config, ACL, dependency surface, safe projection/handling logic and session-helper calls; reject overloads and unapproved catalog drift. A1 tables may require a narrowly enumerated admission successor for new private constraint helpers if implementation needs them; no application definer/read or generic writer is included in A1. Exact helper/table ACL changes must be enumerated at its review, never inferred from this design.
+
+No governed writes, materialization, entity resolution, policy mutation, session minting, arbitrary dynamic SQL or broad helper execution. Preserve the exact current SR1 catalog/body/ACL, historical hashes, and M16/M17/V2 chain. Do not reuse the historical count of 22 as today's catalog count. Qualified relation/pgvector names, trusted search_path with pg_temp last, bounded statement deadline set before RPC selection, and tenant-safe same-snapshot hydration are required. RLS remains defense in depth, not the authority argument. These choices follow [PostgreSQL function security](https://www.postgresql.org/docs/17/sql-createfunction.html#SQL-CREATEFUNCTION-SECURITY), [RLS owner/BYPASSRLS semantics](https://www.postgresql.org/docs/17/ddl-rowsecurity.html) and [Supabase function access guidance](https://supabase.com/docs/guides/database/functions).
+
+## 12. Primary product parity gate — no disconnection before all mandatory gates pass
+
+The JSON inventory freezes mandatory capabilities and maps each to this gate. A0 records every gate **PENDING_IMPLEMENTATION_AND_PROOF**, never PASS. SR1 local tests are unchanged prior evidence of its backend, not proof of Talk parity or production population.
+
+| Gate | Required proof in controlled, explicitly authorized environment |
+| --- | --- |
+| P01 Governance subject discovery | Populated compatible canonical/candidate fixtures retrieved through SR1 and used by Talk beyond regex-only routing; candidate/canonical distinctions and provenance visible. |
+| P02 Repository semantic discovery | Questions about repository purpose, domains, services, modules, dependencies, entrypoints and agent descriptors retrieve grounded protected context. Each mandatory technical inventory row has a positive case. |
+| P03 File/chunk/symbol explanation | Located code regions, file descriptors and true parsed symbols when supported provide sufficient safe explanatory detail; unsupported symbols say unavailable/use typed chunk. Metadata-only does not pass rich explanation. |
+| P04 Repository/revision grounding | Same names/paths across tenants/repos/revisions never collide; resolve current once, immutable historical request works, unavailable/mixed revisions fail closed. |
+| P05 Rich source explanation | Talk explains a representative implementation/flow from protected projections and cites verified source spans/fingerprints; no need for unrestricted raw code. Every required legacy snippet/summary function has a safe positive test. |
+| P06 Operational agents/systems | Legacy-only active/approved agent outside canonical/candidate population is semantically discoverable with useful descriptor. Required system context remains available by safe direct/related-system reads; no claim of existing system-vector parity. Owner/system join corruption denied. |
+| P07 Provenance | Every rich result has complete admissible typed support and source/observation identity, capture times, fingerprints and honest currentness; fabricated/missing/foreign/oversized provenance fails. |
+| P08 Tenant/principal | Two-tenant and FK-bypassed corrupt fixtures; revoked/stale/moved/inactive sessions; service-role invalid principal; all tenant-owned joins and provider egress checked; no foreign data/existence disclosure. |
+| P09 Safe hydration/space | Content/response/scan deadlines and bounds; full five-field space mismatches, recipe drift, invalid/zero vectors, secrets/PII/confidentiality/encoding/license policy rejection; no direct-table bypass or raw payload leak. |
+| P10 Unavailable/unknown | Provider absent/failure, unpopulated space, no matches, stale/missing revision and withheld content remain distinguishable per-domain; no empty-string masking or synthetic embeddings. |
+| P11 Composer/authority | Adversarial prompt injection/model assertions cannot change authority/config/tenant, authorize tools or assert compliance/risk/certification; no numeric confidence/similarity in prompt/public answer/new ledger events. Original C3 containment gates remain independently required. |
+| P12 Integrated continuity | Replacement populated and runnable in Talk; deterministic positive/negative capability corpus passes with all mandatory inventory rows covered, zero unresolved capability loss; security suite passes and owner reviews cutover evidence. Controlled comparison/shadow only where safe. Legacy-disabled trial proves zero old RPC/direct-table/fallback calls while replacement enrichment works. |
+
+Freeze the A5 corpus **before** comparison: at least one positive and one failure/unknown case per mandatory inventory capability, plus cross-revision/tenant collisions, legacy-only agent, source policy and injection cases. Positives assert source identity, required content fields and supported answer/citations, not exact generated prose or obsolete scores. Compare safe functions with inspected payload contracts and sanitized fixtures; an absent coding RPC must not turn into a zero-capability baseline. Every mandatory case must pass; no weighted average or similarity threshold can waive a missing primary function. Optional product extensions are reported separately. Security/adversarial failures block the gate even if answers look useful.
+
+## 13. Cutover stages and rollback design — future only
+
+1. Implement isolated typed stores, read boundaries and protected projections; SR1 stays available.
+2. Separately authorize provider and population in a controlled environment; populate verified immutable sources and operational observations, with coverage/exclusion manifest.
+3. Run functional P01–P07 corpus and P08–P11 security/adversarial checks; publish per-capability evidence and unresolved gaps.
+4. Wire Talk to replacement in controlled mode. Exercise low/unknown-intent and direct-intent enrichment as needed; source/failure labels and secure V2 ledger behavior remain explicit.
+5. Compare side by side/shadow where technically safe; use pinned fixture expectations when legacy RPC is absent or unsafe. Never execute an unsafe cross-tenant path or recreate coding RPC just to obtain an oracle. Shadow is not permission for hosted/provider egress.
+6. Pass P12 with legacy fallback disabled in the controlled trial and review all mandatory gates. Only then separately authorize production cutover/disconnection, with replacement operational first.
+7. Remove/contain actual old Talk callers and direct bypass/fallback possibilities under A6; disposition unrelated consumers before any shared storage/RPC retirement. Frozen legacy catalog removal may itself require a reviewed additive M16 successor.
+8. Re-evaluate original C3/LX03 containment separately. SR2 completion alone cannot close graph/search/answer authority gates or LX01/LX06.
+
+Rollback preserves a verified safe replacement version or pauses cutover and reports explicit unavailability; it never re-enables unsafe legacy fallback. Do not start the cutover if continuity cannot be sustained. An unexpected outage is not permission to conceal lost enrichment. No runtime switch, migration, provider, population, shadow call or legacy removal happens in A0.
+
+## 14. Proposed SR2 slices and review gates
+
+| Slice | Separately authorized scope / exit |
+| --- | --- |
+| A0 — this checkpoint | Architecture, forensic machine inventory, evidence and additive index pointer. No executable change. Return to architecture review. |
+| A1 | Additive local technical foundation/contracts only: tenant-bound repository/snapshot root, three subject families/typed locators/facets, source/projection fingerprints, immutable protected projection/provenance/representation separation, constraints/ACLs. Specify exact table/helper admission budget before coding; local fixture validation. No read RPC, provider, population/backfill, Talk or operational source writes. |
+| A2 | Principal-bound technical exact-space read and same-snapshot safe hydration; freeze exact M16 successor identity/body/config/ACL/dependencies, recipe/query adapter and closed DTO/error mapping. Targeted real PG17/pgvector adversarial/limit tests; no live provider/population/Talk activation. |
+| A3 | Typed operational observations/projections for mandatory legacy agent parity and safe system contextualization; additive tenant source keys if required; own exact admitted read and principal/security tests. No canonical promotion; standalone system semantic expansion only if separately requested. |
+| A4 | Qualify providers/document-query recipes, extraction/redaction and controlled population; optional local RTX/CUDA/reranker experiment. Source connector must verify repository identity/commit once, strict capture manifest and handling. Product corpus, security, quality/resource/egress evidence before activation; production/hosted separately authorized. |
+| A5 | Talk multi-domain composer, protected context, source/citation/authority contract and original C3 applicable answer/ledger controls; functional parity plus security/injection and continuity trial with no fallback. P01–P12 evidence and owner review. |
+| A6 | Only after parity/authorization: disconnect/contain legacy semantic callers and revisit C3/LX03; preserve other consumers and audit history. No automatic M17.5 or M18 closure. |
+
+A1's exact proposed objective is the typed **technical foundation only**, not an implementation of retrieval or a provider experiment. Its authorization must be new; architecture review must pin its baseline and exact schema/helper budget. A0 has no material unresolved architecture blocker: all evidenced primary functions have a typed safe target. Future implementation prerequisites (schema/admission, provider/capture/redaction qualification, population, parity/security proof and cutover authorization) are intentionally unfulfilled and block disconnection, not documentary closure. Optional all-file/full-source editing, arbitrary document uploads, incident semantic search and standalone system-vector expansion remain outside mandatory parity, requiring separate product decisions.
+
+## 15. Status and closure ceiling
+
+A0 CLOSED / ARCHITECTURE PASS. Mandatory product capabilities preserved **by target design only**; implemented parity **NOT PROVEN**, cutover **BLOCKED**. SR1 unchanged. C3 STOPPED; LX03 NEEDS_CONTAINMENT; LX01/LX04/LX05/LX06/LX07 OPEN. V1-S1B/M17.5 OPEN. CONTROLLED_DEMO_READINESS, EXTERNAL_PUBLICATION_READINESS, TENANT_ASSURANCE_READINESS, CERTIFICATION_READINESS and M18 HOLD. Previous contained families unchanged, not retested. No new canonical/Authority Policy/Passport authority, runtime, SQL, database, hosted, provider, deployment or PR delta.
+
+**DO NOT START SR2-A1. RETURN TO ARCHITECTURE REVIEW AFTER A0.**
