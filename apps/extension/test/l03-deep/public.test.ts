@@ -178,7 +178,7 @@ test('MCP descriptor and serialization execute with a local dispatcher substitut
         if (id === './core/dispatcher') return { AuditDispatcher: class { async dispatch() { return result; } } };
         if (id === './core/auth' || id === './core/security') return {};
         if (id === 'express') return () => { throw new Error('Server must not start in this test'); };
-        if (id === 'zod') return require('zod');
+        if (id === 'zod/v3') return require('zod/v3');
         throw new Error(`Unexpected MCP dependency: ${id}`);
     };
     vm.runInNewContext(transpiled.outputText, { exports: {}, require: req, process: { env: { TRANSPORT_MODE: 'stdio' }, exit: () => { throw new Error('Unexpected exit'); } }, console: { error() {} } });

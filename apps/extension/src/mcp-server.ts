@@ -16,7 +16,7 @@ import express from 'express';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { AuditDispatcher } from './core/dispatcher';
 import { UnifiedAuthenticator } from './core/auth';
 import { SecurityGuard } from './core/security';

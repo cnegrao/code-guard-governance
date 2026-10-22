@@ -1,0 +1,11 @@
+# MCP v1 dependency and schema contract
+
+The monorepo installs from the root workspace lock (`npm ci` in the active root CI workflows). The extension is an `apps/*` workspace; its compiler and MCP SDK resolve from root `node_modules`. The retained extension-local lock describes the separate standalone layout. Neither lock is deleted or promoted over the other by this repair.
+
+The extension declares exact Zod `3.25.76` and imports `zod/v3` for MCP v1 raw-shape registration. Both locks resolve that direct version. Their existing SDK resolutions remain `1.29.0` (workspace) and `1.26.0` (standalone), both declaring compatible `^3.25 || ^4.0` Zod peers. No SDK version change, dashboard Zod-major migration or transitive override is introduced. The isolated Python-analysis dependency retains its own Zod `3.22.4`.
+
+With the existing CommonJS/Node10 TypeScript resolution, the bare Zod import loads `.d.cts` declarations while the SDK's `zod/v3` import loads `.d.ts` declarations. This mismatch produced TS2589 at the first `server.tool` registration. Before editing production inputs, a virtual source-read experiment changed only that import to `zod/v3`; the complete global compiler then passed without diagnostics. The actual compiler file inventory did not include Python-analysis's old Zod, so overriding that dependency would not address the demonstrated cause.
+
+Keep `server.tool(...)` schemas as raw shapes. In particular, `codeguard_audit` requires `region` and `frameworks`, with optional `filePath`; graph and shadow-API tools retain their optional fields. `npm run test:mcp-contract` uses the real SDK over in-memory transports to inspect published schemas, valid/invalid inputs and callback forwarding. It starts no application transport/provider. Global typecheck/build and both L03 suites remain required.
+
+Upstream references: [MCP v1 FAQ](https://ts.sdk.modelcontextprotocol.io/faq), [v1.29 README and Zod v3 compatibility](https://github.com/modelcontextprotocol/typescript-sdk/blob/v1.29.0/README.md), [TypeScript module resolution](https://www.typescriptlang.org/docs/handbook/modules/reference.html), [npm lockfile scope](https://docs.npmjs.com/cli/v11/configuring-npm/package-lock-json/).

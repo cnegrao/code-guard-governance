@@ -165,7 +165,8 @@
     "vercel:deploy": "vercel --prod",
     "vercel:preview": "vercel",
     "test:l03-deep": "tsx --test test/l03-deep/*.test.ts",
-    "typecheck:l03-deep": "tsc --noEmit -p tsconfig.l03-deep.json"
+    "typecheck:l03-deep": "tsc --noEmit -p tsconfig.l03-deep.json",
+    "test:mcp-contract": "tsx --test test/mcp-schema.test.ts"
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",
@@ -203,6 +204,7 @@
     "pdfkit": "^0.17.2",
     "punycode": "^2.3.1",
     "simple-git": "^3.30.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "zod": "3.25.76"
   }
 }
