@@ -56,13 +56,18 @@ test("D-01 mirror: unknown / non-governance permissions, wrong action and non-lo
 
 test("static: the S0 migration is additive, hosted-free and creates no L15 store, bootstrap or definer", () => {
   const names = readdirSync(MIGRATIONS).filter(n => /^\d{14}_.*\.sql$/.test(n)).sort();
-  // Horizon: S0 is followed by exactly the M17-S1 / S1R1 / S2 / S2R1 / S3 / S3R1 / S4 / S5 migrations (each later slice extends this exact list; never a
-  // wildcard).
-  assert.deepEqual(names.slice(names.indexOf(S0)), [S0, "20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+  // Preserve the frozen M17-S7D baseline; admit only the four authorized M17.5 successors.
+  const expectedSuccessors = [S0, "20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
     "20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql", "20261013120000_m17_s2_scenario_methodology_registries_v1.sql",
     "20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql", "20261013140000_m17_s3_governed_risk_v1.sql",
-    "20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql", "20261013160000_m17_s4_inherent_risk_assessment_v1.sql", "20261015122639_m17_s5_risk_treatment_v1.sql", "20261016021012_m17_s6_residual_risk_acceptance_v1.sql", "20261017020733_m17_s7a_read_projections_v1.sql", "20261019130000_m17_s7b_passport_risk_overlay_v1.sql", "20261019140000_m17_s7c_final_security_closure_v1.sql", "20261020031523_m17_s7d_adversarial_corrective_v1.sql"],
-    "the S0 migration has exactly the listed historical successors through M17-S7D");
+    "20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql", "20261013160000_m17_s4_inherent_risk_assessment_v1.sql", "20261015122639_m17_s5_risk_treatment_v1.sql", "20261016021012_m17_s6_residual_risk_acceptance_v1.sql", "20261017020733_m17_s7a_read_projections_v1.sql", "20261019130000_m17_s7b_passport_risk_overlay_v1.sql", "20261019140000_m17_s7c_final_security_closure_v1.sql", "20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+    "20261021030240_m175_v1_s1a1_1_tenant_ledger_v2_inactive.sql",
+    "20261021134359_m175_v1_s1a1_2a_ledger_v2_write_cutover.sql",
+    "20261021201316_m175_v1_s1a1_2b_ledger_v2_tenant_read.sql",
+    "20261022142630_m175_c3_sr1_principal_bound_semantic_retrieval_v1.sql"];
+  const assertSuccessors = (actual: string[]) => assert.deepEqual(actual, expectedSuccessors);
+  assertSuccessors(names.slice(names.indexOf(S0)));
+  assert.throws(() => assertSuccessors([...expectedSuccessors, '99991231235959_unapproved.sql']), assert.AssertionError);
   assert.ok(names.indexOf(S0) > names.indexOf("20261012120000_m16_read_projection_closure_v1.sql"));
   assert.match(sql, /^-- M17-S0/);
   assert.doesNotMatch(code, /CREATE\s+(TABLE|VIEW|MATERIALIZED VIEW|SEQUENCE)\b/i, "no L15 store / relation is created in S0");
