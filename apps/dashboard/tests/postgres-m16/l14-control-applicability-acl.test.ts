@@ -375,14 +375,59 @@ test('M16 S1C.4 privilege closure, preflight, postflight negative controls (disp
           predecessor_state_id uuid, effective_from timestamptz, effective_to timestamptz, recorded_at timestamptz)
         language plpgsql volatile security definer set search_path = pg_catalog, pg_temp set lock_timeout = '5s'
         as $body$${body}$body$; reset role;`;
-    const noGuard = decideSrc.replace(/IF p_outcome = 'VALIDATE' THEN\n\s+PERFORM gov_repo\.l14_lock_control_definition_dependency_guard_shared_v1\([^;]+;\n\s+END IF;\n/, '');
+    // psql may return CRLF even when the frozen SQL is LF. Slice the exact adjacent
+    // guard blocks; never normalize or regex-rewrite the retrieved routine body.
+    const authorityCall = 'PERFORM gov_repo.l14_lock_authority_policy_guard_shared_v1(v_org);';
+    const validateConditional = "IF p_outcome = 'VALIDATE' THEN";
+    const dependencyCall = 'PERFORM gov_repo.l14_lock_control_definition_dependency_guard_shared_v1(';
+    const factCall = "PERFORM gov_repo.l14_lock_fact_subject_guard_v1(v_org, 'CONTROL_APPLICABILITY',";
+    const commandCall = 'PERFORM gov_repo.l14_lock_command_guard_v1(v_org, p_command_id);';
+    const uniqueOffset = (body: string, anchor: string) => {
+      const offset = body.indexOf(anchor);
+      assert.ok(offset >= 0, `missing frozen guard anchor: ${anchor}`);
+      assert.equal(body.lastIndexOf(anchor), offset, `exactly one frozen guard call: ${anchor}`);
+      return offset;
+    };
+    const authorityOffset = uniqueOffset(decideSrc, authorityCall);
+    const dependencyOffset = uniqueOffset(decideSrc, dependencyCall);
+    const factOffset = uniqueOffset(decideSrc, factCall);
+    const commandOffset = uniqueOffset(decideSrc, commandCall);
+    const conditionalOffset = decideSrc.lastIndexOf(validateConditional, dependencyOffset);
+    assert.ok(authorityOffset < conditionalOffset && conditionalOffset < dependencyOffset
+      && dependencyOffset < factOffset && factOffset < commandOffset, 'frozen neighboring guard order');
+    const dependencyStart = decideSrc.lastIndexOf('\n', conditionalOffset) + 1;
+    const factStart = decideSrc.lastIndexOf('\n', factOffset) + 1;
+    assert.ok(factStart > dependencyStart, 'dependency conditional ends before the fact guard');
+    const dependencyBlock = decideSrc.slice(dependencyStart, factStart);
+    assert.equal(dependencyBlock.split(dependencyCall).length - 1, 1, 'remove exactly one dependency guard');
+    // Trimming these captured lines validates the frozen block only; mutation uses
+    // the original slices, including their existing indentation and line endings.
+    assert.deepEqual(dependencyBlock.trim().split('\n').map(line => line.trim()), [
+      validateConditional,
+      `${dependencyCall}v_org, v_proposal.control_definition_id,`,
+      'v_proposal.control_definition_version_id, v_proposal.content_hash);',
+      'END IF;',
+    ], 'the removed block is only the exact VALIDATE dependency conditional');
+    const noGuard = decideSrc.slice(0, dependencyStart) + decideSrc.slice(factStart);
     assert.notEqual(noGuard, decideSrc, 'the guard removal probe really removes the guard call');
+    assert.equal(noGuard.includes(dependencyCall), false, 'dependency guard call is absent');
+    assert.ok(uniqueOffset(noGuard, authorityCall) < uniqueOffset(noGuard, factCall)
+      && uniqueOffset(noGuard, factCall) < uniqueOffset(noGuard, commandCall), 'all other guards remain in order');
     // Lock order inversion: the fact KEY guard taken BEFORE the dependency guard.
-    const factGuardCall = /  PERFORM gov_repo\.l14_lock_fact_subject_guard_v1\(v_org, 'CONTROL_APPLICABILITY',\n[^;]+;\n/.exec(decideSrc)?.[0] ?? '';
-    assert.ok(factGuardCall.length > 0, 'the fact guard call is located');
-    const inverted = decideSrc.replace(factGuardCall, '').replace("  IF p_outcome = 'VALIDATE' THEN\n    PERFORM gov_repo.l14_lock_control_definition_dependency_guard_shared_v1(",
-      `${factGuardCall}  IF p_outcome = 'VALIDATE' THEN\n    PERFORM gov_repo.l14_lock_control_definition_dependency_guard_shared_v1(`);
+    const factSemicolon = decideSrc.indexOf(';', factOffset);
+    assert.ok(factSemicolon > factOffset, 'the fact guard statement is complete');
+    const factEnd = decideSrc.indexOf('\n', factSemicolon) + 1;
+    assert.ok(factEnd > factSemicolon && factEnd <= commandOffset, 'the fact guard ends before the command guard');
+    const factBlock = decideSrc.slice(factStart, factEnd);
+    assert.deepEqual(factBlock.trim().split('\n').map(line => line.trim()), [
+      factCall, "ARRAY['KEY', v_proposal.target_key, v_proposal.control_definition_id::text]);",
+    ], 'move only the exact fact guard statement');
+    const inverted = decideSrc.slice(0, dependencyStart) + factBlock + dependencyBlock + decideSrc.slice(factEnd);
     assert.notEqual(inverted, decideSrc, 'the lock order inversion probe really reorders the guards');
+    assert.ok(uniqueOffset(inverted, authorityCall) < uniqueOffset(inverted, factCall)
+      && uniqueOffset(inverted, factCall) < uniqueOffset(inverted, dependencyCall)
+      && uniqueOffset(inverted, dependencyCall) < uniqueOffset(inverted, commandCall),
+    'each guard remains exactly once, with fact before dependency');
     const union = (table: string, check: string) => `alter table gov_repo.${table} drop constraint ${table}_target_union_check;
       alter table gov_repo.${table} add constraint ${table}_target_union_check check (${check});`;
     const controls: Array<[string, string, RegExp]> = [
