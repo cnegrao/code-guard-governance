@@ -128,7 +128,7 @@ async function runAudit() {
     // LICENSE CHECK
     const license = LicenseManager.validate();
     if (!LicenseManager.checkGate('codeguard_audit', license.plan)) {
-        console.error(`\n❌ LICENSE ERROR: Deep Audit requires a PRO/ENTERPRISE license.`);
+        console.error(`\n❌ LICENSE ERROR: Technical framework review requires a PRO/ENTERPRISE license.`);
         console.error(`   Current Plan: ${license.plan}`);
         console.error(`   Please set CODEGUARD_LICENSE_KEY environment variable.`);
         console.error(`   Upgrade at: https://code-guard.eu/enterprise`);
@@ -136,10 +136,10 @@ async function runAudit() {
     }
 
     // Mock Audit Run
-    console.log(`\n🔍 Analyzing for ${flags.region} compliance...`);
-    console.log(`   [Mock] Checked 142 files.`);
-    console.log(`   [Mock] Found 2 potential LGPD risks.`);
-    console.log(`\n✅ Audit Complete (Report generated).`);
+    console.log(`\n🔍 Technical framework review demo for ${flags.region} references (NON_AUTHORITATIVE)...`);
+    console.log(`   [Mock] Example file count: 142; no source acquired.`);
+    console.log(`   [Mock] Example only; no detected findings.`);
+    console.log(`\nMock only: no technical review was executed and no result was established.`);
 }
 
 async function runReport() {

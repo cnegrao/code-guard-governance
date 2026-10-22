@@ -92,544 +92,62 @@ document.addEventListener('click', (e) => {
 }
 
 /**
- * Generate webview content for Deep Compliance Audit results
+ * Generate webview content for Deep Compliance Audit (LEGACY_TRANSPORT_IDENTIFIER).
+ * Display only the closed technical-review contract; no fallback renderer.
  */
-export function getComplianceAuditWebviewContent(result: any): string {
-    const statusColors: Record<string, string> = {
-        'pass': '#4caf50',
-        'warn': '#ff9800',
-        'fail': '#d32f2f'
-    };
-
-    const statusEmojis: Record<string, string> = {
-        'pass': '✅',
-        'warn': '⚠️',
-        'fail': '❌'
-    };
-
-    const severityColors: Record<string, string> = {
-        'High': '#d32f2f',
-        'Alta': '#d32f2f',
-        'Medium': '#ff9800',
-        'Média': '#ff9800',
-        'Low': '#4caf50',
-        'Baixa': '#4caf50'
-    };
-
+export function getComplianceAuditWebviewContent(result: import('../intelligence/review-contract').TechnicalFrameworkReviewResult): string {
     const nonce = getNonce();
-
     return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
-    <title>CodeGuard Compliance Audit Report</title>
-    <style>
-        :root {
-            --primary: #007acc;
-            --success: #4caf50;
-            --warning: #ff9800;
-            --danger: #d32f2f;
-            --bg-dark: #1e1e1e;
-            --bg-card: #252526;
-            --border: #3c3c3c;
-            --text: #cccccc;
-            --text-muted: #888888;
-        }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text);
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-        }
-        
-        .header h1 {
-            font-size: 1.5em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .header .logo {
-            font-size: 1.8em;
-        }
-        
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 0.9em;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: var(--primary);
-        }
-        
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 0.85em;
-            margin-top: 5px;
-        }
-        
-        .framework-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            overflow: hidden;
-        }
-        
-        .framework-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background: rgba(255,255,255,0.03);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-        }
-        
-        .framework-header:hover {
-            background: rgba(255,255,255,0.05);
-        }
-        
-        .framework-name {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .framework-stats {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .issue-count {
-            background: var(--danger);
-            color: white;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 0.85em;
-        }
-        
-        .issue-count.zero {
-            background: var(--success);
-        }
-        
-        .framework-body {
-            padding: 15px 20px;
-        }
-        
-        .issue-item {
-            background: rgba(0,0,0,0.2);
-            border-left: 3px solid var(--danger);
-            padding: 12px 15px;
-            margin-bottom: 10px;
-            border-radius: 0 6px 6px 0;
-        }
-        
-        .issue-item.medium {
-            border-color: var(--warning);
-        }
-        
-        .issue-item.low {
-            border-color: var(--success);
-        }
-        
-        .issue-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-        
-        .issue-title {
-            font-weight: 500;
-            flex: 1;
-        }
-        
-        .severity-badge {
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .issue-meta {
-            color: var(--text-muted);
-            font-size: 0.85em;
-            display: flex;
-            gap: 15px;
-            margin-bottom: 8px;
-        }
-        
-        .issue-recommendation {
-            background: rgba(0,122,204,0.1);
-            border: 1px solid rgba(0,122,204,0.3);
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-        
-        .issue-recommendation strong {
-            color: var(--primary);
-        }
-        
-        .code-fix {
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            padding: 10px;
-            border-radius: 4px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.85em;
-            margin-top: 10px;
-            white-space: pre-wrap;
-            overflow-x: auto;
-        }
-        
-        .btn {
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85em;
-            transition: opacity 0.2s;
-        }
-        
-        .btn:hover { opacity: 0.8; }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-        
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .summary-box {
-            background: rgba(0,122,204,0.1);
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-        }
-        
-        .timestamp {
-            color: var(--text-muted);
-            font-size: 0.85em;
-            text-align: right;
-            margin-top: 20px;
-        }
-        
-    <style>
-        /* ... existing styles ... */
-        
-        .certificate-container {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(33, 150, 243, 0.1) 100%);
-            border: 2px solid #4caf50;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            animation: slideDown 0.5s ease-out;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .cert-badge-icon {
-            font-size: 3em;
-            margin-bottom: 10px;
-            display: inline-block;
-            filter: drop-shadow(0 0 10px rgba(76, 175, 80, 0.5));
-        }
-
-        .cert-title {
-            font-size: 1.8em;
-            font-weight: 800;
-            background: linear-gradient(to right, #4caf50, #2196f3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-
-        .cert-desc {
-            color: var(--text);
-            margin-bottom: 20px;
-            font-size: 1.1em;
-        }
-
-        .share-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn-social {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            color: white;
-            font-size: 0.95em;
-            text-decoration: none;
-        }
-
-        .btn-social:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            text-decoration: none;
-        }
-
-        .btn-linkedin { background: #0077b5; }
-        .btn-twitter { background: #000000; border: 1px solid #333; }
-        .btn-copy { background: #424242; border: 1px solid #666; }
-        // ... existing styles ...
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
-        .modal-content { background-color: var(--bg-card); margin: 10% auto; padding: 20px; border: 1px solid var(--border); width: 80%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); animation: slideDown 0.3s; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
-        .loader { border: 4px solid var(--bg-dark); border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #f00;
-            animation: fall 3s linear infinite;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div>
-            <h1>
-                <span class="logo">🛡️</span>
-                CodeGuard Compliance Audit
-            </h1>
-            ${result.metadata?.clientName ? `<div style="color: var(--text-muted); font-size: 0.9em; margin-top: 5px;">Prepared for: <strong>${escapeHtml(String(result.metadata.clientName))}</strong> ${result.metadata.repoUrl ? `• ${escapeHtml(String(result.metadata.repoUrl))}` : ''}</div>` : ''}
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="btn btn-primary" data-action="exportReport">📥 Export Report</button>
-            <span class="status-badge" style="background: ${statusColors[result.overall_status] || statusColors.fail}; color: white;">
-                ${statusEmojis[result.overall_status] || '❌'} ${result.overall_status.toUpperCase()}
-            </span>
-        </div>
-    </div>
-    
-    ${result.overall_status === 'pass' ? `
-    <div class="certificate-container" id="successBanner">
-        <div class="cert-badge-icon">🏆</div>
-        <div class="cert-title">CERTIFIED COMPLIANT</div>
-        <p class="cert-desc">This repository has passed all CodeGuard AI compliance & security checks.</p>
-        
-        <div class="share-actions">
-            <a href="https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent('Just verified my code compliance with CodeGuard AI! 🛡️ \n\nCertified secure and GDPR/LGPD compliant.\n\n#CodeGuard #DevSecOps #Compliance #CleanCode')}" target="_blank" class="btn-social btn-linkedin">
-                <span>🔗</span> Share on LinkedIn
-            </a>
-            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent('Just verified my code compliance with CodeGuard AI! 🛡️  Certified secure and GDPR/LGPD compliant. #CodeGuard #DevSecOps')}" target="_blank" class="btn-social btn-twitter">
-                <span>𝕏</span> Share on X
-            </a>
-            <button class="btn-social btn-copy" data-action="copyBadge">
-                <span>📋</span> Copy Badge Markdown
-            </button>
-        </div>
-    </div>
-    ` : ''}
-    
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value">${result.files_analyzed}</div>
-            <div class="stat-label">Arquivos Analisados</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${result.frameworks_audited.length}</div>
-            <div class="stat-label">Frameworks</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color: ${result.total_issues > 0 ? 'var(--danger)' : 'var(--success)'}">${result.total_issues}</div>
-            <div class="stat-label">Total Issues</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" style="color: ${result.critical_issues > 0 ? 'var(--danger)' : 'var(--success)'}">${result.critical_issues}</div>
-            <div class="stat-label">Issues Críticas</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${(result.execution_time_ms / 1000).toFixed(1)}s</div>
-            <div class="stat-label">Tempo de Execução</div>
-        </div>
-    </div>
-    
-    ${result.results.map((fw: any) => `
-        <div class="framework-section">
-            <div class="framework-header" data-action="toggleCollapse">
-                <div class="framework-name">
-                    <span class="expand-icon">▼</span>
-                    ${statusEmojis[fw.status_overall] || '❌'} ${escapeHtml(String(fw.frameworkName || fw.framework || ''))}
-                </div>
-                <div class="framework-stats">
-                    <span class="issue-count ${fw.issues.length === 0 ? 'zero' : ''}">${fw.issues.length} issues</span>
-                    <small style="color: var(--text-muted)">${escapeHtml(String(fw.llm_used || ''))}</small>
-                </div>
-            </div>
-            <div class="framework-body">
-                ${fw.issues.length === 0 ? `
-                    <div class="no-issues">✅ Nenhum problema detectado para este framework.</div>
-                ` : fw.issues.map((issue: any) => {
-        const severityClass = (issue.severity === 'High' || issue.severity === 'Alta') ? '' :
-            (issue.severity === 'Medium' || issue.severity === 'Média') ? 'medium' : 'low';
-        return `
-                        <div class="issue-item ${severityClass}">
-                            <div class="issue-header">
-                                <div class="issue-title">${escapeHtml(String(issue.issue || ''))}</div>
-                                <span class="severity-badge" style="background: ${severityColors[issue.severity] || severityColors.Low}; color: white;">
-                                    ${escapeHtml(String(issue.severity || ''))}
-                                </span>
-                            </div>
-                            <div class="issue-meta">
-                                <span>📍 ${escapeHtml(String(issue.file_path || ''))}</span>
-                                ${issue.line_start ? `<span>📍 Linha ${issue.line_start}${issue.line_end && issue.line_end !== issue.line_start ? '-' + issue.line_end : ''}</span>` : ''}
-                                ${issue.article || issue.control || issue.regulation ? `<span>📜 ${escapeHtml(String(issue.article || issue.control || issue.regulation || ''))}</span>` : ''}
-                            </div>
-                            ${issue.recommendation ? `
-                                <div class="issue-recommendation">
-                                    <strong>💡 Recomendação:</strong> ${escapeHtml(String(issue.recommendation || ''))}
-                                </div>
-                            ` : ''}
-                            ${issue.code_fix ? `
-                                <div class="code-fix">${escapeHtml(String(issue.code_fix || ''))}</div>
-                                <div class="actions">
-                                    <button class="btn btn-success" data-action="applyFix" data-code="${encodeURIComponent(String(issue.code_fix || ''))}" data-file="${encodeURIComponent(String(issue.file_path || ''))}" data-line-start="${encodeURIComponent(String(issue.line_start || 1))}" data-line-end="${encodeURIComponent(String(issue.line_end || issue.line_start || 1))}">✨ Aplicar Correção</button>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-    }).join('')}
-                
-                ${fw.summary ? `
-                    <div class="summary-box">
-                        <strong>📋 Resumo:</strong> ${escapeHtml(String(fw.summary || ''))}
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-    `).join('')}
-    
-    <div class="timestamp">
-        Região: ${result.region} | Gerado em: ${new Date(result.timestamp).toLocaleString('pt-BR')}
-    </div>
-    
-    <script nonce="${nonce}">
-        const vscode = acquireVsCodeApi();
-
-        function copyBadge() {
-            const badgeMarkdown = '[![CodeGuard Compliance](https://img.shields.io/badge/CodeGuard-Certified-success?style=for-the-badge&logo=shield)](https://codeguard.ai)';
-            navigator.clipboard.writeText(badgeMarkdown).then(() => {
-                const btn = document.querySelector('.btn-copy');
-                const originalText = btn ? btn.innerHTML : '';
-                if (btn) btn.innerHTML = '<span>✅</span> Copied!';
-                setTimeout(() => {
-                    if (btn) btn.innerHTML = originalText;
-                }, 2000);
-            });
-        }
-
-        document.addEventListener('click', (e) => {
-            const target = e.target;
-            const el = target && target.closest ? target.closest('[data-action]') : null;
-            if (!el) return;
-
-            const action = el.getAttribute('data-action');
-
-            if (action === 'exportReport') {
-                vscode.postMessage({ command: 'exportReport' });
-                return;
-            }
-
-            if (action === 'copyBadge') {
-                copyBadge();
-                return;
-            }
-
-            if (action === 'toggleCollapse') {
-                el.classList.toggle('collapsed');
-                return;
-            }
-
-            if (action === 'applyFix') {
-                const code = decodeURIComponent(el.getAttribute('data-code') || '');
-                const filePath = decodeURIComponent(el.getAttribute('data-file') || '');
-                const lineStart = parseInt(decodeURIComponent(el.getAttribute('data-line-start') || '1'), 10) || 1;
-                const lineEnd = parseInt(decodeURIComponent(el.getAttribute('data-line-end') || String(lineStart)), 10) || lineStart;
-
-                vscode.postMessage({
-                    command: 'applyFix',
-                    code,
-                    filePath,
-                    lineStart,
-                    lineEnd
-                });
-            }
-        });
-    </script>
-</body>
-</html>`;
+<html lang="en"><head><meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM-Assisted Technical Framework Review</title>
+<style>
+body { font-family: system-ui, sans-serif; background: #111827; color: #e5e7eb; padding: 24px; }
+section, aside { border: 1px solid #64748b; border-radius: 8px; padding: 16px; margin: 16px 0; }
+.unknown { border: 2px dashed #fbbf24; }
+.finding { border-left: 3px solid #fb923c; margin: 12px 0; padding: 12px; }
+.scope, small { color: #cbd5e1; } pre { white-space: pre-wrap; } button { padding: 8px; }
+</style></head><body>
+<h1>LLM-Assisted Technical Framework Review</h1>
+<aside aria-label="Analysis boundary">
+<strong>${escapeHtml(result.analysis_boundary.authority)}</strong>
+<p>Source: ${escapeHtml(result.analysis_boundary.kind)} — declared supplied input only.</p>
+${result.limitations.map(limit => `<p>${escapeHtml(limit)}</p>`).join('')}
+</aside>
+${result.metadata?.clientName ? `<p>Prepared for: ${escapeHtml(result.metadata.clientName)} ${escapeHtml(result.metadata.repoUrl || '')}</p>` : ''}
+<p>Technical counts: ${result.total_findings} potential findings; ${result.high_priority_findings} high-priority findings;
+${result.frameworks_requested.length} references requested; ${result.frameworks_analyzed} complete reviews; ${result.frameworks_unknown} incomplete/unknown reviews.</p>
+<p class="scope">${result.files_analyzed} supplied files. Acquisition: ${escapeHtml(result.acquisition.state)};
+${result.acquisition.read_failures} read failures; ${result.acquisition.excluded_files} excluded files; ${result.acquisition.truncated_files} truncated files.</p>
+<details><summary>Declared source scope</summary><pre>${escapeHtml(result.source_files.join('\n'))}</pre></details>
+${result.results.map(fw => `<section class="${fw.completeness !== 'COMPLETE' ? 'unknown' : 'review'}">
+<h2>${escapeHtml(fw.frameworkName)} (${escapeHtml(fw.framework)})</h2>
+<p><strong>${escapeHtml(fw.analysis_state)}</strong> — ${fw.findings.length} potential technical finding(s)</p>
+<p>Completeness: ${escapeHtml(fw.completeness)}. Required batches: ${fw.batches.required}; analyzed: ${fw.batches.analyzed}; failed: ${fw.batches.failed}.</p>
+${fw.completeness !== 'COMPLETE' ? '<p>Unable to establish a complete technical review of the declared input.</p>' : ''}
+<p>${escapeHtml(fw.summary)}</p>
+<p class="scope">Model: ${escapeHtml(fw.llm_used)}. Source files: ${escapeHtml(fw.source_files.join(', '))}</p>
+${fw.failures.map(f => `<p>Execution/acquisition uncertainty: ${escapeHtml(f.reason)} (batch ${f.batch_index === null ? 'scope' : f.batch_index})</p>`).join('')}
+${fw.limitations.map(limit => `<p class="scope">${escapeHtml(limit)}</p>`).join('')}
+${fw.findings.map(finding => `<article class="finding">
+<strong>Potential technical finding — ${escapeHtml(finding.severity)} engineering priority</strong>
+<p>Untrusted model-generated observation: ${escapeHtml(finding.technical_observation)}</p>
+<p>${escapeHtml(finding.file_path)}:${finding.line_start}-${finding.line_end}</p>
+${finding.reference_hint ? `<p>Reference hint for human review only: ${escapeHtml(finding.reference_hint)}. This does not establish applicability, violation or satisfaction.</p>` : ''}
+<p>Engineering suggestion (untrusted model output): ${escapeHtml(finding.recommendation)}</p>
+${finding.code_fix ? `<pre>${escapeHtml(finding.code_fix)}</pre><button data-action="applyFix" data-code="${encodeURIComponent(finding.code_fix)}" data-file="${encodeURIComponent(finding.file_path)}" data-line-start="${finding.line_start}" data-line-end="${finding.line_end}">Apply engineering suggestion</button>` : ''}
+</article>`).join('')}
+</section>`).join('')}
+<p>Region: ${escapeHtml(result.region)}. Generated: ${escapeHtml(result.timestamp)}.</p>
+<script nonce="${nonce}">
+const vscode = acquireVsCodeApi();
+document.addEventListener('click', event => {
+    const el = event.target && event.target.closest ? event.target.closest('[data-action="applyFix"]') : null;
+    if (!el) return;
+    vscode.postMessage({ command: 'applyFix', code: decodeURIComponent(el.getAttribute('data-code') || ''),
+        filePath: decodeURIComponent(el.getAttribute('data-file') || ''),
+        lineStart: Number(el.getAttribute('data-line-start')), lineEnd: Number(el.getAttribute('data-line-end')) });
+});
+</script></body></html>`;
 }
-

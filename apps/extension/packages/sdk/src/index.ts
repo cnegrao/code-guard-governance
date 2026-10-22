@@ -1,7 +1,7 @@
 /**
  * @codeguard/sdk
  * 
- * Universal SDK for CodeGuard AI Compliance API
+ * Universal SDK for CodeGuard AI non-authoritative Technical Framework Review API
  * Works with: Vercel, Lovable, Bolt, v0, React, Node.js
  */
 
@@ -11,43 +11,87 @@ export interface ScanRequest {
     code?: string;
     /** Multiple files to scan */
     files?: Array<{ path: string; content: string }>;
-    /** Regulatory region */
+    /** Reference-topic region; no applicability inferred */
     region: 'BR' | 'EU';
     /** Framework IDs to check (optional, checks all if not provided) */
     frameworks?: string[];
 }
 
-export interface ScanResult {
-    success: boolean;
-    result?: {
-        files_analyzed: number;
-        issues: ComplianceIssue[];
-        summary: {
-            critical: number;
-            high: number;
-            medium: number;
-            low: number;
-        };
-    };
-    error?: string;
-    usage?: {
-        creditsUsed: number;
-        tokensUsed: number;
-        cost: number;
-    };
+export interface AnalysisBoundary {
+    readonly kind: 'LLM_ASSISTED_TECHNICAL_FRAMEWORK_REVIEW';
+    readonly authority: 'HEURISTIC_NON_AUTHORITATIVE';
+    readonly legal_conclusion: false;
+    readonly compliance_determination: false;
+    readonly framework_satisfaction: false;
+    readonly control_effectiveness: false;
+    readonly certification: false;
+    readonly attestation: false;
+    readonly assurance: false;
 }
 
-export interface ComplianceIssue {
-    id: string;
-    file: string;
-    line: number;
-    severity: 'critical' | 'high' | 'medium' | 'low';
-    rule_id: string;
-    framework: string;
-    description: string;
+export type AnalysisState = 'FINDINGS_DETECTED' | 'NO_FINDINGS_DETECTED' | 'UNKNOWN';
+export type ReviewCompleteness = 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+export type ReviewFailure = 'MODEL_FAILURE' | 'MALFORMED_OUTPUT' | 'UNSUPPORTED_OUTPUT' | 'MODEL_UNCERTAINTY' | 'ACQUISITION_INCOMPLETE' | 'ANALYSIS_FAILURE';
+
+export interface TechnicalFrameworkFinding {
+    file_path: string;
+    line_start: number;
+    line_end: number;
+    technical_observation: string;
+    reference_hint?: string;
+    severity: 'High' | 'Medium' | 'Low';
     recommendation: string;
-    code_snippet?: string;
     code_fix?: string;
+}
+
+export interface ReviewAcquisition {
+    state: ReviewCompleteness;
+    read_failures: number;
+    excluded_files: number;
+    truncated_files: number;
+}
+
+export interface FrameworkReviewResult {
+    analysis_boundary: AnalysisBoundary;
+    framework: string;
+    frameworkName: string;
+    analysis_state: AnalysisState;
+    completeness: ReviewCompleteness;
+    findings: TechnicalFrameworkFinding[];
+    summary: string;
+    limitations: readonly string[];
+    batches: { required: number; analyzed: number; failed: number };
+    failures: Array<{ batch_index: number | null; reason: ReviewFailure }>;
+    source_files: string[];
+    llm_used: string;
+    execution_time_ms: number;
+}
+
+export interface TechnicalFrameworkReviewResult {
+    analysis_boundary: AnalysisBoundary;
+    region: 'BR' | 'EU' | 'US' | 'GLOBAL';
+    frameworks_requested: string[];
+    frameworks_analyzed: number;
+    frameworks_unknown: number;
+    total_findings: number;
+    high_priority_findings: number;
+    results: FrameworkReviewResult[];
+    files_analyzed: number;
+    source_files: string[];
+    acquisition: ReviewAcquisition;
+    limitations: readonly string[];
+    total_tokens_used: number;
+    execution_time_ms: number;
+    timestamp: string;
+    metadata?: { clientName?: string; repoUrl?: string; consultationDate?: string };
+}
+
+/** HTTP execution success only; inspect per-framework completeness and UNKNOWN. */
+export interface ScanResult {
+    success: boolean;
+    result?: TechnicalFrameworkReviewResult;
+    error?: string;
+    usage?: { creditsUsed: number; tokensUsed: number; cost: number };
 }
 
 export interface PatchRequest {
@@ -139,7 +183,7 @@ export class CodeGuardClient {
     }
 
     /**
-     * Scan code for compliance issues
+     * Review supplied source for potential technical findings; never a compliance determination
      */
     async scan(request: ScanRequest): Promise<ScanResult> {
         return this.request<ScanResult>('/scan', {

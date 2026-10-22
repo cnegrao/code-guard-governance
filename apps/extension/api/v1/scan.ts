@@ -3,7 +3,8 @@
  * 
  * POST /api/v1/scan
  * 
- * Executa um audit de compliance no código fornecido.
+ * Reviews supplied source for potential technical findings; non-authoritative.
+ * LEGACY_TRANSPORT_IDENTIFIER: /api/v1/scan.
  * Compatível com: Vercel Edge, Supabase Functions, Node.js
  */
 
@@ -19,7 +20,7 @@ interface ScanRequest {
 
 interface ScanResponse {
     success: boolean;
-    result?: any;
+    result?: import('../../src/intelligence/review-contract').TechnicalFrameworkReviewResult;
     error?: string;
     usage?: {
         creditsUsed: number;
@@ -117,14 +118,15 @@ export async function handler(req: Request): Promise<Response> {
             });
         }
 
-        // Run audit
+        // Run the bounded technical review
         const orchestrator = new ComplianceOrchestrator();
 
         // If single code snippet, wrap it
         const files = body.files || [{ path: 'input.ts', content: body.code! }];
 
-        // Mock the batcher to use provided files
+        // Acquire only the explicitly supplied files; do not scan the server workspace
         const mockBatcher = {
+            getAcquisition: () => ({ state: 'COMPLETE', read_failures: 0, excluded_files: 0, truncated_files: 0 }),
             collectWorkspaceFiles: async () => files.map(f => ({
                 path: f.path,
                 relativePath: f.path,
@@ -145,7 +147,7 @@ export async function handler(req: Request): Promise<Response> {
         // Inject mock batcher
         (orchestrator as any).batcher = mockBatcher;
 
-        const result = await orchestrator.runAudit(body.region, body.frameworks);
+        const result = await orchestrator.runAudit(body.region, body.frameworks, undefined, undefined, undefined, true);
 
         // Get usage from analytics
         const summary = costAnalytics.getSummary();

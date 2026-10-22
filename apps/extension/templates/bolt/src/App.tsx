@@ -1,73 +1,43 @@
-
 import React, { useState } from 'react';
 import { createClient } from '@codeguard/sdk';
+import type { TechnicalFrameworkReviewResult } from '@codeguard/sdk';
 
-// NOTE: In Bolt/Browser, be careful exposing API keys. 
-// Ideally, use a backend proxy. For demos, this works directly.
-const client = createClient({
-    apiKey: 'YOUR_DEMO_KEY' // Or import from environment
-});
+// Demo configuration; use a backend proxy when handling credentials in a browser.
+const client = createClient({ apiKey: 'YOUR_DEMO_KEY' });
 
-export default function ComplianceChecker() {
+export default function TechnicalFrameworkReview() {
     const [code, setCode] = useState('');
-    const [issues, setIssues] = useState<any[]>([]);
+    const [review, setReview] = useState<TechnicalFrameworkReviewResult>();
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-
-    const checkCompliance = async () => {
-        setLoading(true);
+    const scan = async () => {
+        setLoading(true); setReview(undefined); setError('');
         try {
-            const result = await client.scan({
-                code,
-                region: 'BR'
-            });
-
-            if (result.success && result.result) {
-                setIssues(result.result.issues);
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Scan failed');
-        } finally {
-            setLoading(false);
-        }
+            const response = await client.scan({ code, region: 'BR' });
+            if (!response.success || !response.result) throw new Error('Technical review unavailable');
+            setReview(response.result);
+        } catch { setError('Unable to establish a technical review.'); }
+        finally { setLoading(false); }
     };
-
-    return (
-        <div className="p-4 max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold mb-4">CodeGuard Compliance Check</h1>
-
-            <textarea
-                className="w-full p-2 border rounded h-40 mb-4 bg-gray-50 text-black"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="Paste your code here..."
-            />
-
-            <button
-                onClick={checkCompliance}
-                disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-                {loading ? 'Analyzing...' : 'Scan Code'}
-            </button>
-
-            <div className="mt-6 space-y-4">
-                {issues.map((issue, idx) => (
-                    <div key={idx} className={`p-4 rounded border ${issue.severity === 'high' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
-                        <div className="flex justify-between items-start">
-                            <span className="font-bold uppercase text-xs px-2 py-1 rounded bg-white border">
-                                {issue.severity}
-                            </span>
-                            <span className="text-xs text-gray-500">{issue.rule_id}</span>
-                        </div>
-                        <p className="mt-2 text-sm font-medium">{issue.description}</p>
-                        <p className="text-xs text-gray-600 mt-1">{issue.recommendation}</p>
-                    </div>
-                ))}
-                {issues.length === 0 && !loading && code && (
-                    <p className="text-green-600">✅ No issues found.</p>
-                )}
-            </div>
-        </div>
-    );
+    return <main>
+        <h1>LLM-Assisted Technical Framework Review</h1>
+        <textarea aria-label="Source code" value={code} onChange={event => setCode(event.target.value)} />
+        <button onClick={scan} disabled={loading}>{loading ? 'Analyzing...' : 'Review supplied source'}</button>
+        {error && <p role="alert">{error}</p>}
+        {review && <>
+            <p>{review.analysis_boundary.authority}</p>
+            {review.limitations.map(limit => <p key={limit}>{limit}</p>)}
+            {review.results.map(result => <section key={result.framework}>
+                <h2>{result.frameworkName}</h2>
+                <p>{result.analysis_state} — Completeness: {result.completeness}</p>
+                <p>{result.summary}</p>
+                {result.findings.map((finding, index) => <article key={index}>
+                    <p>Potential technical finding (untrusted model output): {finding.technical_observation}</p>
+                    <p>{finding.file_path}:{finding.line_start} — {finding.severity} engineering priority</p>
+                    <p>Reference hint for human review: {finding.reference_hint}</p>
+                    <p>Engineering suggestion: {finding.recommendation}</p>
+                </article>)}
+            </section>)}
+        </>}
+    </main>;
 }

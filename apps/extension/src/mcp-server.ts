@@ -43,12 +43,12 @@ function createMcpServer() {
         }
     });
 
-    // 1. Tool: Deep Compliance Audit
+    // 1. LEGACY_TRANSPORT_IDENTIFIER: codeguard_audit; technical review only
     server.tool(
         "codeguard_audit",
-        "Runs deep compliance audit (GDPR/LGPD/PCI) on the current repository",
+        "LLM-assisted technical framework review of supplied source; heuristic, non-authoritative findings or UNKNOWN, never legal compliance or certification",
         {
-            region: z.enum(["BR", "EU"]).describe("Regulatory Region"),
+            region: z.enum(["BR", "EU"]).describe("Reference-topic region; no legal applicability inferred"),
             frameworks: z.array(z.string()).describe("Specific Framework IDs"),
             filePath: z.string().optional().describe("Optional: Specific path to scan")
         },

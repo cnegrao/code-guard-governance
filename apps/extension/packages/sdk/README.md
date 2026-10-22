@@ -1,6 +1,6 @@
 # @codeguard/sdk
 
-Universal SDK for CodeGuard AI Compliance API.
+Universal SDK for CodeGuard AI Technical Framework Review API.
 
 ## Installation
 
@@ -28,7 +28,7 @@ const result = await client.scan({
     region: 'EU'
 });
 
-console.log(result.result?.issues);
+console.log(result.result?.results.flatMap(review => review.findings));
 
 // Generate fix
 const patch = await client.patch({
@@ -55,7 +55,7 @@ function CodeChecker() {
     
     const scan = async (code: string) => {
         const result = await client.scan({ code, region: 'BR' });
-        setIssues(result.result?.issues || []);
+        setIssues(result.result?.results.flatMap(review => review.findings) || []);
     };
     
     return <button onClick={() => scan(code)}>Scan</button>;
@@ -89,7 +89,7 @@ export default async function handler(req, res) {
 
 ### `client.scan(request)`
 
-Scan code for compliance issues.
+Review supplied source for potential technical findings.
 
 ### `client.patch(request)`
 
@@ -106,3 +106,5 @@ Check API health status.
 ## License
 
 MIT
+
+Technical results include a closed `analysis_boundary`, per-reference `analysis_state`, separate `completeness`, and source/acquisition limitations. `NO_FINDINGS_DETECTED` requires all declared-input batches to complete and does not establish framework satisfaction or legal compliance. HTTP `success` means execution only; inspect `UNKNOWN` and incomplete reviews. Engineering fixes establish no compliance conclusion. `/api/v1/scan` is a LEGACY_TRANSPORT_IDENTIFIER.

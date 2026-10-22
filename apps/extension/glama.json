@@ -1,14 +1,13 @@
 {
     "name": "CodeGuard AI",
-    "description": "The only Multi-LLM Compliance Engine (GPT-4o + Claude + DeepSeek). Auto-fix GDPR/LGPD risks and more 15 frameworks.",
+    "description": "LLM-assisted technical framework review and engineering suggestions for supplied source code. Heuristic and non-authoritative; no legal compliance or certification determination.",
     "keywords": [
-        "compliance",
-        "security-audit",
         "gdpr",
         "lgpd",
         "shadow-api",
         "mcp-server",
-        "ai-security"
+        "ai-security",
+        "technical-framework-review"
     ],
     "repository": "https://github.com/negraodenio/code-guard-ai",
     "bugs": "https://github.com/negraodenio/code-guard-ai/issues",

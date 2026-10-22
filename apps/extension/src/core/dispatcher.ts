@@ -57,7 +57,7 @@ export class AuditDispatcher {
             if (status.balance < AUDIT_COST) {
                 return { 
                     error: 'INSUFFICIENT_CREDITS', 
-                    message: `Deep audit costs ${AUDIT_COST} credits. Current balance: ${status.balance}`,
+                    message: `Technical framework review costs ${AUDIT_COST} credits. Current balance: ${status.balance}`,
                     required: AUDIT_COST,
                     current: status.balance
                 };
@@ -72,7 +72,7 @@ export class AuditDispatcher {
 
         try {
             switch (toolName) {
-                case 'codeguard_audit':
+                case 'codeguard_audit': // LEGACY_TRANSPORT_IDENTIFIER; bounded technical review only
                     return await this.handleAudit(args);
                 case 'codeguard_graph':
                     return await this.handleGraph(args);

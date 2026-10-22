@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         // 2. Parse Request
         const body = await request.json();
         
-        // 3. Dispatch to Tool
+        // 3. LEGACY_TRANSPORT_IDENTIFIER: /api/scan and codeguard_audit; bounded technical review
         const result = await dispatcher.dispatch('codeguard_audit', {
             ...body,
             filePath: body.filePath || process.cwd() // Default to project root
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         }
 
         return new Response(JSON.stringify({
-            success: true,
+            success: true, // HTTP/tool execution only; not a framework conclusion
             ...result
         }), { status: 200, headers });
 

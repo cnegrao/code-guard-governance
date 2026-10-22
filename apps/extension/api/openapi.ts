@@ -1,3 +1,4 @@
+import { technicalReviewSchemas } from './review-schema';
 // Node.js Runtime for Vercel
 export const runtime = 'nodejs';
 
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
             openapi: "3.0.3",
             info: {
                 title: "CodeGuard AI API",
-                description: "REST API for CodeGuard AI compliance scanning and analysis",
+                description: "REST API for non-authoritative technical framework review of supplied source code",
                 version: "1.2.0",
                 contact: {
                     name: "CodeGuard AI Support",
@@ -36,8 +37,8 @@ export async function GET(request: Request) {
             paths: {
                 "/api/scan": {
                     post: {
-                        summary: "Run compliance audit",
-                        description: "Execute a deep compliance audit on code for GDPR, LGPD, PCI, and other frameworks",
+                        summary: "Run technical framework review",
+                        description: "LLM-assisted technical findings associated with selected reference topics; no legal compliance or certification determination. LEGACY_TRANSPORT_IDENTIFIER: /api/scan and operationId scanCompliance.",
                         operationId: "scanCompliance",
                         requestBody: {
                             required: true,
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
                                             region: {
                                                 type: "string",
                                                 enum: ["BR", "EU"],
-                                                description: "Regulatory region"
+                                                description: "Reference-topic region; no legal applicability inferred"
                                             },
                                             frameworks: {
                                                 type: "array",
@@ -64,7 +65,7 @@ export async function GET(request: Request) {
                         },
                         responses: {
                             "200": {
-                                description: "Scan completed successfully",
+                                description: "Technical review returned; per-framework UNKNOWN may remain",
                                 content: {
                                     "application/json": {
                                         schema: { $ref: "#/components/schemas/ScanResult" }
@@ -74,6 +75,24 @@ export async function GET(request: Request) {
                         }
                     }
                 },
+                "/api/v1/scan": {
+                "post": {
+                                "summary": "Review supplied source code",
+                                "description": "LEGACY_TRANSPORT_IDENTIFIER /api/v1/scan. Heuristic technical review only; no legal applicability or framework satisfaction determination.",
+                                "responses": {
+                                                "200": {
+                                                                "description": "Technical result; HTTP success is not a framework conclusion",
+                                                                "content": {
+                                                                                "application/json": {
+                                                                                                "schema": {
+                                                                                                                "$ref": "#/components/schemas/V1ScanResult"
+                                                                                                }
+                                                                                }
+                                                                }
+                                                }
+                                }
+                }
+},
                 "/api/graph": {
                     post: {
                         summary: "Generate dependency graph",
@@ -133,22 +152,7 @@ export async function GET(request: Request) {
                     }
                 },
                 schemas: {
-                    ScanResult: {
-                        type: "object",
-                        properties: {
-                            content: {
-                                type: "array",
-                                items: {
-                                    type: "object",
-                                    properties: {
-                                        type: { type: "string", enum: ["text"] },
-                                        text: { type: "string" }
-                                    }
-                                }
-                            },
-                            isError: { type: "boolean" }
-                        }
-                    },
+                    ...technicalReviewSchemas,
                     GraphResult: {
                         type: "object",
                         properties: {

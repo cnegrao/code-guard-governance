@@ -1,7 +1,7 @@
 {
     "name": "@codeguard/sdk",
     "version": "1.0.0",
-    "description": "CodeGuard AI Universal SDK - Compliance scanning and auto-fix for any platform",
+    "description": "Non-authoritative technical framework review and engineering suggestions for supplied source code",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
@@ -20,13 +20,13 @@
     },
     "keywords": [
         "codeguard",
-        "compliance",
         "gdpr",
         "lgpd",
         "security",
         "ai",
         "llm",
-        "autofix"
+        "autofix",
+        "technical-framework-review"
     ],
     "author": "CodeGuard AI",
     "license": "MIT",

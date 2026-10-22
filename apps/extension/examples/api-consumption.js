@@ -21,7 +21,7 @@ async function scanWithFetch() {
             },
             body: JSON.stringify({
                 region: 'BR',
-                frameworks: ['gdpr', 'lgpd']
+                frameworks: ['LGPD', 'ISO27001']
             })
         });
 
@@ -49,7 +49,7 @@ async function scanWithAxios() {
     try {
         const response = await axios.post(`${BASE_URL}/api/scan`, {
             region: 'BR',
-            frameworks: ['gdpr', 'lgpd']
+            frameworks: ['LGPD', 'ISO27001']
         }, {
             headers: {
                 'x-api-key': API_KEY
@@ -74,7 +74,7 @@ def scan_with_requests():
     try:
         response = requests.post(f"{BASE_URL}/api/scan", json={
             "region": "BR",
-            "frameworks": ["gdpr", "lgpd"]
+            "frameworks": ["LGPD", "ISO27001"]
         }, headers={
             "x-api-key": API_KEY,
             "Content-Type": "application/json"
@@ -102,7 +102,7 @@ async def scan_with_httpx():
         try:
             response = await client.post(f"{BASE_URL}/api/scan", json={
                 "region": "BR",
-                "frameworks": ["gdpr", "lgpd"]
+                "frameworks": ["LGPD", "ISO27001"]
             }, headers={
                 "x-api-key": API_KEY
             })
@@ -124,7 +124,7 @@ async def scan_with_httpx():
 curl -X POST https://your-app.vercel.app/api/scan \
   -H "x-api-key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"region": "BR", "frameworks": ["gdpr", "lgpd"]}'
+  -d '{"region": "BR", "frameworks": ["LGPD", "ISO27001"]}'
 
 # Graph
 curl -X POST https://your-app.vercel.app/api/graph \
@@ -156,7 +156,7 @@ async function useSDK() {
         // Scan
         const scanResult = await client.scan({
             region: 'BR',
-            frameworks: ['gdpr', 'lgpd']
+            frameworks: ['LGPD', 'ISO27001']
         });
         console.log('Scan:', scanResult);
 
@@ -181,7 +181,7 @@ async function useSDK() {
 
 import { useState, useEffect } from 'react';
 
-function ComplianceScanner() {
+function TechnicalFrameworkScanner() {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -199,7 +199,7 @@ function ComplianceScanner() {
                 },
                 body: JSON.stringify({
                     region: 'BR',
-                    frameworks: ['gdpr', 'lgpd']
+                    frameworks: ['LGPD', 'ISO27001']
                 })
             });
 
@@ -235,36 +235,31 @@ function ComplianceScanner() {
 // 8. GITHUB ACTIONS - CI/CD Integration
 // ===========================================
 
-# .github/workflows/compliance.yml
-name: Compliance Check
+# .github/workflows/technical-review.yml
+name: Technical Framework Review
 
 on: [push, pull_request]
 
 jobs:
-  compliance:
+  technical-review:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run CodeGuard Compliance Scan
+      - name: Run technical framework review
         run: |
           curl -X POST https://your-app.vercel.app/api/scan \
             -H "x-api-key: ${{ secrets.CODEGUARD_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
               "region": "BR",
-              "frameworks": ["gdpr", "lgpd"]
-            }' > compliance-result.json
+              "frameworks": ["LGPD", "ISO27001"]
+            }' > technical-review-result.json
 
-      - name: Check for violations
+      - name: Inspect technical result
         run: |
-          VIOLATIONS=$(jq '.content[0].text | fromjson | .summary.total_violations' compliance-result.json)
-          if [ "$VIOLATIONS" -gt 0 ]; then
-            echo "❌ Compliance violations found: $VIOLATIONS"
-            exit 1
-          else
-            echo "✅ No compliance violations found"
-          fi
+          jq '{analysis_boundary, total_findings, frameworks_unknown, results: [.results[] | {framework, analysis_state, completeness}]}' technical-review-result.json
+          echo "Review source scope, completeness and potential findings. No framework attainment is determined."
 
 // ===========================================
 // 9. ERROR HANDLING & RETRY LOGIC
@@ -281,7 +276,7 @@ async function scanWithRetry(maxRetries = 3) {
                 },
                 body: JSON.stringify({
                     region: 'BR',
-                    frameworks: ['gdpr', 'lgpd']
+                    frameworks: ['LGPD', 'ISO27001']
                 })
             });
 
