@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import ts from 'typescript';
 
 const root = resolve(__dirname, '../../../..');
+const c2b2ClosingCommit = 'e9293be4488112e703ab746c2f5f0fed301f3b7c';
 test('additive L03 closure preserves history, every HOLD and unrelated authority', () => {
     const read = (path: string) => JSON.parse(readFileSync(resolve(root, path), 'utf8'));
     const status = read('docs/trust-assurance/l03-llm-deep-containment-status-v1.json');
@@ -24,7 +25,14 @@ test('additive L03 closure preserves history, every HOLD and unrelated authority
     assert.equal(status.validation.extension_global_typecheck, 'BASELINE_TS2589_UNCHANGED');
     const historical = read('docs/trust-assurance/l03-extension-deterministic-containment-status-v1.json');
     assert.equal(historical.l03_overall, 'NEEDS_CONTAINMENT');
-    const unchanged = execFileSync('git', ['diff', '--name-only', status.starting_head, '--', 'supabase', 'packages/scanner/src',
+    const git = (args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+    // This receipt protects the closed C2B-2 slice, not every later authorized slice.
+    git(['rev-parse', '--verify', `${c2b2ClosingCommit}^{commit}`]);
+    git(['merge-base', '--is-ancestor', status.starting_head, c2b2ClosingCommit]);
+    git(['merge-base', '--is-ancestor', c2b2ClosingCommit, 'HEAD']);
+    assert.equal(git(['rev-parse', `${c2b2ClosingCommit}^`]), status.starting_head);
+    assert.equal(git(['rev-parse', `${c2b2ClosingCommit}^{tree}`]), '1a068d1bf93e23227745ba590d5cd5a3b442bdfc');
+    const unchanged = execFileSync('git', ['diff', '--name-only', status.starting_head, c2b2ClosingCommit, '--', 'supabase', 'packages/scanner/src',
         'packages/canonical-contracts', 'packages/governance-review', 'apps/dashboard',
         'docs/trust-assurance/l03-extension-deterministic-containment-status-v1.json',
         'docs/trust-assurance/l02-scanner-containment-status-v1.json',
