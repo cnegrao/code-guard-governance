@@ -1,0 +1,47 @@
+{
+  "record_type": "ADDITIVE_LOCAL_CONTAINMENT_STATUS",
+  "recorded_date": "2026-10-22",
+  "timezone": "America/Sao_Paulo",
+  "checkpoint": "M17.5-V1-S1B C3",
+  "starting_head": "e9293be4488112e703ab746c2f5f0fed301f3b7c",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "slice_status": "STOP / BLOCKED BEFORE IMPLEMENTATION",
+  "lx03_status": "NEEDS_CONTAINMENT",
+  "blockers": [
+    {
+      "id": "B1",
+      "kind": "SOURCE_TENANT_BINDING",
+      "description": "agent_semantic_search filters embedding organisation but does not constrain the joined agent organisation; independent foreign keys and definer policies do not supply that invariant.",
+      "basis": "STATIC_CODE_AND_SCHEMA_INSPECTION",
+      "hosted_exploit_claim": false
+    },
+    {
+      "id": "B2",
+      "kind": "ARCHITECTURE_DEPENDENCY_CONFLICT",
+      "description": "Talk coding-memory retrieval calls coding_memory_search, whose presence the canonical M16 migration rejects as NONCANONICAL_TARGET_DRIFT."
+    }
+  ],
+  "previously_contained_unchanged": ["L01", "L02", "L03", "LX02", "LX08"],
+  "remaining_open": ["LX01", "LX03", "LX04", "LX05", "LX06", "LX07"],
+  "lx01_status": "OPEN",
+  "lx06_status": "OPEN",
+  "v1_s1b_status": "OPEN",
+  "m17_5_status": "OPEN",
+  "readiness": {
+    "CONTROLLED_DEMO_READINESS": "HOLD",
+    "EXTERNAL_PUBLICATION_READINESS": "HOLD",
+    "TENANT_ASSURANCE_READINESS": "HOLD",
+    "CERTIFICATION_READINESS": "HOLD",
+    "M18": "HOLD"
+  },
+  "runtime_delta": 0,
+  "database_delta": 0,
+  "migration_delta": 0,
+  "hosted_delta": 0,
+  "functional_tests_run": false,
+  "dashboard_typecheck_run": false,
+  "evidence": "docs/codex/evidence/2026-10-22-m17.5-v1-s1b-c3-lx03-graph-search-talk-containment.md",
+  "proposed_next_checkpoint": "C3-P0 — resolve semantic-source tenant binding and coding-memory dependency disposition",
+  "next_checkpoint_authorized": false,
+  "next_checkpoint_started": false
+}
