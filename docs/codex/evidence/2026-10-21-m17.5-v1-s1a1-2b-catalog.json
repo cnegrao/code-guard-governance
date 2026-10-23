@@ -1,0 +1,657 @@
+{
+  "slice": "M17.5-V1-S1A1-2B",
+  "base": "a8a72f2df1d57196e83cd512525e6dd10e6611de",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "sessionId": "5b5c5acd-ec39-47ad-b47c-868e53a24ff7",
+  "migration": {
+    "path": "supabase/migrations/20261021201316_m175_v1_s1a1_2b_ledger_v2_tenant_read.sql",
+    "sha256LF": "59fd34531f320f27e7b1d1d4dd8e85562ad4a76be6d6065a670f56207f33da2a"
+  },
+  "canonicalReplay": 102,
+  "golden": {
+    "count": 41,
+    "fixtureSha256LF": "9d2ed82e965c9297796e11e70b117f01d8ee0daa4f51f76625eabc1237793f11"
+  },
+  "server": "170011",
+  "vector": "0.8.7",
+  "definerDelta": 3,
+  "hostedDelta": 0,
+  "httpApiUiDelta": 0,
+  "routines": [
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=5s"
+      ],
+      "definer": true,
+      "signature": "gov_repo.ledger_tenant_event_v2(uuid,uuid,bigint,bigint,timestamp with time zone,uuid,text,uuid)",
+      "volatility": "v",
+      "anonExecute": false,
+      "publicExecute": false,
+      "serviceExecute": true,
+      "executorExecute": false,
+      "authenticatedExecute": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=5s"
+      ],
+      "definer": true,
+      "signature": "gov_repo.ledger_tenant_events_v2(uuid,uuid,bigint,bigint,timestamp with time zone,uuid,integer,text,text)",
+      "volatility": "v",
+      "anonExecute": false,
+      "publicExecute": false,
+      "serviceExecute": true,
+      "executorExecute": false,
+      "authenticatedExecute": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=5s"
+      ],
+      "definer": true,
+      "signature": "gov_repo.ledger_tenant_verify_v2(uuid,uuid,bigint,bigint,timestamp with time zone,uuid)",
+      "volatility": "v",
+      "anonExecute": false,
+      "publicExecute": false,
+      "serviceExecute": true,
+      "executorExecute": false,
+      "authenticatedExecute": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "definer": false,
+      "signature": "gov_repo.ledger_v2_event_document(uuid,text,uuid)",
+      "volatility": "s",
+      "anonExecute": false,
+      "publicExecute": false,
+      "serviceExecute": false,
+      "executorExecute": false,
+      "authenticatedExecute": false
+    }
+  ],
+  "tables": [
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=rm/postgres"
+      ],
+      "rls": true,
+      "name": "governance_ledger",
+      "owner": "postgres",
+      "ownerOid": "16384",
+      "columns": [
+        {
+          "acl": [
+            "govia_ledger_executor=r/postgres"
+          ],
+          "name": "entry_sequence"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=r/postgres"
+          ],
+          "name": "entry_id"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "event_type"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "event_description"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "subject_type"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "subject_id"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "actor_user_id"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "actor_ip"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=r/postgres"
+          ],
+          "name": "actor_session_id"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "organisation_id"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "event_timestamp"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "recorded_at"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "previous_hash"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "entry_hash"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=ar/postgres"
+          ],
+          "name": "payload"
+        },
+        {
+          "acl": null,
+          "name": "qes_anchor"
+        },
+        {
+          "acl": null,
+          "name": "qes_anchor_at"
+        }
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "govia_ledger_executor=r/postgres"
+      ],
+      "rls": true,
+      "name": "ledger_global_append_head_v2",
+      "owner": "postgres",
+      "ownerOid": "16384",
+      "columns": [
+        {
+          "acl": null,
+          "name": "singleton"
+        },
+        {
+          "acl": null,
+          "name": "activation_id"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=w/postgres"
+          ],
+          "name": "last_global_sequence"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=w/postgres"
+          ],
+          "name": "last_global_hash"
+        }
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "govia_ledger_executor=r/postgres"
+      ],
+      "rls": true,
+      "name": "ledger_integrity_epochs_v2",
+      "owner": "postgres",
+      "ownerOid": "16384",
+      "columns": [
+        {
+          "acl": null,
+          "name": "activation_id"
+        },
+        {
+          "acl": null,
+          "name": "algorithm"
+        },
+        {
+          "acl": null,
+          "name": "algorithm_version"
+        },
+        {
+          "acl": null,
+          "name": "serialization_version"
+        },
+        {
+          "acl": null,
+          "name": "migration_identifier"
+        },
+        {
+          "acl": null,
+          "name": "activated_at"
+        },
+        {
+          "acl": null,
+          "name": "legacy_high_watermark"
+        },
+        {
+          "acl": null,
+          "name": "legacy_tip_hash"
+        },
+        {
+          "acl": null,
+          "name": "is_active"
+        }
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "govia_ledger_executor=ar/postgres"
+      ],
+      "rls": true,
+      "name": "ledger_tenant_entries_v2",
+      "owner": "postgres",
+      "ownerOid": "16384",
+      "columns": [
+        {
+          "acl": null,
+          "name": "organisation_id"
+        },
+        {
+          "acl": null,
+          "name": "chain_id"
+        },
+        {
+          "acl": null,
+          "name": "activation_id"
+        },
+        {
+          "acl": null,
+          "name": "algorithm_version"
+        },
+        {
+          "acl": null,
+          "name": "serialization_version"
+        },
+        {
+          "acl": null,
+          "name": "tenant_sequence"
+        },
+        {
+          "acl": null,
+          "name": "tenant_entry_id"
+        },
+        {
+          "acl": null,
+          "name": "source_entry_sequence"
+        },
+        {
+          "acl": null,
+          "name": "source_entry_id"
+        },
+        {
+          "acl": null,
+          "name": "previous_tenant_hash"
+        },
+        {
+          "acl": null,
+          "name": "tenant_hash"
+        },
+        {
+          "acl": null,
+          "name": "event_type"
+        },
+        {
+          "acl": null,
+          "name": "event_description"
+        },
+        {
+          "acl": null,
+          "name": "subject_type"
+        },
+        {
+          "acl": null,
+          "name": "subject_id"
+        },
+        {
+          "acl": null,
+          "name": "actor_user_id"
+        },
+        {
+          "acl": null,
+          "name": "actor_ip"
+        },
+        {
+          "acl": null,
+          "name": "actor_session_id"
+        },
+        {
+          "acl": null,
+          "name": "event_timestamp"
+        },
+        {
+          "acl": null,
+          "name": "recorded_at"
+        },
+        {
+          "acl": null,
+          "name": "payload"
+        }
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "govia_ledger_executor=ar/postgres"
+      ],
+      "rls": true,
+      "name": "ledger_tenant_genesis_v2",
+      "owner": "postgres",
+      "ownerOid": "16384",
+      "columns": [
+        {
+          "acl": null,
+          "name": "organisation_id"
+        },
+        {
+          "acl": null,
+          "name": "chain_id"
+        },
+        {
+          "acl": null,
+          "name": "activation_id"
+        },
+        {
+          "acl": null,
+          "name": "algorithm_version"
+        },
+        {
+          "acl": null,
+          "name": "serialization_version"
+        },
+        {
+          "acl": null,
+          "name": "activated_at"
+        },
+        {
+          "acl": null,
+          "name": "first_entry_recorded_at"
+        },
+        {
+          "acl": null,
+          "name": "genesis_hash"
+        }
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "govia_ledger_executor=ar/postgres"
+      ],
+      "rls": true,
+      "name": "ledger_tenant_heads_v2",
+      "owner": "postgres",
+      "ownerOid": "16384",
+      "columns": [
+        {
+          "acl": null,
+          "name": "organisation_id"
+        },
+        {
+          "acl": null,
+          "name": "chain_id"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=w/postgres"
+          ],
+          "name": "last_tenant_sequence"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=w/postgres"
+          ],
+          "name": "last_tenant_hash"
+        },
+        {
+          "acl": [
+            "govia_ledger_executor=w/postgres"
+          ],
+          "name": "committed_count"
+        }
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "name": "ledger_tenant_legacy_refs_v2",
+      "owner": "postgres",
+      "ownerOid": "16384",
+      "columns": [
+        {
+          "acl": null,
+          "name": "legacy_ref_id"
+        },
+        {
+          "acl": null,
+          "name": "organisation_id"
+        },
+        {
+          "acl": null,
+          "name": "source_entry_sequence"
+        }
+      ]
+    }
+  ],
+  "columnReceipt": "Column ACLs measured by the pre-implementation write regression; exact old table/column/default ACL equality asserted before/after the read migration in the passing read suite.",
+  "newTableColumnSequencePolicyGrants": 0,
+  "defaultAclMutation": false,
+  "snapshot": {
+    "observedReaderMonitorLock": true,
+    "appendCommitsDuringVerifierStatement": true,
+    "pre": {
+      "status": "VALID",
+      "checked": "3",
+      "through": "3"
+    },
+    "post": {
+      "status": "VALID",
+      "checked": "4",
+      "through": "4"
+    },
+    "testRun": "98c18cb1-9a4c-4a09-bd15-bb8118c72d27"
+  },
+  "gates": [
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-foundation.test.ts",
+      "profile": "focused",
+      "run": "e57689c3-feb7-448d-8132-688e5b151b9c",
+      "candidate": "0b3a93241186b527f516d3697752de782d95608d59fb953633f7eeb6d00274fb",
+      "status": "passed",
+      "log": ".artifacts\\agent\\e57689c3-feb7-448d-8132-688e5b151b9c-0.log",
+      "durationMs": 35633.253399999994,
+      "tests": 9
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-write-cutover.test.ts",
+      "profile": "focused",
+      "run": "e57689c3-feb7-448d-8132-688e5b151b9c",
+      "candidate": "0b3a93241186b527f516d3697752de782d95608d59fb953633f7eeb6d00274fb",
+      "status": "passed",
+      "log": ".artifacts\\agent\\e57689c3-feb7-448d-8132-688e5b151b9c-1.log",
+      "durationMs": 50168.09159999999,
+      "tests": 15
+    },
+    {
+      "label": "apps/dashboard/tests/ledger-v2-write-source-contract.test.ts",
+      "profile": "focused",
+      "run": "e57689c3-feb7-448d-8132-688e5b151b9c",
+      "candidate": "0b3a93241186b527f516d3697752de782d95608d59fb953633f7eeb6d00274fb",
+      "status": "passed",
+      "log": ".artifacts\\agent\\e57689c3-feb7-448d-8132-688e5b151b9c-2.log",
+      "durationMs": 448.67409999998927,
+      "tests": 2
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-inactive-integration.test.ts",
+      "profile": "focused",
+      "run": "e57689c3-feb7-448d-8132-688e5b151b9c",
+      "candidate": "0b3a93241186b527f516d3697752de782d95608d59fb953633f7eeb6d00274fb",
+      "status": "passed",
+      "log": ".artifacts\\agent\\e57689c3-feb7-448d-8132-688e5b151b9c-3.log",
+      "durationMs": 22451.493700000006,
+      "tests": 1
+    },
+    {
+      "label": ".:typecheck:dashboard",
+      "profile": "final",
+      "run": "f9a3f670-afbb-4a80-bbbe-63dc5aef3561",
+      "candidate": "51245185795c60f601ae6351df3689899000e22dfd1c073859eedf704eb17a33",
+      "status": "passed",
+      "log": ".artifacts\\agent\\f9a3f670-afbb-4a80-bbbe-63dc5aef3561-0.log",
+      "durationMs": 2821.58,
+      "tests": 0
+    },
+    {
+      "label": "apps/dashboard/tests/ledger-v2-read-adapter.test.ts",
+      "profile": "final",
+      "run": "f9a3f670-afbb-4a80-bbbe-63dc5aef3561",
+      "candidate": "51245185795c60f601ae6351df3689899000e22dfd1c073859eedf704eb17a33",
+      "status": "passed",
+      "log": ".artifacts\\agent\\f9a3f670-afbb-4a80-bbbe-63dc5aef3561-1.log",
+      "durationMs": 396.04280000000017,
+      "tests": 5
+    },
+    {
+      "label": "apps/dashboard/tests/ledger-v2-read-source-contract.test.ts",
+      "profile": "focused",
+      "run": "9ca5e351-43ed-43c2-8fc8-54eefd0de630",
+      "candidate": "532ea29ad83c7acd49ff246930a9ec2c3c86e8218dd2f1f54598440f8e384337",
+      "status": "passed",
+      "log": ".artifacts\\agent\\9ca5e351-43ed-43c2-8fc8-54eefd0de630-2.log",
+      "durationMs": 645.6173999999992,
+      "tests": 3
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-tenant-read.test.ts",
+      "profile": "focused",
+      "run": "98c18cb1-9a4c-4a09-bd15-bb8118c72d27",
+      "candidate": "963f43c395ced9bc501859fed51f912d966e2071ec9a80f493933992fbbf1640",
+      "status": "passed",
+      "log": ".artifacts\\agent\\98c18cb1-9a4c-4a09-bd15-bb8118c72d27-0.log",
+      "durationMs": 40761.436,
+      "tests": 14
+    },
+    {
+      "label": "apps/dashboard/tests/postgres-m16/transactional-eligibility.test.ts",
+      "profile": "integration",
+      "run": "4dab9b98-0da2-4da3-bc1e-288deb23a080",
+      "candidate": "176049440d37c36064a9f16e33729a6b785b3c5bc9e3e4fa169b57074e6ce61e",
+      "status": "passed",
+      "log": ".artifacts\\agent\\4dab9b98-0da2-4da3-bc1e-288deb23a080-0.log",
+      "durationMs": 57768.5787,
+      "tests": 33
+    },
+    {
+      "label": "apps/dashboard/tests/verified-governance-principal.test.ts",
+      "profile": "integration",
+      "run": "4dab9b98-0da2-4da3-bc1e-288deb23a080",
+      "candidate": "176049440d37c36064a9f16e33729a6b785b3c5bc9e3e4fa169b57074e6ce61e",
+      "status": "passed",
+      "log": ".artifacts\\agent\\4dab9b98-0da2-4da3-bc1e-288deb23a080-1.log",
+      "durationMs": 792.8654000000024,
+      "tests": 102
+    },
+    {
+      "label": "apps/dashboard/tests/ledger-v2-source-contract.test.ts",
+      "profile": "integration",
+      "run": "4dab9b98-0da2-4da3-bc1e-288deb23a080",
+      "candidate": "176049440d37c36064a9f16e33729a6b785b3c5bc9e3e4fa169b57074e6ce61e",
+      "status": "passed",
+      "log": ".artifacts\\agent\\4dab9b98-0da2-4da3-bc1e-288deb23a080-2.log",
+      "durationMs": 451.35889999999927,
+      "tests": 3
+    }
+  ],
+  "totalSelectedPassingTestNodes": 187,
+  "failedCommands": [
+    {
+      "run": "0e76cd5a-7599-46b7-8994-40140a481e75",
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-tenant-read.test.ts",
+      "status": "failed",
+      "log": ".artifacts\\agent\\0e76cd5a-7599-46b7-8994-40140a481e75-0.log",
+      "durationMs": 87242.3285,
+      "hypothesis": ""
+    },
+    {
+      "run": "e8f1e03b-b214-4ca1-815e-aff4d8c8713b",
+      "label": ".:typecheck:dashboard",
+      "status": "failed",
+      "log": ".artifacts\\agent\\e8f1e03b-b214-4ca1-815e-aff4d8c8713b-0.log",
+      "durationMs": 10192.8444,
+      "hypothesis": ""
+    },
+    {
+      "run": "9b5c8db3-c629-4c1b-8bd5-d6bbebd37a9d",
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-tenant-read.test.ts",
+      "status": "failed",
+      "log": ".artifacts\\agent\\9b5c8db3-c629-4c1b-8bd5-d6bbebd37a9d-1.log",
+      "durationMs": 35973.229900000006,
+      "hypothesis": "Fixtures now disable system triggers as bootstrap before SET ROLE, terminate injected SQL, use organisations.is_active and gate only the reader; explicit invalid-principal record type fixes typecheck"
+    },
+    {
+      "run": "9ca5e351-43ed-43c2-8fc8-54eefd0de630",
+      "label": "apps/dashboard/tests/postgres-m16/ledger-v2-tenant-read.test.ts",
+      "status": "failed",
+      "log": ".artifacts\\agent\\9ca5e351-43ed-43c2-8fc8-54eefd0de630-3.log",
+      "durationMs": 40436.690899999994,
+      "hypothesis": "Global verifier rename now uses bootstrap rather than non-owning postgres; add source-only drift/deletion and actual adapter-to-PG transport, and reject incomplete positive adapter metadata"
+    }
+  ],
+  "measuredCommandMs": 400095.10319999995,
+  "activeWorkingTime": "NOT_AVAILABLE",
+  "operationalTargetMinutes": 90
+}

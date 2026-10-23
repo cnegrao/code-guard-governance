@@ -346,8 +346,67 @@ test('M16 S1C.3 privilege closure, preflight, postflight negative controls (disp
           effective_from timestamptz, effective_to timestamptz, recorded_at timestamptz)
         language plpgsql volatile security definer set search_path = pg_catalog, pg_temp set lock_timeout = '5s'
         as $body$${body}$body$; reset role;`;
-    const noGuard = decideSrc.replace(/IF p_outcome = 'VALIDATE' THEN\n\s+PERFORM gov_repo\.l14_lock_policy_version_dependency_guard_shared_v1\([^;]+;\n\s+END IF;\n/, '');
-    assert.notEqual(noGuard, decideSrc, 'the guard removal probe really removes the guard call');
+    const authorityCall = 'PERFORM gov_repo.l14_lock_authority_policy_guard_shared_v1(v_org);';
+    const dependencyCall = 'PERFORM gov_repo.l14_lock_policy_version_dependency_guard_shared_v1(';
+    const factCall = "PERFORM gov_repo.l14_lock_fact_subject_guard_v1(v_org, 'POLICY_APPLICABILITY',";
+    const commandCall = 'PERFORM gov_repo.l14_lock_command_guard_v1(v_org, p_command_id);';
+    const replayCall = 'IF gov_repo.l14_replay_arbitrate_v1(v_org, p_command_id, v_fingerprint) THEN';
+    const uniqueOffset = (body: string, anchor: string) => {
+      const offset = body.indexOf(anchor);
+      assert.ok(offset >= 0, `missing frozen anchor: ${anchor}`);
+      assert.equal(body.lastIndexOf(anchor), offset, `exactly one frozen anchor: ${anchor}`);
+      return offset;
+    };
+    const assertOrder = (body: string, calls: string[]) => {
+      const offsets = calls.map(call => uniqueOffset(body, call));
+      for (let i = 1; i < offsets.length; i++) assert.ok(offsets[i - 1] < offsets[i], 'frozen guard/replay order');
+    };
+    const removeDependencyGuard = (body: string) => {
+      assertOrder(body, [authorityCall, dependencyCall, factCall, commandCall, replayCall]);
+      const dependencyOffset = uniqueOffset(body, dependencyCall);
+      const conditional = "IF p_outcome = 'VALIDATE' THEN";
+      const conditionalOffset = body.lastIndexOf(conditional, dependencyOffset);
+      assert.ok(conditionalOffset > uniqueOffset(body, authorityCall) && conditionalOffset < dependencyOffset,
+        'the VALIDATE conditional is between the authority and dependency guards');
+      const start = body.lastIndexOf('\n', conditionalOffset) + 1;
+      const end = body.lastIndexOf('\n', uniqueOffset(body, factCall)) + 1;
+      assert.ok(start < end, 'the exact dependency block precedes the fact guard');
+      const block = body.slice(start, end);
+      // Trim only to validate the captured block; splice the original bytes.
+      assert.deepEqual(block.trim().split('\n').map(line => line.trim()), [conditional,
+        `${dependencyCall}v_org, v_proposal.policy_id, v_proposal.version_id,`,
+        'v_proposal.content_hash);', 'END IF;'], 'remove only the frozen dependency conditional');
+      const removed = body.slice(0, start) + body.slice(end);
+      assert.notEqual(removed, body, 'the guard removal probe really removes the guard call');
+      assert.equal(removed.includes(dependencyCall), false, 'the exact dependency call is absent');
+      assertOrder(removed, [authorityCall, factCall, commandCall, replayCall]);
+      assert.equal(removed.slice(start), body.slice(end), 'fact, command, replay and subsequent SQL retain exact bytes');
+      return removed;
+    };
+    const driftBody = (body: string) => {
+      const originalToken = "'POLICY_APPLICABILITY_ALREADY_VALIDATED'";
+      const mutatedToken = "'POLICY_APPLICABILITY_ALREADY_VALIDATED_X'";
+      const offset = uniqueOffset(body, originalToken);
+      assert.equal(body.includes(mutatedToken), false, 'the drift marker is initially absent');
+      const mutated = body.slice(0, offset) + mutatedToken + body.slice(offset + originalToken.length);
+      assert.notEqual(mutated, body, 'body drift really changes the source');
+      assert.equal(mutated.includes(originalToken), false, 'the exact frozen token is absent');
+      uniqueOffset(mutated, mutatedToken);
+      assertOrder(mutated, [authorityCall, dependencyCall, factCall, commandCall, replayCall]);
+      assert.equal(mutated.slice(0, offset), body.slice(0, offset), 'all preceding SQL is unchanged');
+      assert.equal(mutated.slice(offset + mutatedToken.length), body.slice(offset + originalToken.length),
+        'all following SQL is unchanged');
+      return mutated;
+    };
+    const noGuard = removeDependencyGuard(decideSrc);
+    const bodyDrift = driftBody(decideSrc);
+    // Controlled transport variants only; the database probes use the original representation above.
+    const lf = decideSrc.replace(/\r\n/g, '\n');
+    const crlf = lf.replace(/\n/g, '\r\n');
+    assert.equal(removeDependencyGuard(crlf).replace(/\r\n/g, '\n'), removeDependencyGuard(lf));
+    assert.equal(driftBody(crlf).replace(/\r\n/g, '\n'), driftBody(lf));
+    assert.throws(() => driftBody(lf.replace("'POLICY_APPLICABILITY_ALREADY_VALIDATED'", "'UNEXPECTED_TOKEN'")),
+      /missing frozen anchor/, 'an absent token cannot silently become a body-hash probe');
     const union = (table: string, check: string) => `alter table gov_repo.${table} drop constraint ${table}_target_union_check;
       alter table gov_repo.${table} add constraint ${table}_target_union_check check (${check});`;
     const controls: Array<[string, string, RegExp]> = [
@@ -381,7 +440,7 @@ test('M16 S1C.3 privilege closure, preflight, postflight negative controls (disp
       ['overload of a new RPC', `set local role postgres; create function gov_repo.l14_submit_policy_applicability_proposal_v1(uuid) returns integer language sql security definer
         set search_path = pg_catalog, pg_temp as 'select 1'; revoke all on function gov_repo.l14_submit_policy_applicability_proposal_v1(uuid) from public; reset role;`,
       /overload|twenty-one post-S1C\.1R1 \+ two S1C\.3|ACL\/definer shape/],
-      ['decide RPC body drift', decideReplace(decideSrc.replace('POLICY_APPLICABILITY_ALREADY_VALIDATED', 'POLICY_APPLICABILITY_ALREADY_VALIDATED_X')),
+      ['decide RPC body drift', decideReplace(bodyDrift),
         /body hash changed/],
       ['decide no longer takes the dependency guard', decideReplace(noGuard), /lock order drifted|body hash changed/],
       ['RPC search_path drift', `alter function ${NEW_RPCS[0]} set search_path = gov_repo, pg_catalog, pg_temp;`, /search_path|config changed/],

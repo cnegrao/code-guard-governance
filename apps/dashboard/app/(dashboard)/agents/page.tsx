@@ -7,7 +7,7 @@ export default function AgentsPage() {
       <div className="mb-6">
         <h2 className="text-xl font-bold text-white">Agents</h2>
         <p className="text-sm text-gray-400 mt-1">
-          Legacy operational agent inventory and compliance status
+          Legacy operational agent inventory. Manual control records are non-authoritative.
         </p>
         <Link href="/agents/canonical" className="mt-2 inline-block text-sm text-primary underline">
           Browse governed canonical Agent Passports

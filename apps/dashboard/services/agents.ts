@@ -1,6 +1,7 @@
+import { projectAgent, legacyControlEnvelope } from "@/lib/legacy-control-dto";
 import * as agentRepo from "@/repositories/agents";
 import { createAgentSchema, updateAgentSchema } from "@/lib/validation";
-import type { Agent, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
+import type { Agent, AgentDetail, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
 import type { CreateAgentInput, UpdateAgentInput } from "@/lib/validation";
 import { db } from "@/lib/db";
 import { CG_AG_CONTROLS } from "@council/scanner";
@@ -10,14 +11,19 @@ export async function listAgents(
   orgId: string,
   filters?: AgentFilters
 ): Promise<{ agents: Agent[]; total: number }> {
-  return agentRepo.getAgents(orgId, filters);
+  const result = await agentRepo.getAgents(orgId, filters);
+  return { agents: result.agents.map(projectAgent), total: result.total };
 }
 
 export async function getAgent(
   orgId: string,
   agentId: string
-): Promise<Record<string, unknown> | null> {
-  return agentRepo.getAgentWithOwner(orgId, agentId);
+): Promise<AgentDetail | null> {
+  const detail = await agentRepo.getAgentWithOwner(orgId, agentId);
+  if (!detail) return null;
+  const states = await getCompliance(orgId, agentId);
+  return { agent: projectAgent(detail.agent), owner_name: detail.owner_name, owner_email: detail.owner_email,
+    ...legacyControlEnvelope(states, getGapLabels(states)) };
 }
 
 export async function registerAgent(
@@ -39,7 +45,7 @@ export async function registerAgent(
     throw new Error("Owner not found, not active, or not in your organisation");
   }
 
-  return agentRepo.createAgent(orgId, userId, validated);
+  return projectAgent(await agentRepo.createAgent(orgId, userId, validated));
 }
 
 export async function updateAgent(
@@ -75,7 +81,7 @@ export async function updateAgent(
     }
   }
 
-  return agentRepo.updateAgent(orgId, agentId, validated);
+  return projectAgent(await agentRepo.updateAgent(orgId, agentId, validated));
 }
 
 export async function getCompliance(
@@ -97,19 +103,6 @@ export async function assessCompliance(
     }
   }
   return agentRepo.updateAgentCompliance(orgId, agentId, states);
-}
-
-export function computeScore(flags: ComplianceFlags): number | null {
-  const passed: string[] = [];
-  const failed: string[] = [];
-  for (const [k, v] of Object.entries(flags)) {
-    if (v === "passed") passed.push(k);
-    else if (v === "failed") failed.push(k);
-    // not_assessed / waived are excluded from score
-  }
-  const total = passed.length + failed.length;
-  if (total === 0) return null;
-  return Math.round((passed.length / total) * 100);
 }
 
 export function getGapLabels(flags: ComplianceFlags): string[] {

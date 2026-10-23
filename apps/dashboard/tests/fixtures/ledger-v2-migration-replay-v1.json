@@ -1,0 +1,762 @@
+{
+  "base": "9077e1a0a2659fccd4e811fe2246371475df3651",
+  "authority": "supabase/migrations",
+  "authorityBasis": "docs/architecture/m16-noncanonical-migration-roots.manifest.json",
+  "historicalCount": 121,
+  "canonicalHistoricalCount": 99,
+  "excludedHistoricalCount": 22,
+  "additiveMigration": "20261021030240_m175_v1_s1a1_1_tenant_ledger_v2_inactive.sql",
+  "appliedCount": 100,
+  "historical": [
+    {
+      "path": "apps/extension/supabase/migrations/20240119020000_create_credits_table.sql",
+      "oid": "87770318d1cf2d2550da34d2ef197a85b8a75109"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128170000_security_fixes.sql",
+      "oid": "1d8bb2f42c5754031f4fbfc20b195722432f353c"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128171000_linter_fixes.sql",
+      "oid": "897adf7e783f809615b4023fbc73e64c4bff6539"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128172000_performance_fixes.sql",
+      "oid": "d73875cc20c958c3ea565bb333e9596ca0baba44"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128173000_force_search_path.sql",
+      "oid": "0b7227924237236c58153091ead8eb794254f636"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/M008E_GOVERNANCE_LEDGER_ACTIVATION.sql",
+      "oid": "8497462b20affca614ad5052d99846308d9fd3cf"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/M008E_ROLLBACK.sql",
+      "oid": "fe2ae0126e9f7313e8f482554d250c6cfc77100e"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/00_create_profiles.sql",
+      "oid": "eb07d8ce8dd0752ee09cd62c93cc831465bd3714"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260222155306_init_rag_system.sql",
+      "oid": "87afc486ebec87f17483f28109ecbc7c56ea5979"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260224_custom_expert_persona.sql",
+      "oid": "c71f66bc5d8532d67bdf6e31a618bfac773ebfda"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260620_audit_logs.sql",
+      "oid": "5daa484f666ce1c51a385ddbc62302c668bbf914"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260620_compliance_v2.sql",
+      "oid": "77678442572901c9d6d705e87ee56b32bf58ce8a"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260620_graphos_phase4.sql",
+      "oid": "8e1323fbda86dfe8344a595f01921d54fc7a6452"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260621_graphos_phase5_enum_extensions.sql",
+      "oid": "fc4fd2ea840132abf0a146b66ee80e29c6787f2a"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260622_expose_gov_repo_bridge.sql",
+      "oid": "2a6137bff62f0cec9730cc75b915a71cb1e14d08"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/99_enterprise_governance.sql",
+      "oid": "c149f1e3ffbb118c14198655554ea44c5a129b9f"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/99_fix_tenants_trigger.sql",
+      "oid": "2bb9e442e11ec8ba25a053a30b7ca135047761ad"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/phase4_repo_files.sql",
+      "oid": "5173a82697fb921171574310291c335468086bca"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/sdi_debate_tables.sql",
+      "oid": "12441015d182f3423ebbba1d0f3e3a93183a1554"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/sprint3_compliance.sql",
+      "oid": "f6e859ef82ae52ec2a82b69902c2e5c464b0de61"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/sprint4_business.sql",
+      "oid": "19f5f3a739cfa40bfc81761ff9bac7adaa354fcb"
+    },
+    {
+      "path": "supabase/migrations/20260818003539_gov_repo_types_and_organisations.sql",
+      "oid": "d96e4592b93cdce1bb6bdba821302648b168391c"
+    },
+    {
+      "path": "supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql",
+      "oid": "256da82fa8cf4513101fdcfe06ba876b4a33e234"
+    },
+    {
+      "path": "supabase/migrations/20260818003755_gov_repo_policies_risks_evidence_part_1.sql",
+      "oid": "7842155da8ccaa07d1c45526daf81b321c4b275d"
+    },
+    {
+      "path": "supabase/migrations/20260818003822_gov_repo_policies_risks_evidence_part_2.sql",
+      "oid": "daba3a1f09fc709d3439fed7b8330ed2441e3d35"
+    },
+    {
+      "path": "supabase/migrations/20260818003836_gov_repo_policies_risks_evidence_part_3.sql",
+      "oid": "08a3bc3ee652553136484cf2ada984cf4901eabe"
+    },
+    {
+      "path": "supabase/migrations/20260818003900_gov_repo_workflows_assessments_views_part_1.sql",
+      "oid": "24b0b3161643ced732933f15a2dbb2a21105886e"
+    },
+    {
+      "path": "supabase/migrations/20260818003923_gov_repo_workflows_assessments_views_part_2.sql",
+      "oid": "fed7555ba7b9a096a5266ee2512826b3aa3cdc99"
+    },
+    {
+      "path": "supabase/migrations/20260818003944_gov_repo_workflows_assessments_views_part_3.sql",
+      "oid": "fb7d3a482820ba65786ef06c86392af8658265aa"
+    },
+    {
+      "path": "supabase/migrations/20260818004009_agent_registry_graph_part_1.sql",
+      "oid": "be195383afcbb9a45f2af9c7c5af5c220606984c"
+    },
+    {
+      "path": "supabase/migrations/20260818004032_agent_registry_graph_part_2.sql",
+      "oid": "a4735643e87cf180b2a82b8097b6c1a414385529"
+    },
+    {
+      "path": "supabase/migrations/20260818004053_agent_registry_graph_part_3.sql",
+      "oid": "d27c317eefbc84c8626d765b89a22a80c5c5a7bb"
+    },
+    {
+      "path": "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+      "oid": "492fe9d4f0ffe3fddeaf207da5a058197805f52c"
+    },
+    {
+      "path": "supabase/migrations/20260818004156_agent_registry_graph_part_5.sql",
+      "oid": "a85d8be95d191017925f881917cf6e6291686d5f"
+    },
+    {
+      "path": "supabase/migrations/20260818004217_regulatory_and_systems_part_1.sql",
+      "oid": "1a80cfabedf82082f7c750a6e889c9b059341e25"
+    },
+    {
+      "path": "supabase/migrations/20260818004236_regulatory_and_systems_part_2.sql",
+      "oid": "117e6d86d8b1f54fb00e8ff127e3a715ad1f69e8"
+    },
+    {
+      "path": "supabase/migrations/20260818004255_ai_systems_complete_part_1.sql",
+      "oid": "91d59e922da6051cf712870023c6ff9fb8b83448"
+    },
+    {
+      "path": "supabase/migrations/20260818004318_ai_systems_complete_part_2.sql",
+      "oid": "c28deab7673b527ec9e87ca1723ec266d1a6edb1"
+    },
+    {
+      "path": "supabase/migrations/20260818004429_ai_systems_complete_part_3.sql",
+      "oid": "4300d0ea5c51037485b4a41e8aab9b943ad797e2"
+    },
+    {
+      "path": "supabase/migrations/20260818004516_ai_systems_complete_part_4.sql",
+      "oid": "5422aabde94cc3e783a11e7331747bce8952d618"
+    },
+    {
+      "path": "supabase/migrations/20260818004534_ai_systems_complete_part_5.sql",
+      "oid": "b0d0bdefa84f856750d1f9d161a2f912c8a0d4c9"
+    },
+    {
+      "path": "supabase/migrations/20260818004556_ai_systems_complete_part_6.sql",
+      "oid": "38bfa57511bc75a099605e38bcef9ea7ea1b9c61"
+    },
+    {
+      "path": "supabase/migrations/20260818004618_ai_systems_complete_part_7_fixed_gap_order.sql",
+      "oid": "9aee54f126bdc3bce553bfb7a207e55fd9ee2f07"
+    },
+    {
+      "path": "supabase/migrations/20260818004645_ai_systems_complete_part_8.sql",
+      "oid": "dc1659cb3d7f95344f4acd6ebe703fabd17e5031"
+    },
+    {
+      "path": "supabase/migrations/20260818004653_ai_systems_complete_part_9.sql",
+      "oid": "57628f207e49a16b1a502c7c33bbeccdd2905045"
+    },
+    {
+      "path": "supabase/migrations/20260818004716_ict_incidents_complete_part_1.sql",
+      "oid": "0d166b5e8486c0ce2cbb7669af1f742300d3531c"
+    },
+    {
+      "path": "supabase/migrations/20260818004733_ict_incidents_complete_part_2.sql",
+      "oid": "2372263f1de4f6dc9bd2dc42209ae0121754b0b9"
+    },
+    {
+      "path": "supabase/migrations/20260818004753_ict_incidents_complete_part_3.sql",
+      "oid": "8411b3b7cf78e5bb02f113b02eddd5c6fae6a2b5"
+    },
+    {
+      "path": "supabase/migrations/20260818004810_ict_incidents_complete_part_4.sql",
+      "oid": "0e3079f2b65b6333994b780b46e83db89c8aeb05"
+    },
+    {
+      "path": "supabase/migrations/20260818004829_ict_incidents_complete_part_5.sql",
+      "oid": "ec4d41d637af1212f8392224f429a089f595056d"
+    },
+    {
+      "path": "supabase/migrations/20260818004852_ict_incidents_complete_part_6.sql",
+      "oid": "e41ad9b1fbfb13c1fb379bf57fa3a7dc74e9414b"
+    },
+    {
+      "path": "supabase/migrations/20260818004911_ict_incidents_complete_part_7.sql",
+      "oid": "8948f0cf891c7e09784a7d9ffc4ec2bd6e7f526c"
+    },
+    {
+      "path": "supabase/migrations/20260818004934_ict_incidents_complete_part_8.sql",
+      "oid": "37ba89a63a9a6b557bdbc16070343a93fe32814c"
+    },
+    {
+      "path": "supabase/migrations/20260818004952_ict_incidents_complete_part_9.sql",
+      "oid": "8cc03ae29ff66a6919603b661f565ccdacfc5884"
+    },
+    {
+      "path": "supabase/migrations/20260818005016_ict_incidents_complete_part_10.sql",
+      "oid": "7d06713d309611c2b2cfa86ec0a0d5de543e18cf"
+    },
+    {
+      "path": "supabase/migrations/20260818005042_cf000_constitutional_core.sql",
+      "oid": "c21bfb6d191367e47e7c280c59318f891c1f73e8"
+    },
+    {
+      "path": "supabase/migrations/20260818013113_grant_service_role_gov_repo_access.sql",
+      "oid": "0eb4a8c564a486bf454b8e653febdd220bc5a2da"
+    },
+    {
+      "path": "supabase/migrations/20260901021520_wave_a_metadata_comments.sql",
+      "oid": "daf8924d5371f1450351cd186881f3b298332d97"
+    },
+    {
+      "path": "supabase/migrations/20260901134812_policy_mandate_mapping_tenant_isolation.sql",
+      "oid": "a2ee6c69c19ea10566f53b9c5200af67842cfd63"
+    },
+    {
+      "path": "supabase/migrations/20260903200000_canonical_email_identity.sql",
+      "oid": "a2f07793a52f4b0ab05d8e5b351ffe4e04672455"
+    },
+    {
+      "path": "supabase/migrations/20260903200100_atomic_signup_legacy_rpc.sql",
+      "oid": "c894ea457f5707551507d3f096a382f22912101d"
+    },
+    {
+      "path": "supabase/migrations/20260905060000_governance_persistence_v1.sql",
+      "oid": "745a43ff974efbe725605a7f20bbdf6ffe16d27e"
+    },
+    {
+      "path": "supabase/migrations/20260906120000_canonical_materialization_v1.sql",
+      "oid": "70dad73bd5959d8c39b13c8bb30b7938026c9755"
+    },
+    {
+      "path": "supabase/migrations/20260906180000_discovery_intake_v1.sql",
+      "oid": "09fa765be785445f0d73c415c239bef96b291ce4"
+    },
+    {
+      "path": "supabase/migrations/20260906190000_governance_workspace_queue_v1.sql",
+      "oid": "344fbe169306601d69fc4a71dea5eff35863c9af"
+    },
+    {
+      "path": "supabase/migrations/20260907120000_discovery_governance_input_persistence_v1.sql",
+      "oid": "78d0f880ae9b4cec62381d2a0f93f91ef51b5668"
+    },
+    {
+      "path": "supabase/migrations/20260907130000_reconciliation_materialization_workspace_v1.sql",
+      "oid": "6b0f3cc77fb618d20d9d83bc5152ca46253458a8"
+    },
+    {
+      "path": "supabase/migrations/20260908120000_agent_version_technical_profile_persistence_v1.sql",
+      "oid": "47ef93cefc58458fe4a7598e5da7907304e836cc"
+    },
+    {
+      "path": "supabase/migrations/20260909120000_semantic_representation_persistence_v1.sql",
+      "oid": "656af213d8ad0a7c3c20edcf0fa42699a73a34df"
+    },
+    {
+      "path": "supabase/migrations/20260909210640_relationship_decision_to_truth_v1.sql",
+      "oid": "aa7b7703909f8c4701b715a3373a0d9c36c37e8c"
+    },
+    {
+      "path": "supabase/migrations/20260911120904_lineage_support_observations_v1.sql",
+      "oid": "e115d5eca50bfcaedf13fcff1695696330ae9e66"
+    },
+    {
+      "path": "supabase/migrations/20260911184613_technical_field_governance_v1.sql",
+      "oid": "0130382e2ef1b4b085d08abcf50a1ca8f7eda0a6"
+    },
+    {
+      "path": "supabase/migrations/20260915230551_execution_context_v1.sql",
+      "oid": "fd76df596d4231da0a51739c617172827fc065c6"
+    },
+    {
+      "path": "supabase/migrations/20260917021203_runtime_observability_v1.sql",
+      "oid": "6a647af3602aeff9e3ceae7d4760360a88d684d5"
+    },
+    {
+      "path": "supabase/migrations/20260917192615_runtime_observability_v1_review_fixes.sql",
+      "oid": "aa801dcc83ef02b2f56555c5e31f52e454c137f6"
+    },
+    {
+      "path": "supabase/migrations/20260923060000_cross_signal_persistence_v1.sql",
+      "oid": "3ab9f3c0e0b0b21f5ab82add234d220a8d5433c2"
+    },
+    {
+      "path": "supabase/migrations/20260925150000_m16_s0_credential_epoch_v1.sql",
+      "oid": "b3d4cefaf4b047bf6bd46b0a07fce8598efc22c8"
+    },
+    {
+      "path": "supabase/migrations/20260925160000_m16_s0_transactional_eligibility_v1.sql",
+      "oid": "a7cd6e9592868478bb4d1669bf8c266ce8cb711e"
+    },
+    {
+      "path": "supabase/migrations/20260925170000_m16_s0_credential_epoch_binding_v1.sql",
+      "oid": "1739b4340a11c111a355d317c66d88a7bda58779"
+    },
+    {
+      "path": "supabase/migrations/20260925175000_m16_s0_object_materialization_rule_compat_v1.sql",
+      "oid": "8cacd6f3a10371593d145e79587dff15a09d811d"
+    },
+    {
+      "path": "supabase/migrations/20260925180000_m16_s0_governed_write_wrappers_v1.sql",
+      "oid": "9c04f01d4c034a827e4e2558a0977e91712de7a5"
+    },
+    {
+      "path": "supabase/migrations/20260928190000_m16_s0_contract_raw_write_rpc_revocation_v1.sql",
+      "oid": "e65678b29202181eefa357c74d4199fc8f0798a2"
+    },
+    {
+      "path": "supabase/migrations/20260929120000_m16_s1a_l14_authority_policy_v1.sql",
+      "oid": "612058ddf1f307be5d71d1d56106b6f1b3a6263a"
+    },
+    {
+      "path": "supabase/migrations/20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql",
+      "oid": "73d4c4505178e69620e01c5ed024854abf538295"
+    },
+    {
+      "path": "supabase/migrations/20260929140000_m16_s1a2r1_l14_no_resurrection_v1.sql",
+      "oid": "50ea23cbceb7518d19de7f299d81837d74459a87"
+    },
+    {
+      "path": "supabase/migrations/20260930120000_m16_s1b0_l14_registry_framework_v1.sql",
+      "oid": "73b57628ad63da5fc485d9b59f4767ab03364951"
+    },
+    {
+      "path": "supabase/migrations/20260930130000_m16_s1b1_l14_governance_party_v1.sql",
+      "oid": "8ad231ec3ba4bb47ce3da8b17c82406015e7f607"
+    },
+    {
+      "path": "supabase/migrations/20260930140000_m16_s1b1r1_governance_party_pending_cancel_v1.sql",
+      "oid": "a28e5161430520918e0df52b916d542fc71de675"
+    },
+    {
+      "path": "supabase/migrations/20260930150000_m16_s1b2_policy_store_hardening_v1.sql",
+      "oid": "0cdcfec4b627acd9cc6fa653c6a34ef62dc4977a"
+    },
+    {
+      "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+      "oid": "0b739a014de6468b4754506749830eeb0e63c44e"
+    },
+    {
+      "path": "supabase/migrations/20260930170000_m16_s1b2r2_runtime_execution_closure_v1.sql",
+      "oid": "fe53fe8e5d978ab81b68ceb71117ae0cabb1aeae"
+    },
+    {
+      "path": "supabase/migrations/20260930180000_m16_s1b2r3_s0_execution_context_closure_v1.sql",
+      "oid": "2f130819611ead22295eb4632bc41e56977e9263"
+    },
+    {
+      "path": "supabase/migrations/20261002190148_discovery_machine_s2_control_plane_v1.sql",
+      "oid": "758d8c5a05a6113e0ef922f56bcca7afa6d4f6b5"
+    },
+    {
+      "path": "supabase/migrations/20261003011750_discovery_machine_s3_restricted_intake_v1.sql",
+      "oid": "ce6c5381381a74da3f8cc5bb5563dd7d5870c18c"
+    },
+    {
+      "path": "supabase/migrations/20261006134858_discovery_machine_propose_worker_v1.sql",
+      "oid": "e2aa1cfc34848d5d5771a4b270bee3ce131999f5"
+    },
+    {
+      "path": "supabase/migrations/20261007120000_m16_s1b3_policy_admission_v1.sql",
+      "oid": "94b19f05a8bad3da82dcc5dee84b743826b12b18"
+    },
+    {
+      "path": "supabase/migrations/20261008120000_m16_s1b4_policy_version_validation_v1.sql",
+      "oid": "22c4f9a0363eacaccf3482d662d5a1d2d7679918"
+    },
+    {
+      "path": "supabase/migrations/20261008180000_m16_s1b5_domain_registries_v1.sql",
+      "oid": "4266283aaa24bd7ad2be6f1f70d65097b6ee5117"
+    },
+    {
+      "path": "supabase/migrations/20261008200000_m16_s1b6_control_definition_registry_v1.sql",
+      "oid": "4062e662860c0351a499a82424983c2a56658099"
+    },
+    {
+      "path": "supabase/migrations/20261008220000_m16_s1c1_responsibility_assignment_v1.sql",
+      "oid": "a511718410c94d6a13b7f0ad503bf7c7f1a470b3"
+    },
+    {
+      "path": "supabase/migrations/20261009120000_m16_s1c2_business_context_assignment_v1.sql",
+      "oid": "a8f29c5c8ace99277ebbb4a7c7bb7b11d4b83d8d"
+    },
+    {
+      "path": "supabase/migrations/20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql",
+      "oid": "cc191d75b8cf3ccbace9a7d8dee1c6d705c966af"
+    },
+    {
+      "path": "supabase/migrations/20261009130000_m16_s1c3_policy_applicability_v1.sql",
+      "oid": "27c874ac62fd8d57a451034545890da3ec37e2d0"
+    },
+    {
+      "path": "supabase/migrations/20261009220000_m16_s1c4_control_applicability_v1.sql",
+      "oid": "c1265e78797ce0e2e5ce2f7a92ea0c6a19e886e4"
+    },
+    {
+      "path": "supabase/migrations/20261010120000_m16_s1c5_control_assessment_v1.sql",
+      "oid": "8162720a196f33e0668f28f7e22c0dcc264b763b"
+    },
+    {
+      "path": "supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql",
+      "oid": "9c053d08c7a61d24e520872ae54d05687f168dfc"
+    },
+    {
+      "path": "supabase/migrations/20261012200000_m17_s0_authority_policy_l15_extension_v1.sql",
+      "oid": "49a31e808a213a9440e31b5d88806e7f71c5a321"
+    },
+    {
+      "path": "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+      "oid": "aae82c8b02bc57fbcdc7880163b74b876937cb68"
+    },
+    {
+      "path": "supabase/migrations/20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql",
+      "oid": "54c4b1ddb7a958e17448332e37d9c7ac2900551d"
+    },
+    {
+      "path": "supabase/migrations/20261013120000_m17_s2_scenario_methodology_registries_v1.sql",
+      "oid": "ed99a34db21820b72d7119cefc936a362bb066bf"
+    },
+    {
+      "path": "supabase/migrations/20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql",
+      "oid": "cebe12c2c4d2e447863a8b586b0fefdd5c9ed044"
+    },
+    {
+      "path": "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql",
+      "oid": "694c236335ec1465d8a118ce35641c72302f5d3f"
+    },
+    {
+      "path": "supabase/migrations/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql",
+      "oid": "189dbbccebcd81e1ed7195a8c341d5713de5f3d6"
+    },
+    {
+      "path": "supabase/migrations/20261013160000_m17_s4_inherent_risk_assessment_v1.sql",
+      "oid": "03add55f2ccf8c3b47ac8b0c8c90c0b0aefc2e56"
+    },
+    {
+      "path": "supabase/migrations/20261015122639_m17_s5_risk_treatment_v1.sql",
+      "oid": "b2056dd430bbc25ff2300f04d7e96ce22e7fb1a8"
+    },
+    {
+      "path": "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+      "oid": "5699254ae8c5a943fa32d80e5bfb9b2a5e49c720"
+    },
+    {
+      "path": "supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql",
+      "oid": "e5fbb1dc8059d140b6b97af1760289b0c8447805"
+    },
+    {
+      "path": "supabase/migrations/20261019130000_m17_s7b_passport_risk_overlay_v1.sql",
+      "oid": "db39482594537a7b6f8564c1711f33575a86c359"
+    },
+    {
+      "path": "supabase/migrations/20261019140000_m17_s7c_final_security_closure_v1.sql",
+      "oid": "1d466fa2bf648479dfd671169fed6a6f8a6a502b"
+    },
+    {
+      "path": "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+      "oid": "7ede2eb2f86a49cb62e4c6b28789854a81deed53"
+    },
+    {
+      "path": "vibe-code-compliance/supabase/migrations/20260618005000_agent_registry_graph.sql",
+      "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    }
+  ],
+  "applied": [
+    "supabase/migrations/20260818003539_gov_repo_types_and_organisations.sql",
+    "supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql",
+    "supabase/migrations/20260818003755_gov_repo_policies_risks_evidence_part_1.sql",
+    "supabase/migrations/20260818003822_gov_repo_policies_risks_evidence_part_2.sql",
+    "supabase/migrations/20260818003836_gov_repo_policies_risks_evidence_part_3.sql",
+    "supabase/migrations/20260818003900_gov_repo_workflows_assessments_views_part_1.sql",
+    "supabase/migrations/20260818003923_gov_repo_workflows_assessments_views_part_2.sql",
+    "supabase/migrations/20260818003944_gov_repo_workflows_assessments_views_part_3.sql",
+    "supabase/migrations/20260818004009_agent_registry_graph_part_1.sql",
+    "supabase/migrations/20260818004032_agent_registry_graph_part_2.sql",
+    "supabase/migrations/20260818004053_agent_registry_graph_part_3.sql",
+    "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+    "supabase/migrations/20260818004156_agent_registry_graph_part_5.sql",
+    "supabase/migrations/20260818004217_regulatory_and_systems_part_1.sql",
+    "supabase/migrations/20260818004236_regulatory_and_systems_part_2.sql",
+    "supabase/migrations/20260818004255_ai_systems_complete_part_1.sql",
+    "supabase/migrations/20260818004318_ai_systems_complete_part_2.sql",
+    "supabase/migrations/20260818004429_ai_systems_complete_part_3.sql",
+    "supabase/migrations/20260818004516_ai_systems_complete_part_4.sql",
+    "supabase/migrations/20260818004534_ai_systems_complete_part_5.sql",
+    "supabase/migrations/20260818004556_ai_systems_complete_part_6.sql",
+    "supabase/migrations/20260818004618_ai_systems_complete_part_7_fixed_gap_order.sql",
+    "supabase/migrations/20260818004645_ai_systems_complete_part_8.sql",
+    "supabase/migrations/20260818004653_ai_systems_complete_part_9.sql",
+    "supabase/migrations/20260818004716_ict_incidents_complete_part_1.sql",
+    "supabase/migrations/20260818004733_ict_incidents_complete_part_2.sql",
+    "supabase/migrations/20260818004753_ict_incidents_complete_part_3.sql",
+    "supabase/migrations/20260818004810_ict_incidents_complete_part_4.sql",
+    "supabase/migrations/20260818004829_ict_incidents_complete_part_5.sql",
+    "supabase/migrations/20260818004852_ict_incidents_complete_part_6.sql",
+    "supabase/migrations/20260818004911_ict_incidents_complete_part_7.sql",
+    "supabase/migrations/20260818004934_ict_incidents_complete_part_8.sql",
+    "supabase/migrations/20260818004952_ict_incidents_complete_part_9.sql",
+    "supabase/migrations/20260818005016_ict_incidents_complete_part_10.sql",
+    "supabase/migrations/20260818005042_cf000_constitutional_core.sql",
+    "supabase/migrations/20260818013113_grant_service_role_gov_repo_access.sql",
+    "supabase/migrations/20260901021520_wave_a_metadata_comments.sql",
+    "supabase/migrations/20260901134812_policy_mandate_mapping_tenant_isolation.sql",
+    "supabase/migrations/20260903200000_canonical_email_identity.sql",
+    "supabase/migrations/20260903200100_atomic_signup_legacy_rpc.sql",
+    "supabase/migrations/20260905060000_governance_persistence_v1.sql",
+    "supabase/migrations/20260906120000_canonical_materialization_v1.sql",
+    "supabase/migrations/20260906180000_discovery_intake_v1.sql",
+    "supabase/migrations/20260906190000_governance_workspace_queue_v1.sql",
+    "supabase/migrations/20260907120000_discovery_governance_input_persistence_v1.sql",
+    "supabase/migrations/20260907130000_reconciliation_materialization_workspace_v1.sql",
+    "supabase/migrations/20260908120000_agent_version_technical_profile_persistence_v1.sql",
+    "supabase/migrations/20260909120000_semantic_representation_persistence_v1.sql",
+    "supabase/migrations/20260909210640_relationship_decision_to_truth_v1.sql",
+    "supabase/migrations/20260911120904_lineage_support_observations_v1.sql",
+    "supabase/migrations/20260911184613_technical_field_governance_v1.sql",
+    "supabase/migrations/20260915230551_execution_context_v1.sql",
+    "supabase/migrations/20260917021203_runtime_observability_v1.sql",
+    "supabase/migrations/20260917192615_runtime_observability_v1_review_fixes.sql",
+    "supabase/migrations/20260923060000_cross_signal_persistence_v1.sql",
+    "supabase/migrations/20260925150000_m16_s0_credential_epoch_v1.sql",
+    "supabase/migrations/20260925160000_m16_s0_transactional_eligibility_v1.sql",
+    "supabase/migrations/20260925170000_m16_s0_credential_epoch_binding_v1.sql",
+    "supabase/migrations/20260925175000_m16_s0_object_materialization_rule_compat_v1.sql",
+    "supabase/migrations/20260925180000_m16_s0_governed_write_wrappers_v1.sql",
+    "supabase/migrations/20260928190000_m16_s0_contract_raw_write_rpc_revocation_v1.sql",
+    "supabase/migrations/20260929120000_m16_s1a_l14_authority_policy_v1.sql",
+    "supabase/migrations/20260929130000_m16_s1a2_l14_authority_policy_successor_v1.sql",
+    "supabase/migrations/20260929140000_m16_s1a2r1_l14_no_resurrection_v1.sql",
+    "supabase/migrations/20260930120000_m16_s1b0_l14_registry_framework_v1.sql",
+    "supabase/migrations/20260930130000_m16_s1b1_l14_governance_party_v1.sql",
+    "supabase/migrations/20260930140000_m16_s1b1r1_governance_party_pending_cancel_v1.sql",
+    "supabase/migrations/20260930150000_m16_s1b2_policy_store_hardening_v1.sql",
+    "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+    "supabase/migrations/20260930170000_m16_s1b2r2_runtime_execution_closure_v1.sql",
+    "supabase/migrations/20260930180000_m16_s1b2r3_s0_execution_context_closure_v1.sql",
+    "supabase/migrations/20261002190148_discovery_machine_s2_control_plane_v1.sql",
+    "supabase/migrations/20261003011750_discovery_machine_s3_restricted_intake_v1.sql",
+    "supabase/migrations/20261006134858_discovery_machine_propose_worker_v1.sql",
+    "supabase/migrations/20261007120000_m16_s1b3_policy_admission_v1.sql",
+    "supabase/migrations/20261008120000_m16_s1b4_policy_version_validation_v1.sql",
+    "supabase/migrations/20261008180000_m16_s1b5_domain_registries_v1.sql",
+    "supabase/migrations/20261008200000_m16_s1b6_control_definition_registry_v1.sql",
+    "supabase/migrations/20261008220000_m16_s1c1_responsibility_assignment_v1.sql",
+    "supabase/migrations/20261009120000_m16_s1c2_business_context_assignment_v1.sql",
+    "supabase/migrations/20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql",
+    "supabase/migrations/20261009130000_m16_s1c3_policy_applicability_v1.sql",
+    "supabase/migrations/20261009220000_m16_s1c4_control_applicability_v1.sql",
+    "supabase/migrations/20261010120000_m16_s1c5_control_assessment_v1.sql",
+    "supabase/migrations/20261012120000_m16_read_projection_closure_v1.sql",
+    "supabase/migrations/20261012200000_m17_s0_authority_policy_l15_extension_v1.sql",
+    "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+    "supabase/migrations/20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql",
+    "supabase/migrations/20261013120000_m17_s2_scenario_methodology_registries_v1.sql",
+    "supabase/migrations/20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql",
+    "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql",
+    "supabase/migrations/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql",
+    "supabase/migrations/20261013160000_m17_s4_inherent_risk_assessment_v1.sql",
+    "supabase/migrations/20261015122639_m17_s5_risk_treatment_v1.sql",
+    "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+    "supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql",
+    "supabase/migrations/20261019130000_m17_s7b_passport_risk_overlay_v1.sql",
+    "supabase/migrations/20261019140000_m17_s7c_final_security_closure_v1.sql",
+    "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+    "supabase/migrations/20261021030240_m175_v1_s1a1_1_tenant_ledger_v2_inactive.sql"
+  ],
+  "excluded": [
+    {
+      "path": "apps/extension/supabase/migrations/20240119020000_create_credits_table.sql",
+      "oid": "87770318d1cf2d2550da34d2ef197a85b8a75109",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128170000_security_fixes.sql",
+      "oid": "1d8bb2f42c5754031f4fbfc20b195722432f353c",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128171000_linter_fixes.sql",
+      "oid": "897adf7e783f809615b4023fbc73e64c4bff6539",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128172000_performance_fixes.sql",
+      "oid": "d73875cc20c958c3ea565bb333e9596ca0baba44",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/20260128173000_force_search_path.sql",
+      "oid": "0b7227924237236c58153091ead8eb794254f636",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/M008E_GOVERNANCE_LEDGER_ACTIVATION.sql",
+      "oid": "8497462b20affca614ad5052d99846308d9fd3cf",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "apps/extension/supabase/migrations/M008E_ROLLBACK.sql",
+      "oid": "fe2ae0126e9f7313e8f482554d250c6cfc77100e",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/00_create_profiles.sql",
+      "oid": "eb07d8ce8dd0752ee09cd62c93cc831465bd3714",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260222155306_init_rag_system.sql",
+      "oid": "87afc486ebec87f17483f28109ecbc7c56ea5979",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260224_custom_expert_persona.sql",
+      "oid": "c71f66bc5d8532d67bdf6e31a618bfac773ebfda",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260620_audit_logs.sql",
+      "oid": "5daa484f666ce1c51a385ddbc62302c668bbf914",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260620_compliance_v2.sql",
+      "oid": "77678442572901c9d6d705e87ee56b32bf58ce8a",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260620_graphos_phase4.sql",
+      "oid": "8e1323fbda86dfe8344a595f01921d54fc7a6452",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260621_graphos_phase5_enum_extensions.sql",
+      "oid": "fc4fd2ea840132abf0a146b66ee80e29c6787f2a",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/20260622_expose_gov_repo_bridge.sql",
+      "oid": "2a6137bff62f0cec9730cc75b915a71cb1e14d08",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/99_enterprise_governance.sql",
+      "oid": "c149f1e3ffbb118c14198655554ea44c5a129b9f",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/99_fix_tenants_trigger.sql",
+      "oid": "2bb9e442e11ec8ba25a053a30b7ca135047761ad",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/phase4_repo_files.sql",
+      "oid": "5173a82697fb921171574310291c335468086bca",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/sdi_debate_tables.sql",
+      "oid": "12441015d182f3423ebbba1d0f3e3a93183a1554",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/sprint3_compliance.sql",
+      "oid": "f6e859ef82ae52ec2a82b69902c2e5c464b0de61",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "graphos-complete/supabase/migrations/sprint4_business.sql",
+      "oid": "19f5f3a739cfa40bfc81761ff9bac7adaa354fcb",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    },
+    {
+      "path": "vibe-code-compliance/supabase/migrations/20260618005000_agent_registry_graph.sql",
+      "oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "reason": "Noncanonical root, quarantined by the pinned M16 migration authority manifest; not part of Governance Core replay"
+    }
+  ],
+  "outside121": [
+    {
+      "path": "apps/dashboard/supabase-setup-8.2.sql",
+      "oid": "6e5590b93784a344f72fe64b37b8cdef34b97a09",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618001000_gov_repo_types_and_organisations.sql",
+      "oid": "c6479ab15bfd89fd601e45eb566d1ae23f093ef7",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618002000_gov_repo_identity_and_ledger.sql",
+      "oid": "8d5a78c4dffc7470bc1a9d5604f8c0ce34be8280",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618003000_gov_repo_policies_risks_evidence.sql",
+      "oid": "203410703da9977dec58949d953db3959361ad3d",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618004000_gov_repo_workflows_assessments_views.sql",
+      "oid": "fc420945d1668399df0bfd852f22843a2a76af5f",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618005000_agent_registry_graph.sql",
+      "oid": "2b8762f074eb71fe083b9a68551c18d512c43b5c",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618006000_regulatory_and_systems.sql",
+      "oid": "f1341705793b05c371513e636b265f65134ee1b2",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618006500_ai_systems_complete.sql",
+      "oid": "bcdc1aa3a22ec35b8945764cc483bf2a754bd596",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618006600_ict_incidents_complete.sql",
+      "oid": "f3983f0a958cc8a4b4201dbf52f07b1ab96dd70b",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    },
+    {
+      "path": "supabase/legacy-migrations/20260618-monolithic/20260618007000_cf000_constitutional_core.sql",
+      "oid": "73e853af3b15b9a3024987221c179209ae23b25b",
+      "reason": "Quarantined legacy SQL artifact outside regular /migrations/ inventory; not executable canonical authority"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 /**
- * Compliance Framework Mapping
- * Maps each compliance standard to the optimal LLM model
+ * Technical framework reference mapping
+ * Maps each framework reference to the optimal LLM model
  */
 
 export interface FrameworkConfig {
@@ -13,7 +13,7 @@ export interface FrameworkConfig {
 
 /**
  * LLM Model Selection Strategy:
- * - claude-3.5-sonnet: Complex legal reasoning (LGPD, GDPR)
+ * - claude-3.5-sonnet: Source-code data-handling review (LGPD, GDPR)
  * - gpt-4o: Technical security analysis (ISO 27001, NIS2)
  * - gemini-2.0-flash: High volume, pattern matching (BACEN, ANVISA, PSD2)
  */
@@ -39,7 +39,7 @@ export const COMPLIANCE_LLM_MAP: Record<string, string> = {
 };
 
 /**
- * Global frameworks applicable to all regions
+ * Global frameworks available for all regions
  */
 export const GLOBAL_FRAMEWORKS: FrameworkConfig[] = [
     {
@@ -73,7 +73,7 @@ export const GLOBAL_FRAMEWORKS: FrameworkConfig[] = [
 ];
 
 /**
- * Brazil-specific compliance frameworks
+ * Brazil-specific framework reference topics
  */
 export const BR_FRAMEWORKS: FrameworkConfig[] = [
     {
@@ -109,13 +109,13 @@ export const BR_FRAMEWORKS: FrameworkConfig[] = [
         name: "FAPI 1 Advanced (Open Finance BR)",
         llm: "google/gemini-2.0-flash-001",
         region: "BR",
-        description: "Raidiam/OFB Profile: PS256, mtLS, Consent & DCR Compliance"
+        description: "Raidiam/OFB Profile: PS256, mtLS, Consent-related code & DCR configuration"
     },
     ...GLOBAL_FRAMEWORKS
 ];
 
 /**
- * Europe-specific compliance frameworks
+ * Europe-specific framework reference topics
  */
 export const EU_FRAMEWORKS: FrameworkConfig[] = [
     {
@@ -130,7 +130,7 @@ export const EU_FRAMEWORKS: FrameworkConfig[] = [
         name: "EU AI Act",
         llm: COMPLIANCE_LLM_MAP["AIACT"],
         region: "EU",
-        description: "EU AI Regulation 2024/1689 - Risk classification, transparency"
+        description: "EU AI Regulation 2024/1689 - AI transparency and decision-log technical signals"
     },
     {
         id: "PSD2",
@@ -171,7 +171,7 @@ export const EU_FRAMEWORKS: FrameworkConfig[] = [
 ];
 
 /**
- * US-specific compliance frameworks
+ * US-specific framework reference topics
  */
 export const US_FRAMEWORKS: FrameworkConfig[] = [
     {

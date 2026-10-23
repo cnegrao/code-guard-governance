@@ -1,6 +1,7 @@
+import { projectSystem, legacyControlEnvelope } from "@/lib/legacy-control-dto";
 import * as systemRepo from "@/repositories/systems";
 import { createSystemSchema, updateSystemSchema } from "@/lib/validation";
-import type { AISystem, SystemFilters, ControlState } from "@/types/systems";
+import type { AISystem, SystemDetail, SystemFilters, ControlState } from "@/types/systems";
 import type { CreateSystemInput } from "@/lib/validation";
 import type { UpdateSystemInput } from "@/lib/validation";
 import { db } from "@/lib/db";
@@ -9,14 +10,20 @@ export async function listSystems(
   orgId: string,
   filters?: SystemFilters
 ): Promise<{ systems: AISystem[]; total: number }> {
-  return systemRepo.getSystems(orgId, filters);
+  const result = await systemRepo.getSystems(orgId, filters);
+  return { systems: result.systems.map(projectSystem), total: result.total };
 }
 
 export async function getSystem(
   orgId: string,
   systemId: string
-): Promise<Record<string, unknown> | null> {
-  return systemRepo.getSystemWithOwner(orgId, systemId);
+): Promise<SystemDetail | null> {
+  const detail = await systemRepo.getSystemWithOwner(orgId, systemId);
+  if (!detail) return null;
+  const states = await getCompliance(orgId, systemId);
+  return { system: projectSystem(detail.system), owner_name: detail.owner_name, owner_email: detail.owner_email,
+    agent_count: detail.agent_count,
+    ...legacyControlEnvelope(states, getGapLabels(states)) };
 }
 
 export async function registerSystem(
@@ -38,7 +45,7 @@ export async function registerSystem(
     throw new Error("Owner not found, not active, or not in your organisation");
   }
 
-  return systemRepo.createSystem(orgId, userId, validated);
+  return projectSystem(await systemRepo.createSystem(orgId, userId, validated));
 }
 
 export async function updateSystem(
@@ -62,7 +69,7 @@ export async function updateSystem(
     }
   }
 
-  return systemRepo.updateSystem(orgId, systemId, validated);
+  return projectSystem(await systemRepo.updateSystem(orgId, systemId, validated));
 }
 
 export async function getCompliance(
@@ -84,18 +91,6 @@ export async function assessCompliance(
     }
   }
   return systemRepo.updateSystemCompliance(orgId, systemId, states);
-}
-
-export function computeScore(flags: Record<string, ControlState>): number | null {
-  const passed: string[] = [];
-  const failed: string[] = [];
-  for (const [k, v] of Object.entries(flags)) {
-    if (v === "passed") passed.push(k);
-    else if (v === "failed") failed.push(k);
-  }
-  const total = passed.length + failed.length;
-  if (total === 0) return null;
-  return Math.round((passed.length / total) * 100);
 }
 
 export function getGapLabels(flags: Record<string, ControlState>): string[] {

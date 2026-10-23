@@ -1,0 +1,153 @@
+{
+  "record_version": 2,
+  "date": "2026-10-21",
+  "timezone": "America/Sao_Paulo",
+  "slice": "M17.5-V1-S1A1-3",
+  "slice_status": "CLOSED / PASS",
+  "surface_id": "LX08_AUDIT_TRAIL",
+  "classification": "CONTAINED / PASS",
+  "implemented": true,
+  "previous_record": "docs/trust-assurance/lx08-audit-containment-status-v1.json",
+  "starting_head": "af5657213aec858c4896063c271621d12327849a",
+  "chain_model": "DUAL_CHAIN_V2_WITH_LEGACY_GLOBAL_ONLY_HISTORY",
+  "verification_scope": "LOCAL_SOURCE_APPLICATION_AND_DISPOSABLE_PG17",
+  "hosted_verified": false,
+  "hosted_delta": 0,
+  "migration_delta": 0,
+  "evidence": "docs/codex/evidence/2026-10-21-m17.5-v1-s1a1-3-audit-surface-lx08-closure.md",
+  "historical_records_modified": false,
+  "runtime_delta": true,
+  "database_delta": false,
+  "security_tests_passed": true,
+  "closure_criteria": [
+    {
+      "id": 1,
+      "criterion": "Active integrity uses principal-bound V2 verifier",
+      "result": "PASS",
+      "proof": "integrity route; route/source/real signed-cookie PG tests"
+    },
+    {
+      "id": 2,
+      "criterion": "Active list uses principal-bound V2 list",
+      "result": "PASS",
+      "proof": "events route; exact filter and opaque cursor route/source/PG tests"
+    },
+    {
+      "id": 3,
+      "criterion": "Active detail uses principal-bound V2 detail",
+      "result": "PASS",
+      "proof": "detail route; strict handle parser; route/source/PG tests"
+    },
+    {
+      "id": 4,
+      "criterion": "No active governance_ledger direct reads",
+      "result": "PASS",
+      "proof": "complete Audit runtime import graph; RPC-only SQL transport inventory"
+    },
+    {
+      "id": 5,
+      "criterion": "No active global ledger_verify",
+      "result": "PASS",
+      "proof": "import graph; 2B global corruption and unavailable global verifier independence"
+    },
+    {
+      "id": 6,
+      "criterion": "service_role is transport, not authorization",
+      "result": "PASS",
+      "proof": "real signed sessions; persisted eligibility; 2B ACL/security suite"
+    },
+    {
+      "id": 7,
+      "criterion": "UNKNOWN preserved",
+      "result": "PASS",
+      "proof": "200 status/history matrix; malformed/missing adapter rows; inactive epoch real route"
+    },
+    {
+      "id": 8,
+      "criterion": "EMPTY is non-positive",
+      "result": "PASS",
+      "proof": "neutral grey SSR; activated legacy-only tenant route"
+    },
+    {
+      "id": 9,
+      "criterion": "Missing/failed read becomes neither BROKEN nor VALID",
+      "result": "PASS",
+      "proof": "explicit error UI; adapter UNKNOWN; stale-success and late-response lifecycle"
+    },
+    {
+      "id": 10,
+      "criterion": "Global sequence is no longer tenant-facing route identity",
+      "result": "PASS",
+      "proof": "opaque handles; numeric/partial links fail before RPC"
+    },
+    {
+      "id": 11,
+      "criterion": "No global hashes or predecessors exposed",
+      "result": "PASS",
+      "proof": "closed adapter output injection; import graph; list/detail rendering"
+    },
+    {
+      "id": 12,
+      "criterion": "Legacy payloads remain non-authoritative",
+      "result": "PASS",
+      "proof": "legacy authority SSR; 2B semantically false retained payload regression"
+    },
+    {
+      "id": 13,
+      "criterion": "Unsafe affirmative wording removed",
+      "result": "PASS",
+      "proof": "bounded heading and limitations; source/render tests"
+    },
+    {
+      "id": 14,
+      "criterion": "No legacy fallback",
+      "result": "PASS",
+      "proof": "complete import graph; sole bounded quarantined script consumer; RPC-failure tests"
+    },
+    {
+      "id": 15,
+      "criterion": "Cross-tenant tests pass",
+      "result": "PASS",
+      "proof": "A/B signed-cookie routes; foreign/missing detail and cursor equivalence; 2B regression"
+    },
+    {
+      "id": 16,
+      "criterion": "2A and 2B regressions pass",
+      "result": "PASS",
+      "proof": "write/cutover 15/15; writer integration 1/1; read security 14/14"
+    }
+  ],
+  "tenant_ledger_v2": "WRITE + READ + ACTIVE AUDIT APPLICATION PATH / IMPLEMENTED / LOCALLY VERIFIED / NOT HOSTED",
+  "m17_5_status": "OPEN",
+  "controlled_demo_readiness": "HOLD",
+  "external_publication_readiness": "HOLD",
+  "tenant_assurance_readiness": "HOLD",
+  "certification_readiness": "HOLD",
+  "m18": "HOLD",
+  "remaining_exposure_gates": [
+    "L01",
+    "L02",
+    "L03",
+    "L04",
+    "LX01",
+    "LX02",
+    "LX03",
+    "LX04",
+    "LX05",
+    "LX06",
+    "LX07",
+    "LX09_DORMANT_PDF_GENERATORS"
+  ],
+  "l05_scope": "SAFE only for the previously inspected regulatory export rejection guard; no broader promotion",
+  "next_slice_proposal": "M17.5-V1-S1B — LIVE LEGACY ASSURANCE EXPOSURE CONTAINMENT",
+  "next_slice_first_priority": [
+    "L01 CompliancePanel and agent/system API flag percentages",
+    "LX02 home percentage exposure"
+  ],
+  "next_slice_started": false,
+  "limitations": [
+    "No hosted deployment, activation or HTTP acceptance performed.",
+    "Local containment does not assert that older hosted Audit releases have changed.",
+    "Ledger integrity establishes retained-record chain consistency only; no payload semantic truth or governance assurance."
+  ]
+}

@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { reloadEnvConfig } from './core/llm-config';
 import { LicenseManager } from './license/manager';
-import { ComplianceEngine } from './scanner/compliance';
+import { TechnicalScanEngine } from './scanner/compliance';
 import { getWebviewContent, getComplianceAuditWebviewContent } from './ui/dashboard';
 import { RepoIntelligence } from './intelligence/ril';
 import { PatchEngine } from './intelligence/patch';
@@ -94,10 +94,9 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             const licenseStatus = await LicenseManager.checkLicense(licenseKey, context.globalState);
-            const report = ComplianceEngine.scanCode(editor!.document.getText(), licenseStatus, creditBalance > 0);
-            (report as any).creditBalance = creditBalance;
+            const report = TechnicalScanEngine.scanCode(editor!.document.getText(), licenseStatus, creditBalance > 0, editor!.document.uri.toString());
 
-            const panel = vscode.window.createWebviewPanel('codeGuardCompliance', 'Compliance Risk Report', vscode.ViewColumn.Two, { enableScripts: true });
+            const panel = vscode.window.createWebviewPanel('codeGuardTechnicalScan', 'Technical Scan Report', vscode.ViewColumn.Two, { enableScripts: true });
             panel.webview.html = getWebviewContent(report);
             
             panel.webview.onDidReceiveMessage(message => {
@@ -169,7 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.env.openExternal(vscode.Uri.parse(link));
     });
 
-    // 6. Deep Compliance Audit Command (Consolidated via Dispatcher)
+    // 6. Technical Framework Review Command (LEGACY_TRANSPORT_IDENTIFIER: codeguard.complianceAudit) (Consolidated via Dispatcher)
     let complianceAuditDisposable = vscode.commands.registerCommand('codeguard.complianceAudit', async () => {
         const config = vscode.workspace.getConfiguration('codeguard');
         const region = config.get<'BR' | 'EU'>('region') || 'BR';
@@ -185,7 +184,7 @@ export function activate(context: vscode.ExtensionContext) {
         const selectedItems = await vscode.window.showQuickPick(frameworks.map(f => ({ label: f.name, description: f.description, id: f.id, picked: true })), { canPickMany: true, title: 'CodeGuard: Select Frameworks' });
         if (!selectedItems || selectedItems.length === 0) return;
 
-        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'CodeGuard: Running Deep Compliance Audit...' }, async (progress) => {
+        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'CodeGuard: Running Technical Framework Review...' }, async (progress) => {
             const result = await dispatcher.dispatch('codeguard_audit', {
                 region,
                 frameworks: selectedItems.map(i => i.id)
@@ -199,11 +198,11 @@ export function activate(context: vscode.ExtensionContext) {
                 if (result.error === 'INSUFFICIENT_CREDITS') {
                     const buy = t('buyCredits');
                     if (await vscode.window.showErrorMessage(result.message, buy) === buy) vscode.commands.executeCommand('codeguard.buyCredits');
-                } else vscode.window.showErrorMessage(`Audit Failed: ${result.message}`);
+                } else vscode.window.showErrorMessage(`Technical review execution failed: ${result.message}`);
                 return;
             }
 
-            const panel = vscode.window.createWebviewPanel('complianceAuditResult', `Compliance Report - ${region}`, vscode.ViewColumn.One, { enableScripts: true });
+            const panel = vscode.window.createWebviewPanel('complianceAuditResult', `Technical Framework Review - ${region}`, vscode.ViewColumn.One, { enableScripts: true });
             panel.webview.html = getComplianceAuditWebviewContent(result);
             
             panel.webview.onDidReceiveMessage(async msg => {
@@ -213,13 +212,13 @@ export function activate(context: vscode.ExtensionContext) {
                     const resolved = path.resolve(path.isAbsolute(msg.filePath) ? msg.filePath : path.join(root, msg.filePath));
                     const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(resolved));
                     if (await PatchEngine.applyFixRange(doc, msg.code, msg.lineStart || 1, msg.lineEnd || 1)) {
-                        vscode.window.showInformationMessage('Fix applied successfully!');
+                        vscode.window.showInformationMessage('Engineering suggestion applied; review the code change. This does not establish compliance.');
                     }
                 }
             });
 
             DiagnosticsManager.getInstance().updateDiagnostics(result);
-            vscode.window.showInformationMessage(`✅ Audit completed: ${result.total_issues} issues found.`);
+            vscode.window.showInformationMessage(`Technical review returned ${result.total_findings} potential findings; ${result.frameworks_unknown} incomplete/unknown reviews.`);
         });
     });
 
@@ -232,8 +231,8 @@ export function activate(context: vscode.ExtensionContext) {
     // 8. Show Menu
     let menuDisposable = vscode.commands.registerCommand('codeguard.showMenu', async () => {
         const choice = await vscode.window.showQuickPick([
-            { label: '$(search) Quick Scan', detail: 'Local/Free' },
-            { label: '$(hubot) Deep Audit', detail: 'Consolidated AI Engine' },
+            { label: '$(search) Quick Technical Scan', detail: 'Local/Free - heuristic technical findings' },
+            { label: '$(hubot) Deep Technical Framework Review', detail: 'LLM-assisted, non-authoritative technical findings' },
             { label: '$(credit-card) Credits', detail: 'Balance & Buy' }
         ]);
         if (choice) {

@@ -1,94 +1,60 @@
+import type { PlanType } from '../license/manager';
+import { ANALYSIS_BOUNDARY, ANALYSIS_LIMITATION } from './types';
+import type { AcquisitionState, TechnicalFinding, TechnicalScanReport, SummaryCounts } from './types';
 
-import { Violation } from '../scanner/gdpr';
-import { PlanType } from '../license/manager';
-import { ComplianceReport, SummaryCounts, ComplianceMapping } from './types';
+interface ScanOptions {
+    acquisition?: AcquisitionState;
+    detectors_run?: string[];
+    detector_access?: TechnicalScanReport['detector_access'];
+    finding_limit?: number;
+}
 
 export class ReportGenerator {
     static generate(
-        violations: Violation[],
-        plan: PlanType,
-        filesAnalyzed: string[]
-    ): ComplianceReport {
-
-        // 1. Calculate Counts
-        const counts = this.calculateCounts(violations);
-
-        // 2. Generate Compliance Mapping
-        const mapping = this.generateMapping(violations);
-
-        // 3. Draft Executive Summary
-        const summary = this.generateExecutiveSummary(counts, mapping);
-
-        // 4. Recommendations
-        const recommendations = this.generateRecommendations(violations, mapping);
-
-        // 5. Plan Restrictions (already applied in scanner, but good to re-affirm if needed or add 'fix' stubs)
-        // For V1, we don't have auto-fixes, so we just pass the violations array.
-
+        detected: TechnicalFinding[], plan: PlanType, filesAnalyzed: string[], options: ScanOptions = {}
+    ): TechnicalScanReport {
+        const acquisition = filesAnalyzed.length === 0 ? 'NO_FILES' : (options.acquisition ?? 'UNKNOWN');
+        const limit = options.finding_limit ?? detected.length;
+        const findings = detected.slice(0, Math.max(0, limit));
+        const notAssessed = acquisition === 'NO_FILES' || acquisition === 'EMPTY_INPUT';
         return {
-            executiveSummary: summary,
-            violations: violations,
-            summaryCounts: counts,
-            complianceMapping: mapping,
-            recommendations: recommendations,
-            humanValidationRequired: counts.total > 0, // Always suggest human review if ANY issue found
-            plan: plan,
-            filesAnalyzed: filesAnalyzed,
-            timestamp: new Date().toISOString()
+            analysis_boundary: ANALYSIS_BOUNDARY,
+            findings,
+            summary_counts: this.calculateCounts(detected),
+            reported_counts: this.calculateCounts(findings),
+            findings_omitted: detected.length - findings.length,
+            detection_state: detected.length > 0 ? 'DETECTED' : notAssessed ? 'NOT_ASSESSED' : 'NO_FINDINGS_DETECTED_IN_SCANNED_INPUT',
+            summary: detected.length > 0
+                ? `${detected.length} technical findings detected in the analyzed input; ${findings.length} shown.`
+                : notAssessed ? 'No non-empty input was available for assessment.'
+                : 'No findings were detected by this scan in the analyzed input.',
+            recommendations: findings.map(f => ({
+                rule: f.rule, line: f.line, file: f.file,
+                text: f.fixDescription || `Review the detected ${f.rule} pattern in its source context.`,
+            })),
+            files_analyzed: [...filesAnalyzed],
+            acquisition,
+            detectors_run: [...(options.detectors_run ?? [])],
+            plan,
+            detector_access: options.detector_access ?? (plan === 'FREE' ? 'FREE' : 'PAID'),
+            timestamp: new Date().toISOString(),
+            limitations: [
+                ANALYSIS_LIMITATION,
+                'Heuristic, non-authoritative pattern detection in scanned input only; false positives and false negatives are possible. Categories and rule IDs identify detector sources only.',
+                'Only the listed detectors ran. Unexecuted detectors and inputs outside the listed files were not assessed.',
+                ...(acquisition !== 'INPUT_PROVIDED' ? [`Input acquisition: ${acquisition}. No completeness conclusion is available.`] : []),
+                ...(detected.length > findings.length ? ['Some detected findings are omitted by the current plan display limit.'] : []),
+            ],
         };
     }
 
-    private static calculateCounts(violations: Violation[]): SummaryCounts {
+    private static calculateCounts(findings: TechnicalFinding[]): SummaryCounts {
         return {
-            total: violations.length,
-            critical: violations.filter(v => v.severity === 'CRITICAL').length,
-            high: violations.filter(v => v.severity === 'HIGH').length,
-            medium: violations.filter(v => v.severity === 'MEDIUM').length,
-            low: violations.filter(v => v.severity === 'LOW').length,
+            total: findings.length,
+            critical: findings.filter(f => f.severity === 'CRITICAL').length,
+            high: findings.filter(f => f.severity === 'HIGH').length,
+            medium: findings.filter(f => f.severity === 'MEDIUM').length,
+            low: findings.filter(f => f.severity === 'LOW').length,
         };
-    }
-
-    private static generateMapping(violations: Violation[]): ComplianceMapping {
-        const hasGdpr = violations.some(v => v.category === 'GDPR');
-        const hasLgpd = violations.some(v => v.category === 'LGPD');
-        const hasAi = violations.some(v => v.category === 'AI_ACT');
-        const hasCcpa = violations.some(v => v.category === 'CCPA');
-        const hasHipaa = violations.some(v => v.category === 'HIPAA');
-        const hasSecurity = violations.some(v => v.rule.includes('SECRET') || v.rule.includes('TOKEN') || v.category === 'PCI');
-
-        return {
-            GDPR: hasGdpr ? 'risk detected' : 'aligned',
-            LGPD: hasLgpd ? 'risk detected' : 'aligned',
-            CCPA: hasCcpa ? 'risk detected' : 'aligned',
-            HIPAA: hasHipaa ? 'risk detected' : 'aligned',
-            PCI_DSS: hasSecurity ? 'risk detected' : 'aligned',
-            OWASP: hasSecurity ? ['A03:2021-Cryptographic Failures'] : [],
-            ISO27001: 'best-practice indicators present',
-            AI_ACT: hasAi ? 'risk detected' : 'aligned'
-        };
-    }
-
-    private static generateExecutiveSummary(counts: SummaryCounts, mapping: ComplianceMapping): string {
-        if (counts.total === 0) {
-            return "No obvious compliance risks detected. Maintain vigilance.";
-        }
-
-        const criticalMsg = counts.critical > 0
-            ? `${counts.critical} CRITICAL issues detected requiring immediate engineering attention.`
-            : "";
-
-        return `${counts.total} violations detected across scanned files. ${criticalMsg} GDPR Status: ${mapping.GDPR}. AI Act: ${mapping.AI_ACT}.`;
-    }
-
-    private static generateRecommendations(violations: Violation[], mapping: ComplianceMapping): string {
-        const steps = [];
-
-        if (mapping.GDPR === 'risk detected') steps.push("Audit all hardcoded PII.");
-        if (mapping.AI_ACT === 'early alignment signals') steps.push("Review AI models against EU AI Act Annex III.");
-        if (violations.some(v => v.severity === 'CRITICAL')) steps.push("Revoke and rotate exposed secrets immediately.");
-
-        if (steps.length === 0) return "Continue following secure coding best practices.";
-
-        return steps.join(" ");
     }
 }

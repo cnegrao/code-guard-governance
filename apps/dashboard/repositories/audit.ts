@@ -1,3 +1,10 @@
+/**
+ * QUARANTINED LEGACY / NON-AUTHORITATIVE.
+ * Historical repository regression fixtures and accept-hosted-pre-demo.ts only.
+ * Not a tenant authorization boundary. Never import from application routes,
+ * pages, services or the V2 adapter; never use as a fallback. The old acceptance
+ * script cannot establish acceptance of the current V2 Audit surface.
+ */
 import { db } from "@/lib/db";
 
 export interface LedgerEntry {

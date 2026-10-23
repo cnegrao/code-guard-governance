@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.l03.json",
+  "include": [
+    "src/extension.ts",
+    "bin/codeguard.ts",
+    "api/scan.ts",
+    "api/v1/scan.ts",
+    "api/openapi.ts",
+    "packages/sdk/src/index.ts",
+    "test/l03/**/*.ts",
+    "test/l03-deep/**/*.ts"
+  ]
+}

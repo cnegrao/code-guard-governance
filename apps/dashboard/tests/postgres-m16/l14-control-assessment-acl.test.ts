@@ -358,15 +358,122 @@ test('M16 S1C.5 privilege closure, preflight, postflight negative controls (disp
           predecessor_state_id uuid, effective_from timestamptz, valid_until timestamptz, recorded_at timestamptz)
         language plpgsql volatile security definer set search_path = pg_catalog, pg_temp set lock_timeout = '5s'
         as $body$${body}$body$; reset role;`;
+    // psql's displayed prosrc can be CRLF while its stored UTF-8 bytes are LF.
+    // Mutations splice original blocks; trimming below only validates those blocks.
+    const authorityCall = 'PERFORM gov_repo.l14_lock_authority_policy_guard_shared_v1(v_org);';
+    const definitionCall = 'PERFORM gov_repo.l14_lock_control_definition_dependency_guard_shared_v1(';
+    const applicabilityCall = 'PERFORM gov_repo.l14_lock_control_applicability_dependency_guard_shared_v1(';
+    const factCall = "PERFORM gov_repo.l14_lock_fact_subject_guard_v1(v_org, 'CONTROL_ASSESSMENT',";
+    const commandCall = 'PERFORM gov_repo.l14_lock_command_guard_v1(v_org, p_command_id);';
+    const validateConditional = "IF p_outcome = 'VALIDATE' THEN";
+    const definitionLines = [`${definitionCall}v_org, v_proposal.control_definition_id,`,
+      'v_proposal.control_definition_version_id, v_proposal.content_hash);'];
+    const applicabilityLines = [`${applicabilityCall}v_org, v_proposal.applicability_target_key,`,
+      'v_proposal.control_definition_id);'];
+    const uniqueOffset = (body: string, anchor: string) => {
+      const offset = body.indexOf(anchor);
+      assert.ok(offset >= 0, `missing frozen semantic anchor: ${anchor}`);
+      assert.equal(body.lastIndexOf(anchor), offset, `exactly one frozen anchor: ${anchor}`);
+      return offset;
+    };
+    const lineStart = (body: string, offset: number) => body.lastIndexOf('\n', offset) + 1;
+    const lines = (block: string) => block.trim().split('\n').map(line => line.trim());
+    const assertGuardOrder = (body: string, calls: string[]) => {
+      const offsets = calls.map(call => uniqueOffset(body, call));
+      for (let i = 1; i < offsets.length; i++) assert.ok(offsets[i - 1] < offsets[i], `guard order: ${calls[i - 1]} before ${calls[i]}`);
+    };
+    const dependencyBlock = (body: string, hasApplicability: boolean) => {
+      const definitionOffset = uniqueOffset(body, definitionCall);
+      const conditionalOffset = body.lastIndexOf(validateConditional, definitionOffset);
+      assert.ok(conditionalOffset >= 0 && conditionalOffset < definitionOffset, 'exact VALIDATE dependency conditional exists');
+      const start = lineStart(body, conditionalOffset);
+      const end = lineStart(body, uniqueOffset(body, factCall));
+      assert.ok(end > start, 'dependency conditional precedes the neighboring assessment fact guard');
+      const block = body.slice(start, end);
+      assert.deepEqual(lines(block), [validateConditional, ...definitionLines,
+        ...(hasApplicability ? applicabilityLines : []), 'END IF;'], 'only the frozen dependency conditional is captured');
+      return { start, end, block };
+    };
+    const invertDecideGuards = (body: string) => {
+      assertGuardOrder(body, [authorityCall, definitionCall, applicabilityCall, factCall, commandCall]);
+      const dependencies = dependencyBlock(body, true);
+      const factStart = lineStart(body, uniqueOffset(body, factCall));
+      const commandStart = lineStart(body, uniqueOffset(body, commandCall));
+      assert.ok(commandStart > factStart, 'command guard immediately follows the complete fact guard');
+      const factGuardCall = body.slice(factStart, commandStart);
+      assert.ok(factGuardCall.length > 0, 'the fact guard call is located');
+      uniqueOffset(factGuardCall, factCall);
+      assert.ok(factGuardCall.includes('v_proposal.control_applicability_state_id'), 'assessment key retained');
+      assert.equal(factGuardCall.includes(commandCall), false, 'command guard is outside the fact block');
+      assert.deepEqual(lines(factGuardCall), [factCall, "ARRAY['KEY', v_proposal.control_applicability_state_id::text]);"],
+        'capture only the exact assessment fact statement');
+      const inverted = body.slice(0, dependencies.start) + factGuardCall + dependencies.block + body.slice(commandStart);
+      assert.notEqual(inverted, body, 'the lock order inversion probe really reorders the guards');
+      assertGuardOrder(inverted, [authorityCall, factCall, definitionCall, applicabilityCall, commandCall]);
+      return inverted;
+    };
+    const removeWaiverRefusal = (body: string) => {
+      const waivedConditional = "IF p_assessment_outcome = 'WAIVED' THEN";
+      const outcomeConditional = 'IF p_assessment_outcome IS NULL OR p_assessment_outcome NOT IN (';
+      const nextConditional = "IF p_intent = 'VALIDATE' AND p_target_state_id IS NOT NULL THEN";
+      const start = lineStart(body, uniqueOffset(body, waivedConditional));
+      const end = lineStart(body, uniqueOffset(body, outcomeConditional));
+      const outcomeEnd = lineStart(body, uniqueOffset(body, nextConditional));
+      assert.ok(start < end && end < outcomeEnd, 'exact neighboring SUBMIT validation boundaries');
+      assert.deepEqual(lines(body.slice(start, end)), [waivedConditional,
+        "RAISE EXCEPTION 'L14_INVALID_COMMAND' USING ERRCODE = 'GV010', DETAIL = 'CONTROL_ASSESSMENT_WAIVED_UNSUPPORTED';", 'END IF;'],
+      'remove only the explicit WAIVED refusal');
+      const outcomeBlock = body.slice(end, outcomeEnd);
+      assert.deepEqual(lines(outcomeBlock), [outcomeConditional,
+        "'SATISFIED','PARTIALLY_SATISFIED','NOT_SATISFIED','NOT_ASSESSED','INSUFFICIENT_EVIDENCE') THEN",
+        "RAISE EXCEPTION 'L14_INVALID_COMMAND' USING ERRCODE = 'GV010', DETAIL = 'CONTROL_ASSESSMENT_OUTCOME_UNKNOWN';", 'END IF;'],
+      'the following closed outcome vocabulary is frozen');
+      const noWaiverRefusal = body.slice(0, start) + body.slice(end);
+      assert.notEqual(noWaiverRefusal, body, 'the WAIVED refusal removal probe really removes it');
+      assert.equal(noWaiverRefusal.includes('CONTROL_ASSESSMENT_WAIVED_UNSUPPORTED'), false, 'explicit refusal is absent');
+      uniqueOffset(noWaiverRefusal, outcomeConditional);
+      assert.equal(noWaiverRefusal.slice(start, start + outcomeBlock.length), outcomeBlock,
+        'general outcome validation and all five values retain their exact bytes');
+      return noWaiverRefusal;
+    };
+    // This existing removal was proven to work for both displayed CRLF and stored LF.
     const noAppGuard = decideSrc.replace(/\n\s+PERFORM gov_repo\.l14_lock_control_applicability_dependency_guard_shared_v1\([^;]+;/, '');
     assert.notEqual(noAppGuard, decideSrc, 'the guard removal probe really removes the applicability guard call');
-    const factGuardCall = /  PERFORM gov_repo\.l14_lock_fact_subject_guard_v1\(v_org, 'CONTROL_ASSESSMENT',\n[^;]+;\n/.exec(decideSrc)?.[0] ?? '';
-    assert.ok(factGuardCall.length > 0, 'the fact guard call is located');
-    const inverted = decideSrc.replace(factGuardCall, '').replace("  IF p_outcome = 'VALIDATE' THEN\n    PERFORM gov_repo.l14_lock_control_definition_dependency_guard_shared_v1(",
-      `${factGuardCall}  IF p_outcome = 'VALIDATE' THEN\n    PERFORM gov_repo.l14_lock_control_definition_dependency_guard_shared_v1(`);
-    assert.notEqual(inverted, decideSrc, 'the lock order inversion probe really reorders the guards');
-    const noWaiverRefusal = submitSrc.replace(/  IF p_assessment_outcome = 'WAIVED' THEN\n[^\n]+\n  END IF;\n/, '');
-    assert.notEqual(noWaiverRefusal, submitSrc, 'the WAIVED refusal removal probe really removes it');
+    assert.equal(noAppGuard.includes(applicabilityCall), false, 'exact applicability dependency call is absent');
+    assertGuardOrder(noAppGuard, [authorityCall, definitionCall, factCall, commandCall]);
+    dependencyBlock(noAppGuard, false); // The enclosing VALIDATE and definition guard survive.
+    const inverted = invertDecideGuards(decideSrc);
+    const noWaiverRefusal = removeWaiverRefusal(submitSrc);
+    // Also exercise the same mutators on actual stored bytes, without normalizing
+    // either representation or writing any alternate source to the database.
+    const stored = JSON.parse(await owner(`select json_build_object(
+      'decide', (select encode(convert_to(prosrc,'UTF8'),'hex') from pg_proc where oid='${NEW_RPCS[1]}'::regprocedure),
+      'submit', (select encode(convert_to(prosrc,'UTF8'),'hex') from pg_proc where oid='${NEW_RPCS[0]}'::regprocedure))::text`)) as { decide: string; submit: string };
+    invertDecideGuards(Buffer.from(stored.decide, 'hex').toString('utf8'));
+    removeWaiverRefusal(Buffer.from(stored.submit, 'hex').toString('utf8'));
+    const driftBody = (body: string) => {
+      const originalToken = "'CONTROL_ASSESSMENT_ALREADY_VALIDATED'";
+      const mutatedToken = "'CONTROL_ASSESSMENT_ALREADY_VALIDATED_X'";
+      const offset = uniqueOffset(body, originalToken);
+      assert.equal(body.includes(mutatedToken), false, 'the drift marker is initially absent');
+      const mutated = body.slice(0, offset) + mutatedToken + body.slice(offset + originalToken.length);
+      assert.notEqual(mutated, body, 'body drift really changes the source');
+      assert.equal(mutated.includes(originalToken), false, 'the exact frozen token is absent');
+      uniqueOffset(mutated, mutatedToken);
+      const calls = [authorityCall, definitionCall, applicabilityCall, factCall, commandCall, 'IF gov_repo.l14_replay_arbitrate_v1('];
+      assertGuardOrder(body, calls);
+      assertGuardOrder(mutated, calls);
+      assert.equal(mutated.slice(0, offset), body.slice(0, offset), 'all preceding SQL is unchanged');
+      assert.equal(mutated.slice(offset + mutatedToken.length), body.slice(offset + originalToken.length),
+        'all following SQL is unchanged');
+      return mutated;
+    };
+    const bodyDrift = driftBody(decideSrc);
+    const lf = decideSrc.replace(/\r\n/g, '\n');
+    const crlf = lf.replace(/\n/g, '\r\n');
+    assert.equal(driftBody(crlf).replace(/\r\n/g, '\n'), driftBody(lf), 'body drift is equivalent for CRLF and LF');
+    assert.throws(() => driftBody(lf.replace("'CONTROL_ASSESSMENT_ALREADY_VALIDATED'", "'UNEXPECTED_TOKEN'")),
+      /missing frozen semantic anchor/, 'an absent token cannot silently become a body-hash probe');
     const outcomes = (table: string, list: string) => `alter table gov_repo.${table} drop constraint ${table}_assessment_outcome_check;
       alter table gov_repo.${table} add constraint ${table}_assessment_outcome_check check (assessment_outcome in (${list}));`;
     const controls: Array<[string, string, RegExp]> = [
@@ -403,7 +510,7 @@ test('M16 S1C.5 privilege closure, preflight, postflight negative controls (disp
       ['overload of a new RPC', `set local role postgres; create function gov_repo.l14_submit_control_assessment_proposal_v1(uuid) returns integer language sql security definer
         set search_path = pg_catalog, pg_temp as 'select 1'; revoke all on function gov_repo.l14_submit_control_assessment_proposal_v1(uuid) from public; reset role;`,
       /overload|twenty-five post-S1C\.4 \+ two S1C\.5|ACL\/definer shape/],
-      ['decide RPC body drift', decideReplace(decideSrc.replace('CONTROL_ASSESSMENT_ALREADY_VALIDATED', 'CONTROL_ASSESSMENT_ALREADY_VALIDATED_X')), /body hash changed/],
+      ['decide RPC body drift', decideReplace(bodyDrift), /body hash changed/],
       ['decide no longer takes the applicability dependency guard', decideReplace(noAppGuard), /lock order drifted|body hash changed/],
       ['decide lock order inverted (assessment KEY before the dependency guards)', decideReplace(inverted), /lock order drifted|body hash changed/],
       ['submit no longer refuses WAIVED explicitly', submitReplace(noWaiverRefusal), /WAIVED refusal drifted|body hash changed/],
@@ -544,6 +651,9 @@ test('M16 S1C.5 privilege closure, preflight, postflight negative controls (disp
       await assert.rejects(inTxn(setup), (error: Error) => {
         assert.match(error.message, /M16_S1C5_POSTFLIGHT/, `${name}: ${error.message}`);
         assert.match(error.message, expected, `${name}: ${error.message}`);
+        if (name.startsWith('decide ') || name.startsWith('submit ') || name.startsWith('RPC ')) {
+          t.diagnostic(`${name} rejected: ${error.message.split('\n').find(line => line.includes('M16_S1C5_POSTFLIGHT'))?.trim()}`);
+        }
         return true;
       });
     }

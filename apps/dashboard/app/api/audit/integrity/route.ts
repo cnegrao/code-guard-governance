@@ -1,17 +1,12 @@
-import { NextResponse } from "next/server";
-import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
-import * as auditService from "@/services/audit";
+import { requireVerifiedGovernancePrincipal } from "@/lib/auth";
+import { verifyTenantLedger } from "@/lib/governance/ledger-read";
+import { auditJson, auditReadError } from "@/lib/audit/http";
 
 export async function GET() {
   try {
-    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
-    const integrity = await auditService.getIntegrity(orgId);
-    return NextResponse.json(integrity);
+    const principal = await requireVerifiedGovernancePrincipal();
+    return auditJson(await verifyTenantLedger(principal));
   } catch (error) {
-    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to verify integrity" },
-      { status: 500 }
-    );
+    return auditReadError(error);
   }
 }

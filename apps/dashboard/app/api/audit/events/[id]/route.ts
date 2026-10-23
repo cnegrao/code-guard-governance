@@ -1,31 +1,15 @@
-import { NextResponse } from "next/server";
-import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
-import * as auditService from "@/services/audit";
+import { requireVerifiedGovernancePrincipal } from "@/lib/auth";
+import { getTenantLedgerEvent } from "@/lib/governance/ledger-read";
+import { parseAuditHandle } from "@/lib/audit/identity";
+import { auditJson, auditReadError } from "@/lib/audit/http";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
-    const { id } = await params;
-    const sequence = parseInt(id, 10);
-
-    if (isNaN(sequence)) {
-      return NextResponse.json({ error: "Invalid entry sequence" }, { status: 400 });
-    }
-
-    const event = await auditService.getEvent(orgId, sequence);
-    if (!event) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ event });
+    const principal = await requireVerifiedGovernancePrincipal();
+    const { kind, id } = parseAuditHandle((await params).id);
+    const event = await getTenantLedgerEvent(principal, kind, id);
+    return event ? auditJson({ event }) : auditJson({ error: "Event not found" }, 404);
   } catch (error) {
-    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to load event" },
-      { status: 500 }
-    );
+    return auditReadError(error);
   }
 }

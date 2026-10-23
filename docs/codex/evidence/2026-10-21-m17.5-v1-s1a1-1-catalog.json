@@ -1,0 +1,1332 @@
+{
+  "contract": "M17.5-V1-S1A1-1 measured inactive foundation catalog",
+  "environment": {
+    "serverVersionNum": 170011,
+    "pgvector": "0.8.7"
+  },
+  "migration": {
+    "path": "supabase/migrations/20261021030240_m175_v1_s1a1_1_tenant_ledger_v2_inactive.sql",
+    "sha256LF": "d8f01b1cfb79e3b36e677659ff79c270d07ab5433b79a8612305dc07034a2754"
+  },
+  "counts": {
+    "tables": 6,
+    "columns": 50,
+    "constraints": 43,
+    "indexes": 15,
+    "triggers": 13,
+    "functions": 11
+  },
+  "tables": [
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "table": "ledger_global_append_head_v2"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "table": "ledger_integrity_epochs_v2"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "table": "ledger_tenant_entries_v2"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "table": "ledger_tenant_genesis_v2"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "table": "ledger_tenant_heads_v2"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "table": "ledger_tenant_legacy_refs_v2"
+    }
+  ],
+  "columns": [
+    {
+      "acl": null,
+      "type": "boolean",
+      "table": "ledger_global_append_head_v2",
+      "column": "singleton",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_global_append_head_v2",
+      "column": "activation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bigint",
+      "table": "ledger_global_append_head_v2",
+      "column": "last_global_sequence",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bytea",
+      "table": "ledger_global_append_head_v2",
+      "column": "last_global_hash",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "activation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "text",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "algorithm",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "integer",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "algorithm_version",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "integer",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "serialization_version",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "text",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "migration_identifier",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "timestamp with time zone",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "activated_at",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bigint",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "legacy_high_watermark",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bytea",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "legacy_tip_hash",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "boolean",
+      "table": "ledger_integrity_epochs_v2",
+      "column": "is_active",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "organisation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "chain_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "activation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "integer",
+      "table": "ledger_tenant_entries_v2",
+      "column": "algorithm_version",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "integer",
+      "table": "ledger_tenant_entries_v2",
+      "column": "serialization_version",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bigint",
+      "table": "ledger_tenant_entries_v2",
+      "column": "tenant_sequence",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "tenant_entry_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bigint",
+      "table": "ledger_tenant_entries_v2",
+      "column": "source_entry_sequence",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "source_entry_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bytea",
+      "table": "ledger_tenant_entries_v2",
+      "column": "previous_tenant_hash",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bytea",
+      "table": "ledger_tenant_entries_v2",
+      "column": "tenant_hash",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "text",
+      "table": "ledger_tenant_entries_v2",
+      "column": "event_type",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "text",
+      "table": "ledger_tenant_entries_v2",
+      "column": "event_description",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "text",
+      "table": "ledger_tenant_entries_v2",
+      "column": "subject_type",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "subject_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "actor_user_id",
+      "default": null,
+      "notNull": false
+    },
+    {
+      "acl": null,
+      "type": "inet",
+      "table": "ledger_tenant_entries_v2",
+      "column": "actor_ip",
+      "default": null,
+      "notNull": false
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_entries_v2",
+      "column": "actor_session_id",
+      "default": null,
+      "notNull": false
+    },
+    {
+      "acl": null,
+      "type": "timestamp with time zone",
+      "table": "ledger_tenant_entries_v2",
+      "column": "event_timestamp",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "timestamp with time zone",
+      "table": "ledger_tenant_entries_v2",
+      "column": "recorded_at",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "jsonb",
+      "table": "ledger_tenant_entries_v2",
+      "column": "payload",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "organisation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "chain_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "activation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "integer",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "algorithm_version",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "integer",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "serialization_version",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "timestamp with time zone",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "activated_at",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "timestamp with time zone",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "first_entry_recorded_at",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bytea",
+      "table": "ledger_tenant_genesis_v2",
+      "column": "genesis_hash",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_heads_v2",
+      "column": "organisation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_heads_v2",
+      "column": "chain_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bigint",
+      "table": "ledger_tenant_heads_v2",
+      "column": "last_tenant_sequence",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bytea",
+      "table": "ledger_tenant_heads_v2",
+      "column": "last_tenant_hash",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bigint",
+      "table": "ledger_tenant_heads_v2",
+      "column": "committed_count",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "column": "legacy_ref_id",
+      "default": "gen_random_uuid()",
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "uuid",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "column": "organisation_id",
+      "default": null,
+      "notNull": true
+    },
+    {
+      "acl": null,
+      "type": "bigint",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "column": "source_entry_sequence",
+      "default": null,
+      "notNull": true
+    }
+  ],
+  "constraints": [
+    {
+      "name": "ledger_global_append_head_v2_activation_id_fkey",
+      "table": "ledger_global_append_head_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (activation_id) REFERENCES gov_repo.ledger_integrity_epochs_v2(activation_id)"
+    },
+    {
+      "name": "ledger_global_append_head_v2_last_global_hash_check",
+      "table": "ledger_global_append_head_v2",
+      "validated": true,
+      "definition": "CHECK ((octet_length(last_global_hash) = 32))"
+    },
+    {
+      "name": "ledger_global_append_head_v2_last_global_sequence_check",
+      "table": "ledger_global_append_head_v2",
+      "validated": true,
+      "definition": "CHECK ((last_global_sequence >= 0))"
+    },
+    {
+      "name": "ledger_global_append_head_v2_pkey",
+      "table": "ledger_global_append_head_v2",
+      "validated": true,
+      "definition": "PRIMARY KEY (singleton)"
+    },
+    {
+      "name": "ledger_global_append_head_v2_singleton_check",
+      "table": "ledger_global_append_head_v2",
+      "validated": true,
+      "definition": "CHECK (singleton)"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_activated_at_check",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "CHECK (isfinite(activated_at))"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_activation_id_algorithm_version__key",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "UNIQUE (activation_id, algorithm_version, serialization_version, activated_at)"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_algorithm_check",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "CHECK ((algorithm = 'SHA-256'::text))"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_algorithm_version_check",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "CHECK ((algorithm_version = 2))"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_legacy_high_watermark_check",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "CHECK ((legacy_high_watermark >= 0))"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_legacy_tip_hash_check",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "CHECK ((octet_length(legacy_tip_hash) = 32))"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_migration_identifier_check",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "CHECK ((length(migration_identifier) > 0))"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_pkey",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "PRIMARY KEY (activation_id)"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_serialization_version_check",
+      "table": "ledger_integrity_epochs_v2",
+      "validated": true,
+      "definition": "CHECK ((serialization_version = 1))"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_check",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "CHECK ((tenant_hash = sha256(gov_repo.ledger_v2_entry_bytes(organisation_id, chain_id, activation_id, tenant_sequence, tenant_entry_id, previous_tenant_hash, source_entry_id, event_type, event_description, subject_type, subject_id, actor_user_id, actor_ip, actor_session_id, event_timestamp, recorded_at, payload, algorithm_version, serialization_version))))"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_event_timestamp_check",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "CHECK (isfinite(event_timestamp))"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_organisation_id_chain_id_activati_fkey",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (organisation_id, chain_id, activation_id, algorithm_version, serialization_version) REFERENCES gov_repo.ledger_tenant_genesis_v2(organisation_id, chain_id, activation_id, algorithm_version, serialization_version)"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_organisation_id_source_entry_sequ_fkey",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (organisation_id, source_entry_sequence) REFERENCES gov_repo.governance_ledger(organisation_id, entry_sequence)"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_organisation_id_tenant_entry_id_key",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "UNIQUE (organisation_id, tenant_entry_id)"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_pkey",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "PRIMARY KEY (organisation_id, chain_id, tenant_sequence)"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_previous_tenant_hash_check",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "CHECK ((octet_length(previous_tenant_hash) = 32))"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_recorded_at_check",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "CHECK (isfinite(recorded_at))"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_source_entry_sequence_key",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "UNIQUE (source_entry_sequence)"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_tenant_hash_check",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "CHECK ((octet_length(tenant_hash) = 32))"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_tenant_sequence_check",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "CHECK ((tenant_sequence > 0))"
+    },
+    {
+      "name": "ledger_v2_entry_structure",
+      "table": "ledger_tenant_entries_v2",
+      "validated": true,
+      "definition": "TRIGGER DEFERRABLE INITIALLY DEFERRED"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_activation_id_algorithm_version_s_fkey",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (activation_id, algorithm_version, serialization_version, activated_at) REFERENCES gov_repo.ledger_integrity_epochs_v2(activation_id, algorithm_version, serialization_version, activated_at)"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_check",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "CHECK ((genesis_hash = sha256(gov_repo.ledger_v2_genesis_bytes(organisation_id, chain_id, activation_id, activated_at, algorithm_version, serialization_version))))"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_first_entry_recorded_at_check",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "CHECK (isfinite(first_entry_recorded_at))"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_genesis_hash_check",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "CHECK ((octet_length(genesis_hash) = 32))"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_organisation_id_chain_id_activatio_key",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "UNIQUE (organisation_id, chain_id, activation_id, algorithm_version, serialization_version)"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_organisation_id_fkey",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (organisation_id) REFERENCES gov_repo.organisations(organisation_id)"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_organisation_id_key",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "UNIQUE (organisation_id)"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_pkey",
+      "table": "ledger_tenant_genesis_v2",
+      "validated": true,
+      "definition": "PRIMARY KEY (organisation_id, chain_id)"
+    },
+    {
+      "name": "ledger_tenant_heads_v2_check",
+      "table": "ledger_tenant_heads_v2",
+      "validated": true,
+      "definition": "CHECK ((committed_count = last_tenant_sequence))"
+    },
+    {
+      "name": "ledger_tenant_heads_v2_last_tenant_hash_check",
+      "table": "ledger_tenant_heads_v2",
+      "validated": true,
+      "definition": "CHECK ((octet_length(last_tenant_hash) = 32))"
+    },
+    {
+      "name": "ledger_tenant_heads_v2_last_tenant_sequence_check",
+      "table": "ledger_tenant_heads_v2",
+      "validated": true,
+      "definition": "CHECK ((last_tenant_sequence >= 0))"
+    },
+    {
+      "name": "ledger_tenant_heads_v2_organisation_id_chain_id_fkey",
+      "table": "ledger_tenant_heads_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (organisation_id, chain_id) REFERENCES gov_repo.ledger_tenant_genesis_v2(organisation_id, chain_id)"
+    },
+    {
+      "name": "ledger_tenant_heads_v2_pkey",
+      "table": "ledger_tenant_heads_v2",
+      "validated": true,
+      "definition": "PRIMARY KEY (organisation_id, chain_id)"
+    },
+    {
+      "name": "ledger_tenant_legacy_refs_v2_organisation_id_fkey",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (organisation_id) REFERENCES gov_repo.organisations(organisation_id)"
+    },
+    {
+      "name": "ledger_tenant_legacy_refs_v2_organisation_id_source_entry__fkey",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "validated": true,
+      "definition": "FOREIGN KEY (organisation_id, source_entry_sequence) REFERENCES gov_repo.governance_ledger(organisation_id, entry_sequence)"
+    },
+    {
+      "name": "ledger_tenant_legacy_refs_v2_pkey",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "validated": true,
+      "definition": "PRIMARY KEY (legacy_ref_id)"
+    },
+    {
+      "name": "ledger_tenant_legacy_refs_v2_source_entry_sequence_key",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "validated": true,
+      "definition": "UNIQUE (source_entry_sequence)"
+    }
+  ],
+  "indexes": [
+    {
+      "table": "ledger_global_append_head_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_global_append_head_v2_pkey ON gov_repo.ledger_global_append_head_v2 USING btree (singleton)"
+    },
+    {
+      "table": "ledger_integrity_epochs_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_integrity_epochs_v2_activation_id_algorithm_version__key ON gov_repo.ledger_integrity_epochs_v2 USING btree (activation_id, algorithm_version, serialization_version, activated_at)"
+    },
+    {
+      "table": "ledger_integrity_epochs_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_integrity_epochs_v2_pkey ON gov_repo.ledger_integrity_epochs_v2 USING btree (activation_id)"
+    },
+    {
+      "table": "ledger_integrity_epochs_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_v2_one_active_epoch ON gov_repo.ledger_integrity_epochs_v2 USING btree ((true)) WHERE is_active"
+    },
+    {
+      "table": "ledger_tenant_entries_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_entries_v2_organisation_id_tenant_entry_id_key ON gov_repo.ledger_tenant_entries_v2 USING btree (organisation_id, tenant_entry_id)"
+    },
+    {
+      "table": "ledger_tenant_entries_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_entries_v2_pkey ON gov_repo.ledger_tenant_entries_v2 USING btree (organisation_id, chain_id, tenant_sequence)"
+    },
+    {
+      "table": "ledger_tenant_entries_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_entries_v2_source_entry_sequence_key ON gov_repo.ledger_tenant_entries_v2 USING btree (source_entry_sequence)"
+    },
+    {
+      "table": "ledger_tenant_entries_v2",
+      "definition": "CREATE INDEX ledger_v2_tenant_browse ON gov_repo.ledger_tenant_entries_v2 USING btree (organisation_id, recorded_at, tenant_sequence)"
+    },
+    {
+      "table": "ledger_tenant_genesis_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_genesis_v2_organisation_id_chain_id_activatio_key ON gov_repo.ledger_tenant_genesis_v2 USING btree (organisation_id, chain_id, activation_id, algorithm_version, serialization_version)"
+    },
+    {
+      "table": "ledger_tenant_genesis_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_genesis_v2_organisation_id_key ON gov_repo.ledger_tenant_genesis_v2 USING btree (organisation_id)"
+    },
+    {
+      "table": "ledger_tenant_genesis_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_genesis_v2_pkey ON gov_repo.ledger_tenant_genesis_v2 USING btree (organisation_id, chain_id)"
+    },
+    {
+      "table": "ledger_tenant_heads_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_heads_v2_pkey ON gov_repo.ledger_tenant_heads_v2 USING btree (organisation_id, chain_id)"
+    },
+    {
+      "table": "ledger_tenant_legacy_refs_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_legacy_refs_v2_pkey ON gov_repo.ledger_tenant_legacy_refs_v2 USING btree (legacy_ref_id)"
+    },
+    {
+      "table": "ledger_tenant_legacy_refs_v2",
+      "definition": "CREATE UNIQUE INDEX ledger_tenant_legacy_refs_v2_source_entry_sequence_key ON gov_repo.ledger_tenant_legacy_refs_v2 USING btree (source_entry_sequence)"
+    },
+    {
+      "table": "ledger_tenant_legacy_refs_v2",
+      "definition": "CREATE INDEX ledger_v2_legacy_own_detail ON gov_repo.ledger_tenant_legacy_refs_v2 USING btree (organisation_id, legacy_ref_id)"
+    }
+  ],
+  "triggers": [
+    {
+      "name": "ledger_global_append_head_v2_identity",
+      "table": "ledger_global_append_head_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_global_append_head_v2_identity BEFORE DELETE OR UPDATE ON gov_repo.ledger_global_append_head_v2 FOR EACH ROW EXECUTE FUNCTION gov_repo.ledger_v2_head_identity()"
+    },
+    {
+      "name": "ledger_global_append_head_v2_no_truncate",
+      "table": "ledger_global_append_head_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_global_append_head_v2_no_truncate BEFORE TRUNCATE ON gov_repo.ledger_global_append_head_v2 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.ledger_v2_head_identity()"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_immutable",
+      "table": "ledger_integrity_epochs_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_integrity_epochs_v2_immutable BEFORE DELETE OR UPDATE ON gov_repo.ledger_integrity_epochs_v2 FOR EACH ROW EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    },
+    {
+      "name": "ledger_integrity_epochs_v2_no_truncate",
+      "table": "ledger_integrity_epochs_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_integrity_epochs_v2_no_truncate BEFORE TRUNCATE ON gov_repo.ledger_integrity_epochs_v2 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_immutable",
+      "table": "ledger_tenant_entries_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_entries_v2_immutable BEFORE DELETE OR UPDATE ON gov_repo.ledger_tenant_entries_v2 FOR EACH ROW EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    },
+    {
+      "name": "ledger_tenant_entries_v2_no_truncate",
+      "table": "ledger_tenant_entries_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_entries_v2_no_truncate BEFORE TRUNCATE ON gov_repo.ledger_tenant_entries_v2 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    },
+    {
+      "name": "ledger_v2_entry_structure",
+      "table": "ledger_tenant_entries_v2",
+      "enabled": "A",
+      "definition": "CREATE CONSTRAINT TRIGGER ledger_v2_entry_structure AFTER INSERT ON gov_repo.ledger_tenant_entries_v2 DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION gov_repo.ledger_v2_entry_structure()"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_immutable",
+      "table": "ledger_tenant_genesis_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_genesis_v2_immutable BEFORE DELETE OR UPDATE ON gov_repo.ledger_tenant_genesis_v2 FOR EACH ROW EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    },
+    {
+      "name": "ledger_tenant_genesis_v2_no_truncate",
+      "table": "ledger_tenant_genesis_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_genesis_v2_no_truncate BEFORE TRUNCATE ON gov_repo.ledger_tenant_genesis_v2 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    },
+    {
+      "name": "ledger_tenant_heads_v2_identity",
+      "table": "ledger_tenant_heads_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_heads_v2_identity BEFORE DELETE OR UPDATE ON gov_repo.ledger_tenant_heads_v2 FOR EACH ROW EXECUTE FUNCTION gov_repo.ledger_v2_head_identity()"
+    },
+    {
+      "name": "ledger_tenant_heads_v2_no_truncate",
+      "table": "ledger_tenant_heads_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_heads_v2_no_truncate BEFORE TRUNCATE ON gov_repo.ledger_tenant_heads_v2 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.ledger_v2_head_identity()"
+    },
+    {
+      "name": "ledger_tenant_legacy_refs_v2_immutable",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_legacy_refs_v2_immutable BEFORE DELETE OR UPDATE ON gov_repo.ledger_tenant_legacy_refs_v2 FOR EACH ROW EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    },
+    {
+      "name": "ledger_tenant_legacy_refs_v2_no_truncate",
+      "table": "ledger_tenant_legacy_refs_v2",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER ledger_tenant_legacy_refs_v2_no_truncate BEFORE TRUNCATE ON gov_repo.ledger_tenant_legacy_refs_v2 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.ledger_v2_immutable()"
+    }
+  ],
+  "functions": [
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_decimal(numeric)",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_entry_bytes(uuid,uuid,uuid,bigint,uuid,bytea,uuid,text,text,text,uuid,uuid,inet,uuid,timestamp with time zone,timestamp with time zone,jsonb,integer,integer)",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_entry_structure()",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_frame(integer,bytea)",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_genesis_bytes(uuid,uuid,uuid,timestamp with time zone,integer,integer)",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_head_identity()",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_immutable()",
+      "volatility": "v",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_integer(bigint)",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_ip(inet)",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_json(jsonb)",
+      "volatility": "i",
+      "securityDefiner": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "signature": "gov_repo.ledger_v2_timestamp(timestamp with time zone)",
+      "volatility": "i",
+      "securityDefiner": false
+    }
+  ],
+  "sourceSupport": {
+    "constraint": "ledger_v2_source_org_sequence_key",
+    "definition": "UNIQUE (organisation_id, entry_sequence)",
+    "indexCount": 1,
+    "historicalEntryIdUnique": false
+  },
+  "applicationPrivilegePosture": {
+    "roles": [
+      "PUBLIC",
+      "anon",
+      "authenticated",
+      "service_role",
+      "govia_ledger_executor"
+    ],
+    "directTableCapabilities": 0,
+    "columnCapabilities": 0,
+    "helperExecuteCapabilities": 0,
+    "tenantRpcDelta": 0,
+    "securityDefinerDelta": 0,
+    "rlsPolicies": 0,
+    "newSequences": 0
+  },
+  "defaultAcls": {
+    "unchanged": true,
+    "measured": [
+      {
+        "owner": "postgres",
+        "scope": "gov_repo",
+        "objectType": "r",
+        "acl": [
+          "service_role=arwdDxtm/postgres"
+        ]
+      },
+      {
+        "owner": "postgres",
+        "scope": "gov_repo",
+        "objectType": "S",
+        "acl": [
+          "service_role=rwU/postgres"
+        ]
+      },
+      {
+        "owner": "postgres",
+        "scope": "GLOBAL",
+        "objectType": "f",
+        "acl": [
+          "postgres=X/postgres"
+        ]
+      },
+      {
+        "owner": "govia_discovery_control_owner",
+        "scope": "GLOBAL",
+        "objectType": "f",
+        "acl": [
+          "govia_discovery_control_owner=X/govia_discovery_control_owner"
+        ]
+      },
+      {
+        "owner": "govia_discovery_audit_owner",
+        "scope": "GLOBAL",
+        "objectType": "f",
+        "acl": [
+          "govia_discovery_audit_owner=X/govia_discovery_audit_owner"
+        ]
+      },
+      {
+        "owner": "govia_discovery_intake_owner",
+        "scope": "GLOBAL",
+        "objectType": "f",
+        "acl": [
+          "govia_discovery_intake_owner=X/govia_discovery_intake_owner"
+        ]
+      },
+      {
+        "owner": "govia_discovery_propose_owner",
+        "scope": "GLOBAL",
+        "objectType": "f",
+        "acl": [
+          "govia_discovery_propose_owner=X/govia_discovery_propose_owner"
+        ]
+      }
+    ]
+  },
+  "legacyFunctions": [
+    {
+      "signature": "gov_repo.ledger_append(character varying,text,character varying,uuid,uuid,inet,uuid,jsonb)",
+      "sha256LF": "8137f591bdd717ef18cbdc8b6146aab349626903aa9d080cebe55806190ae830",
+      "owner": "govia_ledger_executor",
+      "acl": [
+        "govia_ledger_executor=X/govia_ledger_executor",
+        "service_role=X/govia_ledger_executor"
+      ],
+      "config": [
+        "search_path=pg_catalog, extensions, pg_temp"
+      ]
+    },
+    {
+      "signature": "gov_repo.ledger_verify(bigint,bigint)",
+      "sha256LF": "d52b7bc1d274cb11dd7ef4d3424d4056deba1df9846eb1195007f3695e091ec4",
+      "owner": "govia_ledger_executor",
+      "acl": [
+        "govia_ledger_executor=X/govia_ledger_executor",
+        "service_role=X/govia_ledger_executor"
+      ],
+      "config": [
+        "search_path=pg_catalog, extensions, pg_temp"
+      ]
+    }
+  ],
+  "inactive": {
+    "ledger_tenant_heads_v2": 0,
+    "ledger_tenant_entries_v2": 0,
+    "ledger_tenant_genesis_v2": 0,
+    "ledger_integrity_epochs_v2": 0,
+    "ledger_global_append_head_v2": 0,
+    "ledger_tenant_legacy_refs_v2": 0
+  },
+  "activeEpochCount": 0,
+  "goldenVectors": [
+    {
+      "name": "genesis",
+      "sha256": "61c3368ee9ea661800f0e2c98fb04c79639815ca11dc6d8e4f9fd4aabce475b5",
+      "result": "PASS"
+    },
+    {
+      "name": "genesis-other-organisation",
+      "sha256": "0403c6ab78bc340e2da5b69c2f8140564706995e979e0bcfee6a96dacd5801b3",
+      "result": "PASS"
+    },
+    {
+      "name": "ordinary-event",
+      "sha256": "1185b4fce03700f14a01c623cf7e2877c89071ab7999732f3484df8b0d5eafe7",
+      "result": "PASS"
+    },
+    {
+      "name": "null-nullable-fields",
+      "sha256": "c1418d3fe8de52e0ec053d7bbb490381cf639b520d41120156f18d45b5e7ad9b",
+      "result": "PASS"
+    },
+    {
+      "name": "empty-description",
+      "sha256": "bc3648b253c7361f15cc4cde9f4bd25e1abfc80aacc4cf166c71624f09c26e49",
+      "result": "PASS"
+    },
+    {
+      "name": "empty-object",
+      "sha256": "22878894cadf3ca8e1874d761e5141ffa16a6e17980a28a3c26563fbac85363c",
+      "result": "PASS"
+    },
+    {
+      "name": "nested-object",
+      "sha256": "b3cea68460c6b7ab4184f12b623815eccfc79c6db7d1d82695649a27738733d5",
+      "result": "PASS"
+    },
+    {
+      "name": "key-order-a",
+      "sha256": "82b48d0cdfa1843ee6f6f7b6eed10c85d080bcc585c976adc544c0317c1925e2",
+      "result": "PASS"
+    },
+    {
+      "name": "key-order-b",
+      "sha256": "82b48d0cdfa1843ee6f6f7b6eed10c85d080bcc585c976adc544c0317c1925e2",
+      "result": "PASS"
+    },
+    {
+      "name": "array-order-a",
+      "sha256": "5a36603771eb6b8a43a9ba26a2d64428359d38451421c37c2e6ea1da645a629e",
+      "result": "PASS"
+    },
+    {
+      "name": "array-order-b",
+      "sha256": "63222c9262bcdbf8bce6887b21c846ea89710eb3c8f46de8a0ef365a2e90a7f9",
+      "result": "PASS"
+    },
+    {
+      "name": "unicode",
+      "sha256": "7004f480c4c8ba3c45a04dae41f5457f5a208ec1c72c02c250edfbfb1e91c2c3",
+      "result": "PASS"
+    },
+    {
+      "name": "large-integer",
+      "sha256": "fc416acf4d9a992d2d428783236f1275c4e5c318a6acd7d8fecf5be6bdf46aae",
+      "result": "PASS"
+    },
+    {
+      "name": "negative-integer",
+      "sha256": "dc16342e4d36db50c775e9e3e19264ad5eef1894589c297e6914438fd28bddf7",
+      "result": "PASS"
+    },
+    {
+      "name": "fractional-decimal",
+      "sha256": "044edb60b54b41aba829c4fd2e114692fdf0d8108bdb12a05c707deb0ab4ffc5",
+      "result": "PASS"
+    },
+    {
+      "name": "exponent",
+      "sha256": "e798b66766b815f05e8b553185bf97a65925a58aa79c1d046e3997a0be7f6cc4",
+      "result": "PASS"
+    },
+    {
+      "name": "exponent-expanded",
+      "sha256": "e798b66766b815f05e8b553185bf97a65925a58aa79c1d046e3997a0be7f6cc4",
+      "result": "PASS"
+    },
+    {
+      "name": "negative-zero",
+      "sha256": "e5b3d75acccdb814d7cee08326402e69e48439b441159cb82a189883ca0bdebf",
+      "result": "PASS"
+    },
+    {
+      "name": "zero",
+      "sha256": "e5b3d75acccdb814d7cee08326402e69e48439b441159cb82a189883ca0bdebf",
+      "result": "PASS"
+    },
+    {
+      "name": "microsecond",
+      "sha256": "b9c9db2915385cd879e7ba8e993e022d75755e6b406f55236550fc3b16fa28ef",
+      "result": "PASS"
+    },
+    {
+      "name": "timezone-equivalent",
+      "sha256": "1185b4fce03700f14a01c623cf7e2877c89071ab7999732f3484df8b0d5eafe7",
+      "result": "PASS"
+    },
+    {
+      "name": "ipv4-prefix",
+      "sha256": "270fbef82e9fffab32d08641ec6163a91f95d591382ac09ff58e2a07dd49054a",
+      "result": "PASS"
+    },
+    {
+      "name": "ipv6",
+      "sha256": "ce11236b4f1dd0cc8531cded4703ee7ffff174d63b214b2b62f25f437a54c510",
+      "result": "PASS"
+    },
+    {
+      "name": "ipv6-equivalent",
+      "sha256": "ce11236b4f1dd0cc8531cded4703ee7ffff174d63b214b2b62f25f437a54c510",
+      "result": "PASS"
+    },
+    {
+      "name": "other-organisation",
+      "sha256": "050d15ba37ee1088457145996111c529d83e400b1b14eb1623fad1171abc50d6",
+      "result": "PASS"
+    },
+    {
+      "name": "other-predecessor",
+      "sha256": "d8b9b8f1c0a7e1d018e3f9af7dd5a40ccd424732297a13a1d1a5469c5a0d4f86",
+      "result": "PASS"
+    },
+    {
+      "name": "other-chain",
+      "sha256": "93a15140cbe1d7706ad768a39e057d27df16545a3d7734c90ca0144e007d77de",
+      "result": "PASS"
+    },
+    {
+      "name": "other-activation",
+      "sha256": "32150892b3a892d4c219d895e301da30599e61bb92d85baa638f560295496975",
+      "result": "PASS"
+    },
+    {
+      "name": "source-identity",
+      "sha256": "35dba589666d29118658966ebf342758abee87d4858184339d9edb8451486174",
+      "result": "PASS"
+    },
+    {
+      "name": "large-sequence",
+      "sha256": "de00f624811066c19702c6deaf793348d22725401310f75bc24a3fc6fa66fbef",
+      "result": "PASS"
+    },
+    {
+      "name": "json-null",
+      "sha256": "71f1e01cd72c630d81f6738b509b04b5e07598908d4765cd2584089ce197d865",
+      "result": "PASS"
+    },
+    {
+      "name": "empty-array",
+      "sha256": "c762c3fedba5098abece910891cd557008721b16aac3e81ddf5002f388fd1d1b",
+      "result": "PASS"
+    },
+    {
+      "name": "text-null",
+      "sha256": "3e7077fd2f66d689e0cee6a7cf5b37bf2dca7c979af356d0a31cbc5c85605c7d",
+      "result": "PASS"
+    },
+    {
+      "name": "text-empty",
+      "sha256": "a536aa3cede6ea3c1f3e0357c3c60e0f216a8c89b853df13b29daa8f85065dfb",
+      "result": "PASS"
+    },
+    {
+      "name": "text-unicode",
+      "sha256": "47f6b652d53e47cec4c2b0c8854c55c2595070155e0a2ca70a4906bf2d7c84c7",
+      "result": "PASS"
+    },
+    {
+      "name": "decimal-0.0012000",
+      "sha256": "856d9ac47840a49e1cad7fb40712506e56a34e4f2ab1e0035b409c70075ad3ea",
+      "result": "PASS"
+    },
+    {
+      "name": "decimal--0",
+      "sha256": "a2e8bdb4669186da17c9dce0af2f3b43e758d7fd8bfe3a93c0b8832bdefcce51",
+      "result": "PASS"
+    },
+    {
+      "name": "decimal-1e30",
+      "sha256": "3b56d145e057b213a35c00a400080d09ad9828302e885888dd14fd7c84f52074",
+      "result": "PASS"
+    },
+    {
+      "name": "decimal--1.20",
+      "sha256": "b272662d9b986df3926bb49d147906c833f91be7036992360ecfe530873ba82f",
+      "result": "PASS"
+    },
+    {
+      "name": "timestamp-1969-12-31T23:59:59.999999+00:00",
+      "sha256": "c219f593f3ebfa5a275e85ef471591dc68cbf11f3f7e11aba532dee6db96e4a4",
+      "result": "PASS"
+    },
+    {
+      "name": "timestamp-1970-01-01T00:00:00+00:00",
+      "sha256": "533839de7cd4f504e80cfafcc3258a3da4d7d79d112c0889ce03ff857f58f6b8",
+      "result": "PASS"
+    }
+  ]
+}

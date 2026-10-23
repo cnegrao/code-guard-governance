@@ -1,0 +1,180 @@
+{
+  "record_version": 1,
+  "date": "2026-10-21",
+  "timezone": "America/Sao_Paulo",
+  "slice": "M17.5-V1-S1B CHECKPOINT 1",
+  "slice_status": "CLOSED / PASS",
+  "starting_head": "ded847bf7bc685b371f36664f50b69e9bdb535d1",
+  "verification_scope": "LOCAL_SOURCE_APPLICATION_UI_AND_MOCKED_DATABASE_TRANSPORT",
+  "hosted_verified": false,
+  "hosted_delta": 0,
+  "database_schema_delta": 0,
+  "migration_delta": 0,
+  "evidence": "docs/codex/evidence/2026-10-21-m17.5-v1-s1b-c1-l01-lx02-containment.md",
+  "historical_records_modified": false,
+  "gates": {
+    "L01": {
+      "classification": "CONTAINED / PASS - LOCAL",
+      "criteria": [
+        {
+          "id": 1,
+          "criterion": "Agent aggregate score removed",
+          "result": "PASS",
+          "proof": "services/agents.ts:getAgent; computeScore deleted"
+        },
+        {
+          "id": 2,
+          "criterion": "System aggregate score removed",
+          "result": "PASS",
+          "proof": "services/systems.ts:getSystem; computeScore deleted"
+        },
+        {
+          "id": 3,
+          "criterion": "Shared panel aggregate percentage removed",
+          "result": "PASS",
+          "proof": "components/agents/LegacyControlRecordsPanel.tsx:LegacyControlRecordsPanel"
+        },
+        {
+          "id": 4,
+          "criterion": "Active Agent/System UI describes legacy manual records, not compliance",
+          "result": "PASS",
+          "proof": "Agent/System detail pages; AgentTable; agents/page.tsx"
+        },
+        {
+          "id": 5,
+          "criterion": "Active API emits no unsafe score or compliance aliases",
+          "result": "PASS",
+          "proof": "legacy-control-api.test.ts:all detail/list/create/update/PATCH responses"
+        },
+        {
+          "id": 6,
+          "criterion": "Public DTOs exclude raw cg_ag_/cg_sys_ flags",
+          "result": "PASS",
+          "proof": "lib/legacy-control-dto.ts:AGENT_PUBLIC_FIELDS; SYSTEM_PUBLIC_FIELDS"
+        },
+        {
+          "id": 7,
+          "criterion": "external_refs.controlStates excluded from base public records",
+          "result": "PASS",
+          "proof": "projectAgent; projectSystem; injected raw-column API tests"
+        },
+        {
+          "id": 8,
+          "criterion": "Recorded states explicitly LEGACY_NON_AUTHORITATIVE",
+          "result": "PASS",
+          "proof": "legacyControlEnvelope; LegacyControlRecordsPanel"
+        },
+        {
+          "id": 9,
+          "criterion": "Zero gaps/all-pass never produce an assurance conclusion",
+          "result": "PASS",
+          "proof": "mixed/all-pass/unknown/empty API and SSR matrix"
+        },
+        {
+          "id": 10,
+          "criterion": "No replacement aggregate; additional AgentTable percentage removed",
+          "result": "PASS",
+          "proof": "AgentTable:compliancePct/complianceColor deleted; source contract guard"
+        }
+      ]
+    },
+    "LX02": {
+      "classification": "CONTAINED / PASS - LOCAL",
+      "criteria": [
+        {
+          "id": 1,
+          "criterion": "Home legacy control percentage card removed",
+          "result": "PASS",
+          "proof": "app/(dashboard)/page.tsx:Estate Overview two-column inventory"
+        },
+        {
+          "id": 2,
+          "criterion": "Dashboard summary emits no complianceRate",
+          "result": "PASS",
+          "proof": "repositories/dashboard.ts:getDashboardData; actual summary handler test"
+        },
+        {
+          "id": 3,
+          "criterion": "Dashboard summary emits no cgSysComplianceRate",
+          "result": "PASS",
+          "proof": "repositories/dashboard.ts:getDashboardData; actual summary handler test"
+        },
+        {
+          "id": 4,
+          "criterion": "Dashboard summary emits no evidenceCoverage",
+          "result": "PASS",
+          "proof": "repositories/dashboard.ts:getDashboardData; actual summary handler test"
+        },
+        {
+          "id": 5,
+          "criterion": "No replacement percentage/score or unused ratio queries",
+          "result": "PASS",
+          "proof": "computeCompliance/computeCgSysComplianceRate/computeEvidenceCoverage deleted"
+        },
+        {
+          "id": 6,
+          "criterion": "Zero/empty never implies favorable assurance",
+          "result": "PASS",
+          "proof": "home non-positive gap wording; neutral panel and SSR empty cases"
+        }
+      ]
+    }
+  },
+  "v1_s1b_status": "OPEN",
+  "m17_5_status": "OPEN",
+  "controlled_demo_readiness": "HOLD",
+  "external_publication_readiness": "HOLD",
+  "tenant_assurance_readiness": "HOLD",
+  "certification_readiness": "HOLD",
+  "m18": "HOLD",
+  "lx08_status": "CONTAINED / PASS - LOCAL; existing v2 status and active Audit source boundary unchanged",
+  "remaining_s1b_exposure_gates": [
+    "L02",
+    "L03",
+    "LX01",
+    "LX03",
+    "LX04",
+    "LX05",
+    "LX06",
+    "LX07"
+  ],
+  "s1c_later": [
+    "L04",
+    "LX09_DORMANT_PDF_GENERATORS"
+  ],
+  "l05_scope": "SAFE only for previously inspected regulatory export rejection guard; no broader promotion",
+  "next_checkpoint_proposal": "M17.5-V1-S1B CHECKPOINT 2 - L02 scanner certification tiers + L03 extension compliance/report exposure containment",
+  "next_checkpoint_started": false,
+  "limitations": [
+    "Local tests use real route/service/repository logic with mocked Supabase HTTP transport, not a live database or hosted HTTP acceptance.",
+    "UI evidence is SSR and deterministic hook/effect execution, not browser layout or timing validation.",
+    "No known external client dependency found; no external compatibility guarantee invented. Unsafe response aliases are deliberately removed."
+  ],
+  "source_sha256": {
+    "apps/dashboard/lib/legacy-control-dto.ts": "f12190010f926e2229e4be5cf32759364eddd43a3cb90013c8520348ff928242",
+    "apps/dashboard/types/agents.ts": "5ef64d3a9111f3a8baf7facaf7f66a911810f141921127e0c88166984eb4118d",
+    "apps/dashboard/types/systems.ts": "80c11bac73cd703f22598b4cbe5c903d35259c4c8ce4dafafb6cc1a8aec6e1bb",
+    "apps/dashboard/services/agents.ts": "372ca4f335c55d6cbf77adcbcfe69f741f4da05f085aa3e13e0b89143c9a151b",
+    "apps/dashboard/services/systems.ts": "47190b0c27c550652aa040efab795c8a27ef3fd4accc93270f50fe2a3ec927cd",
+    "apps/dashboard/services/dashboard.ts": "cbe08d1d85cfe51d26783d4cd27628fa2219b29c233fa3d294c7623449912cda",
+    "apps/dashboard/repositories/agents.ts": "88df6cf6b30730c027e50f8e61e0a49ad4249b0e75cdc92094e410b1a6005241",
+    "apps/dashboard/repositories/systems.ts": "d00af9ad1392c0ace442c67f9bd87b99e17f6b64e381cd4b19613ccd208cc528",
+    "apps/dashboard/repositories/dashboard.ts": "0694f4bf0ea4bfcffc99f6386b4a96be48739e6c7700d831bed305eda07c0dfa",
+    "apps/dashboard/app/api/agents/route.ts": "165da91327a75fdb826b9344f5f07e39a2dc19600d8a638ffba9bc8918afb9c6",
+    "apps/dashboard/app/api/agents/[id]/route.ts": "ef069a927762e68760974462759090885cd32b989c5ce476b54f4d55dc4cab5f",
+    "apps/dashboard/app/api/systems/route.ts": "1f0331008c86b0c43dd9db018ddacaf839eb42602fbb819c65d4ba6e43a3e427",
+    "apps/dashboard/app/api/systems/[id]/route.ts": "1c1c5763dd20dbebbaea1a2afb1171080ac3ac532331a59bfca0da1be8f46f28",
+    "apps/dashboard/app/api/dashboard/summary/route.ts": "3559802df85069a29d2134ffe36d1bedd7967746f67ecaf134b557dcfe0c49e6",
+    "apps/dashboard/components/agents/LegacyControlRecordsPanel.tsx": "3b1d19f7e4c737adc99d71aa076cbe8ef9c2cb82c3f200eaed89b7f8ae2de949",
+    "apps/dashboard/components/agents/AgentTable.tsx": "9ce464d73c571b67ca26c9754f378ffc2df35f3806fd1e512510e6c096d1b99d",
+    "apps/dashboard/app/(dashboard)/agents/page.tsx": "df2e046a38b294a5d797bb6b8e4abc5248ab3388b6e7afb0f524a159b1e1ea36",
+    "apps/dashboard/app/(dashboard)/agents/[id]/page.tsx": "d0364589796a21b7e6eda399df703cee5632a0eb79e8b82a0e08780d27a39346",
+    "apps/dashboard/app/(dashboard)/systems/[id]/page.tsx": "01519bd001f74843ffcb74672126810a9ffa3c387d47f7106df3639e2248d313",
+    "apps/dashboard/app/(dashboard)/page.tsx": "09576af5c24396a2993a99ac6118a0e2598ed810eaf2ee32649ce1a8614a9a0b",
+    "apps/dashboard/tests/legacy-control-api.test.ts": "34c4b1b2e7eeac670b7d13d515db810e42cca199df1352fdb173c9683aba3395",
+    "apps/dashboard/tests/legacy-control-source-contract.test.ts": "a13f25e14d710a18ab0a3b6c24cd41e6157324e8ae1db49d7361d4d6ee1eece5",
+    "apps/dashboard/tests/pre-demo-ui.test.ts": "df91744e598b9415f98aaf7ede1ef99d4c869567280749de277504aa8b2f31ae",
+    "apps/dashboard/tests/pre-demo-reads.test.ts": "284c085cda1829847305be3bb3b065538c5b7806973f47aece505f810dd780ed",
+    "apps/dashboard/tests/legacy-read-tenant-binding.test.ts": "b04322bee7df82a6d2b6c1961cda0f29e2c3506ed0042b45cd2dc97ef700f06f"
+  }
+}

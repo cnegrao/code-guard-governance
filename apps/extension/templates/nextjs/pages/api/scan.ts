@@ -25,7 +25,7 @@ export default async function handler(
             return res.status(400).json({ error: 'Code is required' });
         }
 
-        // Perform Compliance Scan
+        // Perform non-authoritative technical framework review
         const result = await client.scan({
             code,
             region

@@ -1,29 +1,24 @@
-import { NextResponse } from "next/server";
-import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
-import * as auditService from "@/services/audit";
+import { requireVerifiedGovernancePrincipal } from "@/lib/auth";
+import { listTenantLedgerEvents } from "@/lib/governance/ledger-read";
+import { auditJson, auditReadError } from "@/lib/audit/http";
 
 export async function GET(request: Request) {
   try {
-    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
+    const principal = await requireVerifiedGovernancePrincipal();
     const { searchParams } = new URL(request.url);
-
-    const result = await auditService.getEvents(orgId, {
-      page: Number(searchParams.get("page")) || 1,
-      limit: Number(searchParams.get("limit")) || 50,
-      event_type: searchParams.get("event_type") ?? undefined,
-      subject_type: searchParams.get("subject_type") ?? undefined,
-      actor_id: searchParams.get("actor_id") ?? undefined,
-      search: searchParams.get("search") ?? undefined,
-      dateFrom: searchParams.get("date_from") ?? undefined,
-      dateTo: searchParams.get("date_to") ?? undefined,
-    });
-
-    return NextResponse.json(result);
+    for (const key of searchParams.keys()) {
+      if (!["limit", "cursor", "event_type"].includes(key) || searchParams.getAll(key).length !== 1) {
+        throw new RangeError("Unsupported audit parameter");
+      }
+    }
+    const rawLimit = searchParams.get("limit");
+    if (rawLimit !== null && !/^[1-9][0-9]*$/.test(rawLimit)) throw new RangeError("Invalid limit");
+    return auditJson(await listTenantLedgerEvents(principal, {
+      limit: rawLimit === null ? undefined : Number(rawLimit),
+      cursor: searchParams.get("cursor") ?? undefined,
+      eventType: searchParams.get("event_type") ?? undefined,
+    }));
   } catch (error) {
-    if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to load events" },
-      { status: 500 }
-    );
+    return auditReadError(error);
   }
 }

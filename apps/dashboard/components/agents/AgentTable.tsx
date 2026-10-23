@@ -7,27 +7,6 @@ import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAgents } from "@/hooks/useAgents";
-import type { Agent } from "@/types/agents";
-
-function compliancePct(agent: Agent): number {
-  const flags = [
-    agent.cg_ag_001_registered,
-    agent.cg_ag_002_owner,
-    agent.cg_ag_003_model_reg,
-    agent.cg_ag_007_oversight,
-    agent.cg_ag_008_audit_trail,
-    agent.cg_ag_010_classified,
-    agent.cg_ag_012_autonomous_governed,
-  ];
-  const passed = flags.filter(Boolean).length;
-  return Math.round((passed / flags.length) * 100);
-}
-
-function complianceColor(pct: number): "passed" | "failed" | "medium" {
-  if (pct >= 85) return "passed";
-  if (pct >= 50) return "medium";
-  return "failed";
-}
 
 export function AgentTable() {
   const { agents, total, loading, error, refetch } = useAgents();
@@ -62,14 +41,13 @@ export function AgentTable() {
               <th className="py-2 px-3 font-medium">Type</th>
               <th className="py-2 px-3 font-medium">Legacy risk label <span className="text-[10px] text-gray-500">({LEGACY_RISK_LABEL})</span></th>
               <th className="py-2 px-3 font-medium">Status</th>
-              <th className="py-2 px-3 font-medium">Compliance</th>
               <th className="py-2 px-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {agents.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-gray-500">
+                <td colSpan={6} className="py-12 text-center text-gray-500">
                   No agents registered.{" "}
                   <Link href="/agents/new" className="text-primary hover:underline">
                     Create your first agent.
@@ -78,7 +56,6 @@ export function AgentTable() {
               </tr>
             ) : (
               agents.map((agent) => {
-                const pct = compliancePct(agent);
                 return (
                   <tr key={agent.agent_id} className="border-b border-border-dark/50 hover:bg-white/5">
                     <td className="py-2 px-3 font-mono text-xs text-gray-300">
@@ -103,9 +80,6 @@ export function AgentTable() {
                       >
                         {agent.status}
                       </Badge>
-                    </td>
-                    <td className="py-2 px-3">
-                      <Badge variant={complianceColor(pct)}>{pct}%</Badge>
                     </td>
                     <td className="py-2 px-3">
                       <Link

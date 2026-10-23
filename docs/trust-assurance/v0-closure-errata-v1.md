@@ -1,0 +1,1423 @@
+# M17.5-V0-E1 — adversarial errata
+
+**M17.5 V0 READINESS PACK: CLOSED / PASS**. Overall M17.5: OPEN.
+
+Append-only interpretation of the owner-supplied external Claude Code review at the pinned V0 snapshot. Historical S0–S5 artifacts remain unchanged. These corrections do not remediate any runtime surface or approve any wording.
+
+Controlled demo, external publication, tenant assurance and certification remain HOLD. V1-S0 and M18 are not started.
+
+The historical S2 register contains 61 OPEN assurance gaps, not 61 total known issues. Presentation/exposure gates form a separate population. L01–L05 and LX01–LX07 are inherited, LX08_AUDIT_TRAIL is appended, and dormant PDF generators are appended under LX09_DORMANT_PDF_GENERATORS. L04 package compatibility inputs expand its scope without changing L04. These populations may overlap in subject matter and must not be summed into a deduplicated issue count.
+
+All 42 claim records remain INELIGIBLE and accessible INTERNAL_ONLY. Affirmative use is PROHIBITED for all 42 at this cutoff; the three rejected positive proposals remain negative review examples only. Record access is not permission to assert the wording. The historical PROHIBITED: 0 count is not an affirmative-use count.
+
+S2 capability_ceilings.current_claim_ceiling controls publication/use gating for all 38 capabilities. The five S1 alignment candidates remain historical mapping metadata, never effective external ceilings. Missing or inconsistent controlling inputs must fail closed.
+
+V1-A1 (known_population denominator hazard) and V1-A2 (read-hop authorization classification) remain UNRESOLVED mandatory V1-S0 acceptance inputs. E1 records them without deciding the architecture.
+
+## Complete errata metadata
+
+JSON is the canonical errata metadata. This complete field projection preserves finding provenance, immutable input blobs, scope, corrected interpretations and unresolved acceptance gates.
+
+- **schema_version:** 1.0
+- **record_version:** 1
+- **errata_id:** M17.5-V0-E1
+- **recorded_at:** 2026-10-20
+- **timezone:** America/Sao_Paulo
+- **author:** Codex / Carlos-authorized append-only E1
+- **supersedes_record_version:** null
+- **repository:** cnegrao/code-guard-governance
+- **branch:** feat/m17.5-trust-assurance-v0
+- **reviewed_head:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+- **authority**
+  - **source:** Owner-supplied external Claude Code READ-ONLY adversarial review, pasted in this session
+  - **source_attachment_name:** Pasted text.txt
+  - **source_sha256_lf_utf8:** f383413f9bae7868790c7f9928864583d84ad58ee4c44150e74278067fbcdaff
+  - **reviewed_branch:** feat/m17.5-trust-assurance-v0
+  - **reviewed_head:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+  - **verdict:** B. V0 CLOSURE DEFENSIBLE WITH CORRECTIONS
+  - **reported_P0:** 0
+  - **reported_P1:** 0
+  - **repository_mutation_by_external_review:** false
+  - **independent_review_reperformed_in_e1:** false
+  - **authorization:** Append-only E1, local documentary verification, then commit and push only after all gates PASS. No PR; do not start V1-S0 or M18.
+  - **new_P0_P1_policy:** STOP and report any newly discovered P0/P1 contradiction.
+- **scope:** Documentary corrections only. E1 overrides only the interpretations explicitly identified below; historical source records and substantive ceilings remain unchanged.
+- **decisions**
+  - **V0_DOCUMENTARY_CLOSURE:** PASS
+  - **CONTROLLED_DEMO_READINESS:** HOLD
+  - **EXTERNAL_PUBLICATION_READINESS:** HOLD
+  - **TENANT_ASSURANCE_READINESS:** HOLD
+  - **CERTIFICATION_READINESS:** HOLD
+  - **M18:** HOLD
+- **closure_statement:** M17.5 V0 READINESS PACK: CLOSED / PASS
+- **overall_milestone:** OPEN
+- **historical_artifacts**
+  - **1**
+    - **path:** docs/architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 9ad77374aa9c392013c911415f5d9cd6188a73cb
+    - **sha256_lf_utf8:** 2ce903ea6e88bf6d78c9e7d3a70ab2f6959935d6f66d30baefc2b2a27586df1e
+  - **2**
+    - **path:** docs/architecture/GOVIA-L0L16-CIA-v1.0-roadmap.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 09673d1ca3979c30269be719a161b45ad4ca67b3
+    - **sha256_lf_utf8:** ad1a71dca174209e3bc2982d6c0a666bdf18d82cc0742169cd67f390a7af7f5b
+  - **3**
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** e8316db57f39a6bce03b41a09f871ffbd8e1eb43
+    - **sha256_lf_utf8:** 74d949895f23f7f53499c00f07e287d42f7c92acdeda001c5608ae6059ad8b0f
+  - **4**
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** da2a247c464809c392a5fd03b2cea3da85110f7b
+    - **sha256_lf_utf8:** 699f19874477652181153308a5bab0ca53ad1e4432dcda4c4bf0f86c7b39b02a
+  - **5**
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s1-source-crosswalk.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 0c8553a55a7b912bebadcecd9a72244bb9edb14e
+    - **sha256_lf_utf8:** 2d6dd5bb7eeaf88f402fdbfc7b3a225f509a1e4f9a40d704ef5d227f4b99e8f4
+  - **6**
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s2-gaps-claims.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 0c5932752750e9e69ef3f5717afc07a01e23dc94
+    - **sha256_lf_utf8:** d1889b774bfaebca4f086ce8f323370e55d1dfc9a000e1b7fb88c5f198c76a2c
+  - **7**
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s3-award-readiness.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 3c06033cc26033a6d3af4f2c895f3de37903da7e
+    - **sha256_lf_utf8:** 38b26e8c5cc8f6c64268a0730940abd3e77711bff009934e83747c0cc086f17d
+  - **8**
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s4-kpi-framework.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 3ab1afb6798c23b305bdef472a5d9d6a06670553
+    - **sha256_lf_utf8:** f6b8ba376d754add59bce12ced81a274ab27e0bb1fdd90088da556bd2c539f34
+  - **9**
+    - **path:** docs/codex/evidence/2026-10-20-m17.5-s5-v0-closure.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 249abfcdd43833e02f501700765aeee0e3bb5ee0
+    - **sha256_lf_utf8:** 25ed386e3e6b94957db34049a79b77a4a8a6e85691fac40786c0ca3c5d85c1c8
+  - **10**
+    - **path:** docs/trust-assurance/award-calendar-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** fae65ee8b37d95073e7f6db38a663cfa1d702921
+    - **sha256_lf_utf8:** 98a1d631b52c67507903e917c556829add35a02b8e24356c499bc9bb5fd44f19
+  - **11**
+    - **path:** docs/trust-assurance/award-calendar-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 1f4832b80db8b64afe9ea0b2f628a61ab72557b0
+    - **sha256_lf_utf8:** aace88bf943fe0feee4ad1cb71fd0a70c2fe03c0d0999367b6f25f55522f5f24
+  - **12**
+    - **path:** docs/trust-assurance/award-readiness-matrix-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** fefcdf820d8d182fb1e29b958922faaba6c8785e
+    - **sha256_lf_utf8:** f2337cbd6ef6b07cc2a23c5e28aae90ef16a11d34bd24765abae0c1cccb38bba
+  - **13**
+    - **path:** docs/trust-assurance/award-readiness-matrix-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 95706c8d4cef022f4f1b7905d038f5fd0303441f
+    - **sha256_lf_utf8:** 4e439f0d3450cbfe42e915bca11203cd65cb9ee38a3b57b911bcc472fa261299
+  - **14**
+    - **path:** docs/trust-assurance/award-render-v0.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 766404b14ff0ab8ed15b9f81e83f4373675ea425
+    - **sha256_lf_utf8:** b7a9659e5cc18b6eb661b85877c418a3117a848db5e22ba4b31dab6015310a71
+  - **15**
+    - **path:** docs/trust-assurance/closure-render-v0.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** c62e1ee479f2a17084ca3e3e4ed4a554f4528959
+    - **sha256_lf_utf8:** 0b7b13b6ac37575901f3a8a8eba8d94d555be3c5653bbad3c64e2b842a89c178
+  - **16**
+    - **path:** docs/trust-assurance/commercial-claims-register-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 9b55194733c824b6d5d19246c2f1aca155fd57cf
+    - **sha256_lf_utf8:** eaf3208146f151bf17ce8390628faadd94cd46e1a11cc10c08c3ff81de3e4107
+  - **17**
+    - **path:** docs/trust-assurance/commercial-claims-register-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 5559cab90d49b84780ba0ef93db1efd83bdc874f
+    - **sha256_lf_utf8:** 06907c6b0f00ba082bce7cab2e5ef367ab274cf4129464aaf4e8099b24452dc6
+  - **18**
+    - **path:** docs/trust-assurance/evidence-index-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 95f8a4572373ca6fefcf58bbc95580f63a8e3b43
+    - **sha256_lf_utf8:** 84f273f365c2721434e7b54c28f8ffe27a5e5ecc8e79037dca2fb09ade33a12f
+  - **19**
+    - **path:** docs/trust-assurance/evidence-index-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 4f691d2892c502aaac09bbb468e790401e7c113a
+    - **sha256_lf_utf8:** 991e718b0c03cd15e9be5d5da56287301faa6729c017e368e2a0747576bf2938
+  - **20**
+    - **path:** docs/trust-assurance/external-credibility-matrix-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** ef40ea61692eb03dde4e47e0234ef0356d83de7e
+    - **sha256_lf_utf8:** 6a46bf1bddef532ad10f0af9a4d22647dc1fd402e7c47e709119245250e9b3ed
+  - **21**
+    - **path:** docs/trust-assurance/framework-crosswalk-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 24ae2be21f517077ef0ec640f4b4b8fb8be572a9
+    - **sha256_lf_utf8:** a701d10decebc4a7b81c33b84f4412d1f33d5261b43b6f7a7055649b66b8a816
+  - **22**
+    - **path:** docs/trust-assurance/framework-crosswalk-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 49e31439714965c32630c9df254f7467ee231ef5
+    - **sha256_lf_utf8:** f1b652d5cdd250f9b7e58705d0232362fcdedf0707b91984cc85e2c1057facde
+  - **23**
+    - **path:** docs/trust-assurance/framework-source-catalog-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 32e24e96d78f3dd1483256d6b5a2c72b506e657d
+    - **sha256_lf_utf8:** d220b50f8943e337bcf20622692175165998d5cf818ca979496658bae44bfa40
+  - **24**
+    - **path:** docs/trust-assurance/gap-register-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** d257548ae81c4bc5ec6c01fd5b461e2271ea8caa
+    - **sha256_lf_utf8:** d3abd41ccbbe777966d6c30deba22026ff8475b9c6d3b686203fd0495d25af46
+  - **25**
+    - **path:** docs/trust-assurance/gap-register-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** efda50263253d690b4db7698d5195b4efa34facf
+    - **sha256_lf_utf8:** 83a449f3502bf6c0a3d066d24d0aa2ccfebacd5ee5a56fd34132ef25dd36b1fd
+  - **26**
+    - **path:** docs/trust-assurance/kpi-framework-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 0bd96efa393d9306a1eb332a5e7b0df80f69c4c3
+    - **sha256_lf_utf8:** 98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69
+  - **27**
+    - **path:** docs/trust-assurance/kpi-framework-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** ca417d8825464c20d764be8ae8e058f0b0aa169e
+    - **sha256_lf_utf8:** 5670e68b5a4b69c5fef7336ee3cd6f4cb30fdc3323fb606c2f1b3a0d5ac166b9
+  - **28**
+    - **path:** docs/trust-assurance/kpi-render-v0.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** fd630017383967639a4c18cb42c39b448774376f
+    - **sha256_lf_utf8:** 844e77d6c57d7b98ac3a1eec57fa04f4506224a525980b82de261488472e6f94
+  - **29**
+    - **path:** docs/trust-assurance/legacy-containment-register-v0.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 5763ca02ca74689e8c831b45271dfd728ea4799c
+    - **sha256_lf_utf8:** d20001d94f1cca7c5d24c64ac427a0a3f949bb826b57772a68dd2d92c6285623
+  - **30**
+    - **path:** docs/trust-assurance/v0-closure-review.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 428c487c7d4086a3c9667de36495646f676a9459
+    - **sha256_lf_utf8:** 6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603
+  - **31**
+    - **path:** docs/trust-assurance/v0-closure-review.md
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** d6fbf6dafd7249e20ea594abfc4c0ae2c2282890
+    - **sha256_lf_utf8:** 267b5070855579e7fbb4ad2f7f135ad02b78e11e4d76e810b022334c1c1a5b7d
+  - **32**
+    - **path:** docs/trust-assurance/verify-s2-final.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** d144bf3492a2c982051378a26c8d2bdae84c113c
+    - **sha256_lf_utf8:** ccf51c88c65f888bd7bed06085aa28555c4b2f8d36fa8747d22b0ca5ed9eb6e2
+  - **33**
+    - **path:** docs/trust-assurance/verify-s2.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 251c0a71e8265a6c913aff340b57af160fd69170
+    - **sha256_lf_utf8:** df82d2378875d7c89317b2d1ed39382b958db3a3cae90c4c905c0b282dc82c06
+  - **34**
+    - **path:** docs/trust-assurance/verify-s3-final.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** be926149c98a76f39dde149d48bff7286cb4d58f
+    - **sha256_lf_utf8:** 06ddbc18072f45e0a628b42fd0d1dca739a4879aea16a228b7bb5aff221e531d
+  - **35**
+    - **path:** docs/trust-assurance/verify-s3.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 2d8277ddfb7229ae3bf269d9f3ab03a848c7e750
+    - **sha256_lf_utf8:** e42a7360e157f387f165e1ad2d29d1df01c4c79247c7fca305040fab3eac9c71
+  - **36**
+    - **path:** docs/trust-assurance/verify-s4-final.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** f51196ce99eda866ff0e88c539a9c1960bf7c701
+    - **sha256_lf_utf8:** 9adc4bc748e804a22daedfd33391a991337fd4bf7396dae659182f1a2f72a53c
+  - **37**
+    - **path:** docs/trust-assurance/verify-s4.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 1ebd6f171e0f7627e0fdc02f3fd901f8456f293d
+    - **sha256_lf_utf8:** cf86b801e93b1421b1256594022c0c43401e8011801675a52a8f864499e7a757
+  - **38**
+    - **path:** docs/trust-assurance/verify-s5-final.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 2d93a9a04195727234a2629644e8b883f9a79095
+    - **sha256_lf_utf8:** 1372fa67728410ef92c287ec958ae3ed2d8c460a9c2d4f7e93d1db37e283c04e
+  - **39**
+    - **path:** docs/trust-assurance/verify-s5.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** f08d24e738b9105d3edfa31614aaad7d50482a9e
+    - **sha256_lf_utf8:** 2681f2e9a0263a43bf0432d0550d652ce8c2a8f0d8fb2f0867a71b7d287a8cc3
+  - **40**
+    - **path:** docs/trust-assurance/verify-v0.test.mjs
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** f079f37581b2bfee35d81e0e742ead81b8389579
+    - **sha256_lf_utf8:** 83735970d72a34d59ff9d42783893cb248b5f942320ffa1273987deed3ebe8cd
+  - **41**
+    - **path:** packages/canonical-contracts/src/contracts.ts
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** f44dd97a0fba469d40286b69e2eabc909374867f
+    - **sha256_lf_utf8:** f3c113e2d0853f1062fe3116bf55a86f41deb2e99774cf5833589e0b2803dab6
+- **findings**
+  - **1**
+    - **finding_id:** P2-1
+    - **disposition:** Append LX08_AUDIT_TRAIL exposure gate; separate tenant/security remediation review required.
+    - **scope:** DOCUMENTARY_ONLY
+  - **2**
+    - **finding_id:** P2-2
+    - **disposition:** Separate record_access_state from affirmative_use_state without rewriting historical records.
+    - **scope:** DOCUMENTARY_ONLY
+  - **3**
+    - **finding_id:** P2-3
+    - **disposition:** Make S2 controlling-ceiling precedence explicit for V1 consumption.
+    - **scope:** DOCUMENTARY_ONLY
+  - **4**
+    - **finding_id:** P2-4
+    - **disposition:** Separate historical assurance gaps from presentation/exposure gates.
+    - **scope:** DOCUMENTARY_ONLY
+  - **5**
+    - **finding_id:** P2-5
+    - **disposition:** Record V1-A1 denominator decision, unresolved; no historical KPI edit.
+    - **scope:** DOCUMENTARY_ONLY
+  - **6**
+    - **finding_id:** P3-6
+    - **disposition:** ISO-specific certification mapping interpretation UNKNOWN, historical NOT_MAPPED untouched.
+    - **scope:** DOCUMENTARY_ONLY
+  - **7**
+    - **finding_id:** P3-7
+    - **disposition:** Future wording labels and prohibited facilitation examples; no wording approval.
+    - **scope:** DOCUMENTARY_ONLY
+  - **8**
+    - **finding_id:** P3-8
+    - **disposition:** M18 Pillar 8 is forward-looking terminology, not canonical V0 architecture.
+    - **scope:** DOCUMENTARY_ONLY
+  - **9**
+    - **finding_id:** P3-9
+    - **disposition:** Expand L04 containment inputs to package compatibility surfaces.
+    - **scope:** DOCUMENTARY_ONLY
+  - **10**
+    - **finding_id:** P3-10
+    - **disposition:** Append dormant report/PDF generators to the exposure universe.
+    - **scope:** DOCUMENTARY_ONLY
+  - **11**
+    - **finding_id:** P3-11
+    - **disposition:** Record V1-A2 mixed read-hop authorization acceptance, unresolved; no resolver change.
+    - **scope:** DOCUMENTARY_ONLY
+- **claim_use_interpretation**
+  - **finding_id:** P2-2
+  - **replaces_interpretation_of:** S5 use_states and claim_boundary_counts; historical mixed use_state remains an access/review label, not affirmative permission.
+  - **record_access_vocabulary**
+    - **1:** INTERNAL_ONLY
+    - **2:** CONTROLLED_DEMO_ONLY
+    - **3:** EXTERNAL_PUBLICATION_ELIGIBLE
+    - **4:** UNKNOWN
+  - **affirmative_use_vocabulary**
+    - **1:** PROHIBITED
+    - **2:** CONDITIONAL
+    - **3:** PERMITTED
+    - **4:** UNKNOWN
+  - **definitions**
+    - **INTERNAL_ONLY:** Labeled draft/rejected-record inspection by internal reviewers only.
+    - **PROHIBITED:** Affirmative assertion of the proposed wording is not authorized.
+    - **CONDITIONAL:** Reserved for a later scoped decision with explicit prerequisites; unused in E1.
+    - **PERMITTED:** Requires a later independent exact-wording/scope/currency/exposure approval and all substantive prerequisites; unused in E1.
+    - **UNKNOWN:** Missing or ambiguous authorization is never permission.
+  - **historical_PROHIBITED_count:** 0
+  - **historical_count_is_affirmative_use_count:** false
+  - **current_counts**
+    - **record_access**
+      - **INTERNAL_ONLY:** 42
+      - **CONTROLLED_DEMO_ONLY:** 0
+      - **EXTERNAL_PUBLICATION_ELIGIBLE:** 0
+      - **UNKNOWN:** 0
+    - **affirmative_use**
+      - **PROHIBITED:** 42
+      - **CONDITIONAL:** 0
+      - **PERMITTED:** 0
+      - **UNKNOWN:** 0
+    - **INELIGIBLE:** 42
+  - **no_new_permission:** true
+  - **records**
+    - **1**
+      - **claim_id:** CL-FACT-TA-C01
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C01]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **2**
+      - **claim_id:** CL-FACT-TA-C02
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C02]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **3**
+      - **claim_id:** CL-FACT-TA-C03
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C03]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **4**
+      - **claim_id:** CL-FACT-TA-C04
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C04]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **5**
+      - **claim_id:** CL-FACT-TA-C05
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C05]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **6**
+      - **claim_id:** CL-FACT-TA-C06
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C06]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **7**
+      - **claim_id:** CL-FACT-TA-C07
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C07]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **8**
+      - **claim_id:** CL-FACT-TA-C08
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C08]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **9**
+      - **claim_id:** CL-FACT-TA-C09
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C09]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **10**
+      - **claim_id:** CL-FACT-TA-C10
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C10]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **11**
+      - **claim_id:** CL-FACT-TA-C11
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C11]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **12**
+      - **claim_id:** CL-FACT-TA-C12
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C12]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **13**
+      - **claim_id:** CL-FACT-TA-C13
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C13]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **14**
+      - **claim_id:** CL-FACT-TA-C14
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C14]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **15**
+      - **claim_id:** CL-FACT-TA-C15
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C15]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **16**
+      - **claim_id:** CL-FACT-TA-C16
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C16]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **17**
+      - **claim_id:** CL-FACT-TA-C17
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C17]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **18**
+      - **claim_id:** CL-FACT-TA-C18
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C18]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **19**
+      - **claim_id:** CL-FACT-TA-C19
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C19]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **20**
+      - **claim_id:** CL-FACT-TA-C20
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C20]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **21**
+      - **claim_id:** CL-FACT-TA-C21
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C21]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **22**
+      - **claim_id:** CL-FACT-TA-C22
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C22]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **23**
+      - **claim_id:** CL-FACT-TA-C23
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C23]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **24**
+      - **claim_id:** CL-FACT-TA-C24
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C24]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **25**
+      - **claim_id:** CL-FACT-TA-C25
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C25]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **26**
+      - **claim_id:** CL-FACT-TA-C26
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C26]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **27**
+      - **claim_id:** CL-FACT-TA-C27
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C27]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **28**
+      - **claim_id:** CL-FACT-TA-C28
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C28]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **29**
+      - **claim_id:** CL-FACT-TA-C29
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C29]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **30**
+      - **claim_id:** CL-FACT-TA-C30
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C30]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **31**
+      - **claim_id:** CL-FACT-TA-C31
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C31]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **32**
+      - **claim_id:** CL-FACT-TA-C32
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C32]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **33**
+      - **claim_id:** CL-FACT-TA-C33
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C33]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **34**
+      - **claim_id:** CL-FACT-TA-C34
+      - **record_disposition:** DRAFT_NOT_APPROVED
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-FACT-TA-C34]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **35**
+      - **claim_id:** CL-ALIGN-TA-C11
+      - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-ALIGN-TA-C11]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **36**
+      - **claim_id:** CL-ALIGN-TA-C12
+      - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-ALIGN-TA-C12]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **37**
+      - **claim_id:** CL-ALIGN-TA-C26
+      - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-ALIGN-TA-C26]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **38**
+      - **claim_id:** CL-ALIGN-TA-C27
+      - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-ALIGN-TA-C27]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **39**
+      - **claim_id:** CL-ALIGN-TA-C28
+      - **record_disposition:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-ALIGN-TA-C28]
+      - **reason:** Draft review only; no approved assertion. Existing exact-wording, scope, currency and exposure review remains missing.
+    - **40**
+      - **claim_id:** CL-READINESS-01
+      - **record_disposition:** REJECTED_PROPOSAL
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-READINESS-01]
+      - **reason:** Negative review example only; affirmative readiness/certification/attestation proposal rejected.
+    - **41**
+      - **claim_id:** CL-CERTIFICATION-01
+      - **record_disposition:** REJECTED_PROPOSAL
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-CERTIFICATION-01]
+      - **reason:** Negative review example only; affirmative readiness/certification/attestation proposal rejected.
+    - **42**
+      - **claim_id:** CL-ATTESTATION-01
+      - **record_disposition:** REJECTED_PROPOSAL
+      - **eligibility:** INELIGIBLE
+      - **record_access_state:** INTERNAL_ONLY
+      - **affirmative_use_state:** PROHIBITED
+      - **controlled_demo_affirmation:** PROHIBITED
+      - **external_publication:** PROHIBITED
+      - **source_path:** docs/trust-assurance/commercial-claims-register-v0.json
+      - **source_selector:** claims[claim_id=CL-ATTESTATION-01]
+      - **reason:** Negative review example only; affirmative readiness/certification/attestation proposal rejected.
+- **claim_ceiling_precedence**
+  - **finding_id:** P2-3
+  - **controlling_claim_ceiling_source:** S2_COMMERCIAL_CLAIMS_REGISTER
+  - **source**
+    - **path:** docs/trust-assurance/commercial-claims-register-v0.json
+    - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+    - **git_blob:** 9b55194733c824b6d5d19246c2f1aca155fd57cf
+    - **sha256_lf_utf8:** eaf3208146f151bf17ce8390628faadd94cd46e1a11cc10c08c3ff81de3e4107
+  - **controlling_field:** capability_ceilings.current_claim_ceiling
+  - **scope:** Publication/use gating; a ceiling never grants permission.
+  - **s1_candidate_role:** HISTORICAL_MAPPING_METADATA_ONLY
+  - **s1_candidate_is_publication_ceiling:** false
+  - **v1_may_use_s1_candidate_as_effective_external_ceiling:** false
+  - **missing_or_inconsistent_s2_behavior:** FAIL_CLOSED_NO_AFFIRMATIVE_CLAIM
+  - **alignment_candidates**
+    - **1:** TA-C11
+    - **2:** TA-C12
+    - **3:** TA-C26
+    - **4:** TA-C27
+    - **5:** TA-C28
+  - **alignment_candidate_status:** CANDIDATES_ONLY
+  - **effective_ceilings**
+    - **1**
+      - **capability_id:** TA-C01
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **2**
+      - **capability_id:** TA-C02
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **3**
+      - **capability_id:** TA-C03
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **4**
+      - **capability_id:** TA-C04
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **5**
+      - **capability_id:** TA-C05
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **6**
+      - **capability_id:** TA-C06
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **7**
+      - **capability_id:** TA-C07
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **8**
+      - **capability_id:** TA-C08
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **9**
+      - **capability_id:** TA-C09
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **10**
+      - **capability_id:** TA-C10
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **11**
+      - **capability_id:** TA-C11
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **publication_eligibility:** INELIGIBLE
+    - **12**
+      - **capability_id:** TA-C12
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **publication_eligibility:** INELIGIBLE
+    - **13**
+      - **capability_id:** TA-C13
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **14**
+      - **capability_id:** TA-C14
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **15**
+      - **capability_id:** TA-C15
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **16**
+      - **capability_id:** TA-C16
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **17**
+      - **capability_id:** TA-C17
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **18**
+      - **capability_id:** TA-C18
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **19**
+      - **capability_id:** TA-C19
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **20**
+      - **capability_id:** TA-C20
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **21**
+      - **capability_id:** TA-C21
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **22**
+      - **capability_id:** TA-C22
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **23**
+      - **capability_id:** TA-C23
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **24**
+      - **capability_id:** TA-C24
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **25**
+      - **capability_id:** TA-C25
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **26**
+      - **capability_id:** TA-C26
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **publication_eligibility:** INELIGIBLE
+    - **27**
+      - **capability_id:** TA-C27
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **publication_eligibility:** INELIGIBLE
+    - **28**
+      - **capability_id:** TA-C28
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** EVIDENCE_BACKED_ALIGNMENT_CANDIDATE
+      - **publication_eligibility:** INELIGIBLE
+    - **29**
+      - **capability_id:** TA-C29
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **30**
+      - **capability_id:** TA-C30
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **31**
+      - **capability_id:** TA-C31
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **32**
+      - **capability_id:** TA-C32
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **33**
+      - **capability_id:** TA-C33
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **34**
+      - **capability_id:** TA-C34
+      - **current_claim_ceiling:** FACTUAL_CAPABILITY_ONLY
+      - **max_defensible_external_class:** FACTUAL_CAPABILITY
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **35**
+      - **capability_id:** TA-C35
+      - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+      - **max_defensible_external_class:** null
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **36**
+      - **capability_id:** TA-C36
+      - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+      - **max_defensible_external_class:** null
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **37**
+      - **capability_id:** TA-C37
+      - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+      - **max_defensible_external_class:** null
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+    - **38**
+      - **capability_id:** TA-C38
+      - **current_claim_ceiling:** NO_AFFIRMATIVE_CLAIM
+      - **max_defensible_external_class:** null
+      - **draft_alignment_ceiling:** null
+      - **publication_eligibility:** INELIGIBLE
+- **populations**
+  - **finding_id:** P2-4
+  - **assurance_gap_population**
+    - **population_id:** S2_ASSURANCE_GAPS
+    - **source**
+      - **path:** docs/trust-assurance/gap-register-v0.json
+      - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+      - **git_blob:** d257548ae81c4bc5ec6c01fd5b461e2271ea8caa
+      - **sha256_lf_utf8:** d3abd41ccbbe777966d6c30deba22026ff8475b9c6d3b686203fd0495d25af46
+    - **count:** 61
+    - **status_counts**
+      - **OPEN:** 61
+    - **member_ids**
+      - **1:** G-SOURCE-01
+      - **2:** G-SOURCE-02
+      - **3:** G-SOURCE-03
+      - **4:** G-SOURCE-04
+      - **5:** G-SOURCE-05
+      - **6:** G-EU-OPERATIVE
+      - **7:** G-MAP-TA-C01
+      - **8:** G-MAP-TA-C02
+      - **9:** G-MAP-TA-C03
+      - **10:** G-MAP-TA-C04
+      - **11:** G-MAP-TA-C05
+      - **12:** G-MAP-TA-C06
+      - **13:** G-MAP-TA-C07
+      - **14:** G-MAP-TA-C08
+      - **15:** G-MAP-TA-C09
+      - **16:** G-MAP-TA-C10
+      - **17:** G-MAP-TA-C13
+      - **18:** G-MAP-TA-C14
+      - **19:** G-MAP-TA-C15
+      - **20:** G-MAP-TA-C16
+      - **21:** G-MAP-TA-C17
+      - **22:** G-MAP-TA-C18
+      - **23:** G-MAP-TA-C19
+      - **24:** G-MAP-TA-C20
+      - **25:** G-MAP-TA-C21
+      - **26:** G-MAP-TA-C22
+      - **27:** G-MAP-TA-C23
+      - **28:** G-MAP-TA-C24
+      - **29:** G-MAP-TA-C25
+      - **30:** G-MAP-TA-C29
+      - **31:** G-MAP-TA-C30
+      - **32:** G-MAP-TA-C31
+      - **33:** G-MAP-TA-C32
+      - **34:** G-MAP-TA-C33
+      - **35:** G-MAP-TA-C34
+      - **36:** G-MAP-TA-C35
+      - **37:** G-MAP-TA-C36
+      - **38:** G-MAP-TA-C37
+      - **39:** G-MAP-TA-C38
+      - **40:** G-REF-NIST-1.0-GOVERN-1.6
+      - **41:** G-REF-NIST-1.0-MEASURE-2.4
+      - **42:** G-REF-EU-OJ-20240712-ART-11
+      - **43:** G-REF-EU-OJ-20240712-ART-12
+      - **44:** G-REF-EU-OJ-20240712-ANNEX-IV
+      - **45:** G-APPLICABILITY
+      - **46:** G-SUFFICIENCY
+      - **47:** G-REVIEWER
+      - **48:** G-EXECUTION
+      - **49:** G-CI
+      - **50:** G-DEPLOYMENT
+      - **51:** G-OPERATING
+      - **52:** G-CERTIFICATION
+      - **53:** G-ATTESTATION
+      - **54:** G-FRESHNESS
+      - **55:** G-LEGACY-L01
+      - **56:** G-LEGACY-L02
+      - **57:** G-LEGACY-L03
+      - **58:** G-LEGACY-L04
+      - **59:** G-REACHABILITY-L04
+      - **60:** G-EMBEDDING-POPULATION
+      - **61:** G-KPI-EXECUTION
+    - **historical:** true
+  - **presentation_exposure_gate_population**
+    - **population_id:** PRESENTATION_EXPOSURE_GATES
+    - **policy:** APPEND_ONLY_SEPARATE_POPULATION
+    - **base_source**
+      - **path:** docs/trust-assurance/v0-closure-review.json
+      - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+      - **git_blob:** 428c487c7d4086a3c9667de36495646f676a9459
+      - **sha256_lf_utf8:** 6f96e074a005cb4c7f5839eb9a3fbfae269b4768d5091332708f1041780bc603
+    - **inherited_ids**
+      - **1:** L01
+      - **2:** L02
+      - **3:** L03
+      - **4:** L04
+      - **5:** L05
+      - **6:** LX01
+      - **7:** LX02
+      - **8:** LX03
+      - **9:** LX04
+      - **10:** LX05
+      - **11:** LX06
+      - **12:** LX07
+    - **appended_ids**
+      - **1:** LX08_AUDIT_TRAIL
+      - **2:** LX09_DORMANT_PDF_GENERATORS
+    - **member_count:** 14
+    - **scope_expansion_ids**
+      - **1:** L04_PACKAGE_COMPATIBILITY
+    - **scope_expansions_are_new_members:** false
+    - **historical_gap_membership:** false
+    - **closure:** OPEN_UNIVERSE_NOT_EXHAUSTIVE
+  - **count_semantics:** 61 means historical S2 assurance gaps only, never total known issues. L01-L04 have related assurance gaps; the populations are different and not additive/deduplicated. LX01-LX09 are not inserted into S2. Future V1 must display both populations separately.
+- **appended_exposure_gates**
+  - **1**
+    - **surface_id:** LX08_AUDIT_TRAIL
+    - **surface:** Sidebar /audit and ledger integrity badge
+    - **finding_ids**
+      - **1:** P2-1
+    - **classification:** NEEDS_CONTAINMENT
+    - **status:** OPEN
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** true
+    - **blocks_external_presentation:** true
+    - **remediation_in_e1:** false
+    - **hosted_reachability:** UNKNOWN
+    - **observations**
+      - **1:** /audit is present in the sidebar; its badge displays VALID/BROKEN from ledger_verify.
+      - **2:** ledger_verify walks sequence ranges without organisation filtering; called through db.write service-role client.
+      - **3:** Empty ledger returns is_valid=true; a missing result row becomes false/BROKEN. UNKNOWN can collapse into positive or negative presentation.
+      - **4:** External review reports legacy oversight default values may already exist in ledger payloads; no tenant payload inspection performed in E1.
+    - **sources**
+      - **1**
+        - **path:** apps/dashboard/components/layout/Sidebar.tsx
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 0bff02ef8f0480f58670e46ee01c9107c6f326e7
+        - **sha256_lf_utf8:** 0e28b11c5041aeab01cfc52c5833772a08b78678f65eb11086ec193123acf150
+        - **line:** 17
+        - **anchor:** href: "/audit"
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/components/layout/Sidebar.tsx#L17
+      - **2**
+        - **path:** apps/dashboard/app/(dashboard)/audit/page.tsx
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** efea21f3dd23824e71fbf9b939bcd321f87f6e51
+        - **sha256_lf_utf8:** b09d3cb842f78c3a3ee89dd1e53bc49ac77a3cd2149ff37aea02607090925cbe
+        - **line:** 123
+        - **anchor:** integrity.hash_chain_valid ? "VALID" : "BROKEN"
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/app/(dashboard)/audit/page.tsx#L123
+      - **3**
+        - **path:** apps/dashboard/repositories/audit.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 21f8e4bab5e1aa4d8f1c6f5a8acad30b82fe0b0d
+        - **sha256_lf_utf8:** fbdf0d00e89fc7136b0cc8464ae21546d28ab98895599446d60d7a4ef463033c
+        - **line:** 180
+        - **anchor:** db.write.rpc("ledger_verify"
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/repositories/audit.ts#L180
+      - **4**
+        - **path:** apps/dashboard/repositories/audit.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 21f8e4bab5e1aa4d8f1c6f5a8acad30b82fe0b0d
+        - **sha256_lf_utf8:** fbdf0d00e89fc7136b0cc8464ae21546d28ab98895599446d60d7a4ef463033c
+        - **line:** 200
+        - **anchor:** hash_chain_valid: verifyResult?.is_valid ?? false
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/repositories/audit.ts#L200
+      - **5**
+        - **path:** apps/dashboard/lib/db.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 7463c1942258fbaf640fbbd21049287c8e1088af
+        - **sha256_lf_utf8:** 5cf9ec05239b6020e5ceaf49660c51ceedad5fb9cb1d132d9d791a9241697e71
+        - **line:** 28
+        - **anchor:** write: createClient
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/lib/db.ts#L28
+      - **6**
+        - **path:** supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 256da82fa8cf4513101fdcfe06ba876b4a33e234
+        - **sha256_lf_utf8:** 9b6ba4639abc6ff25d33792c904064f82bf90e8c0e3ea5ea67fca503b3631be0
+        - **line:** 147
+        - **anchor:** for r in select entry_sequence
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql#L147
+      - **7**
+        - **path:** supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 256da82fa8cf4513101fdcfe06ba876b4a33e234
+        - **sha256_lf_utf8:** 9b6ba4639abc6ff25d33792c904064f82bf90e8c0e3ea5ea67fca503b3631be0
+        - **line:** 155
+        - **anchor:** return query select (v_break_seq is null)
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/supabase/migrations/20260818003710_gov_repo_identity_and_ledger.sql#L155
+      - **8**
+        - **path:** packages/scanner/src/core/classifier.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 2de767f9c57f84b5748c7e7874a8c64f597b9656
+        - **sha256_lf_utf8:** b306cbd89e782f1127ee9d74b04a199609378caf1363405a7f57e16a53693987
+        - **line:** 71
+        - **anchor:** let oversightLevel: AgentClassification['oversightLevel'] = 'l1_automated'
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/packages/scanner/src/core/classifier.ts#L71
+    - **required_next_action:** Separate owner-authorized containment/exposure acceptance; no SAFE conclusion or remediation in E1.
+    - **tenant_security_remediation_review_required:** true
+    - **security_review_status:** REQUIRED_NOT_PERFORMED
+  - **2**
+    - **surface_id:** LX09_DORMANT_PDF_GENERATORS
+    - **surface:** Dormant report/PDF generators
+    - **finding_ids**
+      - **1:** P3-10
+    - **classification:** NEEDS_CONTAINMENT
+    - **status:** OPEN
+    - **blocks_documentary_closure:** false
+    - **blocks_controlled_demo:** true
+    - **blocks_external_presentation:** true
+    - **remediation_in_e1:** false
+    - **hosted_reachability:** UNKNOWN
+    - **observations**
+      - **1:** Legacy Compliance Rate % / AI Act Exposure / DORA Status wording persists in dormant generators.
+      - **2:** Current regulatory export guards reject export; re-enabling generators could bypass the narrow L05 guard. No claim that these generators are currently reachable.
+    - **sources**
+      - **1**
+        - **path:** apps/dashboard/services/reports.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** f2a51034ca703015497c8afeb35fb61b7b179c25
+        - **sha256_lf_utf8:** 1941b2d187ca614f87473648643b6d0f3b2e91cbadeecaadd6492442664475f0
+        - **line:** 56
+        - **anchor:** row("Compliance Rate"
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/services/reports.ts#L56
+      - **2**
+        - **path:** apps/dashboard/services/reports.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** f2a51034ca703015497c8afeb35fb61b7b179c25
+        - **sha256_lf_utf8:** 1941b2d187ca614f87473648643b6d0f3b2e91cbadeecaadd6492442664475f0
+        - **line:** 112
+        - **anchor:** heading("4. AI Act Exposure")
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/services/reports.ts#L112
+      - **3**
+        - **path:** apps/dashboard/services/reports.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** f2a51034ca703015497c8afeb35fb61b7b179c25
+        - **sha256_lf_utf8:** 1941b2d187ca614f87473648643b6d0f3b2e91cbadeecaadd6492442664475f0
+        - **line:** 129
+        - **anchor:** heading("5. DORA Status")
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/services/reports.ts#L129
+      - **4**
+        - **path:** apps/dashboard/app/api/reports/ai-act/route.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 3748f1f8741b8b5b5ab600713cf077dfd789c8cd
+        - **sha256_lf_utf8:** 4464ca2f6b76360919af3382f34b580fb7e55f2785a62faa8afb893cf8dc5340
+        - **line:** 7
+        - **anchor:** status: "NOT_ASSESSED"
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/app/api/reports/ai-act/route.ts#L7
+      - **5**
+        - **path:** apps/dashboard/app/api/reports/dora/route.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 3748f1f8741b8b5b5ab600713cf077dfd789c8cd
+        - **sha256_lf_utf8:** 4464ca2f6b76360919af3382f34b580fb7e55f2785a62faa8afb893cf8dc5340
+        - **line:** 7
+        - **anchor:** status: "NOT_ASSESSED"
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/app/api/reports/dora/route.ts#L7
+      - **6**
+        - **path:** apps/dashboard/app/api/reports/executive/route.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** 3748f1f8741b8b5b5ab600713cf077dfd789c8cd
+        - **sha256_lf_utf8:** 4464ca2f6b76360919af3382f34b580fb7e55f2785a62faa8afb893cf8dc5340
+        - **line:** 7
+        - **anchor:** status: "NOT_ASSESSED"
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/apps/dashboard/app/api/reports/executive/route.ts#L7
+    - **required_next_action:** Separate owner-authorized containment/exposure acceptance; no SAFE conclusion or remediation in E1.
+    - **related_historical_surface_id:** L05
+    - **l05_SAFE_scope:** Inspected rejection guard only; never inherited by dormant generators.
+- **exposure_scope_expansions**
+  - **1**
+    - **input_id:** L04_PACKAGE_COMPATIBILITY
+    - **finding_id:** P3-9
+    - **parent_surface_id:** L04
+    - **classification:** NEEDS_CONTAINMENT
+    - **status:** INPUTS_FOR_SEPARATE_CONTAINMENT
+    - **remediation_in_e1:** false
+    - **hosted_reachability:** UNKNOWN
+    - **observations**
+      - **1:** Package compatibility surfaces may be consumed by graphos-complete; no current hosted-consumer proof.
+      - **2:** ISO 42001 Readiness
+      - **3:** AI Act Technical File
+      - **4:** SOC2 Control Pack
+      - **5:** Certification Readiness
+    - **sources**
+      - **1**
+        - **path:** packages/graphos/src/compat.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** d285a93dbc78348cb6bf50a4ea9f05de2f08ef57
+        - **sha256_lf_utf8:** 10e48bca10692a425ac7cdd1812d2925ad4d2c21b29afdd03ce4586ca7b2e979
+        - **line:** 127
+        - **anchor:** ['cert-ai-act', 'AI Act Technical File']
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/packages/graphos/src/compat.ts#L127
+      - **2**
+        - **path:** packages/graphos/src/compat.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** d285a93dbc78348cb6bf50a4ea9f05de2f08ef57
+        - **sha256_lf_utf8:** 10e48bca10692a425ac7cdd1812d2925ad4d2c21b29afdd03ce4586ca7b2e979
+        - **line:** 309
+        - **anchor:** return view(engine, 'Certification Readiness'
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/packages/graphos/src/compat.ts#L309
+      - **3**
+        - **path:** packages/graphos/src/index.ts
+        - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+        - **git_blob:** b7a8650709f488de6fd19cac0ccc29d499e55de2
+        - **sha256_lf_utf8:** 2fe5ad23eb4df8db96645d6d4daa2e277df07709f8dae418e61631b5a43d5161
+        - **line:** 18
+        - **anchor:** export { VIEW_META, VIEW_BUILDERS } from './compat'
+        - **locator:** https://github.com/cnegrao/code-guard-governance/blob/a8b8bece4f19f105e418b89996693dfaf2d0c9e1/packages/graphos/src/index.ts#L18
+    - **action:** Include package exports/builders and consumers in L04 containment review; no implementation in E1.
+- **corrected_interpretations**
+  - **1**
+    - **finding_id:** P3-6
+    - **claim_id:** CL-CERTIFICATION-01
+    - **framework_version_id:** ISO-IEC-42001-2023-ED1
+    - **historical_mapping_state:** NOT_MAPPED
+    - **corrected_scoped_mapping_state:** UNKNOWN
+    - **reason:** Historical state inherited from framework-less TA-C35 disposition; ISO-specific mapping is not established.
+    - **historical_record_modified:** false
+    - **eligibility:** INELIGIBLE
+    - **external_certification_state:** NOT_ASSERTED
+  - **2**
+    - **finding_id:** P3-7
+    - **historical_label:** SAFE CONTROLLED DEMO LANGUAGE
+    - **future_label:** DOCUMENT WALKTHROUGH TEMPLATE — PENDING SEPARATE WORDING / ACCESS / EXPOSURE APPROVAL
+    - **status:** TEMPLATE_NOT_APPROVED
+    - **prohibited_examples**
+      - **1:** fully governed
+      - **2:** 100% compliant
+      - **3:** supports EU AI Act compliance
+      - **4:** audit-ready
+      - **5:** EU AI Act ready
+    - **semantic_rule:** Fail closed on semantically equivalent facilitation, readiness, guarantee or compliance claims; this list is illustrative, not an exhaustive string filter.
+    - **wording_approval:** false
+    - **publication:** false
+  - **3**
+    - **finding_id:** P3-8
+    - **phrase:** M18 Pillar 8
+    - **classification:** FORWARD_LOOKING_PLANNING_TERMINOLOGY
+    - **canonical_architecture_at_reviewed_head:** false
+    - **basis:** No canonical M18 architecture artifact established at the reviewed V0 snapshot.
+    - **m18_formalized_in_e1:** false
+    - **m18_started:** false
+- **mandatory_v1_acceptance_inputs**
+  - **1**
+    - **acceptance_id:** V1-A1
+    - **finding_id:** P2-5
+    - **status:** UNRESOLVED
+    - **mandatory:** true
+    - **decision_in_e1:** false
+    - **title:** KPI denominator hazard
+    - **historical_field:** known_population
+    - **historical_source**
+      - **path:** docs/trust-assurance/kpi-framework-v0.json
+      - **selection_commit:** a8b8bece4f19f105e418b89996693dfaf2d0c9e1
+      - **git_blob:** 0bd96efa393d9306a1eb332a5e7b0df80f69c4c3
+      - **sha256_lf_utf8:** 98fb96911de13a58390e9731aff31a1a7e3f51487cad7373965ed9854eacab69
+    - **problem:** Known population alongside measure count allows a one-division requirements-with-evidence assurance/compliance denominator.
+    - **required_decision:** V1-S0 must determine how to preserve conservation / UNKNOWN semantics while preventing known_population from becoming an assurance/compliance denominator. No percentage, ratio, readiness/compliance score or hidden denominator.
+    - **historical_kpi_framework_modified:** false
+  - **2**
+    - **acceptance_id:** V1-A2
+    - **finding_id:** P3-11
+    - **status:** UNRESOLVED
+    - **mandatory:** true
+    - **decision_in_e1:** false
+    - **title:** Mixed resolver security model
+    - **problem:** Existing paths mix verified-principal-bound RPCs and privileged/service-role direct-table reads with application filtering.
+    - **required_decision:** V1-S0 must inventory and classify every Hub read hop, its principal/org binding, authorization enforcement, transport privilege, cutoff and fail-closed behavior. No V1 tenant assurance path may substitute service_role/direct-table access for verified-principal authorization. Privileged transport alone never establishes authorization.
+    - **resolvers_modified:** false
+- **delta**
+  - **runtime:** 0
+  - **database:** 0
+  - **migrations:** 0
+  - **API:** 0
+  - **UI:** 0
+  - **hosted_mutations:** 0
+  - **deployments:** 0
+  - **PRs:** 0
+  - **tenant_KPI_executions:** 0
+  - **commercial_publications:** 0
+- **next_action:** Complete E1 verification and handoff; commit/push only after all E1 gates PASS. V1-S0 and M18 not started in this execution.

@@ -13,17 +13,18 @@ export interface ShadowAIFinding {
   reason: string;
 }
 
-export interface CertificationResult {
-  levels: {
-    bronze: { pass: boolean; evidence: string[]; fail: string[] };
-    silver: { pass: boolean; evidence: string[]; fail: string[] };
-    gold: { pass: boolean; evidence: string[]; fail: string[] };
-    platinum: { pass: boolean; evidence: string[]; fail: string[] };
-  };
-  overall: 'bronze' | 'silver' | 'gold' | 'platinum' | 'none';
-}
+/** Applies to technical observations, including an empty or incomplete scan. */
+export const SCANNER_ANALYSIS_BOUNDARY = Object.freeze({
+  analysisKind: 'HEURISTIC',
+  authority: 'NON_AUTHORITATIVE',
+  limitations: Object.freeze(['NOT_CERTIFICATION', 'NOT_COMPLIANCE_DETERMINATION', 'NOT_ASSURANCE'] as const),
+  interpretation: 'Technical scan observations only. Absence of a finding is not proof of satisfaction. Scanner output is not canonical governance truth.',
+} as const);
+
+export type ScannerAnalysisBoundary = typeof SCANNER_ANALYSIS_BOUNDARY;
 
 export interface ScannerResult {
+  analysisBoundary: ScannerAnalysisBoundary;
   repo: RepoMetadata;
   packages: PackageAnalysis;
   configs: ConfigAnalysis;
@@ -32,7 +33,6 @@ export interface ScannerResult {
   compliance: ComplianceAnalysis;
   owner: OwnerInfo;
   shadowAI: ShadowAIFinding[];
-  certification: CertificationResult;
   violations: CodeViolation[];
   enrichment: ScannerEnrichment;
   agentClassifications?: import('./classifier').AgentClassification[];

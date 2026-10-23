@@ -1,0 +1,2548 @@
+{
+  "contract_version": "M17.5-S0-INVENTORY-v1",
+  "inventory_date": "2026-10-20",
+  "repository": "cnegrao/code-guard-governance",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+  "canonical_base": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+  "scope": "Repository implementation properties only; no legal compliance, deployed tenant effectiveness, independent CI or certification conclusion.",
+  "digest_semantics": "SHA-256 of UTF-8 source content with CRLF normalized to LF; lines are 1-based at source_commit.",
+  "proof_status_vocabulary": [
+    "PROVEN",
+    "PARTIALLY_PROVEN",
+    "NOT_PROVEN",
+    "UNKNOWN"
+  ],
+  "classification_vocabulary": [
+    "AUTHORITATIVE",
+    "ANALYTICAL",
+    "SUPPORTING"
+  ],
+  "evidence_mode_vocabulary": [
+    "RUNTIME_EXECUTABLE",
+    "DATABASE_ENFORCED",
+    "CI_PROVEN",
+    "ARCHITECTURE_DOCUMENTED",
+    "PRESENTATION_ONLY"
+  ],
+  "assurance_axes": {
+    "applicability": [
+      "APPLICABLE",
+      "NOT_APPLICABLE",
+      "UNKNOWN"
+    ],
+    "mapping": [
+      "MAPPED",
+      "NOT_MAPPED",
+      "UNKNOWN"
+    ],
+    "evidence": [
+      "EVIDENCE_AVAILABLE",
+      "NOT_EVIDENCED",
+      "UNKNOWN"
+    ],
+    "readiness": [
+      "READY",
+      "GAP",
+      "UNKNOWN"
+    ],
+    "external_attestation": [
+      "NOT_ASSERTED",
+      "CERTIFIED",
+      "ATTESTED",
+      "UNKNOWN"
+    ],
+    "commercial_claim_eligibility": [
+      "ELIGIBLE",
+      "INELIGIBLE",
+      "UNKNOWN"
+    ]
+  },
+  "summary": {
+    "capabilities": 38,
+    "proof_status_counts": {
+      "PROVEN": 9,
+      "PARTIALLY_PROVEN": 25,
+      "NOT_PROVEN": 3,
+      "UNKNOWN": 1
+    },
+    "proven_scope": "Only bounded assertions with local executed verification; DB integration remains partial in this inventory.",
+    "ci_proven": false,
+    "hosted_verified": false
+  },
+  "capabilities": [
+    {
+      "capability_id": "TA-C01",
+      "capability_name": "Canonical object governance",
+      "architectural_layer": "Canonical core",
+      "milestone": "M7/M16",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Decision-linked canonical object materialization with authorized governed write boundary.",
+      "implementation_surface": [
+        "supabase/migrations/20260909210640_relationship_decision_to_truth_v1.sql:216",
+        "supabase/migrations/20260925180000_m16_s0_governed_write_wrappers_v1.sql:274"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002",
+        "E003"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C02",
+      "capability_name": "Relationship governance",
+      "architectural_layer": "L9 / canonical core",
+      "milestone": "M7/M16",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Canonical endpoints and decision-to-truth materialization precede relationship state.",
+      "implementation_surface": [
+        "supabase/migrations/20260909210640_relationship_decision_to_truth_v1.sql:420"
+      ],
+      "evidence_ids": [
+        "E004",
+        "E005"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C03",
+      "capability_name": "Immutable governance history",
+      "architectural_layer": "Canonical core / L14/L15",
+      "milestone": "M16/M17",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "L15 insert-only histories and canonical materialization history have mutation barriers.",
+      "implementation_surface": [
+        "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql:391",
+        "supabase/migrations/20260906120000_canonical_materialization_v1.sql:336"
+      ],
+      "evidence_ids": [
+        "E006",
+        "E007",
+        "E008"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C04",
+      "capability_name": "Replay protection",
+      "architectural_layer": "L14/L15",
+      "milestone": "M16/M17",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Risk command replay returns prior results and rejects conflicting fingerprints.",
+      "implementation_surface": [
+        "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql:1275"
+      ],
+      "evidence_ids": [
+        "E009",
+        "E010",
+        "E011"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE",
+        "ARCHITECTURE_DOCUMENTED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C05",
+      "capability_name": "Concurrency / CAS",
+      "architectural_layer": "L14/L15",
+      "milestone": "M16/M17",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Governed risk heads and decision paths serialize competing state transitions.",
+      "implementation_surface": [
+        "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql:1563"
+      ],
+      "evidence_ids": [
+        "E012",
+        "E013",
+        "E014"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C06",
+      "capability_name": "Tenant isolation at governance boundary",
+      "architectural_layer": "L0–L16",
+      "milestone": "M16/M17",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Verified-principal enforcement, same-tenant support references and read guards exist.",
+      "implementation_surface": [
+        "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql:598",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E015",
+        "E016",
+        "E008",
+        "E017"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted. Passing analytical tenant-filter unit tests are narrower than DB isolation."
+    },
+    {
+      "capability_id": "TA-C07",
+      "capability_name": "Source provenance / snapshot identity",
+      "architectural_layer": "L0",
+      "milestone": "GitHub foundation",
+      "classification": "SUPPORTING",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Deterministic connection identity and commit-pinned GitHub acquisition preserve source provenance in local adapter tests.",
+      "implementation_surface": [
+        "packages/scanner/src/discovery/provenance.ts:38",
+        "packages/scanner/src/discovery/adapters/github-source-adapter.ts:113"
+      ],
+      "evidence_ids": [
+        "E018",
+        "E019",
+        "E020",
+        "E021"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-SOURCE-IDENTITY",
+        "V-GITHUB-ADAPTER"
+      ],
+      "limitations": "Adapter tests use controlled sources; no live GitHub acquisition or hosted persistence was verified."
+    },
+    {
+      "capability_id": "TA-C08",
+      "capability_name": "Evidence-backed discovery",
+      "architectural_layer": "L0–L4",
+      "milestone": "Discovery foundation",
+      "classification": "SUPPORTING",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Discovery pipeline emits evidence-backed candidates with acquisition provenance in fixture execution.",
+      "implementation_surface": [
+        "packages/scanner/src/discovery/pipeline.ts:41"
+      ],
+      "evidence_ids": [
+        "E022",
+        "E023"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-PIPELINE"
+      ],
+      "limitations": "Fixture pipeline proof; not every detector, connector, true/false-negative rate or governed intake path."
+    },
+    {
+      "capability_id": "TA-C09",
+      "capability_name": "Scanner machine authority ceiling",
+      "architectural_layer": "Discovery → governance",
+      "milestone": "Discovery machine/M16/M17",
+      "classification": "SUPPORTING",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Restricted discovery propose worker and L15 machine signal/hypothesis intake do not grant human governance authority.",
+      "implementation_surface": [
+        "supabase/migrations/20261006134858_discovery_machine_propose_worker_v1.sql:3",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E024",
+        "E025",
+        "E016",
+        "E026"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C10",
+      "capability_name": "Single Authority Policy",
+      "architectural_layer": "L14/L15",
+      "milestone": "M16/M17",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Shared policy version/hash and authorization envelope govern L14/L15 decisions; latest corrective guards self-decision.",
+      "implementation_surface": [
+        "packages/governance-review/src/l14-authority-policy.ts:55",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E027",
+        "E016",
+        "E028",
+        "E026"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE",
+        "DATABASE_ENFORCED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C11",
+      "capability_name": "Responsibility / ownership assignments",
+      "architectural_layer": "L14",
+      "milestone": "M16-S1C1",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Governed responsibility roles and exact target/party assignment states support ownership reads.",
+      "implementation_surface": [
+        "packages/governance-review/src/l14-responsibility-assignment.ts:37",
+        "supabase/migrations/20261008220000_m16_s1c1_responsibility_assignment_v1.sql:1194"
+      ],
+      "evidence_ids": [
+        "E029",
+        "E030",
+        "E031"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE",
+        "DATABASE_ENFORCED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C12",
+      "capability_name": "Business context assignments",
+      "architectural_layer": "L14",
+      "milestone": "M16-S1C2",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Governed business/information-domain assignments pin legal target and registry context.",
+      "implementation_surface": [
+        "packages/governance-review/src/l14-business-context-assignment.ts:38",
+        "supabase/migrations/20261009120000_m16_s1c2_business_context_assignment_v1.sql:1013"
+      ],
+      "evidence_ids": [
+        "E032",
+        "E033",
+        "E034"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE",
+        "DATABASE_ENFORCED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C13",
+      "capability_name": "Policy applicability",
+      "architectural_layer": "L14",
+      "milestone": "M16-S1C3",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Policy applicability states pin policy version/hash and scoped governed target.",
+      "implementation_surface": [
+        "packages/governance-review/src/l14-policy-applicability.ts:34",
+        "supabase/migrations/20261009130000_m16_s1c3_policy_applicability_v1.sql:953"
+      ],
+      "evidence_ids": [
+        "E035",
+        "E036",
+        "E037"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE",
+        "DATABASE_ENFORCED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C14",
+      "capability_name": "Control applicability",
+      "architectural_layer": "L14",
+      "milestone": "M16-S1C4",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Control applicability pins governed control-definition version and exact target.",
+      "implementation_surface": [
+        "packages/governance-review/src/l14-control-applicability.ts:35",
+        "supabase/migrations/20261009220000_m16_s1c4_control_applicability_v1.sql:850"
+      ],
+      "evidence_ids": [
+        "E038",
+        "E039",
+        "E040"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE",
+        "DATABASE_ENFORCED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C15",
+      "capability_name": "Control assessment",
+      "architectural_layer": "L14",
+      "milestone": "M16-S1C5",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Categorical, validity-bounded control assessment states reference exact applicability and preserve insufficient-evidence outcomes.",
+      "implementation_surface": [
+        "packages/governance-review/src/l14-control-assessment.ts:26",
+        "supabase/migrations/20261010120000_m16_s1c5_control_assessment_v1.sql:547"
+      ],
+      "evidence_ids": [
+        "E041",
+        "E042",
+        "E043"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE",
+        "DATABASE_ENFORCED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C16",
+      "capability_name": "Agent Passport governed read contract",
+      "architectural_layer": "Read projection / 16 families",
+      "milestone": "M11/M16/M17",
+      "classification": "SUPPORTING",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Passport query tests preserve 16 families, UNKNOWN and tenant/subject-bound read-only projection composition.",
+      "implementation_surface": [
+        "apps/dashboard/lib/governance/agent-passport.ts:7",
+        "apps/dashboard/lib/governance/passport-query.ts:17"
+      ],
+      "evidence_ids": [
+        "E044",
+        "E045",
+        "E046"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-PASSPORT"
+      ],
+      "limitations": "Mocked database/RPC tests prove read composition, not final DB authorization, all UI behavior or deployed data."
+    },
+    {
+      "capability_id": "TA-C17",
+      "capability_name": "Graph analytical boundary",
+      "architectural_layer": "Graph / L8–L9",
+      "milestone": "M12",
+      "classification": "ANALYTICAL",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Governed graph projection accepts canonical persistence, preserves IDs and rejects foreign/illegal endpoints without writing truth.",
+      "implementation_surface": [
+        "packages/graphos/src/governed/graph.ts:88"
+      ],
+      "evidence_ids": [
+        "E047",
+        "E048"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-GRAPH"
+      ],
+      "limitations": "Local pure projection proof; operational legacy GraphEngine is a distinct excluded input."
+    },
+    {
+      "capability_id": "TA-C18",
+      "capability_name": "Vector analytical boundary",
+      "architectural_layer": "L6–L8",
+      "milestone": "M12/M17",
+      "classification": "ANALYTICAL",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Exact retrieval filters tenant, canonical subjects and compatible embedding spaces; output remains analytical.",
+      "implementation_surface": [
+        "packages/graphos/src/governed/retrieval.ts:55"
+      ],
+      "evidence_ids": [
+        "E049",
+        "E048"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-GRAPH"
+      ],
+      "limitations": "Fixture embeddings only; production embedding population and model quality are unverified."
+    },
+    {
+      "capability_id": "TA-C19",
+      "capability_name": "LLM non-authority boundary stub",
+      "architectural_layer": "Analytical consumer",
+      "milestone": "M12/M17",
+      "classification": "ANALYTICAL",
+      "proof_status": "PROVEN",
+      "proven_assertion": "The explicit L15 LLM boundary stub keeps validate/accept/close text inert with no governance action, evidence admission or write authority.",
+      "implementation_surface": [
+        "packages/graphos/src/governed/l15-risk-analysis.ts:72"
+      ],
+      "evidence_ids": [
+        "E050",
+        "E048"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-GRAPH"
+      ],
+      "limitations": "This is an inert-output fixture proof, not a complete deployed LLM integration, content-safety evaluation or certification-claim guard."
+    },
+    {
+      "capability_id": "TA-C20",
+      "capability_name": "Runtime observation validation",
+      "architectural_layer": "L12",
+      "milestone": "M14",
+      "classification": "SUPPORTING",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Runtime observation validator checks typed observation payloads and preserves observed versus unresolved binding semantics.",
+      "implementation_surface": [
+        "packages/governance-review/src/runtime-observation.ts:34"
+      ],
+      "evidence_ids": [
+        "E051",
+        "E052"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-RUNTIME"
+      ],
+      "limitations": "Local validator proof; no live OTel collector, production completeness, latency/cost accuracy or persistence proof."
+    },
+    {
+      "capability_id": "TA-C21",
+      "capability_name": "Cross-signal reconciliation classification",
+      "architectural_layer": "L13/L16",
+      "milestone": "M15",
+      "classification": "ANALYTICAL",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Design-time/runtime comparison yields scoped consistent/conflict/insufficient-evidence results, preserves exact temporal precision and fails on tenant mismatch.",
+      "implementation_surface": [
+        "packages/governance-review/src/cross-signal-comparison.ts:330"
+      ],
+      "evidence_ids": [
+        "E053",
+        "E054"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-CROSS-SIGNAL"
+      ],
+      "limitations": "Comparison function proof; persistence and human reconciliation authority are separate DB integration concerns."
+    },
+    {
+      "capability_id": "TA-C22",
+      "capability_name": "Risk signals",
+      "architectural_layer": "L15 non-authoritative input",
+      "milestone": "M17-S1",
+      "classification": "SUPPORTING",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Typed insert-only risk signals retain source/method/support lineage without becoming governed states.",
+      "implementation_surface": [
+        "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql:707"
+      ],
+      "evidence_ids": [
+        "E055",
+        "E056",
+        "E017"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C23",
+      "capability_name": "Risk hypotheses and dispositions",
+      "architectural_layer": "L15 analytical input/read",
+      "milestone": "M17-S1/S7D",
+      "classification": "ANALYTICAL",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Hypotheses require signal support; latest tenant-scoped disposition read preserves evidence/dismissal distinctions.",
+      "implementation_surface": [
+        "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql:840",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:99"
+      ],
+      "evidence_ids": [
+        "E057",
+        "E058",
+        "E059"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C24",
+      "capability_name": "Governed risk",
+      "architectural_layer": "L15",
+      "milestone": "M17-S3/S7D",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Human-governed risk proposal/decision/state chain pins scenario and policy; latest corrective enforces valid self-decision basis.",
+      "implementation_surface": [
+        "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql:1563",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E012",
+        "E016",
+        "E060",
+        "E010",
+        "E026"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C25",
+      "capability_name": "Inherent risk assessment",
+      "architectural_layer": "L15",
+      "milestone": "M17-S4/S7D",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Assessment uses exact governed risk/methodology pins and categorical methodology lookup, not a free compliance score.",
+      "implementation_surface": [
+        "supabase/migrations/20261013160000_m17_s4_inherent_risk_assessment_v1.sql:1498",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E061",
+        "E062",
+        "E063",
+        "E016"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C26",
+      "capability_name": "Risk treatment",
+      "architectural_layer": "L15",
+      "milestone": "M17-S5/S7D",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Governed treatment states retain exact risk/party/support dependencies and temporal replay/CAS boundaries.",
+      "implementation_surface": [
+        "supabase/migrations/20261015122639_m17_s5_risk_treatment_v1.sql:456",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E064",
+        "E065",
+        "E066",
+        "E016"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C27",
+      "capability_name": "Residual risk assessment",
+      "architectural_layer": "L15",
+      "milestone": "M17-S6/S7D",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Residual assessment pins inherent assessment, treatments and control evidence; current eligibility is derived.",
+      "implementation_surface": [
+        "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql:979",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E067",
+        "E068",
+        "E069",
+        "E016"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted. Residual is an assessment mode, not a fifth authoritative L15 family."
+    },
+    {
+      "capability_id": "TA-C28",
+      "capability_name": "Risk acceptance",
+      "architectural_layer": "L15",
+      "milestone": "M17-S6/S7D",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Human acceptance depends on an exact current residual and governed decision basis; no waiver/certification implication.",
+      "implementation_surface": [
+        "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql:1462",
+        "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql:57"
+      ],
+      "evidence_ids": [
+        "E070",
+        "E071",
+        "E072",
+        "E016"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C29",
+      "capability_name": "Risk lifecycle read projection",
+      "architectural_layer": "L15 read",
+      "milestone": "M17-S7A",
+      "classification": "SUPPORTING",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Lifecycle is derived from existing governed states at effective/recorded coordinates, without stored lifecycle truth.",
+      "implementation_surface": [
+        "supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql:33"
+      ],
+      "evidence_ids": [
+        "E073",
+        "E074"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C30",
+      "capability_name": "Risk support currency",
+      "architectural_layer": "L15 read",
+      "milestone": "M17-S3R1/S7A",
+      "classification": "SUPPORTING",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Support currency traces exact proposal/decision/state support and uses upstream state resolvers.",
+      "implementation_surface": [
+        "supabase/migrations/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql:107"
+      ],
+      "evidence_ids": [
+        "E075",
+        "E076"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C31",
+      "capability_name": "Risk exposure analytical projection",
+      "architectural_layer": "Graph / L15 read",
+      "milestone": "M17-S7B",
+      "classification": "ANALYTICAL",
+      "proof_status": "PROVEN",
+      "proven_assertion": "Risk exposure uses governed canonical traversal and labeled analytical witness paths without inserting risk nodes/edges or transferring ratings.",
+      "implementation_surface": [
+        "packages/graphos/src/governed/l15-risk-analysis.ts:20"
+      ],
+      "evidence_ids": [
+        "E077",
+        "E048"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-GRAPH"
+      ],
+      "limitations": "Pure traversal proof with fixture risk identity; no deployment-wide exposure completeness claim."
+    },
+    {
+      "capability_id": "TA-C32",
+      "capability_name": "Passport risk overlay",
+      "architectural_layer": "L15 read / Passport",
+      "milestone": "M17-S7B",
+      "classification": "SUPPORTING",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Read-only exact subject overlay composes risk with existing Passport families and does not add family 17.",
+      "implementation_surface": [
+        "supabase/migrations/20261019130000_m17_s7b_passport_risk_overlay_v1.sql:27",
+        "apps/dashboard/lib/governance/passport-risk-overlay-read.ts:7"
+      ],
+      "evidence_ids": [
+        "E078",
+        "E079",
+        "E080",
+        "E046"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [
+        "V-PASSPORT"
+      ],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted. Local Passport composition tests pass with mocked overlay RPC."
+    },
+    {
+      "capability_id": "TA-C33",
+      "capability_name": "Execution identity / authorization declarations",
+      "architectural_layer": "L10/L11",
+      "milestone": "M13",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Execution snapshots and reviewed field decisions distinguish declared capability from authorization and unresolved identity.",
+      "implementation_surface": [
+        "packages/governance-review/src/execution-context.ts:15",
+        "supabase/migrations/20260915230551_execution_context_v1.sql:163"
+      ],
+      "evidence_ids": [
+        "E081",
+        "E082",
+        "E083"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE",
+        "DATABASE_ENFORCED"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C34",
+      "capability_name": "Scenario/methodology and control/policy registries",
+      "architectural_layer": "L14/L15",
+      "milestone": "M16/M17-S2",
+      "classification": "AUTHORITATIVE",
+      "proof_status": "PARTIALLY_PROVEN",
+      "proven_assertion": "Governed immutable versions exist for scenario/methodology, control definitions and policy validation; seeds alone cannot validate them.",
+      "implementation_surface": [
+        "supabase/migrations/20261013120000_m17_s2_scenario_methodology_registries_v1.sql:1767",
+        "supabase/migrations/20261008200000_m16_s1b6_control_definition_registry_v1.sql:657",
+        "supabase/migrations/20261008120000_m16_s1b4_policy_version_validation_v1.sql:438"
+      ],
+      "evidence_ids": [
+        "E084",
+        "E085",
+        "E086",
+        "E087",
+        "E088"
+      ],
+      "proof_modes": [
+        "DATABASE_ENFORCED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Implementation and database enforcement/test sources inspected; PostgreSQL suite not rerun in S0. No hosted or current CI proof asserted."
+    },
+    {
+      "capability_id": "TA-C35",
+      "capability_name": "Externally issued certification proof",
+      "architectural_layer": "Assurance external basis",
+      "milestone": "M17.5 gap",
+      "classification": "SUPPORTING",
+      "proof_status": "NOT_PROVEN",
+      "proven_assertion": "No externally issued certification artifact was established by the scoped repository inspection.",
+      "implementation_surface": [
+        "packages/scanner/src/core/certification.ts:3"
+      ],
+      "evidence_ids": [
+        "E089"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Heuristic certification code is counterevidence to accepting its labels; this search does not assert that no certificate exists outside the repository. External state NOT_ASSERTED."
+    },
+    {
+      "capability_id": "TA-C36",
+      "capability_name": "Authoritative clause-level framework sources",
+      "architectural_layer": "External framework reference",
+      "milestone": "M17.5 gap",
+      "classification": "SUPPORTING",
+      "proof_status": "NOT_PROVEN",
+      "proven_assertion": "Existing static mappings/scanners do not establish authoritative edition-pinned requirement source content for the seven requested frameworks.",
+      "implementation_surface": [
+        "apps/extension/src/scanner/compliance.ts:25"
+      ],
+      "evidence_ids": [
+        "E090",
+        "E091"
+      ],
+      "proof_modes": [
+        "ARCHITECTURE_DOCUMENTED",
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "EXTERNAL_REQUIREMENT_SOURCE_PENDING for all seven labels. No clause content or requirement satisfaction inferred from mappings or regex heuristics."
+    },
+    {
+      "capability_id": "TA-C37",
+      "capability_name": "Production embedding population",
+      "architectural_layer": "L6/L7 runtime context",
+      "milestone": "M12 deployment context",
+      "classification": "ANALYTICAL",
+      "proof_status": "UNKNOWN",
+      "proven_assertion": "Current hosted embedding population has not been inspected.",
+      "implementation_surface": [
+        "apps/dashboard/lib/governance/intelligence-query.ts:32"
+      ],
+      "evidence_ids": [
+        "E092"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "No hosted read, deployment audit or model population verification was authorized or performed."
+    },
+    {
+      "capability_id": "TA-C38",
+      "capability_name": "Assurance operational KPI execution",
+      "architectural_layer": "Assurance projection",
+      "milestone": "M17.5 gap",
+      "classification": "SUPPORTING",
+      "proof_status": "NOT_PROVEN",
+      "proven_assertion": "The requested assurance KPI execution contract is architecture-only in S0; no executable assurance KPI evidence is established.",
+      "implementation_surface": [
+        "apps/dashboard/services/agents.ts:102",
+        "apps/dashboard/services/systems.ts:89"
+      ],
+      "evidence_ids": [
+        "E093",
+        "E094"
+      ],
+      "proof_modes": [
+        "RUNTIME_EXECUTABLE"
+      ],
+      "current_verification_ids": [],
+      "limitations": "Legacy percentage functions are not assurance KPIs and cannot establish any allowed count or compliance state. S0 adds no runtime."
+    }
+  ],
+  "evidence_references": [
+    {
+      "evidence_id": "E001",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20260909210640_relationship_decision_to_truth_v1.sql",
+      "line": 216,
+      "anchor": "create or replace function gov_repo.materialize_object_reconciliation(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "4e5dc79a469b54197263d0c99412b6790f06a94998ded63b83a92feda356161b",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E002",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20260925180000_m16_s0_governed_write_wrappers_v1.sql",
+      "line": 274,
+      "anchor": "CREATE FUNCTION gov_repo.materialize_object_reconciliation_governed_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "b6aeed5c7a2e8f8dd42bff817af55167acd19964906dd852cd7d076b24fdb0eb",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E003",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/object-materialization-rule-compat.test.ts",
+      "line": 57,
+      "anchor": "test('M16 S0.3.3B0 object materialization rule compatibility (real PG17, real production functions)', { timeout: 900_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "0511091eb54b71b8edf24dd7ab87008765167b7df151c31a3e88c3d9a65bde0e",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E004",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20260909210640_relationship_decision_to_truth_v1.sql",
+      "line": 420,
+      "anchor": "create or replace function gov_repo.materialize_relationship_reconciliation(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "4e5dc79a469b54197263d0c99412b6790f06a94998ded63b83a92feda356161b",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E005",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/relationship-decision-to-truth.test.ts",
+      "line": 19,
+      "anchor": "test(\"typed mapping separates same-source Agent, V1 and V2 without versionCode\", () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "6e5e5dbe4ee093e6ee47760167b6b9656f850670cd07cf212f75d8c54f7616e1",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E006",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+      "line": 391,
+      "anchor": "CREATE FUNCTION gov_repo.l15_history_immutable_v1() RETURNS trigger",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "a638fb364f80974b5a8067201415b59fde22d9e3e9c740018d9e5383b24ab01c",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E007",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20260906120000_canonical_materialization_v1.sql",
+      "line": 336,
+      "anchor": "create or replace rule canonical_objects_no_update as",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "6d9e1bcf0880141dc93d93b35b2cde14e9d9514838c15e06d8766bc4db71f3f0",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E008",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-final-security-closure.test.ts",
+      "line": 52,
+      "anchor": "for (const horizon of ['M17S7B', 'M17S7D'] as const) test(`final ${horizon} security closure pins the complete L15 definer, ACL and non-authority surface`,",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "b058b9d8a41341f0927758a14dc795cd2f4764a2b631b4fa457c37233d12b2e2",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E009",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql",
+      "line": 1275,
+      "anchor": "CREATE FUNCTION gov_repo.l15_governed_risk_command_result_v1(p_organisation_id uuid, p_command_id text, p_replay boolean)",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "66adbc52947fd70d4b143976232bd9952dd920d907fdd74aff718356074652bf",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E010",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s3-governed-risk.test.ts",
+      "line": 25,
+      "anchor": "test('M17-S3 GOVERNED_RISK (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "590faec287b24ce84f2dd97a140f6d9ada4b24c02d418b6c7b4dc70c9b362eaf",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E011",
+      "evidence_type": "ARCHITECTURE_OR_HISTORICAL_RECORD",
+      "path": "docs/codex/evidence/2026-10-19-m17-closure.md",
+      "line": 1,
+      "anchor": "# M17 formal closure evidence",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "98eaacf57d2a8c1b5e4444a9a840d676cb55a12905a227cc05bcbc9c4dfa5d1d",
+      "classification": "SUPPORTING",
+      "mode": "ARCHITECTURE_DOCUMENTED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E012",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261013140000_m17_s3_governed_risk_v1.sql",
+      "line": 1563,
+      "anchor": "CREATE FUNCTION gov_repo.l15_decide_governed_risk_proposal_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "66adbc52947fd70d4b143976232bd9952dd920d907fdd74aff718356074652bf",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E013",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s3-governed-risk-concurrency.test.ts",
+      "line": 18,
+      "anchor": "test('M17-S3 GOVERNED_RISK concurrency (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "b7c72f78c1af633a93b44035b37acf4d6cef8e270eec371d4b45ab9a7a033555",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E014",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/l14-authority-policy-successor-concurrency.test.ts",
+      "line": 12,
+      "anchor": "test('M16 S1A.2 L14 Authority Policy successor concurrency (disposable PG17)', { timeout: 900_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "0204b84a81d8779e2af756ada5c1ecc765a92f156df3041ec16499f07a3aba5b",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E015",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+      "line": 598,
+      "anchor": "CREATE FUNCTION gov_repo.l15_normalize_support_v1(p_organisation_id uuid, p_tags text[], p_ids text[])",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "a638fb364f80974b5a8067201415b59fde22d9e3e9c740018d9e5383b24ab01c",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E016",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+      "line": 57,
+      "anchor": "CREATE OR REPLACE FUNCTION gov_repo.l15_authorization_allow_guard_v1()",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "868b5f331ba9c8ad19b4e20bfb09beb5af2518ce02ef1d99d6a7f1c1d0a5c5f0",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E017",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s1-security.test.ts",
+      "line": 24,
+      "anchor": "const SERVICE_ROLE_RPCS = L15_S1_DEFINER_INVENTORY.map(e => e.sig).filter(s => /l15_(admit_human|read_)/.test(s));",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "5eb4775bb504c19f6ada759f014bccfd9b037ff9be56cb5a3d71cc5189cfa7c9",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E018",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/scanner/src/discovery/provenance.ts",
+      "line": 38,
+      "anchor": "export function createSourceConnection(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "e7fbaf743f8317fd0a756bb2a0380801facde2795eef2a2dfe5910f3b9b4da79",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E019",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/scanner/src/discovery/adapters/github-source-adapter.ts",
+      "line": 113,
+      "anchor": "export class GitHubSourceAdapter implements SourceAdapter {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "415a8df151e90d527e2bce4fc6f6f915d38e399ae6fc7e96b6f6b860f4475556",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E020",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/scanner/test/discovery-engine/source-identity.test.ts",
+      "line": 52,
+      "anchor": "describe('deterministic source identity', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "13272419d1f6b97d782688c370032c88a6f437ee1e5b3201157fd1f242bc6005",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "EXECUTED_PASS_IN_S0",
+      "verification_id": "V-SOURCE-IDENTITY"
+    },
+    {
+      "evidence_id": "E021",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/scanner/test/discovery-engine/github-source-adapter.test.ts",
+      "line": 64,
+      "anchor": "describe('GitHubSourceAdapter', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "2813d450415725150301b0bf1571392519d410cae8ed3cfd83e8fc3dff2718b6",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "EXECUTED_PASS_IN_S0",
+      "verification_id": "V-GITHUB-ADAPTER"
+    },
+    {
+      "evidence_id": "E022",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/scanner/src/discovery/pipeline.ts",
+      "line": 41,
+      "anchor": "export class DiscoveryPipelineFailure extends Error {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "7173cf2f37ebaf5988dd6d8f91fac91927392716cfaedd92efe95a7644080d60",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E023",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/scanner/test/discovery-engine/pipeline.test.ts",
+      "line": 55,
+      "anchor": "describe('DiscoveryPipeline', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "110b6f702fabe103501d9836ff08ecc2a1559edf9027b8e52ef0302044c3291f",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "EXECUTED_PASS_IN_S0",
+      "verification_id": "V-PIPELINE"
+    },
+    {
+      "evidence_id": "E024",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261006134858_discovery_machine_propose_worker_v1.sql",
+      "line": 3,
+      "anchor": "CREATE ROLE govia_discovery_propose_owner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "5417c2ffabe836db59cf26a592c41e737ba3121fce4f468aa097fbbe1cf0bf33",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E025",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/discovery-machine-propose.test.ts",
+      "line": 9,
+      "anchor": "test('machine PROPOSE: current authority, fixed actor, durable support, replay and denial', { timeout: 300_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "97910a6b05d9f482e940c6dff7530681a5e49db6822244e552feddd1120dc4bc",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E026",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s7d-self-decision.test.ts",
+      "line": 20,
+      "anchor": "test('S7D O56 all six decision families: deny every self outcome, explicit matched allow, non-self, replay and real concurrency',",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "257b4ae4c0421f01dcf67de9a437f44a46065c16aba4c0ae7666d13b22765a0a",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E027",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/l14-authority-policy.ts",
+      "line": 55,
+      "anchor": "export function validateAuthorityPolicyRule(rule: L14AuthorityPolicyRule): void {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "52dc26a7977ee40e945dfb9f56ed5f2eff1db160fc44fa9b4631f21df2e97620",
+      "classification": "AUTHORITATIVE",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E028",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/l14-authority-policy-acl.test.ts",
+      "line": 45,
+      "anchor": "test('M16 S1A.1 L14 Authority Policy ACL / privilege boundary (disposable PG17)', { timeout: 900_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "639881dddbf1798e1be7d78bc20273e77d6f6284b829ad9dccc4b3f22616111e",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E029",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/l14-responsibility-assignment.ts",
+      "line": 37,
+      "anchor": "export function isLegalResponsibilityPairing(targetKind: string, role: string): boolean {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "bedd00b44f8074a521179a276f6ad7f3429e367f933dab3d9e752cd239da839d",
+      "classification": "AUTHORITATIVE",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E030",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261008220000_m16_s1c1_responsibility_assignment_v1.sql",
+      "line": 1194,
+      "anchor": "CREATE FUNCTION gov_repo.l14_decide_responsibility_assignment_proposal_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "f82b3e6e102a595c9684b6e5778c46564f472133c3890ff9aefa66f8adb0fde6",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E031",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/l14-responsibility-assignment.test.ts",
+      "line": 16,
+      "anchor": "test('M16 S1C.1 responsibility assignment lifecycle (disposable PG17)', { timeout: 2_400_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "ea2506865ea278f34da4ad24a1ed2ec31e0185fea2812f7485d4666bfcd0dece",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E032",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/l14-business-context-assignment.ts",
+      "line": 38,
+      "anchor": "export function isLegalBusinessContextPairing(targetKind: string, semanticKind: string): boolean {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "642686d7513f12508cf774d233430839f25407d9f5ff4882c17d2e6be68b27fd",
+      "classification": "AUTHORITATIVE",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E033",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261009120000_m16_s1c2_business_context_assignment_v1.sql",
+      "line": 1013,
+      "anchor": "CREATE FUNCTION gov_repo.l14_decide_business_context_assignment_proposal_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "67552bc5576dd78f648a7fb029ef5d2bbbfde5146bfdc871459010894b63e0be",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E034",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/l14-business-context-assignment.test.ts",
+      "line": 16,
+      "anchor": "test('M16 S1C.2 business context assignment lifecycle (disposable PG17)', { timeout: 2_400_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "1753414b3e4de74ced83dbe8a154618f981636d82c2bf0ec88b280c106dd1883",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E035",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/l14-policy-applicability.ts",
+      "line": 34,
+      "anchor": "export function policyApplicabilityTargetParts(target: L14PolicyApplicabilityTarget): string[] {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "68a065c4807ce04704398a1ed7cbe53a62ff25be90ff413c6d6a5a242f765efc",
+      "classification": "AUTHORITATIVE",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E036",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261009130000_m16_s1c3_policy_applicability_v1.sql",
+      "line": 953,
+      "anchor": "CREATE FUNCTION gov_repo.l14_policy_applicability_valid_state_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "17ea09c40131efe150f3105327bf88efbdd20913924e1d72e80891fa33980673",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E037",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/l14-policy-applicability.test.ts",
+      "line": 17,
+      "anchor": "test('M16 S1C.3 policy applicability lifecycle (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "f5e3b74ee16e4b05d7ea09cdcec340dcedd844934c6f8c61345796f37ece95fd",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E038",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/l14-control-applicability.ts",
+      "line": 35,
+      "anchor": "export function controlApplicabilityTargetParts(target: L14ControlApplicabilityTarget): string[] {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "c87553ca1009ea195ab6561038046a059d17870cd4933f6fdcd170afae86d821",
+      "classification": "AUTHORITATIVE",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E039",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261009220000_m16_s1c4_control_applicability_v1.sql",
+      "line": 850,
+      "anchor": "CREATE FUNCTION gov_repo.l14_control_applicability_valid_state_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "6e0826e0208ad8e4ae12cd8ebdd76b1f08398d287d92bc607bb2485de11d67f4",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E040",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/l14-control-applicability.test.ts",
+      "line": 17,
+      "anchor": "test('M16 S1C.4 control applicability lifecycle (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "8cde1c6767df6ef455ab24f4a524ff35e4eeb483ee9d5de42f86ca1a1256ebac",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E041",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/l14-control-assessment.ts",
+      "line": 26,
+      "anchor": "export function l14ControlAssessmentOutcome(value: string): L14ControlAssessmentOutcome {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "93252fee99b2ece0b53145aabf5aac347031577ce03d9002ccd2f5af697080d2",
+      "classification": "AUTHORITATIVE",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E042",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261010120000_m16_s1c5_control_assessment_v1.sql",
+      "line": 547,
+      "anchor": "CREATE FUNCTION gov_repo.l14_control_assessment_state_guard_v1()",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "f2085a23a6a74bfa1956b504f5498af8f3373e296f3c9037b4684587d78c3454",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E043",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/l14-control-assessment.test.ts",
+      "line": 17,
+      "anchor": "test('M16 S1C.5 control assessment lifecycle (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "e5039be3cefb2274e2a3b82e0e22617164c2cdc2620f7c8557aa039b280a5989",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E044",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/lib/governance/agent-passport.ts",
+      "line": 7,
+      "anchor": "export const PASSPORT_FAMILIES = [",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "17cebda2b99f6861cd00837de72f98893bd2d4eb0987bfaca33c6ef3006d544d",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E045",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/lib/governance/passport-query.ts",
+      "line": 17,
+      "anchor": "export async function getAgentPassport(principal: GovernanceWritePrincipal, canonicalObjectId: string, selectedVersionId?: string): Promise<AgentPassport360 | undefined> {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "976e63c376e5ec3ca3e2bb1f19101a7138b8f0588ed83cbf4d2671a9b517e304",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E046",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/passport-query.test.ts",
+      "line": 178,
+      "anchor": "test('M13 accepted fields populate families 15/16 with UNKNOWN authorization and declared provenance',async()=>{",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "47c7cfc37eb390c93b2aac2b0db70910b57e651703ef0c708e380ea0c927e133",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "EXECUTED_PASS_IN_S0",
+      "verification_id": "V-PASSPORT"
+    },
+    {
+      "evidence_id": "E047",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/graphos/src/governed/graph.ts",
+      "line": 88,
+      "anchor": "export function projectCanonicalGraph(input: {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "d84405769f5ab24fdf52ae24d4e07ca276b382be5860b4095a4ad8527e64cf7c",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E048",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/graphos/test/governed.test.ts",
+      "line": 39,
+      "anchor": "test('01 canonical objects project all 11 closed kinds', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "c990703bd5861fdd3fa9305b767e6b1897621386993c670e56bfa6d30e135fba",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "EXECUTED_PASS_IN_S0",
+      "verification_id": "V-GRAPH"
+    },
+    {
+      "evidence_id": "E049",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/graphos/src/governed/retrieval.ts",
+      "line": 55,
+      "anchor": "export function retrieveCanonicalVectors(input: ExactRetrievalInput) {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "ca3013b57f90ebb955169518cabbac36443615ddf189957424beed772c5f2e94",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E050",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/graphos/src/governed/l15-risk-analysis.ts",
+      "line": 72,
+      "anchor": "export function runL15LlmBoundaryStub(output: 'validated' | 'accepted' | 'closed') {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "f30a85beda2cbc352db43dcdb104097b87f17bd0609794a32147ea4dffd6b399",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E051",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/runtime-observation.ts",
+      "line": 34,
+      "anchor": "export function validateRuntimeObservation(value: unknown): RuntimeObservation {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "edd743077f0243e39916a3e6547276edf7d1401cc6055d277706670d21573b09",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E052",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/runtime-observation.test.ts",
+      "line": 66,
+      "anchor": "for (const kind of ['EXECUTION', 'MODEL_CALL', 'TOOL_CALL', 'MCP_CALL', 'API_CALL'] as const) test(`validate ${kind} without fabrication`, () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "e4023437ae992323a05c961df98f1a86b6a759ed9aa2fb3707a577c55eddabfd",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "EXECUTED_PASS_IN_S0",
+      "verification_id": "V-RUNTIME"
+    },
+    {
+      "evidence_id": "E053",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/cross-signal-comparison.ts",
+      "line": 330,
+      "anchor": "export function compareCrossSignal(request: unknown): CrossSignalComparisonResult {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "d3a8d84eb4755aa79de9abf0441a42cc0e984971c791ddb05c267f905097c5f9",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E054",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/cross-signal-comparison.test.ts",
+      "line": 120,
+      "anchor": "test('1. exact same principal resolves CONSISTENT', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "d4629341c9c6aa72a653222f83538a3a9334a1d6a2991bf4b6a13beb18bbfdf5",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "EXECUTED_PASS_IN_S0",
+      "verification_id": "V-CROSS-SIGNAL"
+    },
+    {
+      "evidence_id": "E055",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+      "line": 707,
+      "anchor": "CREATE FUNCTION gov_repo.l15_write_signal_v1(p_organisation_id uuid, p_intake_key text, p_signal_kind text,",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "a638fb364f80974b5a8067201415b59fde22d9e3e9c740018d9e5383b24ab01c",
+      "classification": "SUPPORTING",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E056",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s1-signals-hypotheses.test.ts",
+      "line": 23,
+      "anchor": "test('M17-S1 signals / hypotheses / support (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "24f6c28bdfa5794c85203c5492288246c30807f97b6d6bf6aa22765e8e66b73b",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E057",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+      "line": 840,
+      "anchor": "CREATE FUNCTION gov_repo.l15_write_hypothesis_v1(p_organisation_id uuid, p_intake_key text, p_generator_kind text,",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "a638fb364f80974b5a8067201415b59fde22d9e3e9c740018d9e5383b24ab01c",
+      "classification": "ANALYTICAL",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E058",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+      "line": 99,
+      "anchor": "CREATE OR REPLACE FUNCTION gov_repo.l15_read_hypothesis_dispositions_v1(p_verified_organisation_id uuid, p_verified_actor_user_id uuid,",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "868b5f331ba9c8ad19b4e20bfb09beb5af2518ce02ef1d99d6a7f1c1d0a5c5f0",
+      "classification": "SUPPORTING",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E059",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s7d-boundaries-dispositions.test.ts",
+      "line": 10,
+      "anchor": "test('S7D O71 hostile LLM output remains inert against the real final PG17 database and closed evidence union',",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "d42b4275319d3b7e892cd5198a2cdfd49cacce9be32a016f03a657a290c6dc56",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E060",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/l15-governed-risk.test.ts",
+      "line": 52,
+      "anchor": "describe('M17-S3 GOVERNED_RISK fingerprints (mirror of the DB frames)', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "82b21e271b2fa8241513b90d3e95b4ae8d6ab48740232320abe6c833e3470f45",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E061",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261013160000_m17_s4_inherent_risk_assessment_v1.sql",
+      "line": 1498,
+      "anchor": "CREATE FUNCTION gov_repo.l15_decide_risk_assessment_proposal_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "83aa0529fb7d2367496d40e7e76280135fbbd0db2ad22cc579cd77583b5b8d3e",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E062",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/l15-risk-assessment.test.ts",
+      "line": 48,
+      "anchor": "describe('M17-S4 RISK_ASSESSMENT mirror', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "807364aef64d1bad70a755cb5d378fc7b9f0cf8f5fae98c4e12b102f106db93a",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E063",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s4-risk-assessment.test.ts",
+      "line": 22,
+      "anchor": "test('M17-S4 INHERENT RISK_ASSESSMENT (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "0c2c21a7795d43a3f0e4855acca26783f50b90ef215c2ea7b9bad9182c0ee34d",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E064",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261015122639_m17_s5_risk_treatment_v1.sql",
+      "line": 456,
+      "anchor": "CREATE FUNCTION gov_repo.l15_decide_risk_treatment_proposal_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "78bdd6f3954ea85890a8a45cff5f2e0abea9ed2fc2c01e7ef187e762a3798177",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E065",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/l15-risk-treatment.test.ts",
+      "line": 11,
+      "anchor": "for (const option of ['ACCEPT','WAIVED','AVOIDANCE']) test(`S5 preflight rejects ${option}`, () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "a159ee45f436c55a458247d696e682987f149e81e682c06d8d9b9ce1e53643e1",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E066",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s5-risk-treatment.test.ts",
+      "line": 8,
+      "anchor": "test('M17-S5 treatment O46/O47/O48, authority, replay and dependencies (PG17)', { timeout: 600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "09999dde8036f615ad268bb211322ecb18d495aef99a8bf75490ddffdc38eb9f",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E067",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+      "line": 979,
+      "anchor": "CREATE OR REPLACE FUNCTION gov_repo.l15_risk_assessment_valid_state_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "6af42e459c463bd1055410b81a1cc62fb947ccfbc81a869a8b06c7df6e322a73",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E068",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/l15-residual-risk-assessment.test.ts",
+      "line": 15,
+      "anchor": "test('S6 pin order is immaterial for submit and decide identity', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "2670a3b1416f376060dc6143c03a58ea94280710cf11375ed1048ebe4317b29a",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E069",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s6-residual.test.ts",
+      "line": 6,
+      "anchor": "test('S6 residual foundation on PG17: exact inherent pin, empty sets, replay, eligibility and historical cutoff', { timeout: 600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "732ea40423dbd3cf778afe1c8de937d6784ab0eeed11f6b78a2fe86fd578d3f8",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E070",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+      "line": 1462,
+      "anchor": "CREATE FUNCTION gov_repo.l15_decide_risk_acceptance_proposal_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "6af42e459c463bd1055410b81a1cc62fb947ccfbc81a869a8b06c7df6e322a73",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E071",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/l15-risk-acceptance.test.ts",
+      "line": 8,
+      "anchor": "test('acceptance fingerprint binds exact target, period, expectation, prior, support and actor',()=>{",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "1c24365e947ab77b5118a683351ada67234067e6c801c00bafe8da9b5ab3d153",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E072",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s6-acceptance.test.ts",
+      "line": 7,
+      "anchor": "test('S6 acceptance: exact residual, authority, support, replay, no waiver and non-interference', {timeout:600_000},async t=>{",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "ea704a8ae4413f4cf646ce913f124b827fdf811cf3eb9b06801b2c2dc55e1564",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E073",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261017020733_m17_s7a_read_projections_v1.sql",
+      "line": 33,
+      "anchor": "CREATE FUNCTION gov_repo.l15_read_risk_projections_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "bdaff50da45aa549fa90eb6f310354cb751475187cd7d447d1018a4384789a62",
+      "classification": "SUPPORTING",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E074",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s7a-lifecycle.test.ts",
+      "line": 9,
+      "anchor": "test('S7A O68: all seven lifecycle states are deterministic and projection execution writes nothing',{timeout:600_000},async t=>{",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "a2df3ceb6c9057053341efa28b2247bcf45b0ee94c01bce7560f960f4a40e687",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E075",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql",
+      "line": 107,
+      "anchor": "CREATE OR REPLACE FUNCTION gov_repo.l15_governed_risk_support_currency_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "05f89f1ccf6ae3c4723b680468c0746fa4b37c36d871fb3eb3fadd29bb1d87e8",
+      "classification": "SUPPORTING",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E076",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s3-support-currency.test.ts",
+      "line": 28,
+      "anchor": "test('M17-S3 GOVERNED_RISK O44 support currency (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "3eb0add51259a9725c02afb1cc2592fc09975694b0649e8ff4e365233692ca9a",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E077",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/graphos/src/governed/l15-risk-analysis.ts",
+      "line": 20,
+      "anchor": "export function projectL15RiskExposure(input: {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "f30a85beda2cbc352db43dcdb104097b87f17bd0609794a32147ea4dffd6b399",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E078",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261019130000_m17_s7b_passport_risk_overlay_v1.sql",
+      "line": 27,
+      "anchor": "CREATE FUNCTION gov_repo.l15_read_passport_risk_overlay_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "2ccdecb40e9de781edc292f11d87dbc27ee5eed02eb75e8a0c28cb4d36f3b677",
+      "classification": "SUPPORTING",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E079",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/lib/governance/passport-risk-overlay-read.ts",
+      "line": 7,
+      "anchor": "const RPC = 'l15_read_passport_risk_overlay_v1';",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "8bb2e492a4199950ebfe76bbc1c8a5c2a00542ea30572c59110b05fb72acb3c1",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E080",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s7b-passport-overlay.test.ts",
+      "line": 11,
+      "anchor": "test('S7B O72 exact Passport overlay is UNKNOWN on absence, mapped on presence, non-inherited and zero-write',",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "4c463fa08d4dd7dbc7cda80a24eb79304536079c9b5d5478f8a2800e403cddb5",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E081",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/governance-review/src/execution-context.ts",
+      "line": 15,
+      "anchor": "export function validateExecutionSnapshot(snapshot: ExecutionSourceSnapshot): void {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "0977fb4b64ef2428f2c822b2120d31f3bdc35c91bb516d99a59ba0ed17402bd9",
+      "classification": "AUTHORITATIVE",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E082",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20260915230551_execution_context_v1.sql",
+      "line": 163,
+      "anchor": "create function gov_repo.record_execution_field_decision(p_organisation_id uuid,p_decision jsonb)",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "81fed886204a07117c3aed1eb1a3fd64b69983f0288713ca7c07d1e208cdb14c",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E083",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/execution-context.test.ts",
+      "line": 36,
+      "anchor": "test('explicit human field governance accepts declared principal without authorizing execution',async()=>{",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "0a16cec5eb08a79d5b3abc8562365cb09117b823f1c5f98cbfc88a69b1146938",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E084",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261013120000_m17_s2_scenario_methodology_registries_v1.sql",
+      "line": 1767,
+      "anchor": "CREATE FUNCTION gov_repo.l15_admit_scenario_version_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "00e81db725819947c0e4e293137c74aec53dc2aaf75d2444eee918d19054a1b4",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E085",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "packages/governance-review/test/l15-registries.test.ts",
+      "line": 37,
+      "anchor": "describe('M17-S2 registry content hashes (mirror of the DB)', () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "90a0325a868beb115abe10778e38713281591a5322e92c39eb46cee928695dd0",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E086",
+      "evidence_type": "EXECUTABLE_TEST",
+      "path": "apps/dashboard/tests/postgres-m16/m17-s2-registries.test.ts",
+      "line": 25,
+      "anchor": "test('M17-S2 scenario / methodology registries (disposable PG17)', { timeout: 3_600_000 }, async t => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "51efd54c924f476667b88ef97dc45d3e29e56d933aae9cf11ed08b4de8941843",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E087",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261008200000_m16_s1b6_control_definition_registry_v1.sql",
+      "line": 657,
+      "anchor": "CREATE FUNCTION gov_repo.l14_control_definition_valid_state_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "f1b75335795f6421e5d76422efb198e633e5fd50edfdb7b32ab60d0f7aa7f7d9",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E088",
+      "evidence_type": "ENFORCEMENT",
+      "path": "supabase/migrations/20261008120000_m16_s1b4_policy_version_validation_v1.sql",
+      "line": 438,
+      "anchor": "CREATE FUNCTION gov_repo.l14_policy_version_valid_state_v1(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "8889f887b33bce41baf9fd90ff70f9c8b0145cb74179a76d87918623388266be",
+      "classification": "AUTHORITATIVE",
+      "mode": "DATABASE_ENFORCED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E089",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/scanner/src/core/certification.ts",
+      "line": 3,
+      "anchor": "export function certifySystem(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "cd5c3348b48a3d6aa130edd54e0ded6843fb960bee121c28d8245b2d49364f27",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E090",
+      "evidence_type": "ARCHITECTURE_OR_HISTORICAL_RECORD",
+      "path": "TRACEABILITY_MATRIX.md",
+      "line": 1,
+      "anchor": "# CodeGuard AI Governance OS — Regulatory Traceability Matrix",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "c9404b6cb56c429a0cc1c3ed70a42b9f9eebaa30ea5e98daad0852cecf4785b9",
+      "classification": "SUPPORTING",
+      "mode": "ARCHITECTURE_DOCUMENTED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E091",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/extension/src/scanner/compliance.ts",
+      "line": 25,
+      "anchor": "export class ComplianceEngine {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "d002daabeff87a7714696e05f923d6c61fb42dde13726050d1d0b721c8ca7c2c",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E092",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/lib/governance/intelligence-query.ts",
+      "line": 32,
+      "anchor": "'PRODUCTION_EMBEDDING_POPULATION_NOT_VERIFIED',",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "10b1273b53df1d39ba2699ee8db7e65a81bf70ee648641d76df45c61e4262de4",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E093",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/services/agents.ts",
+      "line": 102,
+      "anchor": "export function computeScore(flags: ComplianceFlags): number | null {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "f634a30a4aa51f259ee974d073c34b6f2ac68a9b77c35622ee8ff4ab8a0610d5",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E094",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/services/systems.ts",
+      "line": 89,
+      "anchor": "export function computeScore(flags: Record<string, ControlState>): number | null {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "ad175da1374cdcf75bb92055927f5440db63d160f7a1f89828a6afe84fac5e3a",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E095",
+      "evidence_type": "PRESENTATION",
+      "path": "apps/dashboard/components/agents/CompliancePanel.tsx",
+      "line": 21,
+      "anchor": "export function CompliancePanel({ compliance, score, gaps }: CompliancePanelProps) {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "e10fa8d084c55b2af62c2558033cf1c6ca9dc6a89d445d7baf62c0be6ff3fd93",
+      "classification": "SUPPORTING",
+      "mode": "PRESENTATION_ONLY",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E096",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/repositories/agents.ts",
+      "line": 186,
+      "anchor": "export async function updateAgentCompliance(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "2ea90e199d8f5b2d3da06bb77d88655707d00ee6538290ece12bb493f0d101db",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E097",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/repositories/systems.ts",
+      "line": 173,
+      "anchor": "export async function updateSystemCompliance(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "56e635c908dc622f58b1461dce7bd04d312752f7db69cda587f2dcd9daa95d08",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E098",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/app/api/agents/[id]/route.ts",
+      "line": 60,
+      "anchor": "export async function PATCH(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "7f749854e6246156fcdcfe994702b611332fe6daa5b6f45fc2f59d8c08d99e58",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E099",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/app/api/systems/[id]/route.ts",
+      "line": 60,
+      "anchor": "export async function PATCH(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "ab212096d7506a11dd30ae4ec43fc73c99d5a871e3fa1ef68902524af0ede219",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E100",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/scanner/src/unified.ts",
+      "line": 316,
+      "anchor": "complianceScore: this.result.certResult?.overall === 'platinum' ? 100 : this.result.certResult?.overall === 'gold' ? 80 : this.result.certResult?.overall === 'silver' ? 60 : this.result.certResult?.overall === 'bronze' ? 40 : 0,",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "3822b688668f3badd6d216ae58aab5c4222c6ae782013985efd95c2c352b2bf4",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E101",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "packages/scanner/src/index.ts",
+      "line": 26,
+      "anchor": "export { certifySystem } from './core/certification';",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "16fd667fcd39606ff82d10ca4974043930c12c7ff1ff7f3200095a814a503b87",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E102",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/extension/src/report/generator.ts",
+      "line": 20,
+      "anchor": "const summary = this.generateExecutiveSummary(counts, mapping);",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "598e8144b87b70a5b14841b39cbb99eb3de236de9b6ba4ca34d4b09a072984be",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E103",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/extension/src/extension.ts",
+      "line": 173,
+      "anchor": "let complianceAuditDisposable = vscode.commands.registerCommand('codeguard.complianceAudit', async () => {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "5bae72ec2401ef59fa0ba0124bae7f87124a72ff78acc6bc1a0693ae8cf41354",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E104",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "graphos-complete/src/scanner/certification.ts",
+      "line": 3,
+      "anchor": "export function certifySystem(",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "cd5c3348b48a3d6aa130edd54e0ded6843fb960bee121c28d8245b2d49364f27",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E105",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "graphos-complete/src/app/api/scanner/discover/route.ts",
+      "line": 64,
+      "anchor": "complianceScore: result.compliance.overallScore,",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "ec8088670709a2c643ec5410f2c7a7847c234896c7d6841610570feef30a89b7",
+      "classification": "ANALYTICAL",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E106",
+      "evidence_type": "ARCHITECTURE_OR_HISTORICAL_RECORD",
+      "path": "docs/architecture/m16-noncanonical-migration-roots.manifest.json",
+      "line": 1,
+      "anchor": "{",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "bc1fed1f27076cf6b0b6566648255f9070a4c487068a31aaaccd051c86e4e429",
+      "classification": "SUPPORTING",
+      "mode": "ARCHITECTURE_DOCUMENTED",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E107",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/app/api/reports/ai-act/route.ts",
+      "line": 4,
+      "anchor": "export async function GET() {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "4464ca2f6b76360919af3382f34b580fb7e55f2785a62faa8afb893cf8dc5340",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E108",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/app/api/reports/dora/route.ts",
+      "line": 4,
+      "anchor": "export async function GET() {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "4464ca2f6b76360919af3382f34b580fb7e55f2785a62faa8afb893cf8dc5340",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    },
+    {
+      "evidence_id": "E109",
+      "evidence_type": "IMPLEMENTATION",
+      "path": "apps/dashboard/app/api/reports/executive/route.ts",
+      "line": 4,
+      "anchor": "export async function GET() {",
+      "source_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "content_sha256_lf_utf8": "4464ca2f6b76360919af3382f34b580fb7e55f2785a62faa8afb893cf8dc5340",
+      "classification": "SUPPORTING",
+      "mode": "RUNTIME_EXECUTABLE",
+      "execution": "NOT_EXECUTED_IN_S0"
+    }
+  ],
+  "verification": [
+    {
+      "verification_id": "V-GRAPH",
+      "selection": "packages/graphos:test:governed",
+      "input_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "result": "PASS",
+      "passed": 53,
+      "failed": 0,
+      "skipped": 0,
+      "local_log": ".artifacts/agent/258dde98-572c-4f8f-8e69-b16a2f7a924f-0.log",
+      "log_sha256": "6b4eaeac9fe040dee8a612c1311e26cfeb41f566d26ab994b419a89560631c0f",
+      "artifact_portability": "Local ignored log; durable checkpoint summary in sibling markdown. Not independent CI.",
+      "harness": "Node 24; controlled local fixtures; no hosted services"
+    },
+    {
+      "verification_id": "V-SOURCE-IDENTITY",
+      "selection": "packages/scanner/test/discovery-engine/source-identity.test.ts",
+      "input_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "result": "PASS",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "local_log": ".artifacts/agent/258dde98-572c-4f8f-8e69-b16a2f7a924f-1.log",
+      "log_sha256": "8b2f43e7cce54e75338df163ec17718229b40dcf00bc2d903c56b6a7c580d3ba",
+      "artifact_portability": "Local ignored log; durable checkpoint summary in sibling markdown. Not independent CI.",
+      "harness": "Node 24; controlled local fixtures; no hosted services"
+    },
+    {
+      "verification_id": "V-GITHUB-ADAPTER",
+      "selection": "packages/scanner/test/discovery-engine/github-source-adapter.test.ts",
+      "input_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "result": "PASS",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "local_log": ".artifacts/agent/258dde98-572c-4f8f-8e69-b16a2f7a924f-2.log",
+      "log_sha256": "d7ae4eda81750fca872f7fa340ed12b1826305e034891a4f16825e7fc49995cd",
+      "artifact_portability": "Local ignored log; durable checkpoint summary in sibling markdown. Not independent CI.",
+      "harness": "Node 24; controlled local fixtures; no hosted services"
+    },
+    {
+      "verification_id": "V-PIPELINE",
+      "selection": "packages/scanner/test/discovery-engine/pipeline.test.ts",
+      "input_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "result": "PASS",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "local_log": ".artifacts/agent/258dde98-572c-4f8f-8e69-b16a2f7a924f-3.log",
+      "log_sha256": "89049f6faf7977421d29634b49779cf61ec11ece50046f23fa0bc0abf851d843",
+      "artifact_portability": "Local ignored log; durable checkpoint summary in sibling markdown. Not independent CI.",
+      "harness": "Node 24; controlled local fixtures; no hosted services"
+    },
+    {
+      "verification_id": "V-RUNTIME",
+      "selection": "packages/governance-review/test/runtime-observation.test.ts",
+      "input_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "result": "PASS",
+      "passed": 71,
+      "failed": 0,
+      "skipped": 0,
+      "local_log": ".artifacts/agent/258dde98-572c-4f8f-8e69-b16a2f7a924f-4.log",
+      "log_sha256": "f24df75499c1e481cddc6758b0e4e53c75c70a447886a4945c129af4f54374da",
+      "artifact_portability": "Local ignored log; durable checkpoint summary in sibling markdown. Not independent CI.",
+      "harness": "Node 24; controlled local fixtures; no hosted services"
+    },
+    {
+      "verification_id": "V-CROSS-SIGNAL",
+      "selection": "packages/governance-review/test/cross-signal-comparison.test.ts",
+      "input_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "result": "PASS",
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0,
+      "local_log": ".artifacts/agent/258dde98-572c-4f8f-8e69-b16a2f7a924f-5.log",
+      "log_sha256": "eb08c23642d050d926eeb81c6a0092d2b77636778f5e9dc1d99238450674255d",
+      "artifact_portability": "Local ignored log; durable checkpoint summary in sibling markdown. Not independent CI.",
+      "harness": "Node 24; controlled local fixtures; no hosted services"
+    },
+    {
+      "verification_id": "V-PASSPORT",
+      "selection": "apps/dashboard/tests/passport-query.test.ts",
+      "input_commit": "acb95f84036b9bd5759c8afa04460bf1a004595f",
+      "result": "PASS",
+      "passed": 68,
+      "failed": 0,
+      "skipped": 0,
+      "local_log": ".artifacts/agent/258dde98-572c-4f8f-8e69-b16a2f7a924f-6.log",
+      "log_sha256": "8a6b9a9215511ff7f2c839b30a7c256a50710395b5e4bef85cac05f7fc6c96fb",
+      "artifact_portability": "Local ignored log; durable checkpoint summary in sibling markdown. Not independent CI.",
+      "harness": "Node 24; controlled local fixtures; no hosted services"
+    }
+  ],
+  "framework_sources": [
+    {
+      "framework_id": "DAMA-DMBOK",
+      "requested_label": "DAMA-DMBOK",
+      "framework_version": null,
+      "publisher": null,
+      "source_uri": null,
+      "source_reference": null,
+      "source_version_date": null,
+      "source_status": "EXTERNAL_REQUIREMENT_SOURCE_PENDING",
+      "requirement_count": 0,
+      "requirements": [],
+      "note": "Owner-requested scope label only; edition, publisher and authoritative source metadata await verification. No normative content admitted."
+    },
+    {
+      "framework_id": "DCAM",
+      "requested_label": "EDM Council / DCAM",
+      "framework_version": null,
+      "publisher": null,
+      "source_uri": null,
+      "source_reference": null,
+      "source_version_date": null,
+      "source_status": "EXTERNAL_REQUIREMENT_SOURCE_PENDING",
+      "requirement_count": 0,
+      "requirements": [],
+      "note": "Owner-requested scope label only; edition, publisher and authoritative source metadata await verification. No normative content admitted."
+    },
+    {
+      "framework_id": "ISO-IEC-42001",
+      "requested_label": "ISO/IEC 42001",
+      "framework_version": null,
+      "publisher": null,
+      "source_uri": null,
+      "source_reference": null,
+      "source_version_date": null,
+      "source_status": "EXTERNAL_REQUIREMENT_SOURCE_PENDING",
+      "requirement_count": 0,
+      "requirements": [],
+      "note": "Owner-requested scope label only; edition, publisher and authoritative source metadata await verification. No normative content admitted."
+    },
+    {
+      "framework_id": "ISO-IEC-38505-1",
+      "requested_label": "ISO/IEC 38505-1:2026",
+      "framework_version": null,
+      "publisher": null,
+      "source_uri": null,
+      "source_reference": null,
+      "source_version_date": null,
+      "source_status": "EXTERNAL_REQUIREMENT_SOURCE_PENDING",
+      "requirement_count": 0,
+      "requirements": [],
+      "note": "Owner-requested scope label only; edition, publisher and authoritative source metadata await verification. No normative content admitted."
+    },
+    {
+      "framework_id": "ISO-IEC-23894",
+      "requested_label": "ISO/IEC 23894",
+      "framework_version": null,
+      "publisher": null,
+      "source_uri": null,
+      "source_reference": null,
+      "source_version_date": null,
+      "source_status": "EXTERNAL_REQUIREMENT_SOURCE_PENDING",
+      "requirement_count": 0,
+      "requirements": [],
+      "note": "Owner-requested scope label only; edition, publisher and authoritative source metadata await verification. No normative content admitted."
+    },
+    {
+      "framework_id": "NIST-AI-RMF",
+      "requested_label": "NIST AI RMF",
+      "framework_version": null,
+      "publisher": null,
+      "source_uri": null,
+      "source_reference": null,
+      "source_version_date": null,
+      "source_status": "EXTERNAL_REQUIREMENT_SOURCE_PENDING",
+      "requirement_count": 0,
+      "requirements": [],
+      "note": "Owner-requested scope label only; edition, publisher and authoritative source metadata await verification. No normative content admitted."
+    },
+    {
+      "framework_id": "EU-AI-ACT",
+      "requested_label": "EU AI Act",
+      "framework_version": null,
+      "publisher": null,
+      "source_uri": null,
+      "source_reference": null,
+      "source_version_date": null,
+      "source_status": "EXTERNAL_REQUIREMENT_SOURCE_PENDING",
+      "requirement_count": 0,
+      "requirements": [],
+      "note": "Owner-requested scope label only; edition, publisher and authoritative source metadata await verification. No normative content admitted."
+    }
+  ],
+  "legacy_surfaces": [
+    {
+      "surface_id": "L01",
+      "classification": "NEEDS_CONTAINMENT",
+      "surface": "CompliancePanel and agent/system API flag scores",
+      "evidence_ids": [
+        "E095",
+        "E093",
+        "E094",
+        "E096",
+        "E097",
+        "E098",
+        "E099"
+      ],
+      "observation": "Live code computes passed/(passed+failed) percentages and renders score%. PATCH writes legacy flags/controlStates without governed L14 decisions or evidence. Waived flags can be stored true. These are legacy agents/ai_systems, not canonical M16 assessment state.",
+      "disposition": "Exclude from assurance, readiness and claims. Contain naming/percentage exposure and manual flag ambiguity in a separately authorized slice before external assurance presentation. No S0 refactor."
+    },
+    {
+      "surface_id": "L02",
+      "classification": "NEEDS_CONTAINMENT",
+      "surface": "Scanner certifySystem / UnifiedScanner",
+      "evidence_ids": [
+        "E089",
+        "E100",
+        "E101"
+      ],
+      "observation": "Exported heuristic certification creates bronze/silver/gold/platinum from filenames, risk hints and compliance heuristics; UnifiedScanner converts tiers into 40/60/80/100 scores.",
+      "disposition": "Not an external artifact, canonical fact or admissible requirement proof. Isolate exported labels from external claims in later authorized containment work."
+    },
+    {
+      "surface_id": "L03",
+      "classification": "LEGACY_NON_AUTHORITATIVE",
+      "surface": "Extension compliance scanners / reports",
+      "evidence_ids": [
+        "E091",
+        "E102",
+        "E103"
+      ],
+      "observation": "IDE-local regex findings, static legal mappings and executive summaries depend on license tier; not authoritative clause sources or a governed intake path.",
+      "disposition": "Preserve as local heuristic analysis. Do not count an empty/limited scan as conformity or evidence completeness. Review wording before exposing as assurance."
+    },
+    {
+      "surface_id": "L04",
+      "classification": "NEEDS_CONTAINMENT",
+      "surface": "graphos-complete remnants",
+      "evidence_ids": [
+        "E104",
+        "E105",
+        "E106"
+      ],
+      "observation": "Standalone legacy scanner/API still returns heuristic compliance scores and duplicated certification tiers; its migration root is quarantined outside the canonical chain.",
+      "disposition": "Never ingest these outputs as assurance or deploy this subsystem as an assurance authority. Hosted reachability UNKNOWN, not audited in S0; canonical workspace excludes this root."
+    },
+    {
+      "surface_id": "L05",
+      "classification": "SAFE",
+      "surface": "Dashboard regulatory report export guard",
+      "evidence_ids": [
+        "E107",
+        "E108",
+        "E109"
+      ],
+      "observation": "Inspected routes return 409 for regulatory exports and explicitly reject legacy heuristic certification as basis.",
+      "disposition": "SAFE for this guard only; no claim about the entire legacy dashboard or live deployment."
+    }
+  ]
+}

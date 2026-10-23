@@ -46,17 +46,18 @@ const dbStub = {
   write: {
     from: (table: string) => chain(table),
     rpc: async (name: string, args: Record<string, any>) => {
-      if (name === 'ledger_append') ledger.push(args);
+      if (name === 'ledger_append_v2') { ledger.push(args); return { data: '44444444-4444-4444-8444-444444444444', error: null }; }
       return { data: tableRows[`rpc:${name}`] ?? [], error: null };
     },
   },
 };
 
 before(() => {
+  mock.module('server-only', { namedExports: {} });
   Object.assign(globalThis, { React });
   mock.module('../lib/db', { namedExports: { db: { ...dbStub, read: dbStub.write } } });
   mock.module('../lib/auth', { namedExports: {
-    requireVerifiedGovernancePrincipal: async () => ({ organisationId: 'org-1', userId: 'user-1' }),
+    requireVerifiedGovernancePrincipal: async () => ({ organisationId: 'org-1', userId: 'user-1', issuedAtSeconds: 100, expiresAtSeconds: 200, credentialEpoch: '2026-10-20T00:00:00.123456Z' }),
     SessionAuthenticationError: class extends Error {},
   } });
   // Disk-backed provider over a committed golden fixture repository (no network, no hosted service).

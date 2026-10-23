@@ -44,21 +44,13 @@ test('product reads use server credentials and tenant predicates, including find
   assert.ok(requests.some(u => u.pathname.endsWith('/control_findings') && u.searchParams.get('select')?.includes('control_assessments!inner')));
   assert.ok(requests.some(u => u.pathname.endsWith('/governance_ledger')));
 });
-test('empty inventory has no favourable coverage score; unassessed and waived controls have no score', async () => {
+test('empty dashboard inventory omits removed aggregates; quarantined report remains unknown', async () => {
   failedTable = '';
   const empty = await dashboard.getDashboardData(org);
-  assert.equal(empty.complianceRate, null);
-  assert.equal(empty.cgSysComplianceRate, null);
-  assert.equal(empty.evidenceCoverage, null);
+  for (const key of ['complianceRate', 'cgSysComplianceRate', 'evidenceCoverage']) assert.ok(!(key in empty));
   const report = await reports.gatherReportData(org);
   assert.equal(report.compliance.rate, null);
   assert.equal(report.compliance.controlCoverage, null);
-  for (const service of [await import('../services/agents'), await import('../services/systems')]) {
-    assert.equal(service.computeScore({} as never), null);
-    assert.equal(service.computeScore({ a: 'not_assessed', b: 'waived' } as never), null);
-    assert.equal(service.computeScore({ a: 'passed', b: 'failed' } as never), 50);
-    assert.equal(service.computeScore({ a: 'passed' } as never), 100);
-  }
 });
 test('Discovery promotion and regulatory exports are blocked at API ingress without a database write', async () => {
   requests.length = 0;

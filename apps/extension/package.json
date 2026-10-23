@@ -1,7 +1,7 @@
 {
   "name": "codeguard-ai",
-  "displayName": "CodeGuard AI - Multi-LLM Compliance Orchestrator",
-  "description": "🛡️ The only Multi-LLM Compliance Engine (GPT-4o + Claude + DeepSeek). Auto-fix GDPR/LGPD risks by routing code to the best model for each task. Works offline & with Cursor.",
+  "displayName": "CodeGuard AI - Technical Framework Review",
+  "description": "LLM-assisted technical framework review and engineering suggestions for supplied source code. Heuristic and non-authoritative; no legal compliance or certification determination.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/negraodenio/code-guard-ai.git"
@@ -18,15 +18,14 @@
     "orchestration",
     "gdpr",
     "lgpd",
-    "compliance",
-    "security-audit",
     "claude",
     "gpt-4o",
     "ai-act",
     "pii-detection",
     "auto-fix",
     "cursor-companion",
-    "privacy-engineer"
+    "privacy-engineer",
+    "technical-framework-review"
   ],
   "engines": {
     "vscode": "^1.80.0"
@@ -38,15 +37,10 @@
   ],
   "main": "index.js",
   "contributes": {
-
-
-
-
     "commands": [
-
       {
         "command": "codeguard.scan",
-        "title": "CodeGuard: Quick Scan (Local/Free)"
+        "title": "CodeGuard: Quick Technical Scan (Local/Free)"
       },
       {
         "command": "codeguard.fix",
@@ -66,7 +60,7 @@
       },
       {
         "command": "codeguard.complianceAudit",
-        "title": "CodeGuard: Run Deep Compliance Audit (AI/Pro)"
+        "title": "CodeGuard: LLM-Assisted Technical Framework Review (AI/Pro)"
       },
       {
         "command": "codeguard.scanGithub",
@@ -113,7 +107,7 @@
         "codeguard.userApiKey": {
           "type": "string",
           "default": "",
-          "description": "🔑 BYOK (Privacy Mode): Enter your OpenAI/OpenRouter Key to use Auto-Fix & Deep Audit for free."
+          "description": "BYOK: Enter your OpenAI/OpenRouter key to use engineering suggestions and technical framework review."
         },
         "codeguard.modelName": {
           "type": "string",
@@ -138,7 +132,7 @@
             "Europe: GDPR, AI Act, PSD2, MDR/HIPAA, NIS2, ISO 27001",
             "USA: CCPA, HIPAA, PCI-DSS, SOC2"
           ],
-          "description": "Compliance region for regulatory auditing."
+          "description": "Reference-topic region for non-authoritative technical source review; no legal applicability is inferred."
         },
         "codeguard.stripePaymentLink": {
           "type": "string",
@@ -161,15 +155,20 @@
     "vscode:prepublish": "npm run compile",
     "build": "npm run compile",
     "compile": "tsc -p ./ && node -e \"require('fs').cpSync('.well-known', 'out/.well-known', {recursive: true})\"",
+    "typecheck": "tsc --noEmit -p ./",
+    "test:l03": "tsx --test test/l03/*.test.ts",
+    "typecheck:l03": "tsc --noEmit -p tsconfig.l03.json",
     "watch": "tsc -watch -p ./",
     "start:mcp": "node out/src/mcp-server.js",
     "test": "mocha out/test/api.test.js --timeout 10000",
     "vercel:dev": "vercel dev",
     "vercel:deploy": "vercel --prod",
-    "vercel:preview": "vercel"
+    "vercel:preview": "vercel",
+    "test:l03-deep": "tsx --test test/l03-deep/*.test.ts",
+    "typecheck:l03-deep": "tsc --noEmit -p tsconfig.l03-deep.json",
+    "test:mcp-contract": "tsx --test test/mcp-schema.test.ts"
   },
   "devDependencies": {
-
     "@types/chai": "^5.2.3",
     "@types/diff-match-patch": "^1.0.36",
     "@types/mocha": "^10.0.10",
@@ -205,9 +204,7 @@
     "pdfkit": "^0.17.2",
     "punycode": "^2.3.1",
     "simple-git": "^3.30.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "zod": "3.25.76"
   }
 }
-
-
-

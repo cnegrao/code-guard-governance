@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
 import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
+import { LEGACY_CONTROL_AUTHORITY, LEGACY_CONTROL_LIMITATION } from "@/lib/legacy-control-dto";
 import { getUnifiedGraph, isAgentNode, type DiscoveryGraphNode } from "@/services/knowledge-graph";
 
 export interface DashboardSummary {
   totalAgents: number;
   totalSystems: number;
-  complianceRate: number | null;
   openFindings: number;
   openIncidents: number;
   upcomingReviews: number;
@@ -14,11 +14,13 @@ export interface DashboardSummary {
   systemsWithoutAgents: number;
   highRiskSystems: number;
   openDoraIncidents: number;
-  totalGovernanceGaps: number;
+  legacyControlAuthority: typeof LEGACY_CONTROL_AUTHORITY;
+  legacyControlLimitation: typeof LEGACY_CONTROL_LIMITATION;
+  totalLegacyControlGaps: number;
   auditEventsLast30Days: number;
   riskDistribution: { critical: number; high: number; medium: number; low: number };
   /**
-   * highRiskAgents / highRiskSystems / riskDistribution / topGaps[].risk_level aggregate LEGACY risk labels
+   * highRiskAgents / highRiskSystems / riskDistribution / legacyControlGaps[].risk_level aggregate LEGACY risk labels
    * (agents.risk_level, ai_systems.risk_class): never governed risk, never an L15 input (M17-S0).
    */
   legacyRiskAuthority: typeof LEGACY_RISK_LABEL;
@@ -29,7 +31,7 @@ export interface DashboardSummary {
     status: string;
     occurred_at: string;
   }>;
-  topGaps: Array<{
+  legacyControlGaps: Array<{
     agent_code: string;
     agent_name: string;
     risk_level: string;
@@ -49,15 +51,12 @@ export interface DashboardSummary {
   criticalFindings: number;
   aiActExposureCount: number;
   doraMajorIncidents: number;
-  cgSysComplianceRate: number | null;
-  evidenceCoverage: number | null;
 }
 
 export async function getDashboardData(orgId: string): Promise<DashboardSummary> {
   const [
     totalAgents,
     totalSystems,
-    complianceResult,
     openFindings,
     openIncidents,
     upcomingReviews,
@@ -66,11 +65,11 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
     systemsWithoutAgents,
     highRiskSystems,
     openDoraIncidents,
-    totalGovernanceGaps,
+    totalLegacyControlGaps,
     auditEventsLast30Days,
     riskDistribution,
     recentIncidents,
-    topGaps,
+    legacyControlGaps,
     governanceQuestions,
     repositoriesScanned,
     agentsDiscovered,
@@ -79,12 +78,9 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
     criticalFindings,
     aiActExposureCount,
     doraMajorIncidents,
-    cgSysComplianceRate,
-    evidenceCoverage,
   ] = await Promise.all([
     countAgents(orgId),
     countSystems(orgId),
-    computeCompliance(orgId),
     countOpenFindings(orgId),
     countOpenIncidents(orgId),
     countUpcomingReviews(orgId),
@@ -93,11 +89,11 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
     countSystemsWithoutAgents(orgId),
     countHighRiskSystems(orgId),
     countOpenDoraIncidents(orgId),
-    countTotalGovernanceGaps(orgId),
+    countTotalLegacyControlGaps(orgId),
     countAuditEvents30Days(orgId),
     getRiskDistribution(orgId),
     getRecentIncidents(orgId),
-    getTopGaps(orgId),
+    getLegacyControlGaps(orgId),
     getGovernanceQuestions(orgId),
     countRepositoriesScanned(orgId),
     countAgentsDiscovered(orgId),
@@ -106,14 +102,11 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
     countCriticalFindings(orgId),
     countAiActExposure(orgId),
     countDoraMajorIncidents(orgId),
-    computeCgSysComplianceRate(orgId),
-    computeEvidenceCoverage(orgId),
   ]);
 
   return {
     totalAgents,
     totalSystems,
-    complianceRate: complianceResult.rate,
     openFindings,
     openIncidents,
     upcomingReviews,
@@ -122,12 +115,14 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
     systemsWithoutAgents,
     highRiskSystems,
     openDoraIncidents,
-    totalGovernanceGaps,
+    totalLegacyControlGaps,
     auditEventsLast30Days,
     riskDistribution,
     legacyRiskAuthority: LEGACY_RISK_LABEL,
+    legacyControlAuthority: LEGACY_CONTROL_AUTHORITY,
+    legacyControlLimitation: LEGACY_CONTROL_LIMITATION,
     recentIncidents,
-    topGaps,
+    legacyControlGaps,
     governanceQuestions,
     repositoriesScanned,
     agentsDiscovered,
@@ -136,8 +131,6 @@ export async function getDashboardData(orgId: string): Promise<DashboardSummary>
     criticalFindings,
     aiActExposureCount,
     doraMajorIncidents,
-    cgSysComplianceRate,
-    evidenceCoverage,
   };
 }
 
@@ -159,23 +152,6 @@ async function countSystems(orgId: string): Promise<number> {
   return count ?? 0;
 }
 
-async function computeCompliance(orgId: string): Promise<{ rate: number | null }> {
-  const { count: total } = await db.write
-    .from("agents")
-    .select("*", { count: "exact", head: true })
-    .eq("organisation_id", orgId)
-    .neq("status", "decommissioned").throwOnError();
-
-  const { data: gaps } = await db.write.rpc("agent_compliance_gaps", {
-    p_organisation_id: orgId,
-  }).throwOnError();
-
-  const gapCount = (gaps as Array<unknown>)?.length ?? 0;
-  const totalCount = total ?? 0;
-  const rate = totalCount > 0 ? Math.round((1 - gapCount / totalCount) * 100) : null;
-
-  return { rate };
-}
 
 async function countOpenFindings(orgId: string): Promise<number> {
   const { data: assessments } = await db.write
@@ -258,7 +234,7 @@ async function countOpenDoraIncidents(orgId: string): Promise<number> {
   return count ?? 0;
 }
 
-async function countTotalGovernanceGaps(orgId: string): Promise<number> {
+async function countTotalLegacyControlGaps(orgId: string): Promise<number> {
   const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
   }).throwOnError();
@@ -332,9 +308,9 @@ async function getRecentIncidents(
   return (data as DashboardSummary["recentIncidents"]) ?? [];
 }
 
-async function getTopGaps(
+async function getLegacyControlGaps(
   orgId: string
-): Promise<DashboardSummary["topGaps"]> {
+): Promise<DashboardSummary["legacyControlGaps"]> {
   const { data } = await db.write.rpc("agent_compliance_gaps", {
     p_organisation_id: orgId,
   }).throwOnError();
@@ -347,7 +323,13 @@ async function getTopGaps(
     owner_name: string;
   }>) ?? [];
 
-  return gaps.sort((a, b) => b.total_gaps - a.total_gaps).slice(0, 5);
+  return gaps.sort((a, b) => b.total_gaps - a.total_gaps).slice(0, 5).map(gap => ({
+    agent_code: gap.agent_code,
+    agent_name: gap.agent_name,
+    risk_level: gap.risk_level,
+    total_gaps: gap.total_gaps,
+    owner_name: gap.owner_name,
+  }));
 }
 
 async function countAuditEvents30Days(orgId: string): Promise<number> {
@@ -422,20 +404,4 @@ async function countAiActExposure(orgId: string): Promise<number> {
 async function countDoraMajorIncidents(orgId: string): Promise<number> {
   const graph = await getUnifiedGraph(orgId);
   return graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "incident" && (n as DiscoveryGraphNode).metadata?.is_major_incident === true).length;
-}
-
-async function computeCgSysComplianceRate(orgId: string): Promise<number | null> {
-  const graph = await getUnifiedGraph(orgId);
-  const sysNodes = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "ai_system") as DiscoveryGraphNode[];
-  if (sysNodes.length === 0) return null;
-  if (sysNodes.some(s => typeof s.metadata?.systemComplianceScore !== "number")) return null;
-  const totalScore = sysNodes.reduce((sum, s) => sum + ((s.metadata?.systemComplianceScore as number) ?? 0), 0);
-  return Math.round(totalScore / sysNodes.length);
-}
-
-async function computeEvidenceCoverage(orgId: string): Promise<number | null> {
-  const graph = await getUnifiedGraph(orgId);
-  const evCount = graph.nodes.filter((n) => !isAgentNode(n) && n.nodeType === "evidence").length;
-  const agCount = graph.agentCount;
-  return agCount > 0 ? Math.round((evCount / agCount) * 100) : null;
 }

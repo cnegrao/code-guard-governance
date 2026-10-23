@@ -72,8 +72,58 @@ test('the canonical R1 allowlist is exactly the 22 and never contains a quaranti
 
 test('the canonical ledger API is defined only by its canonical migration; redefinitions elsewhere are quarantined', () => {
   const definesLedger = (text: string) => /create\s+(or\s+replace\s+)?function\s+gov_repo\.ledger_append\s*\(/i.test(text);
-  const canonical = readdirSync(`${repo}supabase/migrations`).filter(name => definesLedger(read(`supabase/migrations/${name}`)));
-  assert.deepEqual(canonical, ['20260818003710_gov_repo_identity_and_ledger.sql']);
+  // ADR tenant-ledger-integrity-v2 permits this exact additive replacement only.
+  // Whole-file LF hashes freeze the original definition and every successor statement,
+  // including ACLs/config; the separate V2 PG suite proves actual behavior/catalog state.
+  const original = '20260818003710_gov_repo_identity_and_ledger.sql';
+  const successor = '20261021134359_m175_v1_s1a1_2a_ledger_v2_write_cutover.sql';
+  const approved = [original, successor];
+  const hashes = [
+    '9b6ba4639abc6ff25d33792c904064f82bf90e8c0e3ea5ea67fca503b3631be0',
+    'a29bc7d3d0fc81264ebddc177c0aaa9cc274a7bf605aab1f6d20a4f97833292d',
+  ];
+  const digest = (text: string) => createHash('sha256').update(text.replace(/\r\n/g, '\n')).digest('hex');
+  const definitions = readdirSync(`${repo}supabase/migrations`).sort()
+    .map(name => ({ name, text: read(`supabase/migrations/${name}`) })).filter(entry => definesLedger(entry.text));
+  const assertDefinitions = (actual: typeof definitions) => {
+    assert.deepEqual(actual.map(entry => entry.name), approved, 'closed original/successor definition sources');
+    actual.forEach((entry, index) => assert.equal(digest(entry.text), hashes[index], entry.name));
+  };
+  assertDefinitions(definitions);
+  const sql = definitions[1].text.replace(/\r\n/g, '\n');
+  const signature = 'gov_repo.ledger_append(character varying,text,character varying,uuid,uuid,inet,uuid,jsonb)';
+  const expected = {
+    acl: ['govia_ledger_executor=X/govia_ledger_executor', 'postgres=X/govia_ledger_executor'],
+    kind: 'f', owner: 'govia_ledger_executor',
+    config: ['search_path=pg_catalog, pg_temp', 'lock_timeout=5s'],
+    sha256: 'cbbae64a240966fa61c4d182d7b56e49c1570ae4ba393642f053ffe9029e8252',
+    signature, volatility: 'v', securityDefiner: true,
+  };
+  const receipt = JSON.parse(read('docs/codex/evidence/2026-10-21-m17.5-v1-s1a1-2a-catalog.json'));
+  assert.deepEqual(receipt.migration, { path: `supabase/migrations/${successor}`, sha256LF: hashes[1] });
+  assert.deepEqual(receipt.catalog.routines.find((routine: { signature: string }) => routine.signature === signature), expected);
+  assert.ok(sql.includes(`CREATE OR REPLACE FUNCTION gov_repo.ledger_append(
+  p_event_type varchar,p_event_desc text,p_subject_type varchar,p_subject_id uuid,
+  p_actor_user_id uuid,p_actor_ip inet,p_organisation_id uuid,p_payload jsonb)
+RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog,pg_temp SET lock_timeout='5s' AS $append$`));
+  const body = sql.match(/AS \$append\$([\s\S]*?)\$append\$;/)?.[1];
+  assert.ok(body, 'exact admitted append definition');
+  assert.equal(digest(body), expected.sha256);
+  // In-memory negatives never edit/apply a migration or weaken the legacy-root quarantine.
+  assert.throws(() => assertDefinitions([...definitions, { name: '99991231235959_unapproved.sql', text: sql }]), assert.AssertionError);
+  assert.throws(() => assertDefinitions([{ ...definitions[0], text: definitions[0].text + '\n-- rewrite' }, definitions[1]]), assert.AssertionError);
+  for (const [label, altered] of Object.entries({
+    identity: sql.replace('p_actor_ip inet', 'p_actor_ip text'),
+    body: sql.replace('RETURN s;', 'RETURN NULL;'),
+    owner: sql + `\nALTER FUNCTION ${signature} OWNER TO service_role;`,
+    definer: sql.replace('VOLATILE SECURITY DEFINER', 'VOLATILE SECURITY INVOKER'),
+    config: sql.replace('SET search_path=pg_catalog,pg_temp', 'SET search_path=public,pg_temp'),
+    acl: sql + `\nGRANT EXECUTE ON FUNCTION ${signature} TO PUBLIC;`,
+  })) {
+    assert.notEqual(altered, sql, label);
+    assert.throws(() => assertDefinitions([definitions[0], { name: successor, text: altered }]), assert.AssertionError, label);
+  }
   const tracked = execFileSync('git', ['ls-files'], { cwd: repo, encoding: 'utf8' }).split(/\r?\n/)
     .filter(path => path && !path.startsWith('supabase/migrations/') && /\.(sql|ts|js|mjs|cjs|py)$/.test(path) && !path.startsWith('apps/dashboard/tests/'));
   const elsewhere = tracked.filter(path => definesLedger(read(path))).sort();

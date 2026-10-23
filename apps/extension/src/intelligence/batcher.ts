@@ -116,6 +116,9 @@ function shouldIgnore(filePath: string): boolean {
 
 export class ContextBatcher {
     private maxTokensPerBatch: number;
+    private acquisition = { state: 'UNKNOWN' as 'COMPLETE' | 'PARTIAL' | 'UNKNOWN', read_failures: 0, excluded_files: 0, truncated_files: 0 };
+
+    getAcquisition() { return { ...this.acquisition }; }
 
     constructor(maxTokensPerBatch: number = 80000) {
         this.maxTokensPerBatch = maxTokensPerBatch;
@@ -125,10 +128,11 @@ export class ContextBatcher {
      * Collect all relevant files from the workspace or specific path
      */
     async collectWorkspaceFiles(rootPath?: string): Promise<FileContext[]> {
+        this.acquisition = { state: 'COMPLETE', read_failures: 0, excluded_files: 0, truncated_files: 0 };
         const files: FileContext[] = [];
         const targetPath = rootPath || (vscode.workspace.workspaceFolders?.[0]?.uri.fsPath);
 
-        if (!targetPath) return [];
+        if (!targetPath) { this.acquisition.state = 'UNKNOWN'; return []; }
 
         try {
             const filePaths = await this.scanDirectory(targetPath);
@@ -138,7 +142,7 @@ export class ContextBatcher {
                     const uint8Array = await vscode.workspace.fs.readFile(uri);
                     const content = Buffer.from(uint8Array).toString('utf-8');
 
-                    if (content.length > 50000 || content.trim().length === 0) continue;
+                    if (content.length > 50000 || content.trim().length === 0) { this.acquisition.excluded_files++; continue; }
 
                     const relativePath = path.isAbsolute(filePath) 
                         ? path.relative(targetPath, filePath)
@@ -152,10 +156,14 @@ export class ContextBatcher {
                         tokenEstimate: estimateTokens(content)
                     });
                 } catch (e) {
+                    this.acquisition.read_failures++;
+                    this.acquisition.state = 'PARTIAL';
                     console.warn(`Failed to read file ${filePath}:`, e);
                 }
             }
         } catch (err) {
+            this.acquisition.read_failures++;
+            this.acquisition.state = 'UNKNOWN';
             console.error('Error scanning repo directory:', err);
         }
 
@@ -182,6 +190,8 @@ export class ContextBatcher {
                 }
             }
         } catch (e) {
+            this.acquisition.read_failures++;
+            this.acquisition.state = 'PARTIAL';
             console.warn(`Skipping dir ${dir}:`, e);
         }
         return files;
@@ -213,6 +223,8 @@ export class ContextBatcher {
             }
 
             if (file.tokenEstimate > this.maxTokensPerBatch) {
+                this.acquisition.truncated_files++;
+                this.acquisition.state = 'PARTIAL';
                 const maxChars = this.maxTokensPerBatch * 4;
                 const truncatedContent = file.content.substring(0, maxChars) + '\n// ... [TRUNCATED]';
 

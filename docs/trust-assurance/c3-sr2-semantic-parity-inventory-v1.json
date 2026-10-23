@@ -1,0 +1,2943 @@
+{
+  "schema_version": "GOVIA_C3_SR2_PARITY_INVENTORY_V1",
+  "record_type": "ADDITIVE_ARCHITECTURE_AND_FORENSIC_STATUS",
+  "recorded_date": "2026-10-22",
+  "timezone": "America/Sao_Paulo",
+  "repository": "cnegrao/code-guard-governance",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "starting_head": "698dc6fbd31c1ffa10258812b30c78964df3520c",
+  "checkpoint": "M17.5-V1-S1B / C3-SR2-A0",
+  "slice_status": "CLOSED / ARCHITECTURE PASS",
+  "scope": "DOCUMENTATION_ONLY",
+  "runtime_parity_proven": false,
+  "hosted_state_inspected": false,
+  "legacy_disconnection_permitted": false,
+  "sr1_unchanged": true,
+  "disposition_vocabulary": [
+    "MUST_PRESERVE_FUNCTION",
+    "REPLACE_UNSAFE_IMPLEMENTATION",
+    "LEGACY_ONLY_NO_PRODUCT_DEPENDENCY",
+    "NONCANONICAL_ABSENT",
+    "REQUIRES_PRODUCT_DECISION"
+  ],
+  "disposition_semantics": "Classify primary functions separately from unsafe/absent mechanisms. ABSENT means canonical chain only; no hosted-state inference. NO_PRODUCT_DEPENDENCY is relative to dashboard Talk, not deletion authorization.",
+  "inventory": [
+    {
+      "id": "L01",
+      "capability": "agent_semantic_search implementation",
+      "legacy_producer_source": "gov_repo.agent_embeddings; canonical table, production writer/population not established by repository",
+      "legacy_consumer": "services/talk.ts:ask -> repositories/talk.ts:semanticSearch -> formatContextForLLM -> generateGovernanceAnswer",
+      "subject_domain": "LEGACY_OPERATIONAL_AGENT",
+      "tenant_binding": "Verified ingress supplies organisation; RPC filters ae.organisation_id only; agent and owner joins by UUID without tenant predicates; independent FKs",
+      "content_returned": [
+        "content_snippet = left(content_text,300)"
+      ],
+      "metadata_returned": [
+        "agent_id",
+        "agent_code",
+        "agent_name",
+        "agent_type",
+        "risk_level",
+        "oversight_level",
+        "ai_system_id",
+        "owner_name",
+        "similarity"
+      ],
+      "raw_text_code_returned": "YES: arbitrary embedding text prefix; may contain text/code/PII, no source admission proof",
+      "numeric_similarity_confidence_exposed": "YES: similarity to model via arbitrary field formatter; Talk public confidence also numeric",
+      "provenance": "Embedding row content_hash/model/generated_at exist but are not returned; no complete source/capture support returned",
+      "source_revision_freshness": "is_current plus active/approved agent status; no immutable observation/source revision; generation time not currentness",
+      "currently_executable": "CALLER_AND_CANONICAL_RPC_PRESENT_CONDITIONAL; match.confidence<80, llm.available, nonempty embedding; hosted population/provider not inspected",
+      "security_defects": [
+        "joined agent and owner tenant not proven",
+        "no persisted-session revalidation inside legacy RPC",
+        "optional model filter omitted by Talk",
+        "uncontrolled snippet and owner PII",
+        "no exact full-space/query recipe binding"
+      ],
+      "authority_defects": [
+        "flattened fields mixed with governance context",
+        "numeric similarity and confidence",
+        "legacy risk/oversight lacks typed per-hit boundary"
+      ],
+      "product_value": "Mechanism of C01; unsafe joins must not be preserved",
+      "replacement_capability_required": "Typed LEGACY_AGENT_RECORD observation/projection/read with principal binding, exact operational space and protected hydration",
+      "cutover_dependency": [
+        "P06",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "REPLACE_UNSAFE_IMPLEMENTATION",
+      "evidence": [
+        {
+          "source_id": "talk_service",
+          "path": "apps/dashboard/services/talk.ts",
+          "line": 22,
+          "anchor": "export async function ask"
+        },
+        {
+          "source_id": "talk_repository",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 576,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "talk_format",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 593,
+          "anchor": "export function formatContextForLLM"
+        },
+        {
+          "source_id": "agent_embeddings",
+          "path": "supabase/migrations/20260818004053_agent_registry_graph_part_3.sql",
+          "line": 5,
+          "anchor": "create table gov_repo.agent_embeddings"
+        },
+        {
+          "source_id": "agent_rpc",
+          "path": "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+          "line": 1,
+          "anchor": "create or replace function gov_repo.agent_semantic_search"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "required_function_ids": [
+        "C01"
+      ]
+    },
+    {
+      "id": "L02",
+      "capability": "agent_embeddings vector/content storage",
+      "legacy_producer_source": "gov_repo.agent_embeddings; canonical table, production writer/population not established by repository",
+      "legacy_consumer": "No application direct-table reader/writer of this table found; SQL agent_semantic_search reads it",
+      "subject_domain": "LEGACY_OPERATIONAL_AGENT",
+      "tenant_binding": "Verified ingress supplies organisation; RPC filters ae.organisation_id only; agent and owner joins by UUID without tenant predicates; independent FKs",
+      "content_returned": [
+        "content_snippet = left(content_text,300)"
+      ],
+      "metadata_returned": [
+        "agent_id",
+        "agent_code",
+        "agent_name",
+        "agent_type",
+        "risk_level",
+        "oversight_level",
+        "ai_system_id",
+        "owner_name",
+        "similarity"
+      ],
+      "raw_text_code_returned": "YES: arbitrary embedding text prefix; may contain text/code/PII, no source admission proof",
+      "numeric_similarity_confidence_exposed": "YES: similarity to model via arbitrary field formatter; Talk public confidence also numeric",
+      "provenance": "Embedding row content_hash/model/generated_at exist but are not returned; no complete source/capture support returned",
+      "source_revision_freshness": "is_current plus active/approved agent status; no immutable observation/source revision; generation time not currentness",
+      "currently_executable": "CANONICAL_TABLE_AND_RPC_PRESENT; app producer/population not established; hosted unknown",
+      "security_defects": [
+        "joined agent and owner tenant not proven",
+        "no persisted-session revalidation inside legacy RPC",
+        "optional model filter omitted by Talk",
+        "uncontrolled snippet and owner PII",
+        "no exact full-space/query recipe binding"
+      ],
+      "authority_defects": [
+        "flattened fields mixed with governance context",
+        "numeric similarity and confidence",
+        "legacy risk/oversight lacks typed per-hit boundary"
+      ],
+      "product_value": "Natural-language discovery and useful explanation of operational agents not necessarily canonical/candidate",
+      "replacement_capability_required": "Separate typed operational representation/projection; no legacy content backfill without source revalidation",
+      "cutover_dependency": [
+        "P06",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "REPLACE_UNSAFE_IMPLEMENTATION",
+      "evidence": [
+        {
+          "source_id": "talk_service",
+          "path": "apps/dashboard/services/talk.ts",
+          "line": 22,
+          "anchor": "export async function ask"
+        },
+        {
+          "source_id": "talk_repository",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 576,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "talk_format",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 593,
+          "anchor": "export function formatContextForLLM"
+        },
+        {
+          "source_id": "agent_embeddings",
+          "path": "supabase/migrations/20260818004053_agent_registry_graph_part_3.sql",
+          "line": 5,
+          "anchor": "create table gov_repo.agent_embeddings"
+        },
+        {
+          "source_id": "agent_rpc",
+          "path": "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+          "line": 1,
+          "anchor": "create or replace function gov_repo.agent_semantic_search"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "required_function_ids": [
+        "C01"
+      ]
+    },
+    {
+      "id": "L03",
+      "capability": "coding_memory table and indexing expectation",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "storeChunk/searchSimilar/getRepositoryMemory plus their services and scan/memory API; canonical table absent",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "summary formatted as ranked text"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "Typed immutable repository/snapshot subject and protected projection; exact technical space; principal-bound same-snapshot hydration; reacquire sources, never copy/recreate legacy RPC",
+      "cutover_dependency": [
+        "P02",
+        "P03",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "NONCANONICAL_ABSENT",
+      "evidence": [
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_code",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 114,
+          "anchor": "export function chunkAgentCode"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "coding_repository",
+          "path": "apps/dashboard/repositories/coding-memory.ts",
+          "line": 73,
+          "anchor": "export async function searchSimilar"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        },
+        {
+          "source_id": "absence_test",
+          "path": "apps/dashboard/tests/postgres-m16/pre-demo-read-schema.test.ts",
+          "line": 42,
+          "anchor": "to_regclass('gov_repo.coding_memory') is null"
+        },
+        {
+          "source_id": "sr1_test",
+          "path": "apps/dashboard/tests/postgres-m16/semantic-context-retrieval.test.ts",
+          "line": 25,
+          "anchor": "proname='coding_memory_search'"
+        }
+      ],
+      "required_function_ids": [
+        "C02",
+        "C03",
+        "C04",
+        "C05",
+        "C06",
+        "C07",
+        "C08",
+        "C09",
+        "C10"
+      ]
+    },
+    {
+      "id": "L04",
+      "capability": "coding_memory_search RPC dependency",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "summary formatted as ranked text"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "Do not recreate; dedicated principal-bound technical read with reviewed M16 admission",
+      "cutover_dependency": [
+        "P02",
+        "P03",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "NONCANONICAL_ABSENT",
+      "evidence": [
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_code",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 114,
+          "anchor": "export function chunkAgentCode"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "coding_repository",
+          "path": "apps/dashboard/repositories/coding-memory.ts",
+          "line": 73,
+          "anchor": "export async function searchSimilar"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        },
+        {
+          "source_id": "absence_test",
+          "path": "apps/dashboard/tests/postgres-m16/pre-demo-read-schema.test.ts",
+          "line": 42,
+          "anchor": "to_regclass('gov_repo.coding_memory') is null"
+        },
+        {
+          "source_id": "sr1_test",
+          "path": "apps/dashboard/tests/postgres-m16/semantic-context-retrieval.test.ts",
+          "line": 25,
+          "anchor": "proname='coding_memory_search'"
+        }
+      ],
+      "required_function_ids": [
+        "C02",
+        "C03",
+        "C04",
+        "C05",
+        "C06",
+        "C07",
+        "C08",
+        "C09",
+        "C10"
+      ]
+    },
+    {
+      "id": "C01",
+      "capability": "Semantic discovery/explanation of legacy-only agents",
+      "legacy_producer_source": "gov_repo.agent_embeddings; canonical table, production writer/population not established by repository",
+      "legacy_consumer": "services/talk.ts:ask -> repositories/talk.ts:semanticSearch -> formatContextForLLM -> generateGovernanceAnswer",
+      "subject_domain": "LEGACY_OPERATIONAL_AGENT",
+      "tenant_binding": "Verified ingress supplies organisation; RPC filters ae.organisation_id only; agent and owner joins by UUID without tenant predicates; independent FKs",
+      "content_returned": [
+        "content_snippet = left(content_text,300)"
+      ],
+      "metadata_returned": [
+        "agent_id",
+        "agent_code",
+        "agent_name",
+        "agent_type",
+        "risk_level",
+        "oversight_level",
+        "ai_system_id",
+        "owner_name",
+        "similarity"
+      ],
+      "raw_text_code_returned": "YES: arbitrary embedding text prefix; may contain text/code/PII, no source admission proof",
+      "numeric_similarity_confidence_exposed": "YES: similarity to model via arbitrary field formatter; Talk public confidence also numeric",
+      "provenance": "Embedding row content_hash/model/generated_at exist but are not returned; no complete source/capture support returned",
+      "source_revision_freshness": "is_current plus active/approved agent status; no immutable observation/source revision; generation time not currentness",
+      "currently_executable": "CALLER_AND_CANONICAL_RPC_PRESENT_CONDITIONAL; match.confidence<80, llm.available, nonempty embedding; hosted population/provider not inspected",
+      "security_defects": [
+        "joined agent and owner tenant not proven",
+        "no persisted-session revalidation inside legacy RPC",
+        "optional model filter omitted by Talk",
+        "uncontrolled snippet and owner PII",
+        "no exact full-space/query recipe binding"
+      ],
+      "authority_defects": [
+        "flattened fields mixed with governance context",
+        "numeric similarity and confidence",
+        "legacy risk/oversight lacks typed per-hit boundary"
+      ],
+      "product_value": "Natural-language discovery and useful explanation of operational agents not necessarily canonical/candidate",
+      "replacement_capability_required": "Typed LEGACY_AGENT_RECORD observation/projection/read with principal binding, exact operational space and protected hydration",
+      "cutover_dependency": [
+        "P06",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "talk_service",
+          "path": "apps/dashboard/services/talk.ts",
+          "line": 22,
+          "anchor": "export async function ask"
+        },
+        {
+          "source_id": "talk_repository",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 576,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "talk_format",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 593,
+          "anchor": "export function formatContextForLLM"
+        },
+        {
+          "source_id": "agent_embeddings",
+          "path": "supabase/migrations/20260818004053_agent_registry_graph_part_3.sql",
+          "line": 5,
+          "anchor": "create table gov_repo.agent_embeddings"
+        },
+        {
+          "source_id": "agent_rpc",
+          "path": "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+          "line": 1,
+          "anchor": "create or replace function gov_repo.agent_semantic_search"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ]
+    },
+    {
+      "id": "C02",
+      "capability": "Repository summary and architecture overview",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "summary; metadata trustZone,languages,frameworks,confidence,businessCapabilities"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "REPOSITORY_SNAPSHOT protected summary and structural facets",
+      "cutover_dependency": [
+        "P02",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "repository",
+      "legacy_locator_recipe": "repo:<name>"
+    },
+    {
+      "id": "C03",
+      "capability": "Business-domain discovery as a technical observation",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "name,confidence,signals in summary/metadata"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "REPOSITORY_SNAPSHOT DOMAIN_OBSERVATION; grounded source-set/method, no governed business assignment",
+      "cutover_dependency": [
+        "P02",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "domain",
+      "legacy_locator_recipe": "domain:<name>"
+    },
+    {
+      "id": "C04",
+      "capability": "Service/component discovery and location",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "name,type,path,confidence"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "SERVICE_DESCRIPTOR grounded config/entrypoint facet",
+      "cutover_dependency": [
+        "P02",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "service",
+      "legacy_locator_recipe": "service:<path>"
+    },
+    {
+      "id": "C05",
+      "capability": "Module/package/file membership contextualization",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "name,type,path,file count; metadata symbols contains at most 20 filenames, not parsed symbols"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "MODULE_DESCRIPTOR with bounded source member manifest; typed file descriptors",
+      "cutover_dependency": [
+        "P02",
+        "P03",
+        "P04",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "module",
+      "legacy_locator_recipe": "module:<path>"
+    },
+    {
+      "id": "C06",
+      "capability": "Repository-discovered agent descriptor and source location",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "name,framework,agentType,filePath"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "AGENT_DESCRIPTOR facet on exact source region, no canonical/operational ID inference",
+      "cutover_dependency": [
+        "P02",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "agent",
+      "legacy_locator_recipe": "agent:<filePath>"
+    },
+    {
+      "id": "C07",
+      "capability": "Dependency/provider discovery",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "name,type,optional provider; filename heuristic, version omitted"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "DEPENDENCY_DESCRIPTOR with source/method; observed manifest version only if captured",
+      "cutover_dependency": [
+        "P02",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "dependency",
+      "legacy_locator_recipe": "dependency:<name>"
+    },
+    {
+      "id": "C08",
+      "capability": "Entrypoint discovery and location",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "entrypoint path"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "ENTRYPOINT_DESCRIPTOR facet on exact snapshot/file",
+      "cutover_dependency": [
+        "P02",
+        "P04",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "entrypoint",
+      "legacy_locator_recipe": "entrypoint:<path>"
+    },
+    {
+      "id": "C09",
+      "capability": "Agent-code explanatory descriptor",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "framework,name,agentType,first three evidence strings; metadata autonomy/confidence"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "CODE_REGION / CODE_SYMBOL protected structural projection and verified locator",
+      "cutover_dependency": [
+        "P03",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_code",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 114,
+          "anchor": "export function chunkAgentCode"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "agent_code",
+      "legacy_locator_recipe": "agent.filePath"
+    },
+    {
+      "id": "C10",
+      "capability": "Code-region contextualization and explanatory text",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "50-line chunks, summary truncated to 200 chars; lineStart/lineEnd metadata"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "CODE_REGION protected context with exact source hash/span; parser symbol projection where supported, no raw source dump",
+      "cutover_dependency": [
+        "P03",
+        "P04",
+        "P05",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "coding_code",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 114,
+          "anchor": "export function chunkAgentCode"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "repo_intel",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+          "line": 22,
+          "anchor": "export async function generateRepoIntelligence"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        },
+        {
+          "source_id": "setup",
+          "path": "apps/dashboard/supabase-setup-8.2.sql",
+          "line": 86,
+          "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory"
+        },
+        {
+          "source_id": "m16",
+          "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+          "line": 62,
+          "anchor": "p.proname = 'coding_memory_search'"
+        }
+      ],
+      "legacy_symbol_type": "code_snippet",
+      "legacy_locator_recipe": "<filePath>:L<start>"
+    },
+    {
+      "id": "C11",
+      "capability": "Direct operational agent/system/incident/gap context",
+      "legacy_producer_source": "agents, ai_systems, ict_incidents, agent_compliance_gaps and getUnifiedGraph projections",
+      "legacy_consumer": "Talk executeQuery direct intents; buildGovernanceContext -> formatContextForLLM -> generateGovernanceAnswer",
+      "subject_domain": "DIRECT_OPERATIONAL_NOT_VECTOR_SEARCH",
+      "tenant_binding": "Verified principal at route; application organisation predicates and RPC organisation arguments; graph findings filter assessment tenant; no SR2 certification of transitive legacy joins",
+      "content_returned": [
+        "Context queries up to 15 agents,10 systems,10 gaps,5 incidents, then global evidence.slice(0,15); agents can starve other families",
+        "Direct intents bypass semantics when returned confidence >=80"
+      ],
+      "metadata_returned": [
+        "Direct fields and arbitrary supportingData; source/record labels; graph metadata"
+      ],
+      "raw_text_code_returned": "YES record labels/text/external_refs in some intents; formatter serializes object-valued fields",
+      "numeric_similarity_confidence_exposed": "No vector similarity from these reads; YES intent/answer confidence and graph/source numeric fields",
+      "provenance": "Table/code or knowledge-graph label; no immutable rich-source provenance",
+      "source_revision_freshness": "Live query snapshot or legacy mutable external_refs; no immutable repository commit",
+      "currently_executable": "SOURCE_CALLERS_PRESENT; conditional DB reads; not executed by A0; hosted unknown",
+      "security_defects": [
+        "service transport requires explicit source binding",
+        "raw supportingData/graph metadata",
+        "unbounded graph/context fields and downstream source flattening"
+      ],
+      "authority_defects": [
+        "legacy control/risk/conformity and inferred graph claims",
+        "confidence-based semantic bypass",
+        "source count not completeness"
+      ],
+      "product_value": "Direct estate, system/agent and repository/operational explanatory context independent of vector retrieval",
+      "replacement_capability_required": "Safe source-specific direct context in C3; mandatory useful systems context via direct/related descriptors; no incident/gap vector family required",
+      "cutover_dependency": [
+        "P04",
+        "P06",
+        "P07",
+        "P08",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "talk_direct",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 550,
+          "anchor": "export async function buildGovernanceContext"
+        },
+        {
+          "source_id": "talk_repository",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 576,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "graph",
+          "path": "apps/dashboard/services/knowledge-graph.ts",
+          "line": 266,
+          "anchor": "export async function getUnifiedGraph"
+        },
+        {
+          "source_id": "graph_repo",
+          "path": "apps/dashboard/services/knowledge-graph.ts",
+          "line": 704,
+          "anchor": "const repoMap"
+        },
+        {
+          "source_id": "talk_service",
+          "path": "apps/dashboard/services/talk.ts",
+          "line": 22,
+          "anchor": "export async function ask"
+        }
+      ]
+    },
+    {
+      "id": "C12",
+      "capability": "Graph-based repository and operational intent context",
+      "legacy_producer_source": "getUnifiedGraph -> tenant-filtered legacy rows and agents.external_refs.discovery.repo_intelligence; buildDiscoveryGraph heuristic name/path joins",
+      "legacy_consumer": "executeQuery repository/service/module/provider/autonomy/PII/financial/AML/fraud/payments and finding/control/evidence intents",
+      "subject_domain": "DIRECT_OPERATIONAL_NOT_VECTOR_SEARCH",
+      "tenant_binding": "Verified principal at route; application organisation predicates and RPC organisation arguments; graph findings filter assessment tenant; no SR2 certification of transitive legacy joins",
+      "content_returned": [
+        "Agent/system/incident/gap scalar records and graph intent explanations"
+      ],
+      "metadata_returned": [
+        "Direct fields and arbitrary supportingData; source/record labels; graph metadata"
+      ],
+      "raw_text_code_returned": "YES record labels/text/external_refs in some intents; formatter serializes object-valued fields",
+      "numeric_similarity_confidence_exposed": "No vector similarity from these reads; YES intent/answer confidence and graph/source numeric fields",
+      "provenance": "Table/code or knowledge-graph label; no immutable rich-source provenance",
+      "source_revision_freshness": "Live query snapshot or legacy mutable external_refs; no immutable repository commit",
+      "currently_executable": "SOURCE_CALLERS_PRESENT; conditional DB reads; not executed by A0; hosted unknown",
+      "security_defects": [
+        "service transport requires explicit source binding",
+        "raw supportingData/graph metadata",
+        "unbounded graph/context fields and downstream source flattening"
+      ],
+      "authority_defects": [
+        "legacy control/risk/conformity and inferred graph claims",
+        "confidence-based semantic bypass",
+        "source count not completeness"
+      ],
+      "product_value": "Direct estate, system/agent and repository/operational explanatory context independent of vector retrieval",
+      "replacement_capability_required": "Preserve safe explanatory function through typed source-labelled C3 reads and grounded SR2 technical projections; do not reproduce inferred governance truth",
+      "cutover_dependency": [
+        "P04",
+        "P06",
+        "P07",
+        "P08",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "talk_repository",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 576,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "graph",
+          "path": "apps/dashboard/services/knowledge-graph.ts",
+          "line": 266,
+          "anchor": "export async function getUnifiedGraph"
+        },
+        {
+          "source_id": "graph_repo",
+          "path": "apps/dashboard/services/knowledge-graph.ts",
+          "line": 704,
+          "anchor": "const repoMap"
+        },
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        }
+      ]
+    },
+    {
+      "id": "C13",
+      "capability": "Governance subject reference discovery via SR1",
+      "legacy_producer_source": "No equivalent broad legacy subject retrieval; existing gov_repo.semantic_representations canonical/candidate foundation",
+      "legacy_consumer": "SR1 factory/port exists; not called by Talk. Future A5 composer required",
+      "subject_domain": "GOVERNANCE_REFERENCE_ONLY",
+      "tenant_binding": "SR1 persisted session basis, principal-derived tenant, composite subject/support joins",
+      "content_returned": [
+        "SUBJECT_REFERENCE_ONLY_V1; original embedding document NOT_STORED"
+      ],
+      "metadata_returned": [
+        "subject,representation,exact space,fingerprint,generated/record times,complete safe provenance,rank,limitations"
+      ],
+      "raw_text_code_returned": "NO",
+      "numeric_similarity_confidence_exposed": "NO; ordinal rank only",
+      "provenance": "Complete bounded assertion/evidence references; no raw envelope",
+      "source_revision_freshness": "Latest representative in exact space; source_freshness UNKNOWN",
+      "currently_executable": "IMPLEMENTED_AND_TESTED_LOCAL_PRIOR_SR1_EVIDENCE; no current Talk wiring or provider/population proof",
+      "security_defects": [
+        "No new defect alleged; broad postgres owner exception remains explicitly documented"
+      ],
+      "authority_defects": [
+        "Reference discovery cannot establish governance facts or replace rich explanation"
+      ],
+      "product_value": "Primary governance subject discovery required by target; separate from legacy agent/repository parity",
+      "replacement_capability_required": "Use unchanged SR1 through safe A5 composer; qualify provider/population separately",
+      "cutover_dependency": [
+        "P01",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "final_disposition": "MUST_PRESERVE_FUNCTION",
+      "evidence": [
+        {
+          "source_id": "sr1",
+          "path": "apps/dashboard/lib/governance/semantic-context-retrieval.ts",
+          "line": 187,
+          "anchor": "export function createSemanticRetrievalAdapter"
+        },
+        {
+          "source_id": "sr1_migration",
+          "path": "supabase/migrations/20261022142630_m175_c3_sr1_principal_bound_semantic_retrieval_v1.sql",
+          "line": 24,
+          "anchor": "CREATE FUNCTION gov_repo.semantic_context_search_v1"
+        },
+        {
+          "source_id": "foundation",
+          "path": "supabase/migrations/20260909120000_semantic_representation_persistence_v1.sql",
+          "line": 102,
+          "anchor": "create table gov_repo.semantic_representations"
+        },
+        {
+          "source_id": "talk_service",
+          "path": "apps/dashboard/services/talk.ts",
+          "line": 22,
+          "anchor": "export async function ask"
+        }
+      ]
+    },
+    {
+      "id": "L05",
+      "capability": "Direct repository-memory API/table reader",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "/api/discovery/memory?action=repo -> service getRepositoryMemory -> repository direct SELECT; not called by Talk",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "Up to 100 rows: memory_id,path,symbol_type,symbol_name,summary,metadata; risk text/keys stripped by service"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "No similarity in direct SELECT, but numeric confidence can survive metadata/summary",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "Separate product decision for direct memory browsing API continuity before shared storage retirement; no hidden fallback for Talk",
+      "cutover_dependency": [
+        "P12"
+      ],
+      "final_disposition": "REQUIRES_PRODUCT_DECISION",
+      "evidence": [
+        {
+          "source_id": "memory_api",
+          "path": "apps/dashboard/app/api/discovery/memory/route.ts",
+          "line": 5,
+          "anchor": "export async function GET"
+        },
+        {
+          "source_id": "coding_direct",
+          "path": "apps/dashboard/repositories/coding-memory.ts",
+          "line": 105,
+          "anchor": "export async function getRepositoryMemory"
+        },
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        }
+      ]
+    },
+    {
+      "id": "L06",
+      "capability": "Independent literal Search surface",
+      "legacy_producer_source": "agents,ai_systems,ict_incidents literal ilike queries",
+      "legacy_consumer": "/api/search -> services/search -> repositories/search; no Talk invocation",
+      "subject_domain": "INDEPENDENT_SURFACE",
+      "tenant_binding": "Verified route organisation and per-table predicates; not a vector/principal-bound SR2 read",
+      "content_returned": [
+        "id,type,title,subtitle,status,url,legacy risk label or incident severity"
+      ],
+      "metadata_returned": [
+        "Source-specific metadata"
+      ],
+      "raw_text_code_returned": "Labels only in result; search inspects descriptions",
+      "numeric_similarity_confidence_exposed": "No vector score",
+      "provenance": "Source-specific, not a proven dashboard Talk provenance chain",
+      "source_revision_freshness": "Source-specific; no transfer of freshness assurance to SR2",
+      "currently_executable": "SOURCE_PRESENT; deployment/population/dependencies not inspected or executed",
+      "security_defects": [
+        "Independent surface not validated by A0; must not become unreviewed SR2 fallback"
+      ],
+      "authority_defects": [
+        "No new authority or containment approval follows from inventory"
+      ],
+      "product_value": "Separate product function; no proved dashboard Talk dependency",
+      "replacement_capability_required": "Keep independent C3 Search containment; no semantic replacement claim",
+      "cutover_dependency": [
+        "P12"
+      ],
+      "final_disposition": "LEGACY_ONLY_NO_PRODUCT_DEPENDENCY",
+      "evidence": [
+        {
+          "source_id": "search",
+          "path": "apps/dashboard/repositories/search.ts",
+          "line": 17,
+          "anchor": "export async function searchAll"
+        }
+      ]
+    },
+    {
+      "id": "L07",
+      "capability": "M12 direct semantic table reader",
+      "legacy_producer_source": "gov_repo.semantic_representations and canonical/provenance tables",
+      "legacy_consumer": "intelligence-query/getGovernedIntelligence -> intelligenceReader; not Talk",
+      "subject_domain": "INDEPENDENT_SURFACE",
+      "tenant_binding": "Verified passportOrganisation ingress; application per-table org filters/validation, <=10000 rows; not SR1 SQL boundary",
+      "content_returned": [
+        "Canonical anchor/compatible representation vectors for analytical context; no original embedding text"
+      ],
+      "metadata_returned": [
+        "Source-specific metadata"
+      ],
+      "raw_text_code_returned": "Possible on independent surface; not fed into dashboard Talk",
+      "numeric_similarity_confidence_exposed": "M12 analytical cosine is separate; SR2 makes no new exposure approval",
+      "provenance": "Source-specific, not a proven dashboard Talk provenance chain",
+      "source_revision_freshness": "Multi-query read not transaction-wide snapshot; production embedding population unverified",
+      "currently_executable": "SOURCE_PRESENT; deployment/population/dependencies not inspected or executed",
+      "security_defects": [
+        "Independent surface not validated by A0; must not become unreviewed SR2 fallback"
+      ],
+      "authority_defects": [
+        "No new authority or containment approval follows from inventory"
+      ],
+      "product_value": "Separate product function; no proved dashboard Talk dependency",
+      "replacement_capability_required": "Leave M12 unchanged; never use privileged direct-table reader as SR2 fallback",
+      "cutover_dependency": [
+        "P12"
+      ],
+      "final_disposition": "LEGACY_ONLY_NO_PRODUCT_DEPENDENCY",
+      "evidence": [
+        {
+          "source_id": "m12",
+          "path": "apps/dashboard/lib/governance/intelligence-read-store.ts",
+          "line": 36,
+          "anchor": "export function intelligenceReader"
+        },
+        {
+          "source_id": "m12_entry",
+          "path": "apps/dashboard/lib/governance/intelligence-query.ts",
+          "line": 15,
+          "anchor": "export async function getGovernedIntelligence"
+        }
+      ]
+    },
+    {
+      "id": "L08",
+      "capability": "Graphos repository RAG / direct code-memory surfaces",
+      "legacy_producer_source": "graphos-complete repo/sync coding_memory+repo_files; repo/embed Mistral; ingest-text/QStash repo_documents/repo_embeddings",
+      "legacy_consumer": "patch/generate and session/worker match_code_chunks; not dashboard Talk or Graphos deterministic Talk",
+      "subject_domain": "INDEPENDENT_SURFACE",
+      "tenant_binding": "Own auth/tenant-user repository access checks in sync/embed/patch; general worker selector and transitive retrieval not certified by A0",
+      "content_returned": [
+        "Raw code/content/file_path and similarity in patch context; worker context marks scientific/high confidence"
+      ],
+      "metadata_returned": [
+        "Sync tenant_id,repo_id,commit_sha,content_sha; different schema from gov_repo.coding_memory"
+      ],
+      "raw_text_code_returned": "YES separate raw content paths",
+      "numeric_similarity_confidence_exposed": "YES independent RAG similarity and worker high-confidence label",
+      "provenance": "Some sync commit/content hashes exist, but mutable upserts and alternate ingest population do not establish SR2 immutable provenance",
+      "source_revision_freshness": "repository last_commit_sha and per-file metadata; no SR2 same-snapshot guarantee",
+      "currently_executable": "SOURCE_PRESENT; deployment/population/dependencies not inspected or executed",
+      "security_defects": [
+        "Independent surface not validated by A0; must not become unreviewed SR2 fallback"
+      ],
+      "authority_defects": [
+        "No new authority or containment approval follows from inventory"
+      ],
+      "product_value": "Separate product function; no proved dashboard Talk dependency",
+      "replacement_capability_required": "Separate product/system review; do not alias public coding_memory/match_code_chunks into gov_repo SR2 or delete it",
+      "cutover_dependency": [
+        "P12"
+      ],
+      "final_disposition": "LEGACY_ONLY_NO_PRODUCT_DEPENDENCY",
+      "evidence": [
+        {
+          "source_id": "graphos_sync",
+          "path": "graphos-complete/src/app/api/repo/sync/route.ts",
+          "line": 122,
+          "anchor": ".from('coding_memory').insert"
+        },
+        {
+          "source_id": "graphos_embed",
+          "path": "graphos-complete/src/app/api/repo/embed/route.ts",
+          "line": 35,
+          "anchor": ".from('coding_memory')"
+        },
+        {
+          "source_id": "graphos_patch",
+          "path": "graphos-complete/src/app/api/patch/generate/route.ts",
+          "line": 68,
+          "anchor": "rpc('match_code_chunks'"
+        },
+        {
+          "source_id": "graphos_worker",
+          "path": "graphos-complete/src/app/api/session/worker/route.ts",
+          "line": 62,
+          "anchor": "rpc('match_code_chunks'"
+        },
+        {
+          "source_id": "graphos_ingest",
+          "path": "graphos-complete/src/app/api/repo/ingest-text/route.ts",
+          "line": 6,
+          "anchor": "export async function POST"
+        },
+        {
+          "source_id": "graphos_qstash",
+          "path": "graphos-complete/src/app/api/webhooks/qstash/route.ts",
+          "line": 44,
+          "anchor": "from('repo_embeddings')"
+        }
+      ]
+    },
+    {
+      "id": "L09",
+      "capability": "Extension local/optional remote code memory and old SQL search",
+      "legacy_producer_source": "apps/extension CodingMemory local vector cache; optional public code_memory persistence; separate SQL public.coding_memory search_coding_memory",
+      "legacy_consumer": "Extension memory query; no dashboard Talk edge found; no active src call to search_coding_memory found",
+      "subject_domain": "INDEPENDENT_SURFACE",
+      "tenant_binding": "Local workspace; optional persistence project_id=current-workspace; no proven governance tenant/session binding",
+      "content_returned": [
+        "Local query constructs empty chunk content placeholders and relevance context; old SQL has separate content body"
+      ],
+      "metadata_returned": [
+        "Source-specific metadata"
+      ],
+      "raw_text_code_returned": "Remote indexing writes source chunks; current local query placeholders are empty",
+      "numeric_similarity_confidence_exposed": "YES local relevanceScores/relevance percent",
+      "provenance": "Source-specific, not a proven dashboard Talk provenance chain",
+      "source_revision_freshness": "Local path/chunk cache and content hash; no immutable repository commit/tenant identity",
+      "currently_executable": "SOURCE_PRESENT; deployment/population/dependencies not inspected or executed",
+      "security_defects": [
+        "Independent surface not validated by A0; must not become unreviewed SR2 fallback"
+      ],
+      "authority_defects": [
+        "No new authority or containment approval follows from inventory"
+      ],
+      "product_value": "Separate product function; no proved dashboard Talk dependency",
+      "replacement_capability_required": "Independent review; no import into SR2 provider/identity contracts",
+      "cutover_dependency": [
+        "P12"
+      ],
+      "final_disposition": "LEGACY_ONLY_NO_PRODUCT_DEPENDENCY",
+      "evidence": [
+        {
+          "source_id": "extension",
+          "path": "apps/extension/src/intelligence/memory.ts",
+          "line": 52,
+          "anchor": "export class CodingMemory"
+        },
+        {
+          "source_id": "extension_sql",
+          "path": "apps/extension/supabase/migrations/20260128173000_force_search_path.sql",
+          "line": 13,
+          "anchor": "CREATE FUNCTION public.search_coding_memory"
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "capability": "Graphos deterministic Talk surface",
+      "legacy_producer_source": "GraphEngine from scanner cache or seed",
+      "legacy_consumer": "graphos-complete/api/governance/talk -> parseGovernanceIntent/answerGovernanceQuery",
+      "subject_domain": "INDEPENDENT_SURFACE",
+      "tenant_binding": "Route uses optional repoUrl cache selector; no verified governance principal visible in this handler; not certified by A0",
+      "content_returned": [
+        "Deterministic graph intent answers,evidence,nodeIds,score/data"
+      ],
+      "metadata_returned": [
+        "Source-specific metadata"
+      ],
+      "raw_text_code_returned": "No source-code semantic hydration in this handler",
+      "numeric_similarity_confidence_exposed": "YES intent confidence and legacy numeric scores, no vector call",
+      "provenance": "Source-specific, not a proven dashboard Talk provenance chain",
+      "source_revision_freshness": "Source-specific; no transfer of freshness assurance to SR2",
+      "currently_executable": "SOURCE_PRESENT; deployment/population/dependencies not inspected or executed",
+      "security_defects": [
+        "Independent surface not validated by A0; must not become unreviewed SR2 fallback"
+      ],
+      "authority_defects": [
+        "No new authority or containment approval follows from inventory"
+      ],
+      "product_value": "Separate product function; no proved dashboard Talk dependency",
+      "replacement_capability_required": "No vector cutover dependency for dashboard Talk; separate containment scope",
+      "cutover_dependency": [
+        "P12"
+      ],
+      "final_disposition": "LEGACY_ONLY_NO_PRODUCT_DEPENDENCY",
+      "evidence": [
+        {
+          "source_id": "graphos_talk",
+          "path": "graphos-complete/src/app/api/governance/talk/route.ts",
+          "line": 2,
+          "anchor": "parseGovernanceIntent"
+        },
+        {
+          "source_id": "graphos_talk_engine",
+          "path": "graphos-complete/src/lib/governance/talk.ts",
+          "line": 191,
+          "anchor": "export function answerGovernanceQuery"
+        }
+      ]
+    },
+    {
+      "id": "O01",
+      "capability": "Standalone semantic system discovery",
+      "legacy_producer_source": "agents, ai_systems, ict_incidents, agent_compliance_gaps and getUnifiedGraph projections",
+      "legacy_consumer": "Talk executeQuery direct intents; buildGovernanceContext -> formatContextForLLM -> generateGovernanceAnswer",
+      "subject_domain": "OPTIONAL_OPERATIONAL_VECTOR_EXTENSION",
+      "tenant_binding": "Verified principal at route; application organisation predicates and RPC organisation arguments; graph findings filter assessment tenant; no SR2 certification of transitive legacy joins",
+      "content_returned": [
+        "Current systems come from direct/graph reads, not a demonstrated system vector source"
+      ],
+      "metadata_returned": [
+        "Direct fields and arbitrary supportingData; source/record labels; graph metadata"
+      ],
+      "raw_text_code_returned": "YES record labels/text/external_refs in some intents; formatter serializes object-valued fields",
+      "numeric_similarity_confidence_exposed": "No vector similarity from these reads; YES intent/answer confidence and graph/source numeric fields",
+      "provenance": "Table/code or knowledge-graph label; no immutable rich-source provenance",
+      "source_revision_freshness": "Live query snapshot or legacy mutable external_refs; no immutable repository commit",
+      "currently_executable": "SOURCE_CALLERS_PRESENT; conditional DB reads; not executed by A0; hosted unknown",
+      "security_defects": [
+        "service transport requires explicit source binding",
+        "raw supportingData/graph metadata",
+        "unbounded graph/context fields and downstream source flattening"
+      ],
+      "authority_defects": [
+        "legacy control/risk/conformity and inferred graph claims",
+        "confidence-based semantic bypass",
+        "source count not completeness"
+      ],
+      "product_value": "Direct estate, system/agent and repository/operational explanatory context independent of vector retrieval",
+      "replacement_capability_required": "LEGACY_SYSTEM_RECORD can support this only after separate product scope; direct/related-system context remains mandatory in C11",
+      "cutover_dependency": [],
+      "final_disposition": "REQUIRES_PRODUCT_DECISION",
+      "evidence": [
+        {
+          "source_id": "talk_direct",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 550,
+          "anchor": "export async function buildGovernanceContext"
+        },
+        {
+          "source_id": "agent_rpc",
+          "path": "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+          "line": 1,
+          "anchor": "create or replace function gov_repo.agent_semantic_search"
+        },
+        {
+          "source_id": "graph",
+          "path": "apps/dashboard/services/knowledge-graph.ts",
+          "line": 266,
+          "anchor": "export async function getUnifiedGraph"
+        }
+      ]
+    },
+    {
+      "id": "O02",
+      "capability": "Standalone incident/control/risk/policy semantic subjects",
+      "legacy_producer_source": "agents, ai_systems, ict_incidents, agent_compliance_gaps and getUnifiedGraph projections",
+      "legacy_consumer": "Talk executeQuery direct intents; buildGovernanceContext -> formatContextForLLM -> generateGovernanceAnswer",
+      "subject_domain": "UNSUPPORTED_OPTIONAL_SEMANTIC_EXTENSION",
+      "tenant_binding": "Verified principal at route; application organisation predicates and RPC organisation arguments; graph findings filter assessment tenant; no SR2 certification of transitive legacy joins",
+      "content_returned": [
+        "No actual standalone vector family found; existing direct/graph text is not one"
+      ],
+      "metadata_returned": [
+        "Direct fields and arbitrary supportingData; source/record labels; graph metadata"
+      ],
+      "raw_text_code_returned": "YES record labels/text/external_refs in some intents; formatter serializes object-valued fields",
+      "numeric_similarity_confidence_exposed": "No vector similarity from these reads; YES intent/answer confidence and graph/source numeric fields",
+      "provenance": "Table/code or knowledge-graph label; no immutable rich-source provenance",
+      "source_revision_freshness": "Live query snapshot or legacy mutable external_refs; no immutable repository commit",
+      "currently_executable": "SOURCE_CALLERS_PRESENT; conditional DB reads; not executed by A0; hosted unknown",
+      "security_defects": [
+        "service transport requires explicit source binding",
+        "raw supportingData/graph metadata",
+        "unbounded graph/context fields and downstream source flattening"
+      ],
+      "authority_defects": [
+        "legacy control/risk/conformity and inferred graph claims",
+        "confidence-based semantic bypass",
+        "source count not completeness"
+      ],
+      "product_value": "Direct estate, system/agent and repository/operational explanatory context independent of vector retrieval",
+      "replacement_capability_required": "Separate architecture/product review; do not add canonical kinds/facts or overload SR1",
+      "cutover_dependency": [],
+      "final_disposition": "REQUIRES_PRODUCT_DECISION",
+      "evidence": [
+        {
+          "source_id": "talk_direct",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 550,
+          "anchor": "export async function buildGovernanceContext"
+        },
+        {
+          "source_id": "graph",
+          "path": "apps/dashboard/services/knowledge-graph.ts",
+          "line": 266,
+          "anchor": "export async function getUnifiedGraph"
+        },
+        {
+          "source_id": "agent_rpc",
+          "path": "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+          "line": 1,
+          "anchor": "create or replace function gov_repo.agent_semantic_search"
+        },
+        {
+          "source_id": "sr1",
+          "path": "apps/dashboard/lib/governance/semantic-context-retrieval.ts",
+          "line": 187,
+          "anchor": "export function createSemanticRetrievalAdapter"
+        }
+      ]
+    },
+    {
+      "id": "O03",
+      "capability": "All-file raw source, arbitrary documents and true symbol index beyond observed chunks",
+      "legacy_producer_source": "discovery/scan -> indexRepoIntelligence/indexAgentCode -> repositories/coding-memory.ts:storeChunk; noncanonical setup table",
+      "legacy_consumer": "services/talk.ts:ask -> services/coding-memory.ts:semanticSearch -> repositories/coding-memory.ts:searchSimilar; also /api/discovery/memory search",
+      "subject_domain": "REPOSITORY_TECHNICAL",
+      "tenant_binding": "Verified ingress org; store/search carry organisation_id; repository_id is lossy owner/name-derived text, no provider/commit binding or composite source FK",
+      "content_returned": [
+        "Existing dashboard memory indexes agent source snippets, not all files or parsed symbols; documentation/config appear as structural inputs, no independent rich document index proved"
+      ],
+      "metadata_returned": [
+        "RPC: memory_id,path,symbol_type,symbol_name,metadata,similarity",
+        "Talk: symbol_type,symbol_name,path,summary,numeric similarity; metadata not formatted into Talk"
+      ],
+      "raw_text_code_returned": "YES for source-derived summaries/evidence and code_snippet first 200 characters; RPC also returns arbitrary metadata",
+      "numeric_similarity_confidence_exposed": "YES similarity printed into Talk/model context and memory-search API; confidence in generated domain/service summaries and repository metadata",
+      "provenance": "Paths/synthetic paths and snippet line metadata only; no complete admissible source support or source fingerprint",
+      "source_revision_freshness": "No immutable commit/blob/projection/space identity; append-only inserts may duplicate rescans; created_at only",
+      "currently_executable": "ACTIVE_CONDITIONAL_CALLER_BUT_DEPENDENCY_NONCANONICAL_ABSENT; canonical table absent, coding RPC rejected by M16; errors collapse to empty string. Hosted state unknown",
+      "security_defects": [
+        "repository identity collision/provider omission",
+        "branch may move between reads",
+        "untyped metadata/raw snippets",
+        "no source or exact-space integrity",
+        "zero-filled 1536-vector fallback on indexing",
+        "silent errors/no-match conflation"
+      ],
+      "authority_defects": [
+        "M17 risk stripping is narrow",
+        "numeric confidence/similarity retained",
+        "repository summary can assert legal applicability",
+        "source text not isolated as untrusted instructions"
+      ],
+      "product_value": "Rich source-oriented repository understanding and code explanation; useful even though legacy dependency is unavailable canonically",
+      "replacement_capability_required": "Typed safe file/symbol/doc/config grounding is designed; broader source editing/raw export/arbitrary uploads are outside mandatory legacy parity and require separate scope",
+      "cutover_dependency": [],
+      "final_disposition": "REQUIRES_PRODUCT_DECISION",
+      "evidence": [
+        {
+          "source_id": "coding_service",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 34,
+          "anchor": "export function chunkRepoIntelligence"
+        },
+        {
+          "source_id": "coding_code",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 114,
+          "anchor": "export function chunkAgentCode"
+        },
+        {
+          "source_id": "repo_structure",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+          "line": 46,
+          "anchor": "export function analyseStructure"
+        },
+        {
+          "source_id": "repo_types",
+          "path": "packages/scanner/src/codeguard/repo-intelligence/types.ts",
+          "line": 1,
+          "anchor": "export interface RepoIntelligence"
+        }
+      ]
+    }
+  ],
+  "mandatory_function_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12",
+    "C13"
+  ],
+  "actual_dashboard_talk_semantic_callers": [
+    {
+      "caller": "apps/dashboard/services/talk.ts:ask",
+      "chain": [
+        "apps/dashboard/repositories/talk.ts:semanticSearch",
+        "gov_repo.agent_semantic_search",
+        "formatContextForLLM",
+        "generateGovernanceAnswer"
+      ],
+      "condition": "returned match confidence <80 AND llm.available AND nonempty query embedding",
+      "evidence": [
+        {
+          "source_id": "talk_service",
+          "path": "apps/dashboard/services/talk.ts",
+          "line": 22,
+          "anchor": "export async function ask"
+        },
+        {
+          "source_id": "talk_repository",
+          "path": "apps/dashboard/repositories/talk.ts",
+          "line": 576,
+          "anchor": "export async function semanticSearch"
+        }
+      ]
+    },
+    {
+      "caller": "apps/dashboard/services/talk.ts:ask",
+      "chain": [
+        "apps/dashboard/services/coding-memory.ts:semanticSearch",
+        "apps/dashboard/repositories/coding-memory.ts:searchSimilar",
+        "gov_repo.coding_memory_search",
+        "generateGovernanceAnswer"
+      ],
+      "condition": "returned match confidence <80 AND llm.available; inner provider/embedding check; absent canonical dependency errors become empty string",
+      "evidence": [
+        {
+          "source_id": "talk_service",
+          "path": "apps/dashboard/services/talk.ts",
+          "line": 22,
+          "anchor": "export async function ask"
+        },
+        {
+          "source_id": "coding_search",
+          "path": "apps/dashboard/services/coding-memory.ts",
+          "line": 232,
+          "anchor": "export async function semanticSearch"
+        },
+        {
+          "source_id": "coding_repository",
+          "path": "apps/dashboard/repositories/coding-memory.ts",
+          "line": 73,
+          "anchor": "export async function searchSimilar"
+        }
+      ]
+    }
+  ],
+  "additional_coding_memory_consumers": [
+    {
+      "surface": "/api/discovery/memory?action=search",
+      "call": "services/coding-memory.ts:semanticSearch",
+      "evidence": [
+        {
+          "source_id": "memory_api",
+          "path": "apps/dashboard/app/api/discovery/memory/route.ts",
+          "line": 5,
+          "anchor": "export async function GET"
+        }
+      ]
+    },
+    {
+      "surface": "/api/discovery/memory?action=repo",
+      "call": "getRepositoryMemory -> direct table SELECT",
+      "evidence": [
+        {
+          "source_id": "memory_api",
+          "path": "apps/dashboard/app/api/discovery/memory/route.ts",
+          "line": 5,
+          "anchor": "export async function GET"
+        },
+        {
+          "source_id": "coding_direct",
+          "path": "apps/dashboard/repositories/coding-memory.ts",
+          "line": 105,
+          "anchor": "export async function getRepositoryMemory"
+        }
+      ]
+    },
+    {
+      "surface": "/api/discovery/scan",
+      "call": "indexRepoIntelligence and indexAgentCode",
+      "evidence": [
+        {
+          "source_id": "scan",
+          "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+          "line": 44,
+          "anchor": "const repositoryId"
+        }
+      ]
+    }
+  ],
+  "direct_semantic_readers": [
+    {
+      "surface": "M12 intelligenceReader",
+      "table": "gov_repo.semantic_representations",
+      "talk_dependency": false,
+      "evidence": [
+        {
+          "source_id": "m12",
+          "path": "apps/dashboard/lib/governance/intelligence-read-store.ts",
+          "line": 36,
+          "anchor": "export function intelligenceReader"
+        }
+      ]
+    },
+    {
+      "surface": "repository getRepositoryMemory",
+      "table": "noncanonical gov_repo.coding_memory",
+      "talk_dependency": false,
+      "evidence": [
+        {
+          "source_id": "coding_direct",
+          "path": "apps/dashboard/repositories/coding-memory.ts",
+          "line": 105,
+          "anchor": "export async function getRepositoryMemory"
+        }
+      ]
+    },
+    {
+      "surface": "graphos repo/embed + sync",
+      "table": "independent coding_memory/repo_files",
+      "talk_dependency": false,
+      "evidence": [
+        {
+          "source_id": "graphos_embed",
+          "path": "graphos-complete/src/app/api/repo/embed/route.ts",
+          "line": 35,
+          "anchor": ".from('coding_memory')"
+        },
+        {
+          "source_id": "graphos_sync",
+          "path": "graphos-complete/src/app/api/repo/sync/route.ts",
+          "line": 122,
+          "anchor": ".from('coding_memory').insert"
+        }
+      ]
+    }
+  ],
+  "source_catalog": [
+    {
+      "id": "talk_route",
+      "path": "apps/dashboard/app/api/talk-to-governance/route.ts",
+      "line": 2,
+      "anchor": "requireVerifiedGovernancePrincipal",
+      "sha256": "3b8045aa51782f2ebbdf46d77f4178a765cc034d3c31ad2e52bc53abf9f3bafa",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "talk_ui",
+      "path": "apps/dashboard/app/(dashboard)/governance/page.tsx",
+      "line": 47,
+      "anchor": "/api/talk-to-governance",
+      "sha256": "90cbd223e1d374e9b3a78fab2f3a1c870924fb01b774617b09dc899481b99b0f",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "talk_service",
+      "path": "apps/dashboard/services/talk.ts",
+      "line": 22,
+      "anchor": "export async function ask",
+      "sha256": "567c30942e83e10b4966ecabaff644a3c8846e74e3e20a47e6ac9139f6ead554",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "talk_repository",
+      "path": "apps/dashboard/repositories/talk.ts",
+      "line": 576,
+      "anchor": "export async function semanticSearch",
+      "sha256": "6bf05128603badc56de60fba1d0b01f19e6a9fdb9ef637d974fa81c10d62e6d9",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "talk_direct",
+      "path": "apps/dashboard/repositories/talk.ts",
+      "line": 550,
+      "anchor": "export async function buildGovernanceContext",
+      "sha256": "6bf05128603badc56de60fba1d0b01f19e6a9fdb9ef637d974fa81c10d62e6d9",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "talk_format",
+      "path": "apps/dashboard/repositories/talk.ts",
+      "line": 593,
+      "anchor": "export function formatContextForLLM",
+      "sha256": "6bf05128603badc56de60fba1d0b01f19e6a9fdb9ef637d974fa81c10d62e6d9",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "coding_service",
+      "path": "apps/dashboard/services/coding-memory.ts",
+      "line": 34,
+      "anchor": "export function chunkRepoIntelligence",
+      "sha256": "7498cb36d0b6d6ab85fcadf2c1682f320d324289162cd2ba4d85c8f88dc81f8a",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "coding_code",
+      "path": "apps/dashboard/services/coding-memory.ts",
+      "line": 114,
+      "anchor": "export function chunkAgentCode",
+      "sha256": "7498cb36d0b6d6ab85fcadf2c1682f320d324289162cd2ba4d85c8f88dc81f8a",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "coding_search",
+      "path": "apps/dashboard/services/coding-memory.ts",
+      "line": 232,
+      "anchor": "export async function semanticSearch",
+      "sha256": "7498cb36d0b6d6ab85fcadf2c1682f320d324289162cd2ba4d85c8f88dc81f8a",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "coding_repository",
+      "path": "apps/dashboard/repositories/coding-memory.ts",
+      "line": 73,
+      "anchor": "export async function searchSimilar",
+      "sha256": "9a6df3207fe203b267b34494f153c9d2fd96a71d651aaff453059948724ac9ac",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "coding_direct",
+      "path": "apps/dashboard/repositories/coding-memory.ts",
+      "line": 105,
+      "anchor": "export async function getRepositoryMemory",
+      "sha256": "9a6df3207fe203b267b34494f153c9d2fd96a71d651aaff453059948724ac9ac",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "memory_api",
+      "path": "apps/dashboard/app/api/discovery/memory/route.ts",
+      "line": 5,
+      "anchor": "export async function GET",
+      "sha256": "d3bc6816b4d3a08f36aca7d45fa7ec7cb0e1ca42c00daab46ed4af475d3b56c9",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "scan",
+      "path": "apps/dashboard/app/api/discovery/scan/route.ts",
+      "line": 44,
+      "anchor": "const repositoryId",
+      "sha256": "7c9ff706cd52b714daaf55d78d74018201e311399de373e308a1d324ddd71dde",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "provider",
+      "path": "apps/dashboard/lib/discovery/providers/index.ts",
+      "line": 4,
+      "anchor": "export function createGitHubProvider",
+      "sha256": "555a6752d04e3002b74204fc97ebb36b072b96ec5a6aac58923d14e2da456ebc",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "azure",
+      "path": "apps/dashboard/lib/discovery/providers/azure-devops.ts",
+      "line": 25,
+      "anchor": "const repositoryId = reposData",
+      "sha256": "2264857b76161145891d6dbd7a37189fc3c971ff61916bd7bda00bd281472aa8",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "provider_types",
+      "path": "apps/dashboard/lib/discovery/types.ts",
+      "line": 1,
+      "anchor": "export interface RepositoryProvider",
+      "sha256": "405ef4510a88752421aaf0cf599b7d363208c0af6ec14e41b5e8e464af6dfdb9",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "repo_intel",
+      "path": "packages/scanner/src/codeguard/repo-intelligence/index.ts",
+      "line": 22,
+      "anchor": "export async function generateRepoIntelligence",
+      "sha256": "9e1d76963795356fa767a904c3b3ddf0ee3d603128b0305d0412903388f017e7",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "repo_structure",
+      "path": "packages/scanner/src/codeguard/repo-intelligence/structure.ts",
+      "line": 46,
+      "anchor": "export function analyseStructure",
+      "sha256": "0558ef64860400845d09f625e61942020be7ba242d0de6fbaf9688e5557bdfa8",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "repo_types",
+      "path": "packages/scanner/src/codeguard/repo-intelligence/types.ts",
+      "line": 1,
+      "anchor": "export interface RepoIntelligence",
+      "sha256": "32d587c798c3bae9184b5dc0bdbc2c676747fc233020be0ba6efd9e28596dab9",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "agent_table",
+      "path": "supabase/migrations/20260818004009_agent_registry_graph_part_1.sql",
+      "line": 13,
+      "anchor": "create table gov_repo.agents",
+      "sha256": "4f64bb1c9685fa339f4281aba883095a2359b13bb46e7fd6a2539c5e43c164ee",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "system_table",
+      "path": "supabase/migrations/20260818004217_regulatory_and_systems_part_1.sql",
+      "line": 8,
+      "anchor": "create table gov_repo.ai_systems",
+      "sha256": "208565f0c91dd297952049c3d808492b9da034120d857e7789b31a831faaabcf",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "agent_embeddings",
+      "path": "supabase/migrations/20260818004053_agent_registry_graph_part_3.sql",
+      "line": 5,
+      "anchor": "create table gov_repo.agent_embeddings",
+      "sha256": "5fb3aea6b50daa3bf58de07d129247037bea44ab1629ee7a7eb0e0061eb05fde",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "agent_rpc",
+      "path": "supabase/migrations/20260818004146_agent_registry_graph_part_4_fixed_total_gaps_order.sql",
+      "line": 1,
+      "anchor": "create or replace function gov_repo.agent_semantic_search",
+      "sha256": "3fa9badd4876bb1c9afbd6e87a145641d399771dcca486d8d121f9f31c9726f2",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "m16",
+      "path": "supabase/migrations/20260930160000_m16_s1b2r1_definer_capability_surface_v1.sql",
+      "line": 62,
+      "anchor": "p.proname = 'coding_memory_search'",
+      "sha256": "20cfac42d21ea8d3a5c5ce65b19980693aa108a52ee8f70b90db13c51f633d12",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "setup",
+      "path": "apps/dashboard/supabase-setup-8.2.sql",
+      "line": 86,
+      "anchor": "CREATE TABLE IF NOT EXISTS gov_repo.coding_memory",
+      "sha256": "de4ddc3cb932c2d38caca027e4847baac1919a2a1310da7a7ff0d29c662c3e87",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "absence_test",
+      "path": "apps/dashboard/tests/postgres-m16/pre-demo-read-schema.test.ts",
+      "line": 42,
+      "anchor": "to_regclass('gov_repo.coding_memory') is null",
+      "sha256": "c190c915a7bbc69bd8914d4ad2bf33e236b9d1744cd571c383bc6b1d908cb730",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "sr1_test",
+      "path": "apps/dashboard/tests/postgres-m16/semantic-context-retrieval.test.ts",
+      "line": 25,
+      "anchor": "proname='coding_memory_search'",
+      "sha256": "030595726c6d5dab749c065d58f05487b0293f0d388458f95c42d7dea6ac4b73",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "sr1",
+      "path": "apps/dashboard/lib/governance/semantic-context-retrieval.ts",
+      "line": 187,
+      "anchor": "export function createSemanticRetrievalAdapter",
+      "sha256": "799c685dcd1780d26666146aa09b2be07d8df02413c25c7eb5404fd95115adfb",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "sr1_migration",
+      "path": "supabase/migrations/20261022142630_m175_c3_sr1_principal_bound_semantic_retrieval_v1.sql",
+      "line": 24,
+      "anchor": "CREATE FUNCTION gov_repo.semantic_context_search_v1",
+      "sha256": "d39f8f2fa6b2cbac53b23d3f3c9f56a34b78bf75765b3c9ed6bb6bbbd6d72097",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "foundation",
+      "path": "supabase/migrations/20260909120000_semantic_representation_persistence_v1.sql",
+      "line": 102,
+      "anchor": "create table gov_repo.semantic_representations",
+      "sha256": "2c16f1abb50fca39f5cf79e4c2ae88b7d8d25c81d31fa58ebe1566f57d3051f1",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "connection",
+      "path": "supabase/migrations/20260911184613_technical_field_governance_v1.sql",
+      "line": 11,
+      "anchor": "create table gov_repo.technical_source_connections",
+      "sha256": "44dde73d7d5af808a5cb5698e01cc726271146e2e1e32dd580e5634c568d3d39",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "source_snapshots",
+      "path": "supabase/migrations/20260911184613_technical_field_governance_v1.sql",
+      "line": 177,
+      "anchor": "create table gov_repo.technical_source_snapshots",
+      "sha256": "44dde73d7d5af808a5cb5698e01cc726271146e2e1e32dd580e5634c568d3d39",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graph",
+      "path": "apps/dashboard/services/knowledge-graph.ts",
+      "line": 266,
+      "anchor": "export async function getUnifiedGraph",
+      "sha256": "8c3f269b0c1e5e897c75fb41e690bd5263247aca74328feec50366519d233acf",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graph_repo",
+      "path": "apps/dashboard/services/knowledge-graph.ts",
+      "line": 704,
+      "anchor": "const repoMap",
+      "sha256": "8c3f269b0c1e5e897c75fb41e690bd5263247aca74328feec50366519d233acf",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "search",
+      "path": "apps/dashboard/repositories/search.ts",
+      "line": 17,
+      "anchor": "export async function searchAll",
+      "sha256": "643770e81aba6bbfaeb281e2bf71af4544c4ae092dc6d65677ccd94392170b49",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "m12",
+      "path": "apps/dashboard/lib/governance/intelligence-read-store.ts",
+      "line": 36,
+      "anchor": "export function intelligenceReader",
+      "sha256": "c417c19e05aff94b5462e9db35d5ce5ff801120c38be8118d12194ea31d87943",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "m12_entry",
+      "path": "apps/dashboard/lib/governance/intelligence-query.ts",
+      "line": 15,
+      "anchor": "export async function getGovernedIntelligence",
+      "sha256": "10b1273b53df1d39ba2699ee8db7e65a81bf70ee648641d76df45c61e4262de4",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "llm",
+      "path": "apps/dashboard/lib/llm.ts",
+      "line": 133,
+      "anchor": "export function getLLMProvider",
+      "sha256": "da2a614727fa21d49704a909c8724072a92e871d0c871b9d0f38a8e5e4419f76",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "producer",
+      "path": "apps/dashboard/lib/runtime/openai-governance-answer-producer.ts",
+      "line": 17,
+      "anchor": "export async function generateGovernanceAnswer",
+      "sha256": "a76106ed5dd34d833cbbcfbc496f0e1599fdc9918dd13eca0594ff16cc455c2e",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_talk",
+      "path": "graphos-complete/src/app/api/governance/talk/route.ts",
+      "line": 2,
+      "anchor": "parseGovernanceIntent",
+      "sha256": "37e42be42fbcb9b87052e6cdd521402204e6ceac9878cd84dc789213f9611f91",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_talk_engine",
+      "path": "graphos-complete/src/lib/governance/talk.ts",
+      "line": 191,
+      "anchor": "export function answerGovernanceQuery",
+      "sha256": "8f747b77d734cbabad28200953402e644b6091c7d4385d57f6ca50df175dd967",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_sync",
+      "path": "graphos-complete/src/app/api/repo/sync/route.ts",
+      "line": 122,
+      "anchor": ".from('coding_memory').insert",
+      "sha256": "00a64f593729873f045788001942797b510c8cde76a26d885b2daa23d83dcaa9",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_embed",
+      "path": "graphos-complete/src/app/api/repo/embed/route.ts",
+      "line": 35,
+      "anchor": ".from('coding_memory')",
+      "sha256": "a81b5ebf5e25b37840ca8ce84899775e712fd54403688d783c62209982db00e1",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_patch",
+      "path": "graphos-complete/src/app/api/patch/generate/route.ts",
+      "line": 68,
+      "anchor": "rpc('match_code_chunks'",
+      "sha256": "9cf9835d97c6f55abc2da709bb9d30386893f8593e92085bdc15b9929ebd4b10",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_worker",
+      "path": "graphos-complete/src/app/api/session/worker/route.ts",
+      "line": 62,
+      "anchor": "rpc('match_code_chunks'",
+      "sha256": "5fc573172b64f0d0ecbc85e3de5ebe3316b2c98e0a3073e1b95820a9ddaf4835",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_ingest",
+      "path": "graphos-complete/src/app/api/repo/ingest-text/route.ts",
+      "line": 6,
+      "anchor": "export async function POST",
+      "sha256": "356ab9bbbfd720a0951b362957344b7cac1f101f0fb9b30f38d35219a1ffa3fb",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "graphos_qstash",
+      "path": "graphos-complete/src/app/api/webhooks/qstash/route.ts",
+      "line": 44,
+      "anchor": "from('repo_embeddings')",
+      "sha256": "d5c2b7fe6376c440fe97cae587c869e516fa46387785ea50663c497cd01e2b09",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "extension",
+      "path": "apps/extension/src/intelligence/memory.ts",
+      "line": 52,
+      "anchor": "export class CodingMemory",
+      "sha256": "f3d4bc16b87a4c66725cc3ca30a5ffdb9fe545faf7007de0d2310f463fee3a34",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    },
+    {
+      "id": "extension_sql",
+      "path": "apps/extension/supabase/migrations/20260128173000_force_search_path.sql",
+      "line": 13,
+      "anchor": "CREATE FUNCTION public.search_coding_memory",
+      "sha256": "0b1fdf362c260cc5cb320c6872b18d8036c0e382fcc8290251b42c67379666ff",
+      "git_revision": "698dc6fbd31c1ffa10258812b30c78964df3520c"
+    }
+  ],
+  "decisions": {
+    "technical_subjects": [
+      "REPOSITORY_SNAPSHOT",
+      "CODE_SYMBOL",
+      "REPOSITORY_CHUNK"
+    ],
+    "operational_subjects": [
+      "LEGACY_AGENT_RECORD",
+      "LEGACY_SYSTEM_RECORD"
+    ],
+    "mandatory_operational_semantic_population": [
+      "LEGACY_AGENT_RECORD"
+    ],
+    "standalone_system_vector_population": "OPTIONAL_PRODUCT_DECISION",
+    "authority": "DERIVED_ANALYTICAL_NON_AUTHORITATIVE",
+    "storage": "DEDICATED_TYPED_TECHNICAL_AND_OPERATIONAL_STORES",
+    "content_classes": [
+      "METADATA_ONLY_V1",
+      "PROTECTED_CONTEXT_V1"
+    ],
+    "hydration": "SAME_SNAPSHOT_TENANT_SUBJECT_REVISION_PROJECTION_HASH_BOUND",
+    "exact_space": [
+      "projection_schema_version",
+      "provider_id",
+      "model_id",
+      "model_version",
+      "dimension"
+    ],
+    "technical_recipe_pair": [
+      "GOVIA_TECHNICAL_CONTEXT_V1",
+      "TECHNICAL_CONTEXT_QUERY_V1"
+    ],
+    "operational_recipe_pair": [
+      "GOVIA_OPERATIONAL_CONTEXT_V1",
+      "OPERATIONAL_CONTEXT_QUERY_V1"
+    ],
+    "source_currentness": [
+      "CURRENT_AT_VERIFIED_CAPTURE",
+      "HISTORICAL_AT_REQUESTED_REVISION",
+      "UNKNOWN"
+    ],
+    "principal_boundary": "VERIFIED_PRINCIPAL_PERSISTED_SESSION_REVALIDATION_PRINCIPAL_DERIVED_TENANT",
+    "m16_successor_expected": true,
+    "planned_new_read_capabilities": 2,
+    "owner_exception": "postgres retains broad power; exact read bodies/config/ACL/dependencies frozen, not a read-only owner",
+    "provider_activated": false,
+    "provider_selected": false,
+    "gpu": "RTX 4050 / CUDA is user-supplied candidate for separate local qualification; not inspected/benchmarked"
+  },
+  "parity_gate": {
+    "id": "PRIMARY_PRODUCT_PARITY_BEFORE_LEGACY_DISCONNECTION_V1",
+    "status": "BLOCKED_PENDING_IMPLEMENTATION_POPULATION_SECURITY_AND_PARITY_PROOF",
+    "mandatory_function_ids": [
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "C06",
+      "C07",
+      "C08",
+      "C09",
+      "C10",
+      "C11",
+      "C12",
+      "C13"
+    ],
+    "requirements": [
+      {
+        "id": "P01",
+        "capability": "Governance subject discovery",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C13"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P02",
+        "capability": "Repository semantic discovery",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P03",
+        "capability": "File/chunk/symbol contextualization",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C05",
+          "C09",
+          "C10"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P04",
+        "capability": "Repository/revision grounding",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P05",
+        "capability": "Rich safe explanatory source context",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C02",
+          "C03",
+          "C04",
+          "C06",
+          "C07",
+          "C09",
+          "C10"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P06",
+        "capability": "Required operational agent/system context",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C01",
+          "C11",
+          "C12"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P07",
+        "capability": "Provenance/source references",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P08",
+        "capability": "Tenant/principal isolation",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P09",
+        "capability": "Bounded safe hydration and exact space",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C13"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P10",
+        "capability": "Explicit unavailable/no-match/unknown",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P11",
+        "capability": "Composer prompt-injection and authority containment",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      },
+      {
+        "id": "P12",
+        "capability": "Integrated continuity and legacy-disabled trial",
+        "status": "PENDING_IMPLEMENTATION_AND_PROOF",
+        "mandatory": true,
+        "covered_inventory_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13"
+        ],
+        "acceptance_location": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md section 12"
+      }
+    ],
+    "corpus_rule": "Freeze positive and failure/unknown case per mandatory capability before comparison, all must pass; no scores/weighted waivers; unsafe/absent legacy not executed as oracle",
+    "cutover_rule": "Replacement exists -> controlled qualified population -> functional and adversarial proof -> Talk replacement runnable -> safe comparison where appropriate -> legacy-disabled continuity trial -> owner review and explicit cutover authorization -> legacy disconnect/containment -> C3/LX03 re-evaluation",
+    "no_intentional_semantic_enrichment_gap": true
+  },
+  "remaining_architecture_blockers": [],
+  "implementation_prerequisites": [
+    "Separately authorize/pin A1 exact additive schema/helper budget",
+    "A2/A3 exact capability admission and local security proof",
+    "Provider/capture/redaction/egress qualification and controlled population in A4",
+    "A5 all mandatory parity/security/composer gates",
+    "Explicit A6 legacy cutover authorization"
+  ],
+  "scope_deltas": {
+    "executable_source": 0,
+    "sql_migrations": 0,
+    "database_objects": 0,
+    "sr1": 0,
+    "talk": 0,
+    "providers": 0,
+    "hosted": 0,
+    "deployment": 0,
+    "canonical_authority": 0
+  },
+  "status": {
+    "c3": "STOPPED",
+    "lx03": "NEEDS_CONTAINMENT",
+    "lx01": "OPEN",
+    "lx04": "OPEN",
+    "lx05": "OPEN",
+    "lx06": "OPEN",
+    "lx07": "OPEN",
+    "v1_s1b": "OPEN",
+    "m17_5": "OPEN",
+    "m18": "HOLD",
+    "CONTROLLED_DEMO_READINESS": "HOLD",
+    "EXTERNAL_PUBLICATION_READINESS": "HOLD",
+    "TENANT_ASSURANCE_READINESS": "HOLD",
+    "CERTIFICATION_READINESS": "HOLD",
+    "sr2_a1": "NOT_AUTHORIZED_NOT_STARTED"
+  },
+  "adr": "docs/architecture/ADR-GOVIA-M175-C3-SR2-TYPED-SEMANTIC-PARITY-V1.md",
+  "evidence_document": "docs/codex/evidence/2026-10-22-m17.5-v1-s1b-c3-sr2-a0-typed-semantic-parity.md",
+  "next_action": "DO NOT START SR2-A1. RETURN TO ARCHITECTURE REVIEW AFTER A0."
+}

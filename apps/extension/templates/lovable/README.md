@@ -1,6 +1,6 @@
 # CodeGuard Lovable (Supabase Edge) Template
 
-This template is optimized for Lovable projects that use Supabase Edge Functions. It allows you to run compliance scans without spinning up a dedicated Node.js server.
+This template is optimized for Lovable projects that use Supabase Edge Functions. It allows you to run non-authoritative technical framework reviews without spinning up a dedicated Node.js server.
 
 ## Setup
 
@@ -37,7 +37,9 @@ const { data, error } = await supabase.functions.invoke('codeguard-scan', {
   }
 })
 
-if (data.result.issues.length > 0) {
-  console.log("Compliance Issues Found!");
+if (data.result.total_findings > 0) {
+  console.log("Potential technical findings returned; review completeness and limitations.");
 }
 ```
+
+Technical results include a closed `analysis_boundary`, per-reference `analysis_state`, separate `completeness`, and source/acquisition limitations. `NO_FINDINGS_DETECTED` requires all declared-input batches to complete and does not establish framework satisfaction or legal compliance. HTTP `success` means execution only; inspect `UNKNOWN` and incomplete reviews. Engineering fixes establish no compliance conclusion. `/api/v1/scan` is a LEGACY_TRANSPORT_IDENTIFIER.

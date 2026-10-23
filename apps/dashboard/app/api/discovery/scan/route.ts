@@ -8,7 +8,8 @@ import { enrichAgent, enrichSummary } from "@council/scanner/codeguard/enrichmen
 import { generateRepoIntelligence } from "@council/scanner/codeguard/repo-intelligence";
 import { buildKnowledgeGraph } from "@council/scanner/codeguard/repo-knowledge-graph";
 import { indexRepoIntelligence, indexAgentCode } from "@/services/coding-memory";
-import { db } from "@/lib/db";
+import { toGovernanceWritePrincipal, type GovernanceWritePrincipal } from "@/lib/auth/governance-write-principal";
+import { appendLedgerEvent, LedgerWriteUnavailableError } from "@/lib/governance/ledger-write";
 import { traceCrossFileLineage } from "@council/scanner/codeguard/enrichment/cross-file-lineage";
 import type { DiscoveryResult } from "@council/scanner/codeguard/types";
 import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
@@ -21,24 +22,18 @@ function withoutHeuristicRisk(classification: unknown): Record<string, unknown> 
   return rest;
 }
 
-async function logToLedger(orgId: string, userId: string, event: string, payload: Record<string, unknown>) {
-  try {
-    await db.write.rpc("ledger_append", {
-      p_event_type: event,
-      p_event_desc: (payload.summary as string)?.slice(0, 200) ?? event,
-      p_subject_type: "discovery",
-      p_subject_id: userId,
-      p_actor_user_id: userId,
-      p_actor_ip: null,
-      p_organisation_id: orgId,
-      p_payload: { ...payload, authority: "OPERATIONAL_LEGACY", governedIngestion: "NOT_ACTIVE" },
-    });
-  } catch {}
+async function logToLedger(principal: GovernanceWritePrincipal, event: string, payload: Record<string, unknown>) {
+  await appendLedgerEvent(principal, {
+    type: event, description: (payload.summary as string)?.slice(0, 200) ?? event,
+    subjectType: "discovery", subjectId: principal.actorUserId,
+    payload: { ...payload, authority: "OPERATIONAL_LEGACY", governedIngestion: "NOT_ACTIVE" },
+  });
 }
 
 export async function POST(request: Request) {
   try {
-    const { organisationId: orgId, userId } = await requireVerifiedGovernancePrincipal();
+    const principal = toGovernanceWritePrincipal(await requireVerifiedGovernancePrincipal());
+    const orgId = principal.organisationId;
     const { provider, owner, repo, branch, token, baseUrl } = await request.json();
 
     if (!provider || !owner || !repo) {
@@ -48,7 +43,7 @@ export async function POST(request: Request) {
     const repositoryName = `${owner}/${repo}`;
     const repositoryId = `repo_${owner}_${repo}`.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64);
 
-    await logToLedger(orgId, userId, "inventory.discovery.scan.started", {
+    await logToLedger(principal, "inventory.discovery.scan.started", {
       provider, repository: repositoryName, branch: branch ?? "main",
     });
 
@@ -67,7 +62,7 @@ export async function POST(request: Request) {
       readFile
     );
 
-    await logToLedger(orgId, userId, "repo_intelligence.generated", {
+    await logToLedger(principal, "repo_intelligence.generated", {
       repository: repositoryName,
       domains: repoIntel.domains.map((d) => d.name),
       services: repoIntel.services.length,
@@ -99,7 +94,7 @@ export async function POST(request: Request) {
       fileContents
     );
 
-    await logToLedger(orgId, userId, "coding_memory.indexed", {
+    await logToLedger(principal, "coding_memory.indexed", {
       repository: repositoryName,
       memory_chunks: memoryChunksIndexed,
       code_chunks: codeChunksIndexed,
@@ -147,7 +142,7 @@ export async function POST(request: Request) {
     // legacy risk value; no scanner/discovery row is created at all and no placeholder is written. Existing rows, values
     // and ledger history are untouched. Scanner -> M17 integration happens only through RISK_SIGNAL adapters (S1).
     for (const agent of enrichedAgents) {
-      await logToLedger(orgId, userId, "inventory.discovery.agent.detected", {
+      await logToLedger(principal, "inventory.discovery.agent.detected", {
         repository: repositoryName,
         agent_name: agent.name,
         framework: agent.framework,
@@ -156,7 +151,7 @@ export async function POST(request: Request) {
       });
     }
 
-    await logToLedger(orgId, userId, "inventory.discovery.scan.completed", {
+    await logToLedger(principal, "inventory.discovery.scan.completed", {
       repository: repositoryName,
       filesScanned: files.length,
       agentsDiscovered: enrichedAgents.length,
@@ -191,6 +186,7 @@ export async function POST(request: Request) {
       message: `${enrichedAgents.length} agents discovered; no legacy inventory rows written (legacy risk-bearing inventory writes are stopped); ${repoIntel.domains.length} domains identified, ${crossFileLineage.totalFlows} data flows traced, ${memoryChunksIndexed + codeChunksIndexed} memory chunks indexed.`,
     });
   } catch (error) {
+    if (error instanceof LedgerWriteUnavailableError) return NextResponse.json({ error: error.message }, { status: 503 });
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Discovery scan failed" },

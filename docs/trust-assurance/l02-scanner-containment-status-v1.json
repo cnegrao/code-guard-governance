@@ -1,0 +1,57 @@
+{
+  "record_version": 1,
+  "date": "2026-10-21",
+  "timezone": "America/Sao_Paulo",
+  "slice": "M17.5-V1-S1B CHECKPOINT 2A",
+  "slice_status": "CLOSED / PASS",
+  "starting_head": "8a10a99a42dd2a5554c44d056d9fc31378433e04",
+  "branch": "feat/m17.5-trust-assurance-v0",
+  "verification_scope": "LOCAL_SCANNER_RUNTIME_PUBLIC_TYPES_EXPORTS_GRAPH_AND_CONTROLLED_ACQUISITION_FIXTURES",
+  "evidence": "docs/codex/evidence/2026-10-21-m17.5-v1-s1b-c2a-l02-scanner-containment.md",
+  "historical_records_modified": false,
+  "hosted_verified": false,
+  "database_delta": 0,
+  "migration_delta": 0,
+  "hosted_delta": 0,
+  "gates": {
+    "L02": {
+      "classification": "CONTAINED / PASS - LOCAL",
+      "criteria": [
+        { "id": 1, "criterion": "No active certification tier computation", "result": "PASS", "proof": "Production core/certification.ts deleted; unified Scanner.scan has no certification import/call" },
+        { "id": 2, "criterion": "No current Bronze/Silver/Gold/Platinum authority", "result": "PASS", "proof": "Actual output/export tests plus frozen test-only historical tier matrix" },
+        { "id": 3, "criterion": "No active certLevel", "result": "PASS", "proof": "UnifiedScanResult and summary allowlist; negative type test" },
+        { "id": 4, "criterion": "No L02 aggregate complianceScore", "result": "PASS", "proof": "Weighted compliance computation and tier-to-score mapping removed; summary contains counts only" },
+        { "id": 5, "criterion": "No inferred certificate object", "result": "PASS", "proof": "Collection and producer removed; technical entity kind allowlists; toGraph tests" },
+        { "id": 6, "criterion": "No inferred SOC2 certificate or valid status", "result": "PASS", "proof": "Certificate graph construction deleted; actual result and graph assertions" },
+        { "id": 7, "criterion": "No ordinary public certifySystem capability", "result": "PASS", "proof": "Public export and production function deleted; runtime and type-level negative tests" },
+        { "id": 8, "criterion": "Technical findings explicitly non-authoritative", "result": "PASS", "proof": "Frozen analysisBoundary in scan result and every produced entity" },
+        { "id": 9, "criterion": "Clean or empty scan gives no positive assurance", "result": "PASS", "proof": "Zero-risk, empty, reused scanner, partial and missing source tests" },
+        { "id": 10, "criterion": "No replacement score, tier or readiness model", "result": "PASS", "proof": "Exact result/summary key tests; bounded technical counts and acquisition limitations only" },
+        { "id": 11, "criterion": "Canonical discovery contracts unchanged", "result": "PASS", "proof": "No discovery/semantic/L15/canonical/governance/DB source delta; 404 discovery, 114 semantic, 7 L15 regressions pass" }
+      ]
+    },
+    "L03": { "classification": "NEEDS_CONTAINMENT", "checkpoint": "C2B", "started": false },
+    "L04": { "classification": "NEEDS_CONTAINMENT", "started": false }
+  },
+  "preserved_local_classifications": {
+    "L01": "CONTAINED / PASS - LOCAL",
+    "LX02": "CONTAINED / PASS - LOCAL",
+    "LX08": "CONTAINED / PASS - LOCAL"
+  },
+  "v1_s1b_status": "OPEN",
+  "m17_5_status": "OPEN",
+  "controlled_demo_readiness": "HOLD",
+  "external_publication_readiness": "HOLD",
+  "tenant_assurance_readiness": "HOLD",
+  "certification_readiness": "HOLD",
+  "m18": "HOLD",
+  "next_checkpoint_proposal": "M17.5-V1-S1B CHECKPOINT 2B - L03 EXTENSION COMPLIANCE / REPORT EXPOSURE CONTAINMENT",
+  "next_checkpoint_started": false,
+  "limitations": [
+    "Tier and zero-risk fixtures control acquisition only; real scanner analysis, detection, mapping, result builders and exports execute. No live remote/hosted acceptance was performed.",
+    "Real local filesystem cases exercise high-risk agent/model observations, PII with consent, empty/reused scans, missing sources and partial size-limited acquisition.",
+    "Local loader extension filters, remote 200-file limit and upstream empty-tree ambiguity remain explicit acquisition limitations; no completeness claim is made.",
+    "graphos-complete is L04: its independent legacy scanner and pipeline projections remain unresolved. The pipeline deep-imports removed package fields/API and is not a supported compatibility consumer.",
+    "Independently exposed ComplianceAnalysis states/overallScore, classifier legal/regulatory labels and other legacy graph/report/score surfaces are not declared safe by L02 closure. Record them for their separately authorized containment gates."
+  ]
+}

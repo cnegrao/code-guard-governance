@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ConsolidatedAuditResult } from '../intelligence/orchestrator';
+import type { TechnicalFrameworkReviewResult } from '../intelligence/review-contract';
 
 export class DiagnosticsManager {
     private static instance: DiagnosticsManager;
@@ -24,13 +24,13 @@ export class DiagnosticsManager {
         this.collection.clear();
     }
 
-    public updateDiagnostics(result: ConsolidatedAuditResult) {
+    public updateDiagnostics(result: TechnicalFrameworkReviewResult) {
         this.clear();
 
         const diagnosticsMap = new Map<string, vscode.Diagnostic[]>();
 
         // Flatten issues from all frameworks
-        const allIssues = result.results.flatMap(r => r.issues);
+        const allIssues = result.results.flatMap(r => r.findings);
 
         for (const issue of allIssues) {
             // Skip issues without file path
@@ -57,9 +57,9 @@ export class DiagnosticsManager {
                 Number.MAX_VALUE // Highlight full line
             );
 
-            const diagnostic = new vscode.Diagnostic(range, `${issue.issue}`, severity);
+            const diagnostic = new vscode.Diagnostic(range, `Potential technical finding (untrusted model output): ${issue.technical_observation}`, severity);
             diagnostic.source = 'CodeGuard AI';
-            diagnostic.code = issue.control || issue.article || 'COMPLIANCE_RULE';
+            diagnostic.code = issue.reference_hint || 'TECHNICAL_REVIEW_HINT';
 
             // Embed fix logic if available (can be used by CodeActionProvider)
             if (issue.code_fix || issue.recommendation) {

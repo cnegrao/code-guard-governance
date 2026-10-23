@@ -1,9 +1,9 @@
-// Core scanner (graphos-complete canonical source of truth)
+// Technical scanner observations; no canonical governance authority.
 export { purviewInbound, parsePurviewEntities, PURVIEW_ADAPTER, PURVIEW_PROVIDER, PURVIEW_TYPE_MAPPING } from './exchange/purview';
 export type {
   DetectedAgent, DetectedRisk, ScannerRequest, ScannerResult,
   PackageAnalysis, ConfigAnalysis, SourceAnalysis, ShadowAIFinding,
-  CertificationResult, ComplianceAnalysis, ApplicableRegulation,
+  ScannerAnalysisBoundary, ComplianceAnalysis, ApplicableRegulation,
   CodeViolation, ViolationScanResult,
   PIIEnrichment, PIIFinding,
   DataFlow, DataFlowNode, LineageResult,
@@ -23,7 +23,7 @@ export { classifyAllAgents, summarizeAIAct } from './core/classifier';
 export { detectRisks } from './core/risk-detector';
 export { detectShadowAI } from './core/shadow-ai';
 export { scanCodeViolations } from './core/violations';
-export { certifySystem } from './core/certification';
+export { SCANNER_ANALYSIS_BOUNDARY } from './core/types';
 export { CG_AG_CONTROLS, getCGAGControl, getCGAGControlByRisk, isCGAGImplemented, getCGAGScore } from './core/cg-ag-controls';
 export type { CGAGControl } from './core/cg-ag-controls';
 export { analyzePackageJson, analyzeConfigs, analyzeSourceCode, aggregatePackages } from './core/analyzer';

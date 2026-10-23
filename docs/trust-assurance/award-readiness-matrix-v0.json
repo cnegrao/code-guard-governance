@@ -1,0 +1,2547 @@
+{
+  "schema_version": "1.0",
+  "record_version": 1,
+  "recorded_at": "2026-10-20",
+  "recorded_by": "Codex / owner-authorized S3 source research; no independent approval",
+  "supersedes_record_version": null,
+  "repository": "cnegrao/code-guard-governance",
+  "starting_head": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+  "cutoff": "2026-10-20",
+  "cutoff_timezone": "America/Sao_Paulo",
+  "organisation_id": null,
+  "scope": "GovIA / IA4ALL product repository reference metadata; applicant legal entity UNKNOWN",
+  "status": "INTERNAL_REFERENCE_ONLY_PUBLICATION_AND_SUBMISSION_PROHIBITED",
+  "input_artifacts": [
+    {
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.json",
+      "commit": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+      "sha256_lf_utf8": "74d949895f23f7f53499c00f07e287d42f7c92acdeda001c5608ae6059ad8b0f"
+    },
+    {
+      "path": "docs/trust-assurance/framework-source-catalog-v0.json",
+      "commit": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+      "sha256_lf_utf8": "d220b50f8943e337bcf20622692175165998d5cf818ca979496658bae44bfa40"
+    },
+    {
+      "path": "docs/trust-assurance/framework-crosswalk-v0.json",
+      "commit": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+      "sha256_lf_utf8": "a701d10decebc4a7b81c33b84f4412d1f33d5261b43b6f7a7055649b66b8a816"
+    },
+    {
+      "path": "docs/trust-assurance/evidence-index-v0.json",
+      "commit": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+      "sha256_lf_utf8": "84f273f365c2721434e7b54c28f8ffe27a5e5ecc8e79037dca2fb09ade33a12f"
+    },
+    {
+      "path": "docs/trust-assurance/gap-register-v0.json",
+      "commit": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+      "sha256_lf_utf8": "d3abd41ccbbe777966d6c30deba22026ff8475b9c6d3b686203fd0495d25af46"
+    },
+    {
+      "path": "docs/trust-assurance/commercial-claims-register-v0.json",
+      "commit": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+      "sha256_lf_utf8": "eaf3208146f151bf17ce8390628faadd94cd46e1a11cc10c08c3ff81de3e4107"
+    },
+    {
+      "path": "docs/trust-assurance/legacy-containment-register-v0.md",
+      "commit": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+      "sha256_lf_utf8": "d20001d94f1cca7c5d24c64ac427a0a3f949bb826b57772a68dd2d92c6285623"
+    }
+  ],
+  "inventory_version": "c3fcf7228530aa5f165361d78ad76cf5f612feb0",
+  "s1_version": "38314b7ea20e479f4d108ea1b48fd37c78d37ebf",
+  "s2_version": "c354691e8dc24e771c4887a999f57f2165dc14ac",
+  "version_policy": "Append a new record/version for changed sources, editions, mappings or dispositions; preserve past calendar assertions; never infer annual recurrence. Reverify mutable sources before any future decision.",
+  "eligibility_states": [
+    "ELIGIBLE",
+    "INELIGIBLE",
+    "UNKNOWN",
+    "NOT_ASSESSED"
+  ],
+  "readiness_states": [
+    "READY_FOR_INTERNAL_REVIEW",
+    "GAPS_OPEN",
+    "SOURCE_PENDING",
+    "ELIGIBILITY_UNKNOWN",
+    "EVIDENCE_INSUFFICIENT",
+    "NOT_ELIGIBLE",
+    "UNKNOWN"
+  ],
+  "readiness_policy": {
+    "precedence": [
+      "unverified or materially conflicted source -> SOURCE_PENDING",
+      "verified disqualifying applicant fact -> NOT_ELIGIBLE",
+      "missing applicant facts -> ELIGIBILITY_UNKNOWN",
+      "insufficient reviewed proof -> EVIDENCE_INSUFFICIENT",
+      "other unresolved prerequisites -> GAPS_OPEN",
+      "only fully resolved scoped gates -> READY_FOR_INTERNAL_REVIEW"
+    ],
+    "unknown_required_input": "FAIL_CLOSED",
+    "ready_semantics": "READY_FOR_INTERNAL_REVIEW is not READY_TO_SUBMIT, NOMINATED, FINALIST or WINNER. No external award-ready wording permitted.",
+    "numeric_score": "PROHIBITED",
+    "probability": "PROHIBITED",
+    "official_weights": "Metadata only; never multiply by an invented GovIA score.",
+    "claims": "All 42 S2 drafts remain INELIGIBLE; exact claim IDs are traceability only.",
+    "legacy": "No affirmative use of L01/L02/L03/L04, legacy risk scores, heuristic costs or registry claims. Exclusion does not implement containment; S2 exposure gates remain unresolved.",
+    "authority": "Award eligibility and readiness are reference dispositions, never governance truth or framework compliance."
+  },
+  "search_strategy": {
+    "date": "2026-10-20",
+    "areas": [
+      "AI governance",
+      "responsible AI",
+      "enterprise AI",
+      "data governance",
+      "data management",
+      "cybersecurity / trust",
+      "governance / compliance technology",
+      "innovation",
+      "enterprise software",
+      "European technology",
+      "Portuguese technology",
+      "Brazilian technology",
+      "international B2B technology"
+    ],
+    "queries": [
+      "responsible AI awards 2026 official awards criteria deadline",
+      "data management awards 2026 official awards entry criteria",
+      "Portugal technology awards 2026 premio inovação software candidatura",
+      "Brasil prêmio inovação tecnologia 2026 inscrições regulamento",
+      "European technology awards 2026 criteria",
+      "cybersecurity awards 2026 criteria software",
+      "European AI Awards 2026 governance",
+      "enterprise software awards 2026 official",
+      "site.stevieawards.com iba 2026 software categories entry deadline",
+      "site.aibreakthroughawards.com 2026 AI Governance",
+      "site.a-teaminsight.com RegTech Insight Awards 2026"
+    ],
+    "admission_policy": "Organizer-controlled or explicitly designated public source only; third-party results never establish authoritative metadata. Discovery is bounded, not exhaustive."
+  },
+  "discovery_leads": [
+    {
+      "program": "WITSA Global AI Awards",
+      "url": "https://www.witsa.org/witsa-global-ai-awards-2026",
+      "disposition": "ADMITTED",
+      "award_program_id": "AW-WITSA",
+      "reason": "Exact identity verified; admission does not establish eligibility or readiness."
+    },
+    {
+      "program": "Prémio Transformação Digital",
+      "url": "https://apdsi.pt/2026/inscricoes-abertas-6a-edicao-do-premio-transformacao-digital/",
+      "disposition": "ADMITTED",
+      "award_program_id": "AW-APDSI",
+      "reason": "Exact identity verified; admission does not establish eligibility or readiness."
+    },
+    {
+      "program": "European AI Awards",
+      "url": "https://eaiforum.org/eaif-awards/eaif-awards-2026",
+      "disposition": "ADMITTED",
+      "award_program_id": "AW-EAIF",
+      "reason": "Exact identity verified; admission does not establish eligibility or readiness."
+    },
+    {
+      "program": "Data Management Insight Awards Europe",
+      "url": "https://a-teaminsight.com/awards/data-management-insight-awards-europe/",
+      "disposition": "ADMITTED",
+      "award_program_id": "AW-DMI-EU",
+      "reason": "Exact identity verified; admission does not establish eligibility or readiness."
+    },
+    {
+      "program": "Cyber Security Awards",
+      "url": "https://www.cybersecurityawards.com/",
+      "disposition": "ADMITTED",
+      "award_program_id": "AW-CYBER",
+      "reason": "Exact identity verified; admission does not establish eligibility or readiness."
+    },
+    {
+      "program": "Prêmio Nacional de Inovação",
+      "url": "https://www.premiodeinovacao.com.br/",
+      "disposition": "ADMITTED",
+      "award_program_id": "AW-PNI",
+      "reason": "Exact identity verified; admission does not establish eligibility or readiness."
+    },
+    {
+      "program": "Data Management Insight Awards USA",
+      "url": "https://a-teaminsight.com/awards/data-management-insight-awards-usa/?section=winners",
+      "disposition": "DEFERRED",
+      "reason": "Additional regional edition; Europe chosen for bounded initial matrix."
+    },
+    {
+      "program": "Prêmio de Inovação J.Ex",
+      "url": "https://jexlegal.com.br/premioinovacao/",
+      "disposition": "DEFERRED",
+      "reason": "Justice ecosystem specialization; no applicant deployment fit established."
+    },
+    {
+      "program": "AI Breakthrough Awards",
+      "url": "https://aibreakthroughawards.com/2026-award-winners/",
+      "disposition": "DEFERRED",
+      "reason": "Relevant governance lead; entry rules/criteria not verified for admission."
+    },
+    {
+      "program": "International Business Awards",
+      "url": "https://iba.stevieawards.com/enter/how-to-submit-winning-entries/",
+      "disposition": "DEFERRED",
+      "reason": "International enterprise software/B2B lead; category and full conditions not verified."
+    },
+    {
+      "program": "The National Cyber Awards",
+      "url": "https://awards.thenationalcyberawards.org/2026/en/page/categories",
+      "disposition": "DEFERRED",
+      "reason": "Cyber innovation lead; full eligibility not inspected."
+    },
+    {
+      "program": "Prémio Vencer o Adamastor",
+      "url": "https://inesc.pt/vencer-o-adamastor/",
+      "disposition": "DEFERRED",
+      "reason": "Portuguese technology lead; full rules not inspected."
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "SRC-W",
+      "url": "https://www.witsa.org/witsa-global-ai-awards-2026",
+      "title": "WITSA Global AI Awards 2026",
+      "edition_ids": [
+        "WITSA-AI-2026"
+      ],
+      "locator": "Award Categories #5; How to Apply; Judging Criteria; Key Dates",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-A",
+      "url": "https://apdsi.pt/2026/inscricoes-abertas-6a-edicao-do-premio-transformacao-digital/",
+      "title": "APDSI sixth edition announcement",
+      "edition_ids": [
+        "APDSI-TD-2026-6"
+      ],
+      "locator": "Announcement and linked regulations",
+      "published_at": "2026-09-15",
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-AR",
+      "url": "https://apdsi.pt/wp-content/uploads/2026/09/Regulamento-Premio-Transformacao-Digital-2026.pdf",
+      "title": "APDSI sixth edition regulations",
+      "edition_ids": [
+        "APDSI-TD-2026-6"
+      ],
+      "locator": "Articles 2-6, 10-13, 17; PDF pp.2-8",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-AF",
+      "url": "https://apdsi.pt/wp-content/uploads/2026/09/Formulario-de-candidatura-Premio-Transformacao-Digital_2026.pdf",
+      "title": "APDSI sixth edition form",
+      "edition_ids": [
+        "APDSI-TD-2026-6"
+      ],
+      "locator": "PDF pp.1-2",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-E",
+      "url": "https://eaiforum.org/eaif-awards/eaif-awards-2026",
+      "title": "European AI Awards 2026",
+      "edition_ids": [
+        "EAIF-AI-2026"
+      ],
+      "locator": "Timeline; Categories; Eligibility; linked terms",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-ER",
+      "url": "https://assets.super.so/cbdb2971-67c2-4627-9101-9e5ffbbe0b93/files/1a4d6f9e-33cc-4cb1-89de-47a918772415/european_ai_awards_2026_terms_and_conditions.pdf",
+      "title": "European AI Awards 2026 terms",
+      "edition_ids": [
+        "EAIF-AI-2026"
+      ],
+      "locator": "Sections 1-5, 8; PDF pp.1-6",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "FORMALLY_DESIGNATED_BY_ORGANIZER",
+      "designated_by": "SRC-E",
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-D",
+      "url": "https://a-teaminsight.com/awards/data-management-insight-awards-europe/",
+      "title": "Data Management Insight Awards Europe",
+      "edition_ids": [
+        "DMI-EUROPE-2026"
+      ],
+      "locator": "2026 edition; voting closure; December event",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-DE",
+      "url": "https://a-teaminsight.com/awards/data-management-insight-awards-europe/?section=enter",
+      "title": "DMI Europe entry guidance",
+      "edition_ids": [
+        "DMI-EUROPE-2026"
+      ],
+      "locator": "How the Nomination / Call for Entry Process Works; Shortlisting; Voting",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-DC",
+      "url": "https://a-teaminsight.com/awards/data-management-insight-awards-europe/?section=categories",
+      "title": "DMI Europe categories",
+      "edition_ids": [
+        "DMI-EUROPE-2026"
+      ],
+      "locator": "Core Data Management Solutions / data governance category",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-C",
+      "url": "https://www.cybersecurityawards.com/",
+      "title": "Cyber Security Awards",
+      "edition_ids": [
+        "CYBER-2027"
+      ],
+      "locator": "Key dates 2027; worldwide scope; 2026 categories excluded from 2027 mapping",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-CM",
+      "url": "https://www.cybersecurityawards.com/methodology/",
+      "title": "Cyber Security Awards methodology",
+      "edition_ids": [],
+      "locator": "Recognition cycle; category-dependent criteria; page has no edition pin",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-P",
+      "url": "https://www.premiodeinovacao.com.br/",
+      "title": "Prêmio Nacional de Inovação",
+      "edition_ids": [
+        "PNI-9-2025-26"
+      ],
+      "locator": "2025/26 cycle; forthcoming edition has no verified identity",
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    },
+    {
+      "source_id": "SRC-PR",
+      "url": "https://www.premiodeinovacao.com.br/media/filer_public/0d/93/0d938d43-12da-4490-9123-f1eb1e0fcbce/regulamento_retificado_empresas_pesquisadores.pdf",
+      "title": "PNI ninth edition consolidated amendment and regulations",
+      "edition_ids": [
+        "PNI-9-2025-26"
+      ],
+      "locator": "Amendment pp.1-4; sections 5.4, 7, 8, 10, 13; PDF pp.9-25",
+      "published_at": "2026-01",
+      "updated_at": null,
+      "retrieved_at": "2026-10-20",
+      "retrieval_method": "Public web retrieval; text inspected; no login/form submission",
+      "authority": "ORGANIZER_CONTROLLED",
+      "designated_by": null,
+      "source_status": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "access_status": "AVAILABLE",
+      "fingerprint": null,
+      "fingerprint_limitation": "No full-page byte capture; locators and bounded observations are versioned here, not an immutable archive of the remote page."
+    }
+  ],
+  "awards": [
+    {
+      "award_program_id": "AW-WITSA",
+      "edition_id": "WITSA-AI-2026",
+      "official_program_name": "WITSA Global AI Awards",
+      "organizer": "World Innovation, Technology and Services Alliance (WITSA)",
+      "edition_year": 2026,
+      "edition_status": "IDENTITY_VERIFIED",
+      "current_candidate": true,
+      "geographic_scope": "International, through national member associations",
+      "category_id": "WITSA-AI-2026-CAT-1",
+      "category_name": "AI & Data",
+      "category_id_semantics": "Local reference ID, never an organizer-issued application ID",
+      "source_ids": [
+        "SRC-W"
+      ],
+      "source_verification": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "application_submission_status": "NOT_SUBMITTED",
+      "eligibility_state": "UNKNOWN",
+      "eligibility_rationale": "Published conditions have been located, but applicant facts and independent review are missing. Product correspondence cannot establish eligibility.",
+      "eligibility_checks": [
+        {
+          "dimension": "nomination",
+          "published_condition": "National association selects one entry per category per country.",
+          "reference": {
+            "source_id": "SRC-W",
+            "locator": "How to Apply steps 1-3"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "category_fit",
+          "published_condition": "Data governance / trustworthy AI domain; no automatic product acceptance.",
+          "reference": {
+            "source_id": "SRC-W",
+            "locator": "Award Categories #5"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "legal_entity",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "geography",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "incorporation_country",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_age",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_size",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "revenue_funding",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "product_launch",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "customer_deployment",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "membership",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "fee",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "language",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "conflict_exclusion",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        }
+      ],
+      "eligibility_gaps": [
+        "Applicant country and national-association route unverified; local deadline may precede global cutoff.",
+        "No national selection artifact; detailed local legal, fee and language requirements UNKNOWN."
+      ],
+      "criteria": [
+        {
+          "criterion_id": "WITSA-AI-2026-IMPACT",
+          "official_criterion_reference": "Judging Criteria / Real-World Impact",
+          "criterion_label": "Demonstrated outcomes",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-W",
+            "locator": "Judging Criteria / Real-World Impact"
+          },
+          "official_weight_percent": 30,
+          "correspondence_state": "NOT_MAPPED",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [],
+          "evidence_ids": [],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING"
+          ],
+          "required_external_evidence": [
+            "Measured beneficiary/customer outcomes"
+          ],
+          "limitation": "No repository capability is used to affirm this criterion; external proof is absent."
+        },
+        {
+          "criterion_id": "WITSA-AI-2026-SCALE",
+          "official_criterion_reference": "Judging Criteria / Scalability",
+          "criterion_label": "Growth without proportional cost/risk",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-W",
+            "locator": "Judging Criteria / Scalability"
+          },
+          "official_weight_percent": 30,
+          "correspondence_state": "NOT_MAPPED",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [],
+          "evidence_ids": [],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING"
+          ],
+          "required_external_evidence": [
+            "Adoption and cost/risk scaling evidence"
+          ],
+          "limitation": "No repository capability is used to affirm this criterion; external proof is absent."
+        },
+        {
+          "criterion_id": "WITSA-AI-2026-RESP",
+          "official_criterion_reference": "Judging Criteria / Responsible AI Practices",
+          "criterion_label": "Responsible AI safeguards",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-W",
+            "locator": "Judging Criteria / Responsible AI Practices"
+          },
+          "official_weight_percent": 20,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C06",
+            "TA-C10",
+            "TA-C11",
+            "TA-C15",
+            "TA-C26"
+          ],
+          "evidence_ids": [
+            "E015",
+            "E016",
+            "E008",
+            "E017",
+            "E027",
+            "E028",
+            "E026",
+            "E029",
+            "E030",
+            "E031",
+            "E041",
+            "E042",
+            "E043",
+            "E064",
+            "E065",
+            "E066"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Bias/fairness, privacy and deployed governance assessment"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        },
+        {
+          "criterion_id": "WITSA-AI-2026-INNOV",
+          "official_criterion_reference": "Judging Criteria / Innovation & Originality",
+          "criterion_label": "AI originality",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-W",
+            "locator": "Judging Criteria / Innovation & Originality"
+          },
+          "official_weight_percent": 20,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C09",
+            "TA-C19",
+            "TA-C24"
+          ],
+          "evidence_ids": [
+            "E024",
+            "E025",
+            "E016",
+            "E026",
+            "E050",
+            "E048",
+            "E012",
+            "E060",
+            "E010"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Independent novelty comparison and deployed AI contribution"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        }
+      ],
+      "capability_ids": [
+        "TA-C06",
+        "TA-C10",
+        "TA-C11",
+        "TA-C15",
+        "TA-C26",
+        "TA-C09",
+        "TA-C19",
+        "TA-C24"
+      ],
+      "evidence_ids": [
+        "E015",
+        "E016",
+        "E008",
+        "E017",
+        "E027",
+        "E028",
+        "E026",
+        "E029",
+        "E030",
+        "E031",
+        "E041",
+        "E042",
+        "E043",
+        "E064",
+        "E065",
+        "E066",
+        "E024",
+        "E025",
+        "E050",
+        "E048",
+        "E012",
+        "E060",
+        "E010"
+      ],
+      "gap_ids": [
+        "G-SUFFICIENCY",
+        "G-OPERATING",
+        "G-DEPLOYMENT",
+        "G-FRESHNESS",
+        "G-APPLICABILITY",
+        "G-REVIEWER",
+        "G-LEGACY-L01",
+        "G-LEGACY-L02",
+        "G-LEGACY-L03",
+        "G-LEGACY-L04"
+      ],
+      "claim_ids": [
+        "CL-FACT-TA-C06",
+        "CL-FACT-TA-C10",
+        "CL-FACT-TA-C11",
+        "CL-FACT-TA-C15",
+        "CL-FACT-TA-C26",
+        "CL-FACT-TA-C09",
+        "CL-FACT-TA-C19",
+        "CL-FACT-TA-C24"
+      ],
+      "claim_trace": [
+        {
+          "claim_id": "CL-FACT-TA-C06",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C10",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C11",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C15",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C26",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C09",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C19",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C24",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        }
+      ],
+      "required_external_evidence": [
+        "Applicant identity and national eligibility documentation",
+        "Independent outcomes, adoption, scale and responsible-practice evidence",
+        "Team and project documentation required by national process"
+      ],
+      "submission_window_state": "CLOSED",
+      "readiness_state": "ELIGIBILITY_UNKNOWN",
+      "readiness_limitations": [
+        "No independently reviewed applicant or criterion satisfaction assessment.",
+        "Repository evidence cannot establish customer adoption, measured impact, or current operating effectiveness.",
+        "S2 draft claims remain INELIGIBLE; no application wording is created."
+      ],
+      "independent_review_requirement": "Named independent reviewer must verify exact edition, applicant identity/conditions, evidence adequacy/currency, claim ceilings and legacy exposure before any internal readiness disposition.",
+      "review_state": "NOT_REVIEWED",
+      "reviewer": null,
+      "publication_prohibition_state": "PROHIBITED",
+      "submission_prohibition_state": "PROHIBITED",
+      "external_award_state": "NOT_ASSERTED",
+      "external_artifact_ids": [],
+      "approved_application_wording": null,
+      "affirmative_legacy_inputs": [],
+      "excluded_legacy_inputs": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "legacy risk scores",
+        "heuristic cost estimates",
+        "legacy registry claims"
+      ],
+      "source_issues": []
+    },
+    {
+      "award_program_id": "AW-APDSI",
+      "edition_id": "APDSI-TD-2026-6",
+      "official_program_name": "Prémio Transformação Digital",
+      "organizer": "APDSI (support: Oracle Portugal)",
+      "edition_year": 2026,
+      "edition_status": "IDENTITY_VERIFIED",
+      "current_candidate": true,
+      "geographic_scope": "Portugal; national entities under Art.3",
+      "category_id": "APDSI-TD-2026-6-CAT-1",
+      "category_name": "Eficácia/Eficiência das Organizações",
+      "category_id_semantics": "Local reference ID, never an organizer-issued application ID",
+      "source_ids": [
+        "SRC-A",
+        "SRC-AR",
+        "SRC-AF"
+      ],
+      "source_verification": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "application_submission_status": "NOT_SUBMITTED",
+      "eligibility_state": "UNKNOWN",
+      "eligibility_rationale": "Published conditions have been located, but applicant facts and independent review are missing. Product correspondence cannot establish eligibility.",
+      "eligibility_checks": [
+        {
+          "dimension": "legal_entity",
+          "published_condition": "National entities responsible for implementing the proposed practices; represented by individuals/team.",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.3, PDF p.3"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "geography",
+          "published_condition": "National entity requirement; no applicant jurisdiction established.",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.3, PDF p.3"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "language",
+          "published_condition": "Portuguese; maximum five A4 pages.",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.4(3)-(4), PDF p.4"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "Application has not been prepared",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "customer_deployment",
+          "published_condition": "Applicant must be responsible for implementing the submitted practices.",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.3(1), PDF p.3"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "conflict_exclusion",
+          "published_condition": "IP/privacy guarantees and required declarations need human review; no acceptance performed.",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Arts.4-5,17; PDF pp.4,8"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "incorporation_country",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_age",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_size",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "revenue_funding",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "product_launch",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "category_fit",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "nomination",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "membership",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "fee",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        }
+      ],
+      "eligibility_gaps": [
+        "Portuguese applicant status and implementation responsibility unverified.",
+        "Category fit, disclosure rights and consent documentation unreviewed."
+      ],
+      "criteria": [
+        {
+          "criterion_id": "APDSI-TD-2026-6-FIT",
+          "official_criterion_reference": "Art.6(a), PDF p.4",
+          "criterion_label": "Fit to stated objective",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.6(a), PDF p.4"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C11",
+            "TA-C12"
+          ],
+          "evidence_ids": [
+            "E029",
+            "E030",
+            "E031",
+            "E032",
+            "E033",
+            "E034"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Implemented organizational context and objective fit"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        },
+        {
+          "criterion_id": "APDSI-TD-2026-6-INNOV",
+          "official_criterion_reference": "Art.6(b), PDF p.5",
+          "criterion_label": "Differentiation from alternatives",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.6(b), PDF p.5"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C09",
+            "TA-C24"
+          ],
+          "evidence_ids": [
+            "E024",
+            "E025",
+            "E016",
+            "E026",
+            "E012",
+            "E060",
+            "E010"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Comparative novelty assessment"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        },
+        {
+          "criterion_id": "APDSI-TD-2026-6-IMPACT",
+          "official_criterion_reference": "Art.6(c), PDF p.5",
+          "criterion_label": "Practical organizational/social benefit",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.6(c), PDF p.5"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "NOT_MAPPED",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [],
+          "evidence_ids": [],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING"
+          ],
+          "required_external_evidence": [
+            "Measured efficiency and social outcomes"
+          ],
+          "limitation": "No repository capability is used to affirm this criterion; external proof is absent."
+        },
+        {
+          "criterion_id": "APDSI-TD-2026-6-REPLICATE",
+          "official_criterion_reference": "Art.6(d), PDF p.5",
+          "criterion_label": "Transfer to other institutions/geographies",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.6(d), PDF p.5"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "NOT_MAPPED",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [],
+          "evidence_ids": [],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING"
+          ],
+          "required_external_evidence": [
+            "Independent replication record"
+          ],
+          "limitation": "No repository capability is used to affirm this criterion; external proof is absent."
+        },
+        {
+          "criterion_id": "APDSI-TD-2026-6-PROOF",
+          "official_criterion_reference": "Art.6(e), PDF p.5",
+          "criterion_label": "Data or other substantiation",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-AR",
+            "locator": "Art.6(e), PDF p.5"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C07",
+            "TA-C08"
+          ],
+          "evidence_ids": [
+            "E018",
+            "E019",
+            "E020",
+            "E021",
+            "E022",
+            "E023"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Actual project metrics and reviewer sufficiency assessment"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        }
+      ],
+      "capability_ids": [
+        "TA-C11",
+        "TA-C12",
+        "TA-C09",
+        "TA-C24",
+        "TA-C07",
+        "TA-C08"
+      ],
+      "evidence_ids": [
+        "E029",
+        "E030",
+        "E031",
+        "E032",
+        "E033",
+        "E034",
+        "E024",
+        "E025",
+        "E016",
+        "E026",
+        "E012",
+        "E060",
+        "E010",
+        "E018",
+        "E019",
+        "E020",
+        "E021",
+        "E022",
+        "E023"
+      ],
+      "gap_ids": [
+        "G-SUFFICIENCY",
+        "G-OPERATING",
+        "G-DEPLOYMENT",
+        "G-FRESHNESS",
+        "G-APPLICABILITY",
+        "G-REVIEWER",
+        "G-LEGACY-L01",
+        "G-LEGACY-L02",
+        "G-LEGACY-L03",
+        "G-LEGACY-L04"
+      ],
+      "claim_ids": [
+        "CL-FACT-TA-C11",
+        "CL-FACT-TA-C12",
+        "CL-FACT-TA-C09",
+        "CL-FACT-TA-C24",
+        "CL-FACT-TA-C07",
+        "CL-FACT-TA-C08"
+      ],
+      "claim_trace": [
+        {
+          "claim_id": "CL-FACT-TA-C11",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C12",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C09",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C24",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C07",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C08",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        }
+      ],
+      "required_external_evidence": [
+        "Entity/project/authors identity and geography",
+        "Implemented project impact metrics",
+        "Rights/privacy and required declarations reviewed by authorized humans"
+      ],
+      "submission_window_state": "OPEN",
+      "readiness_state": "ELIGIBILITY_UNKNOWN",
+      "readiness_limitations": [
+        "No independently reviewed applicant or criterion satisfaction assessment.",
+        "Repository evidence cannot establish customer adoption, measured impact, or current operating effectiveness.",
+        "S2 draft claims remain INELIGIBLE; no application wording is created."
+      ],
+      "independent_review_requirement": "Named independent reviewer must verify exact edition, applicant identity/conditions, evidence adequacy/currency, claim ceilings and legacy exposure before any internal readiness disposition.",
+      "review_state": "NOT_REVIEWED",
+      "reviewer": null,
+      "publication_prohibition_state": "PROHIBITED",
+      "submission_prohibition_state": "PROHIBITED",
+      "external_award_state": "NOT_ASSERTED",
+      "external_artifact_ids": [],
+      "approved_application_wording": null,
+      "affirmative_legacy_inputs": [],
+      "excluded_legacy_inputs": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "legacy risk scores",
+        "heuristic cost estimates",
+        "legacy registry claims"
+      ],
+      "source_issues": [
+        "Arts.11-13 give January/February 2026 stages before the September-December 2026 application period; do not infer 2027 corrections. Application dates agree with announcement."
+      ]
+    },
+    {
+      "award_program_id": "AW-EAIF",
+      "edition_id": "EAIF-AI-2026",
+      "official_program_name": "European AI Awards",
+      "organizer": "European AI Forum AISBL",
+      "edition_year": 2026,
+      "edition_status": "IDENTITY_VERIFIED",
+      "current_candidate": true,
+      "geographic_scope": "Europe; headquarters/activity conditions differ in breadth between page and terms",
+      "category_id": "EAIF-AI-2026-CAT-1",
+      "category_name": "AI Business",
+      "category_id_semantics": "Local reference ID, never an organizer-issued application ID",
+      "source_ids": [
+        "SRC-E",
+        "SRC-ER"
+      ],
+      "source_verification": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "application_submission_status": "NOT_SUBMITTED",
+      "eligibility_state": "UNKNOWN",
+      "eligibility_rationale": "Published conditions have been located, but applicant facts and independent review are missing. Product correspondence cannot establish eligibility.",
+      "eligibility_checks": [
+        {
+          "dimension": "legal_entity",
+          "published_condition": "Full legal status and capacity required.",
+          "reference": {
+            "source_id": "SRC-ER",
+            "locator": "Section 2(4), PDF p.2"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "geography",
+          "published_condition": "Page requires European headquarters and main activities; terms use broader European activity wording. Both remain unresolved.",
+          "reference": {
+            "source_id": "SRC-E",
+            "locator": "Eligibility (compare SRC-ER Section 2(5))"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "fee",
+          "published_condition": "Participation free of charge.",
+          "reference": {
+            "source_id": "SRC-ER",
+            "locator": "Section 2(7), PDF p.2"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "No payment made",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "language",
+          "published_condition": "English permitted.",
+          "reference": {
+            "source_id": "SRC-ER",
+            "locator": "Section 3(7), PDF p.3"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "Application has not been prepared",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "conflict_exclusion",
+          "published_condition": "Organizer employees/contractor excluded; Russia and Belarus excluded.",
+          "reference": {
+            "source_id": "SRC-ER",
+            "locator": "Section 2(5),(8), PDF p.2"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "category_fit",
+          "published_condition": "Companies/startups offering AI products/services with implementation success.",
+          "reference": {
+            "source_id": "SRC-ER",
+            "locator": "Section 2(2)(b), PDF p.2"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "incorporation_country",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_age",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_size",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "revenue_funding",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "product_launch",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "customer_deployment",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "nomination",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "membership",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        }
+      ],
+      "eligibility_gaps": [
+        "Legal identity, European headquarters/main activities and exclusion checks missing.",
+        "Implementation success and scope-matched category fit unproven."
+      ],
+      "criteria": [
+        {
+          "criterion_id": "EAIF-AI-2026-BUSINESS",
+          "official_criterion_reference": "Section 2(2)(b), PDF p.2",
+          "criterion_label": "Successful AI implementation",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-ER",
+            "locator": "Section 2(2)(b), PDF p.2"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C09",
+            "TA-C19",
+            "TA-C24"
+          ],
+          "evidence_ids": [
+            "E024",
+            "E025",
+            "E016",
+            "E026",
+            "E050",
+            "E048",
+            "E012",
+            "E060",
+            "E010"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "AI implementation/customer success evidence; qualitative category description, no published weight"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        }
+      ],
+      "capability_ids": [
+        "TA-C09",
+        "TA-C19",
+        "TA-C24"
+      ],
+      "evidence_ids": [
+        "E024",
+        "E025",
+        "E016",
+        "E026",
+        "E050",
+        "E048",
+        "E012",
+        "E060",
+        "E010"
+      ],
+      "gap_ids": [
+        "G-SUFFICIENCY",
+        "G-OPERATING",
+        "G-DEPLOYMENT",
+        "G-FRESHNESS",
+        "G-APPLICABILITY",
+        "G-REVIEWER",
+        "G-LEGACY-L01",
+        "G-LEGACY-L02",
+        "G-LEGACY-L03",
+        "G-LEGACY-L04"
+      ],
+      "claim_ids": [
+        "CL-FACT-TA-C09",
+        "CL-FACT-TA-C19",
+        "CL-FACT-TA-C24"
+      ],
+      "claim_trace": [
+        {
+          "claim_id": "CL-FACT-TA-C09",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C19",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C24",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        }
+      ],
+      "required_external_evidence": [
+        "Corporate identity, headquarters and operating footprint",
+        "Verified AI implementation outcomes and category justification"
+      ],
+      "submission_window_state": "UNKNOWN",
+      "readiness_state": "SOURCE_PENDING",
+      "readiness_limitations": [
+        "No independently reviewed applicant or criterion satisfaction assessment.",
+        "Repository evidence cannot establish customer adoption, measured impact, or current operating effectiveness.",
+        "S2 draft claims remain INELIGIBLE; no application wording is created."
+      ],
+      "independent_review_requirement": "Named independent reviewer must verify exact edition, applicant identity/conditions, evidence adequacy/currency, claim ceilings and legacy exposure before any internal readiness disposition.",
+      "review_state": "NOT_REVIEWED",
+      "reviewer": null,
+      "publication_prohibition_state": "PROHIBITED",
+      "submission_prohibition_state": "PROHIBITED",
+      "external_award_state": "NOT_ASSERTED",
+      "external_artifact_ids": [],
+      "approved_application_wording": null,
+      "affirmative_legacy_inputs": [],
+      "excluded_legacy_inputs": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "legacy risk scores",
+        "heuristic cost estimates",
+        "legacy registry claims"
+      ],
+      "source_issues": [
+        "Page Timeline: 5-31 October 2026; terms Section 1(4): duration 1 July-15 October 2026. Section 3(5) refers to website deadlines; operative timeline still requires independent resolution, not assumed extension.",
+        "Page and terms differ in geographic wording; narrower page cannot be waived by inference."
+      ]
+    },
+    {
+      "award_program_id": "AW-DMI-EU",
+      "edition_id": "DMI-EUROPE-2026",
+      "official_program_name": "Data Management Insight Awards Europe",
+      "organizer": "A-Team Group",
+      "edition_year": 2026,
+      "edition_status": "IDENTITY_VERIFIED",
+      "current_candidate": true,
+      "geographic_scope": "European capital markets solution providers",
+      "category_id": "DMI-EUROPE-2026-CAT-1",
+      "category_name": "Best Data Governance Solution",
+      "category_id_semantics": "Local reference ID, never an organizer-issued application ID",
+      "source_ids": [
+        "SRC-D",
+        "SRC-DE",
+        "SRC-DC"
+      ],
+      "source_verification": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "application_submission_status": "NOT_SUBMITTED",
+      "eligibility_state": "UNKNOWN",
+      "eligibility_rationale": "Published conditions have been located, but applicant facts and independent review are missing. Product correspondence cannot establish eligibility.",
+      "eligibility_checks": [
+        {
+          "dimension": "category_fit",
+          "published_condition": "Provider of data-management solutions/services for capital markets.",
+          "reference": {
+            "source_id": "SRC-DE",
+            "locator": "How to Enter introduction and nomination process"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "nomination",
+          "published_condition": "Self or third-party nominations accepted; vendors may not vote for themselves.",
+          "reference": {
+            "source_id": "SRC-DE",
+            "locator": "Nomination process; Voting"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "legal_entity",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "geography",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "incorporation_country",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_age",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_size",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "revenue_funding",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "product_launch",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "customer_deployment",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "membership",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "fee",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "language",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "conflict_exclusion",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        }
+      ],
+      "eligibility_gaps": [
+        "Capital-markets customer/product fit unverified.",
+        "Detailed entrant legal/fee/language conditions and exact nomination deadline not located."
+      ],
+      "criteria": [
+        {
+          "criterion_id": "DMI-EUROPE-2026-GOV",
+          "official_criterion_reference": "Core Data Management Solutions / Best Data Governance Solution",
+          "criterion_label": "Demonstrable understanding/control of data",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-DC",
+            "locator": "Core Data Management Solutions / Best Data Governance Solution"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C01",
+            "TA-C02",
+            "TA-C03",
+            "TA-C07",
+            "TA-C11",
+            "TA-C12"
+          ],
+          "evidence_ids": [
+            "E001",
+            "E002",
+            "E003",
+            "E004",
+            "E005",
+            "E006",
+            "E007",
+            "E008",
+            "E018",
+            "E019",
+            "E020",
+            "E021",
+            "E029",
+            "E030",
+            "E031",
+            "E032",
+            "E033",
+            "E034"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Actual data governance demonstrations for capital-markets users"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        },
+        {
+          "criterion_id": "DMI-EUROPE-2026-ENTRY",
+          "official_criterion_reference": "Nomination process / entry guidance (500 words)",
+          "criterion_label": "Documented solution achievements",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-DE",
+            "locator": "Nomination process / entry guidance (500 words)"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C07",
+            "TA-C08"
+          ],
+          "evidence_ids": [
+            "E018",
+            "E019",
+            "E020",
+            "E021",
+            "E022",
+            "E023"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Efficiency, integration effort, user and benefit evidence"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        }
+      ],
+      "capability_ids": [
+        "TA-C01",
+        "TA-C02",
+        "TA-C03",
+        "TA-C07",
+        "TA-C11",
+        "TA-C12",
+        "TA-C08"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002",
+        "E003",
+        "E004",
+        "E005",
+        "E006",
+        "E007",
+        "E008",
+        "E018",
+        "E019",
+        "E020",
+        "E021",
+        "E029",
+        "E030",
+        "E031",
+        "E032",
+        "E033",
+        "E034",
+        "E022",
+        "E023"
+      ],
+      "gap_ids": [
+        "G-SUFFICIENCY",
+        "G-OPERATING",
+        "G-DEPLOYMENT",
+        "G-FRESHNESS",
+        "G-APPLICABILITY",
+        "G-REVIEWER",
+        "G-LEGACY-L01",
+        "G-LEGACY-L02",
+        "G-LEGACY-L03",
+        "G-LEGACY-L04"
+      ],
+      "claim_ids": [
+        "CL-FACT-TA-C01",
+        "CL-FACT-TA-C02",
+        "CL-FACT-TA-C03",
+        "CL-FACT-TA-C07",
+        "CL-FACT-TA-C11",
+        "CL-FACT-TA-C12",
+        "CL-FACT-TA-C08"
+      ],
+      "claim_trace": [
+        {
+          "claim_id": "CL-FACT-TA-C01",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C02",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C03",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C07",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C11",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C12",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C08",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        }
+      ],
+      "required_external_evidence": [
+        "Capital-markets customer references",
+        "Detailed product entry and substantiated efficiency/integration/outcome examples"
+      ],
+      "submission_window_state": "CLOSED",
+      "readiness_state": "ELIGIBILITY_UNKNOWN",
+      "readiness_limitations": [
+        "No independently reviewed applicant or criterion satisfaction assessment.",
+        "Repository evidence cannot establish customer adoption, measured impact, or current operating effectiveness.",
+        "S2 draft claims remain INELIGIBLE; no application wording is created."
+      ],
+      "independent_review_requirement": "Named independent reviewer must verify exact edition, applicant identity/conditions, evidence adequacy/currency, claim ceilings and legacy exposure before any internal readiness disposition.",
+      "review_state": "NOT_REVIEWED",
+      "reviewer": null,
+      "publication_prohibition_state": "PROHIBITED",
+      "submission_prohibition_state": "PROHIBITED",
+      "external_award_state": "NOT_ASSERTED",
+      "external_artifact_ids": [],
+      "approved_application_wording": null,
+      "affirmative_legacy_inputs": [],
+      "excluded_legacy_inputs": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "legacy risk scores",
+        "heuristic cost estimates",
+        "legacy registry claims"
+      ],
+      "source_issues": [
+        "Nomination dates not published in retrieved entry page. CLOSED is inferred from organizer reporting voting completed, not a verified exact entry deadline. 2027 reminder is not a verified 2027 edition/window."
+      ]
+    },
+    {
+      "award_program_id": "AW-CYBER",
+      "edition_id": "CYBER-2027",
+      "official_program_name": "Cyber Security Awards",
+      "organizer": "Cyber Security Awards (brand; legal organizer entity UNKNOWN)",
+      "edition_year": 2027,
+      "edition_status": "IDENTITY_VERIFIED",
+      "current_candidate": true,
+      "geographic_scope": "Worldwide programme announcement",
+      "category_id": null,
+      "category_name": null,
+      "category_id_semantics": "Local reference ID, never an organizer-issued application ID",
+      "source_ids": [
+        "SRC-C"
+      ],
+      "source_verification": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "application_submission_status": "NOT_SUBMITTED",
+      "eligibility_state": "UNKNOWN",
+      "eligibility_rationale": "Published conditions have been located, but applicant facts and independent review are missing. Product correspondence cannot establish eligibility.",
+      "eligibility_checks": [
+        {
+          "dimension": "geography",
+          "published_condition": "Worldwide nominations announced; edition-specific full conditions not established.",
+          "reference": {
+            "source_id": "SRC-C",
+            "locator": "A global stage; Key dates 2027"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "legal_entity",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "incorporation_country",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_age",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_size",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "revenue_funding",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "product_launch",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "customer_deployment",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "category_fit",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "nomination",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "membership",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "fee",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "language",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "conflict_exclusion",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        }
+      ],
+      "eligibility_gaps": [
+        "2027 category criteria, legal entrant terms, fees, language and conflicts not established.",
+        "Cybersecurity product effectiveness and category fit unassessed."
+      ],
+      "criteria": [],
+      "capability_ids": [],
+      "evidence_ids": [],
+      "gap_ids": [
+        "G-APPLICABILITY",
+        "G-SUFFICIENCY",
+        "G-REVIEWER",
+        "G-DEPLOYMENT",
+        "G-OPERATING",
+        "G-FRESHNESS",
+        "G-LEGACY-L01",
+        "G-LEGACY-L02",
+        "G-LEGACY-L03",
+        "G-LEGACY-L04"
+      ],
+      "claim_ids": [],
+      "claim_trace": [],
+      "required_external_evidence": [
+        "2027 category/rules source",
+        "Applicant identity and verified cybersecurity/customer outcomes"
+      ],
+      "submission_window_state": "FUTURE",
+      "readiness_state": "SOURCE_PENDING",
+      "readiness_limitations": [
+        "No independently reviewed applicant or criterion satisfaction assessment.",
+        "Repository evidence cannot establish customer adoption, measured impact, or current operating effectiveness.",
+        "S2 draft claims remain INELIGIBLE; no application wording is created."
+      ],
+      "independent_review_requirement": "Named independent reviewer must verify exact edition, applicant identity/conditions, evidence adequacy/currency, claim ceilings and legacy exposure before any internal readiness disposition.",
+      "review_state": "NOT_REVIEWED",
+      "reviewer": null,
+      "publication_prohibition_state": "PROHIBITED",
+      "submission_prohibition_state": "PROHIBITED",
+      "external_award_state": "NOT_ASSERTED",
+      "external_artifact_ids": [],
+      "approved_application_wording": null,
+      "affirmative_legacy_inputs": [],
+      "excluded_legacy_inputs": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "legacy risk scores",
+        "heuristic cost estimates",
+        "legacy registry claims"
+      ],
+      "source_issues": [
+        "2027 timeline explicitly published alongside 2026 content. No 2026 category or undated methodology is imported as 2027 criteria. General methodology SRC-CM is discovery context only."
+      ]
+    },
+    {
+      "award_program_id": "AW-PNI",
+      "edition_id": "PNI-9-2025-26",
+      "official_program_name": "Prêmio Nacional de Inovação",
+      "organizer": "CNI and Sebrae",
+      "edition_year": 2026,
+      "edition_status": "HISTORICAL_IDENTITY_VERIFIED",
+      "current_candidate": false,
+      "geographic_scope": "Brazil; exact modality-specific legal/sector requirements",
+      "category_id": "PNI-9-2025-26-CAT-1",
+      "category_name": "Digitalização de Negócios",
+      "category_id_semantics": "Local reference ID, never an organizer-issued application ID",
+      "source_ids": [
+        "SRC-P",
+        "SRC-PR"
+      ],
+      "source_verification": "AUTHORITATIVE_SOURCE_VERIFIED",
+      "application_submission_status": "NOT_SUBMITTED",
+      "eligibility_state": "UNKNOWN",
+      "eligibility_rationale": "Published conditions have been located, but applicant facts and independent review are missing. Product correspondence cannot establish eligibility.",
+      "eligibility_checks": [
+        {
+          "dimension": "company_size",
+          "published_condition": "Small-business track includes service/trade/agricultural firms; medium/large require industrial qualification.",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 7.1-7.2, PDF p.13"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "revenue_funding",
+          "published_condition": "BRL annual revenue: small <=4.8m; medium >4.8m to 300m; large >300m; 2024 or assessed 2025; consolidated group revenue if controlled.",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 3.1-3.1.1, PDF pp.6-7"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "product_launch",
+          "published_condition": "Implemented innovations: January 2023-June 2025.",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 2.1, PDF p.6"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "legal_entity",
+          "published_condition": "Medium/large: private entity with active CNPJ and qualifying industrial CNAE/contribution/MEI route.",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 7.2, PDF p.13"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "fee",
+          "published_condition": "Registration free.",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 8, PDF p.15"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "No payment made",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "category_fit",
+          "published_condition": "Digital modernization; requirements vary by company modality.",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 5.4, PDF pp.9-10"
+          },
+          "source_state": "PUBLISHED",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "geography",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "incorporation_country",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "company_age",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "customer_deployment",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "nomination",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "membership",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "language",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        },
+        {
+          "dimension": "conflict_exclusion",
+          "published_condition": null,
+          "reference": null,
+          "source_state": "NOT_ESTABLISHED_IN_RETRIEVED_SOURCES",
+          "applicant_fact": "UNKNOWN",
+          "assessment": "UNKNOWN"
+        }
+      ],
+      "eligibility_gaps": [
+        "CNPJ, company size/sector and applicant modality not established.",
+        "Implemented innovation and measured benefit evidence absent.",
+        "Next edition identity/window UNKNOWN; historical rules cannot establish future eligibility."
+      ],
+      "criteria": [
+        {
+          "criterion_id": "PNI-9-2025-26-NOVELTY",
+          "official_criterion_reference": "Section 10.1.1, PDF p.18",
+          "criterion_label": "Novelty and implementation stage",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 10.1.1, PDF p.18"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C09",
+            "TA-C24"
+          ],
+          "evidence_ids": [
+            "E024",
+            "E025",
+            "E016",
+            "E026",
+            "E012",
+            "E060",
+            "E010"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Independent comparison and market adoption record"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        },
+        {
+          "criterion_id": "PNI-9-2025-26-COLLAB",
+          "official_criterion_reference": "Section 10.1.2, PDF pp.18-19",
+          "criterion_label": "Collaboration breadth/depth/results",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 10.1.2, PDF pp.18-19"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "NOT_MAPPED",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [],
+          "evidence_ids": [],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING"
+          ],
+          "required_external_evidence": [
+            "External partner contribution records"
+          ],
+          "limitation": "No repository capability is used to affirm this criterion; external proof is absent."
+        },
+        {
+          "criterion_id": "PNI-9-2025-26-VALUE",
+          "official_criterion_reference": "Section 10.1.3, PDF p.19",
+          "criterion_label": "Financial and nonfinancial value",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 10.1.3, PDF p.19"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "NOT_MAPPED",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [],
+          "evidence_ids": [],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING"
+          ],
+          "required_external_evidence": [
+            "Verified benefit metrics"
+          ],
+          "limitation": "No repository capability is used to affirm this criterion; external proof is absent."
+        },
+        {
+          "criterion_id": "PNI-9-2025-26-SOCIAL",
+          "official_criterion_reference": "Section 10.1.4, PDF pp.19-20",
+          "criterion_label": "Societal impact",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 10.1.4, PDF pp.19-20"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "NOT_MAPPED",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [],
+          "evidence_ids": [],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING"
+          ],
+          "required_external_evidence": [
+            "Independent social/environmental impact data"
+          ],
+          "limitation": "No repository capability is used to affirm this criterion; external proof is absent."
+        },
+        {
+          "criterion_id": "PNI-9-2025-26-THEME",
+          "official_criterion_reference": "Section 10.1 and 10.4; Section 5.4",
+          "criterion_label": "Connection to selected theme",
+          "label_type": "PARAPHRASE_EXACT_SOURCE_LOCATOR",
+          "reference": {
+            "source_id": "SRC-PR",
+            "locator": "Section 10.1 and 10.4; Section 5.4"
+          },
+          "official_weight_percent": null,
+          "correspondence_state": "BOUNDED_REPOSITORY_CORRESPONDENCE",
+          "satisfaction_state": "NOT_ASSESSED",
+          "capability_ids": [
+            "TA-C11",
+            "TA-C12"
+          ],
+          "evidence_ids": [
+            "E029",
+            "E030",
+            "E031",
+            "E032",
+            "E033",
+            "E034"
+          ],
+          "gap_ids": [
+            "G-SUFFICIENCY",
+            "G-OPERATING",
+            "G-DEPLOYMENT",
+            "G-FRESHNESS"
+          ],
+          "required_external_evidence": [
+            "Applicant-specific digital modernization evidence"
+          ],
+          "limitation": "Capabilities identify implementation subjects for review only; neither novelty, effectiveness nor satisfaction of the award criterion is established."
+        }
+      ],
+      "capability_ids": [
+        "TA-C09",
+        "TA-C24",
+        "TA-C11",
+        "TA-C12"
+      ],
+      "evidence_ids": [
+        "E024",
+        "E025",
+        "E016",
+        "E026",
+        "E012",
+        "E060",
+        "E010",
+        "E029",
+        "E030",
+        "E031",
+        "E032",
+        "E033",
+        "E034"
+      ],
+      "gap_ids": [
+        "G-SUFFICIENCY",
+        "G-OPERATING",
+        "G-DEPLOYMENT",
+        "G-FRESHNESS",
+        "G-APPLICABILITY",
+        "G-REVIEWER",
+        "G-LEGACY-L01",
+        "G-LEGACY-L02",
+        "G-LEGACY-L03",
+        "G-LEGACY-L04"
+      ],
+      "claim_ids": [
+        "CL-FACT-TA-C09",
+        "CL-FACT-TA-C24",
+        "CL-FACT-TA-C11",
+        "CL-FACT-TA-C12"
+      ],
+      "claim_trace": [
+        {
+          "claim_id": "CL-FACT-TA-C09",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C24",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C11",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        },
+        {
+          "claim_id": "CL-FACT-TA-C12",
+          "eligibility": "INELIGIBLE",
+          "claim_ceiling": "FACTUAL_CAPABILITY_ONLY",
+          "use": "TRACEABILITY_ONLY_NOT_APPROVED_WORDING"
+        }
+      ],
+      "required_external_evidence": [
+        "Entity/CNPJ and modality documentation",
+        "Implemented innovation, collaboration, value and social-impact evidence"
+      ],
+      "submission_window_state": "CLOSED",
+      "readiness_state": "ELIGIBILITY_UNKNOWN",
+      "readiness_limitations": [
+        "No independently reviewed applicant or criterion satisfaction assessment.",
+        "Repository evidence cannot establish customer adoption, measured impact, or current operating effectiveness.",
+        "S2 draft claims remain INELIGIBLE; no application wording is created."
+      ],
+      "independent_review_requirement": "Named independent reviewer must verify exact edition, applicant identity/conditions, evidence adequacy/currency, claim ceilings and legacy exposure before any internal readiness disposition.",
+      "review_state": "NOT_REVIEWED",
+      "reviewer": null,
+      "publication_prohibition_state": "PROHIBITED",
+      "submission_prohibition_state": "PROHIBITED",
+      "external_award_state": "NOT_ASSERTED",
+      "external_artifact_ids": [],
+      "approved_application_wording": null,
+      "affirmative_legacy_inputs": [],
+      "excluded_legacy_inputs": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "legacy risk scores",
+        "heuristic cost estimates",
+        "legacy registry claims"
+      ],
+      "source_issues": [
+        "Section 8 retains 21 November 2025 23:59 Brasília; Section 13 lists 5 December 2025 without time/zone. Preserve both historical assertions; exact effective cutoff UNKNOWN.",
+        "Amendment removes voting and revises stages. Forthcoming edition on home page has no verified year/identity."
+      ],
+      "edition_label": "9th edition: 2025 applications / 2026 ceremony; historical, not a new 2026/2027 call"
+    }
+  ],
+  "counts": {
+    "discovered": 12,
+    "admitted": 6,
+    "eligibility": {
+      "UNKNOWN": 6
+    },
+    "readiness": {
+      "ELIGIBILITY_UNKNOWN": 4,
+      "SOURCE_PENDING": 2
+    },
+    "submission_windows": {
+      "CLOSED": 3,
+      "FUTURE": 1,
+      "OPEN": 1,
+      "UNKNOWN": 1
+    }
+  }
+}

@@ -1,0 +1,1817 @@
+{
+  "schema_version": "1.0.0",
+  "framework_id": "M17.5-S4-KPI-V0",
+  "framework_version": "1.0.0",
+  "recorded_at": "2026-10-20",
+  "author": "Codex / Carlos-authorized S4 documentation",
+  "supersedes": null,
+  "repository": "cnegrao/code-guard-governance",
+  "starting_head": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+  "status": "DEFINITION_METADATA_ONLY_NO_EVALUATOR",
+  "summary": {
+    "definitions": 11,
+    "product": 5,
+    "tenant": 6,
+    "DEFINITION_ONLY": 7,
+    "PRODUCT_DOCUMENTARY_ONLY": 4,
+    "operationally_executable": 0,
+    "executed_results": 0
+  },
+  "interpretation": "Counts describe only exact categorical populations. No certainty, compliance, readiness, maturity or certification is manufactured. No product count describes customer estate state.",
+  "version_policy": "Any change to population, predicate, scope, grain, deduplication, axes, admissibility, temporal semantics or missing-data semantics creates a new immutable kpi_version AND predicate_version. Preserve prior definitions and input pins; never reinterpret historical output. Editorial-only corrections require a framework revision with recorded provenance.",
+  "type_vocabulary": [
+    "COUNT",
+    "PARTITIONED_COUNT"
+  ],
+  "execution_status_vocabulary": [
+    "DEFINITION_ONLY",
+    "PRODUCT_DOCUMENTARY_ONLY"
+  ],
+  "axis_vocabularies": {
+    "applicability": [
+      "APPLICABLE",
+      "NOT_APPLICABLE",
+      "UNKNOWN"
+    ],
+    "mapping": [
+      "MAPPED",
+      "NOT_MAPPED",
+      "UNKNOWN"
+    ],
+    "evidence_availability": [
+      "EVIDENCE_AVAILABLE",
+      "NOT_EVIDENCED",
+      "UNKNOWN"
+    ],
+    "internal_readiness": [
+      "READY",
+      "GAP",
+      "UNKNOWN"
+    ],
+    "external_certification_attestation": [
+      "NOT_ASSERTED",
+      "CERTIFIED",
+      "ATTESTED",
+      "UNKNOWN"
+    ],
+    "commercial_claim_eligibility": [
+      "ELIGIBLE",
+      "INELIGIBLE",
+      "UNKNOWN"
+    ]
+  },
+  "gap_kind_vocabulary": [
+    "SOURCE_PENDING",
+    "MAPPING_MISSING",
+    "APPLICABILITY_UNKNOWN",
+    "EVIDENCE_MISSING",
+    "EVIDENCE_STALE",
+    "EVIDENCE_INSUFFICIENT",
+    "CONFLICT",
+    "EXTERNAL_BASIS_MISSING"
+  ],
+  "source_artifacts": [
+    {
+      "source_id": "ADR",
+      "path": "docs/architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "9ad77374aa9c392013c911415f5d9cd6188a73cb",
+      "sha256_lf_utf8": "2ce903ea6e88bf6d78c9e7d3a70ab2f6959935d6f66d30baefc2b2a27586df1e",
+      "selector": null,
+      "authority_class": "ARCHITECTURE_CONTRACT"
+    },
+    {
+      "source_id": "KINDS",
+      "path": "packages/canonical-contracts/src/contracts.ts",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "f44dd97a0fba469d40286b69e2eabc909374867f",
+      "sha256_lf_utf8": "f3c113e2d0853f1062fe3116bf55a86f41deb2e99774cf5833589e0b2803dab6",
+      "selector": "CANONICAL_OBJECT_KIND",
+      "authority_class": "CANONICAL_TYPE_CONTRACT"
+    },
+    {
+      "source_id": "S0",
+      "path": "docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "e8316db57f39a6bce03b41a09f871ffbd8e1eb43",
+      "sha256_lf_utf8": "74d949895f23f7f53499c00f07e287d42f7c92acdeda001c5608ae6059ad8b0f",
+      "selector": null,
+      "authority_class": "PRODUCT_INVENTORY"
+    },
+    {
+      "source_id": "CATALOG",
+      "path": "docs/trust-assurance/framework-source-catalog-v0.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "32e24e96d78f3dd1483256d6b5a2c72b506e657d",
+      "sha256_lf_utf8": "d220b50f8943e337bcf20622692175165998d5cf818ca979496658bae44bfa40",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "CROSSWALK",
+      "path": "docs/trust-assurance/framework-crosswalk-v0.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "24ae2be21f517077ef0ec640f4b4b8fb8be572a9",
+      "sha256_lf_utf8": "a701d10decebc4a7b81c33b84f4412d1f33d5261b43b6f7a7055649b66b8a816",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "EVIDENCE",
+      "path": "docs/trust-assurance/evidence-index-v0.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "95f8a4572373ca6fefcf58bbc95580f63a8e3b43",
+      "sha256_lf_utf8": "84f273f365c2721434e7b54c28f8ffe27a5e5ecc8e79037dca2fb09ade33a12f",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "LEGACY",
+      "path": "docs/trust-assurance/legacy-containment-register-v0.md",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "5763ca02ca74689e8c831b45271dfd728ea4799c",
+      "sha256_lf_utf8": "d20001d94f1cca7c5d24c64ac427a0a3f949bb826b57772a68dd2d92c6285623",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "CREDIBILITY",
+      "path": "docs/trust-assurance/external-credibility-matrix-v0.md",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "ef40ea61692eb03dde4e47e0234ef0356d83de7e",
+      "sha256_lf_utf8": "6a46bf1bddef532ad10f0af9a4d22647dc1fd402e7c47e709119245250e9b3ed",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "GAPS",
+      "path": "docs/trust-assurance/gap-register-v0.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "d257548ae81c4bc5ec6c01fd5b461e2271ea8caa",
+      "sha256_lf_utf8": "d3abd41ccbbe777966d6c30deba22026ff8475b9c6d3b686203fd0495d25af46",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "CLAIMS",
+      "path": "docs/trust-assurance/commercial-claims-register-v0.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "9b55194733c824b6d5d19246c2f1aca155fd57cf",
+      "sha256_lf_utf8": "eaf3208146f151bf17ce8390628faadd94cd46e1a11cc10c08c3ff81de3e4107",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "AWARDS",
+      "path": "docs/trust-assurance/award-readiness-matrix-v0.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "fefcdf820d8d182fb1e29b958922faaba6c8785e",
+      "sha256_lf_utf8": "f2337cbd6ef6b07cc2a23c5e28aae90ef16a11d34bd24765abae0c1cccb38bba",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    },
+    {
+      "source_id": "CALENDAR",
+      "path": "docs/trust-assurance/award-calendar-v0.json",
+      "commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+      "git_blob": "fae65ee8b37d95073e7f6db38a663cfa1d702921",
+      "sha256_lf_utf8": "98a1d631b52c67507903e917c556829add35a02b8e24356c499bc9bb5fd44f19",
+      "selector": null,
+      "authority_class": "PRODUCT_REFERENCE_METADATA"
+    }
+  ],
+  "unknown_reasons": {
+    "MISSING_REQUIRED_SOURCE": "A required source or exact pinned source version is absent.",
+    "ACCESS_DENIED_OR_UNAVAILABLE": "Permission denied, unavailable read boundary or unresolved entitlement. Do not disclose foreign identities or counts.",
+    "PARTIAL_ACQUISITION": "Pagination, acquisition or joins did not finish for the entire declared population.",
+    "POPULATION_NOT_ENUMERABLE": "The exact population, including exclusions, cannot be proven enumerable.",
+    "MISSING_TENANT_PROJECTION": "No verified-principal, org-scoped assurance population/read projection is established for this KPI.",
+    "UNRESOLVED_IDENTITY": "A population identity, deduplication key, scope or required linked identity cannot be resolved.",
+    "MISSING_APPLICABILITY": "Required scoped applicability is absent or unreviewed; never infer NOT_APPLICABLE.",
+    "UNKNOWN_EVIDENCE_CURRENCY": "Currency is required by the predicate but no applicable versioned policy or its evaluated inputs exist.",
+    "INCOMPLETE_TEMPORAL_CUTOFF": "Effective time, recorded cutoff, source pins or atomic same-cutoff acquisition cannot be established.",
+    "DEPENDENCY_INVALID": "A required dependency is revoked, invalid, contradictory or incompatible with the pinned definition.",
+    "MISSING_FRESHNESS_POLICY": "No approved, scope-matched, versioned freshness rule is available.",
+    "UNRESOLVED_AXIS_STATE": "An axis cannot be determined; retain its UNKNOWN category when the row population is complete."
+  },
+  "shared_contract": {
+    "COMPLETE_EVALUABLE_V1": "Population completeness refers only to the explicitly enumerated scope, not all possible sources or a customer estate. Unknown cardinality remains null. Known categorical UNKNOWN rows remain visible.",
+    "UNKNOWN_V1": {
+      "value": null,
+      "priority": "If any required source, population or predicate dependency is unresolved, whole output is UNKNOWN with reason codes and limitations. Do not emit partial bucket integers as a complete total.",
+      "categorical_exception": "A complete row population with an explicit or assessed UNKNOWN category may produce an integer in that UNKNOWN bucket. Distinguish known unknown-state rows from inaccessible/un-enumerated rows; never invent their count.",
+      "predicate_logic": "A missing required dependency cannot be treated as false. Known negative membership is allowed only after complete evaluation of all required sources. NOT_ASSESSED is a workflow assessment marker, not a seventh assurance axis."
+    },
+    "ZERO_V1": {
+      "requires": [
+        "population_proven_enumerable",
+        "all_required_sources_successfully_evaluated",
+        "complete_access_for_scope",
+        "every_predicate_dependency_evaluable",
+        "zero_matching_members"
+      ],
+      "unknown_is_zero": false
+    },
+    "deduplication": "Select the pinned/as-of version first; deduplicate only by the declared tuple. Identical repeated rows collapse; conflicting same-key records yield DEPENDENCY_INVALID. Do not use DISTINCT to hide ambiguity. Reference versions are part of identity only for reference-version grain.",
+    "partitioning": "Enumerate declared closed categories, including zero buckets only under ZERO_V1; reject illegal state values. One row belongs to exactly one bucket in each named partition. No total across axes or across KPIs; no ratio or hidden denominator.",
+    "admissibility": "ADR section 4 only. Preserve type, original authority, tenant/scope, exact source version, access, dependency validity and currency where required. Reference existence is not admissibility; capability proof or evidence availability is not sufficiency.",
+    "freshness": "No default policy is supplied. A future policy must pin identity/version, eligible reference kinds, scope/applicability, time inputs/precision, exact STALE predicate and dependency treatment. A policy change creates a new definition version; unknown currency is not STALE.",
+    "result_contract": {
+      "status": [
+        "KNOWN",
+        "UNKNOWN"
+      ],
+      "value": "Non-negative integer or category-to-integer map only when KNOWN; null when UNKNOWN.",
+      "required_envelope": [
+        "kpi_id",
+        "kpi_version",
+        "predicate_version",
+        "scope",
+        "scope_ref",
+        "organisation_id (TENANT only; null for PRODUCT)",
+        "population_identity",
+        "known_population (integer only if enumeration proven; otherwise null)",
+        "UNKNOWN_population (known unknown-state identities per axis only; otherwise null)",
+        "effective_at",
+        "recorded_cutoff",
+        "definition_artifact_commit",
+        "source_versions",
+        "authority_source_class",
+        "as_of",
+        "limitations",
+        "unknown_reasons",
+        "drill_down_basis"
+      ],
+      "provenance": "Generated time is separate. Do not disclose unauthorized drill-down or count inaccessible rows. No result instances supplied in S4."
+    },
+    "SCOPE_V1": {
+      "scope_ref": "Required immutable manifest identity/version, never a mutable label.",
+      "tenant": "Exactly one organisation_id supplied by verified principal, explicit subject identities/intended-use boundary, exact projection versions and authority/source classes. Complete acquisition is proven against this manifest only; it does not establish whole-estate completeness.",
+      "objects": "Manifest declares exact canonical subject ID set or a version-pinned enumerable membership rule at the shared cutoff. Include only current decision-linked governed canonical states selected by the existing authorized resolver, across all eleven declared kinds; no evidence-based filtering of the candidate population.",
+      "requirements": "Manifest pins exact framework editions and selection mode: EXPLICIT_REFERENCE_SET with every exact requirement/reference ID, or FULL_FRAMEWORK with a complete authoritative enumerable requirement population. A bounded public set is never silently FULL_FRAMEWORK. Missing licensed/source populations produce UNKNOWN for a selected full framework.",
+      "projections": "Manifest pins the exact subject/scope AssuranceProjection version and all normalized gap, evidence link and governed decision references. Each population includes only records assigned to this manifest scope. Unknown membership yields UNKNOWN, not exclusion.",
+      "not_applicable": "Do not silently prune reviewed NOT_APPLICABLE references. Membership is fixed by the manifest, independently of axis state.",
+      "binding_limit": "No runtime schema, concrete tenant read projection, manifest store or evaluator is implemented or claimed available by S4. A future authorized binding must satisfy these metadata preconditions."
+    }
+  },
+  "temporal_models": {
+    "PRODUCT_GIT_SNAPSHOT": {
+      "effective_at": {
+        "source_snapshot": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+        "observed_date": "2026-10-20",
+        "precision": "DAY",
+        "timezone": "America/Sao_Paulo"
+      },
+      "recorded_cutoff": {
+        "selection_commit": "e56d9d8b9ed729b982f234e20a5658e0f9d60be3",
+        "semantics": "Exact source artifact vector, not an invented timestamp or live now."
+      },
+      "source_versions": "Every allowed source resolves through source_artifacts with full commit, Git blob and normalized UTF-8 SHA-256. Original record versions and transitive evidence locators remain unchanged.",
+      "latest_rule": "PROHIBITED; source updates require a new explicitly pinned observation; changed semantics require a new definition version."
+    },
+    "TENANT_BITEMPORAL": {
+      "effective_at": "Required explicit upstream-precision instant; no default now.",
+      "recorded_cutoff": "Required explicit upstream-precision instant and shared atomic snapshot token across all dependencies.",
+      "source_versions": "Exact framework editions, requirement/mapping/projection versions, original state/decision/evidence identities, authorization/policy versions and resolver versions.",
+      "availability": "NOT_ESTABLISHED; future authorized implementation must bind concrete existing read projections and prove complete atomic same-cutoff acquisition. No runtime binding is invented here.",
+      "non_atomic": "UNKNOWN / INCOMPLETE_TEMPORAL_CUTOFF; never silently combine individually successful reads."
+    }
+  },
+  "legacy_exclusions": [
+    "CompliancePanel percentages",
+    "scanner bronze/silver/gold/platinum tiers",
+    "graphos-complete scores",
+    "legacy risk scores",
+    "legacy governance scores",
+    "heuristic cost estimates",
+    "extension budget defaults",
+    "legacy agents/ai_systems counts",
+    "legacy ict_incidents"
+  ],
+  "legacy_boundary": "These are prohibited affirmative inputs. Referencing S0/S1 legacy locators to document exclusion is permitted. Exclusion is not proof of containment; L01-L04 gates remain unresolved.",
+  "m18_boundary": "Compatibility metadata only: exact/known/UNKNOWN population, authority/source class, as-of, limitations and drill-down basis. The existing ADR remains the architecture contract; no M18 aggregation engine or parallel contract is implemented.",
+  "readiness_pack": [
+    {
+      "artifact": "External Credibility Matrix",
+      "status": "PRESENT",
+      "source_ids": [
+        "CREDIBILITY"
+      ],
+      "meaning": "Versioned bounded V0 documentary artifact exists; limitations and unresolved gates preserved."
+    },
+    {
+      "artifact": "Standards / Framework Crosswalk",
+      "status": "PRESENT",
+      "source_ids": [
+        "CATALOG",
+        "CROSSWALK"
+      ],
+      "meaning": "Versioned bounded V0 documentary artifact exists; limitations and unresolved gates preserved."
+    },
+    {
+      "artifact": "Evidence Index",
+      "status": "PRESENT",
+      "source_ids": [
+        "EVIDENCE"
+      ],
+      "meaning": "Versioned bounded V0 documentary artifact exists; limitations and unresolved gates preserved."
+    },
+    {
+      "artifact": "Certification Gap Register",
+      "status": "PRESENT",
+      "source_ids": [
+        "GAPS"
+      ],
+      "meaning": "Versioned bounded V0 documentary artifact exists; limitations and unresolved gates preserved."
+    },
+    {
+      "artifact": "Award Readiness Matrix + Calendar",
+      "status": "PRESENT",
+      "source_ids": [
+        "AWARDS",
+        "CALENDAR"
+      ],
+      "meaning": "Versioned bounded V0 documentary artifact exists; limitations and unresolved gates preserved."
+    },
+    {
+      "artifact": "Commercial Claims Register",
+      "status": "PRESENT",
+      "source_ids": [
+        "CLAIMS"
+      ],
+      "meaning": "Versioned bounded V0 documentary artifact exists; limitations and unresolved gates preserved."
+    },
+    {
+      "artifact": "Product / Customer KPI Framework",
+      "status": "PRESENT",
+      "paths": [
+        "docs/trust-assurance/kpi-framework-v0.json",
+        "docs/trust-assurance/kpi-framework-v0.md"
+      ],
+      "meaning": "Definitions only; no tenant evaluator or output."
+    }
+  ],
+  "closure_boundary": "PRESENT means delivered documentary artifact, not complete source/requirement coverage, independent approval, runtime availability or formal M17.5 closure.",
+  "proposed_s5": "M17.5-S5: V0 readiness-pack closure and publication-boundary review, documentation only. Review S0-S4 acceptance, input/version lineage, unresolved source/applicant/applicability/currency/sufficiency/legacy gates and exact permissible internal wording. Record PASS/HOLD and owner/independent review requirements; distinguish bounded documentary completeness from external presentation eligibility. No containment implementation, tenant execution, runtime/UI/database/API work, M18, Normative Intelligence, deployment or PR; any such work requires separate authorization. S5 not started.",
+  "definitions": [
+    {
+      "kpi_id": "TENANT.GOVERNED_OBJECTS_WITH_EVIDENCE",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Governed objects with evidence",
+      "description": "Governed objects with evidence within the exact declared population only.",
+      "scope": "TENANT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "COUNT",
+      "unit": "canonical_object_id",
+      "population_ref": "ADR section 8 / Governed objects with evidence",
+      "population_definition": {
+        "identity": "ADR section 8 / Governed objects with evidence",
+        "grain": "canonical_object_id",
+        "deduplication_key": [
+          "organisation_id",
+          "canonical_object_id"
+        ],
+        "included_object_kinds": [
+          "AGENT",
+          "AGENT_VERSION",
+          "MODEL",
+          "TOOL",
+          "MCP_SERVER",
+          "API",
+          "PROMPT",
+          "KNOWLEDGE_BASE",
+          "DATA_ASSET",
+          "DATA_ELEMENT",
+          "SKILL"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "One organisation_id from the verified principal AND one exact subject/intended-use scope_ref; never aggregate tenants. SCOPE_V1 is required; manifest version is an input pin.",
+        "temporal_boundary": "TENANT_BITEMPORAL"
+      },
+      "population_source": [
+        "ADR",
+        "KINDS",
+        "S0",
+        "EVIDENCE"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "KINDS",
+        "S0",
+        "EVIDENCE"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "KINDS",
+        "S0",
+        "EVIDENCE"
+      ],
+      "authority_requirement": "Sources listed here establish definition lineage only. Runtime facts must preserve original upstream authority through the existing authorized governed read boundary. No documentary product source supplies tenant facts.",
+      "inclusion_predicate": {
+        "all_of": [
+          "Enumerate current decision-linked governed canonical object states selected by the existing authorized resolver for every member of the SCOPE_V1 subject population at effective_at and recorded_cutoff, across all eleven KINDS regardless of trust state. A discovered/legacy row or an object with no selected governed canonical state is excluded.",
+          "EXISTS at least one exact scope-matched link to resolved accessible admissible evidence under ADR section 4; its original authority, target version and dependency validity resolve.",
+          "Admissibility must be positively resolved for this bounded evidence-availability assertion; UNKNOWN freshness does not automatically disqualify an available artifact unless its admissibility policy requires currency."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "organisation_id",
+        "canonical_object_id"
+      ],
+      "grouping_dimensions": [],
+      "evidence_lineage": [
+        "Exact requirement version -> scoped assurance projection -> source mapping -> admissible typed evidence target/version -> original source/state/decision and authorization/policy pins.",
+        "Preserve every selected subject, scope, upstream version and temporal coordinate; no new evidence store."
+      ],
+      "temporal_model": "TENANT_BITEMPORAL",
+      "effective_at_semantics": "Required caller-supplied exact instant, respecting upstream precision. Resolve governing state valid at this effective_at.",
+      "recorded_cutoff_semantics": "Required exact recorded cutoff and atomic/same-cutoff snapshot token across all reads; include only knowledge recorded by that cutoff. Non-atomic reads yield UNKNOWN.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "MISSING_TENANT_PROJECTION",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "DEFINITION_ONLY",
+      "execution_preconditions": [
+        "Separate explicit authorization for any tenant execution.",
+        "An established verified-principal, org-scoped read projection for every required population and dependency; no projection/API is asserted to exist here.",
+        "Complete same-cutoff atomic reads, identity joins, admissibility decisions and source/definition version pins.",
+        "SCOPE_V1 immutable population manifest and exact source-to-read bindings established and reviewed before evaluation."
+      ],
+      "permission_read_requirements": [
+        "Use verified principal organisation_id at every hop; same subject/scope and existing authorized read resolver.",
+        "No direct table scan, service-role bypass or generic cross-store query authority.",
+        "Framework/license entitlements and evidence access must be complete."
+      ],
+      "limitations": [
+        "No tenant projection verified. Count is not governance coverage. Evidence availability does not imply currency or sufficiency. Multiple links or state versions never multiply an object."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {}
+    },
+    {
+      "kpi_id": "TENANT.UNRESOLVED_ASSURANCE_GAPS",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Unresolved assurance gaps by kind",
+      "description": "Unresolved assurance gaps by kind within the exact declared population only.",
+      "scope": "TENANT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "PARTITIONED_COUNT",
+      "unit": "gap_id",
+      "population_ref": "ADR section 3 / Gap",
+      "population_definition": {
+        "identity": "ADR section 3 / Gap",
+        "grain": "gap_id",
+        "deduplication_key": [
+          "organisation_id",
+          "scope_ref",
+          "gap_id"
+        ],
+        "included_object_kinds": [
+          "gap_id"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "One organisation_id from the verified principal AND one exact subject/intended-use scope_ref; never aggregate tenants. SCOPE_V1 is required; manifest version is an input pin.",
+        "temporal_boundary": "TENANT_BITEMPORAL"
+      },
+      "population_source": [
+        "ADR",
+        "GAPS"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "GAPS"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "GAPS"
+      ],
+      "authority_requirement": "Sources listed here establish definition lineage only. Runtime facts must preserve original upstream authority through the existing authorized governed read boundary. No documentary product source supplies tenant facts.",
+      "inclusion_predicate": {
+        "all_of": [
+          "Enumerate derived Trust & Assurance Gap identities for the exact subject/scope at the common cutoff; do not substitute governed risks, controls or S2 product gaps.",
+          "Selected gap state is OPEN at effective_at using knowledge at recorded_cutoff.",
+          "Each stable gap_id identifies a single normalized cause/requirement/scope/reference set; repeated observations or references do not create a new identity."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "organisation_id",
+        "scope_ref",
+        "gap_id"
+      ],
+      "grouping_dimensions": [
+        "gap_kind"
+      ],
+      "evidence_lineage": [
+        "Exact requirement version -> scoped assurance projection -> source mapping -> admissible typed evidence target/version -> original source/state/decision and authorization/policy pins.",
+        "Preserve every selected subject, scope, upstream version and temporal coordinate; no new evidence store."
+      ],
+      "temporal_model": "TENANT_BITEMPORAL",
+      "effective_at_semantics": "Required caller-supplied exact instant, respecting upstream precision. Resolve governing state valid at this effective_at.",
+      "recorded_cutoff_semantics": "Required exact recorded cutoff and atomic/same-cutoff snapshot token across all reads; include only knowledge recorded by that cutoff. Non-atomic reads yield UNKNOWN.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "MISSING_TENANT_PROJECTION",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "DEFINITION_ONLY",
+      "execution_preconditions": [
+        "Separate explicit authorization for any tenant execution.",
+        "An established verified-principal, org-scoped read projection for every required population and dependency; no projection/API is asserted to exist here.",
+        "Complete same-cutoff atomic reads, identity joins, admissibility decisions and source/definition version pins.",
+        "SCOPE_V1 immutable population manifest and exact source-to-read bindings established and reviewed before evaluation."
+      ],
+      "permission_read_requirements": [
+        "Use verified principal organisation_id at every hop; same subject/scope and existing authorized read resolver.",
+        "No direct table scan, service-role bypass or generic cross-store query authority.",
+        "Framework/license entitlements and evidence access must be complete."
+      ],
+      "limitations": [
+        "No tenant projection completeness verified; no query, customer dataset or tenant result supplied by S4.",
+        "Presence of core governance reads does not establish an assurance KPI projection."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {
+        "gap_kind": [
+          "SOURCE_PENDING",
+          "MAPPING_MISSING",
+          "APPLICABILITY_UNKNOWN",
+          "EVIDENCE_MISSING",
+          "EVIDENCE_STALE",
+          "EVIDENCE_INSUFFICIENT",
+          "CONFLICT",
+          "EXTERNAL_BASIS_MISSING"
+        ]
+      }
+    },
+    {
+      "kpi_id": "TENANT.REQUIREMENTS_WITH_EVIDENCE",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Requirements with evidence",
+      "description": "Requirements with evidence within the exact declared population only.",
+      "scope": "TENANT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "COUNT",
+      "unit": "framework_requirement_reference",
+      "population_ref": "ADR section 3 / FrameworkRequirement",
+      "population_definition": {
+        "identity": "ADR section 3 / FrameworkRequirement",
+        "grain": "framework_requirement_reference",
+        "deduplication_key": [
+          "organisation_id",
+          "framework_version_id",
+          "requirement_id",
+          "scope_ref"
+        ],
+        "included_object_kinds": [
+          "framework_requirement_reference"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "One organisation_id from the verified principal AND one exact subject/intended-use scope_ref; never aggregate tenants. SCOPE_V1 is required; manifest version is an input pin.",
+        "temporal_boundary": "TENANT_BITEMPORAL"
+      },
+      "population_source": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authority_requirement": "Sources listed here establish definition lineage only. Runtime facts must preserve original upstream authority through the existing authorized governed read boundary. No documentary product source supplies tenant facts.",
+      "inclusion_predicate": {
+        "all_of": [
+          "Enumerate exact versioned requirement/reference records from explicitly selected framework editions and subject/scope, with verified source identity and lawful access. Do not assume selected public references exhaust a framework.",
+          "EXISTS RequirementEvidenceMapping (or exact requirement -> capability -> evidence lineage) with explicit requirement version, matching tenant/scope and an accessible admissible resolved evidence target/version.",
+          "The evidence link is current at effective_at/recorded_cutoff; evidence currency must be CURRENT under a versioned policy, not inferred from link existence.",
+          "Reviewed scoped applicability must be resolved; APPLICABLE and explicitly reviewed NOT_APPLICABLE rows both stay in this observational population. UNKNOWN applicability makes this count UNKNOWN."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "organisation_id",
+        "framework_version_id",
+        "requirement_id",
+        "scope_ref"
+      ],
+      "grouping_dimensions": [],
+      "evidence_lineage": [
+        "Exact requirement version -> scoped assurance projection -> source mapping -> admissible typed evidence target/version -> original source/state/decision and authorization/policy pins.",
+        "Preserve every selected subject, scope, upstream version and temporal coordinate; no new evidence store."
+      ],
+      "temporal_model": "TENANT_BITEMPORAL",
+      "effective_at_semantics": "Required caller-supplied exact instant, respecting upstream precision. Resolve governing state valid at this effective_at.",
+      "recorded_cutoff_semantics": "Required exact recorded cutoff and atomic/same-cutoff snapshot token across all reads; include only knowledge recorded by that cutoff. Non-atomic reads yield UNKNOWN.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "MISSING_TENANT_PROJECTION",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "DEFINITION_ONLY",
+      "execution_preconditions": [
+        "Separate explicit authorization for any tenant execution.",
+        "An established verified-principal, org-scoped read projection for every required population and dependency; no projection/API is asserted to exist here.",
+        "Complete same-cutoff atomic reads, identity joins, admissibility decisions and source/definition version pins.",
+        "SCOPE_V1 immutable population manifest and exact source-to-read bindings established and reviewed before evaluation."
+      ],
+      "permission_read_requirements": [
+        "Use verified principal organisation_id at every hop; same subject/scope and existing authorized read resolver.",
+        "No direct table scan, service-role bypass or generic cross-store query authority.",
+        "Framework/license entitlements and evidence access must be complete."
+      ],
+      "limitations": [
+        "Requirement with evidence != requirement satisfied != compliant.",
+        "Pending/licensed requirement populations are UNKNOWN, never empty by inference. Missing currency or applicability blocks a numeric output."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {}
+    },
+    {
+      "kpi_id": "TENANT.UNKNOWN_REQUIREMENTS_BY_AXIS",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Requirement states by independent assurance axis",
+      "description": "Requirement states by independent assurance axis within the exact declared population only.",
+      "scope": "TENANT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "PARTITIONED_COUNT",
+      "unit": "framework_requirement_reference_axis",
+      "population_ref": "ADR sections 3 and 5 / FrameworkRequirement independent axes",
+      "population_definition": {
+        "identity": "ADR sections 3 and 5 / FrameworkRequirement independent axes",
+        "grain": "framework_requirement_reference_axis",
+        "deduplication_key": [
+          "organisation_id",
+          "framework_version_id",
+          "requirement_id",
+          "scope_ref",
+          "axis"
+        ],
+        "included_object_kinds": [
+          "framework_requirement_reference_axis"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "One organisation_id from the verified principal AND one exact subject/intended-use scope_ref; never aggregate tenants. SCOPE_V1 is required; manifest version is an input pin.",
+        "temporal_boundary": "TENANT_BITEMPORAL"
+      },
+      "population_source": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authority_requirement": "Sources listed here establish definition lineage only. Runtime facts must preserve original upstream authority through the existing authorized governed read boundary. No documentary product source supplies tenant facts.",
+      "inclusion_predicate": {
+        "all_of": [
+          "Enumerate the exact scoped requirement/reference population as for REQUIREMENTS_WITH_EVIDENCE, without requiring positive evidence, known applicability or known currency.",
+          "For each enumerated requirement emit exactly one category for each of the six ADR section 5 axes from the closed axis vocabularies; explicitly UNKNOWN or unresolved assessed state maps to UNKNOWN. Missing applicability/currency are UNKNOWN axis states, not a failure of otherwise complete requirement enumeration.",
+          "No claim associated after a complete authorized lookup gives commercial eligibility UNKNOWN, not INELIGIBLE; no assertion gives external NOT_ASSERTED only when absence of assertion is known.",
+          "Resolve conflicting scoped records by their pinned source projection; no unique resolvable state means UNKNOWN for that axis."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "organisation_id",
+        "framework_version_id",
+        "requirement_id",
+        "scope_ref",
+        "axis"
+      ],
+      "grouping_dimensions": [
+        "axis",
+        "state"
+      ],
+      "evidence_lineage": [
+        "Exact requirement version -> scoped assurance projection -> source mapping -> admissible typed evidence target/version -> original source/state/decision and authorization/policy pins.",
+        "Preserve every selected subject, scope, upstream version and temporal coordinate; no new evidence store."
+      ],
+      "temporal_model": "TENANT_BITEMPORAL",
+      "effective_at_semantics": "Required caller-supplied exact instant, respecting upstream precision. Resolve governing state valid at this effective_at.",
+      "recorded_cutoff_semantics": "Required exact recorded cutoff and atomic/same-cutoff snapshot token across all reads; include only knowledge recorded by that cutoff. Non-atomic reads yield UNKNOWN.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "MISSING_TENANT_PROJECTION",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "DEFINITION_ONLY",
+      "execution_preconditions": [
+        "Separate explicit authorization for any tenant execution.",
+        "An established verified-principal, org-scoped read projection for every required population and dependency; no projection/API is asserted to exist here.",
+        "Complete same-cutoff atomic reads, identity joins, admissibility decisions and source/definition version pins.",
+        "SCOPE_V1 immutable population manifest and exact source-to-read bindings established and reviewed before evaluation."
+      ],
+      "permission_read_requirements": [
+        "Use verified principal organisation_id at every hop; same subject/scope and existing authorized read resolver.",
+        "No direct table scan, service-role bypass or generic cross-store query authority.",
+        "Framework/license entitlements and evidence access must be complete."
+      ],
+      "limitations": [
+        "This is six separate partitions, never a sum across axes. Each requirement appears once per axis. UNKNOWN category count can be known while the aggregate is UNKNOWN if enumeration fails.",
+        "Evidence sufficiency NOT_ASSESSED is not one of the six ADR axes and cannot replace evidence availability."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {
+        "axis": [
+          "applicability",
+          "mapping",
+          "evidence_availability",
+          "internal_readiness",
+          "external_certification_attestation",
+          "commercial_claim_eligibility"
+        ],
+        "state": "Use the vocabulary for the independently named axis; no cross-axis state total."
+      }
+    },
+    {
+      "kpi_id": "TENANT.STALE_EVIDENCE_REFERENCES",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Stale evidence references",
+      "description": "Stale evidence references within the exact declared population only.",
+      "scope": "TENANT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "COUNT",
+      "unit": "evidence_reference_version",
+      "population_ref": "ADR sections 3 and 8 / EvidenceReference",
+      "population_definition": {
+        "identity": "ADR sections 3 and 8 / EvidenceReference",
+        "grain": "evidence_reference_version",
+        "deduplication_key": [
+          "organisation_id",
+          "scope_ref",
+          "evidence_reference_id",
+          "evidence_reference_version"
+        ],
+        "included_object_kinds": [
+          "evidence_reference_version"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "One organisation_id from the verified principal AND one exact subject/intended-use scope_ref; never aggregate tenants. SCOPE_V1 is required; manifest version is an input pin.",
+        "temporal_boundary": "TENANT_BITEMPORAL"
+      },
+      "population_source": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authority_requirement": "Sources listed here establish definition lineage only. Runtime facts must preserve original upstream authority through the existing authorized governed read boundary. No documentary product source supplies tenant facts.",
+      "inclusion_predicate": {
+        "all_of": [
+          "Enumerate distinct evidence reference versions linked to the exact subject/scope projection, not evidence content or repeated link rows.",
+          "A scope-matched approved versioned freshness policy has evaluated effective_at and dependencies at recorded_cutoff and explicitly returns STALE.",
+          "Unknown policy, expiry/revocation basis, applicability or temporal inputs produce UNKNOWN, never STALE; no implicit age threshold."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "organisation_id",
+        "scope_ref",
+        "evidence_reference_id",
+        "evidence_reference_version"
+      ],
+      "grouping_dimensions": [],
+      "evidence_lineage": [
+        "Exact requirement version -> scoped assurance projection -> source mapping -> admissible typed evidence target/version -> original source/state/decision and authorization/policy pins.",
+        "Preserve every selected subject, scope, upstream version and temporal coordinate; no new evidence store."
+      ],
+      "temporal_model": "TENANT_BITEMPORAL",
+      "effective_at_semantics": "Required caller-supplied exact instant, respecting upstream precision. Resolve governing state valid at this effective_at.",
+      "recorded_cutoff_semantics": "Required exact recorded cutoff and atomic/same-cutoff snapshot token across all reads; include only knowledge recorded by that cutoff. Non-atomic reads yield UNKNOWN.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "MISSING_TENANT_PROJECTION",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "DEFINITION_ONLY",
+      "execution_preconditions": [
+        "Separate explicit authorization for any tenant execution.",
+        "An established verified-principal, org-scoped read projection for every required population and dependency; no projection/API is asserted to exist here.",
+        "Complete same-cutoff atomic reads, identity joins, admissibility decisions and source/definition version pins.",
+        "SCOPE_V1 immutable population manifest and exact source-to-read bindings established and reviewed before evaluation."
+      ],
+      "permission_read_requirements": [
+        "Use verified principal organisation_id at every hop; same subject/scope and existing authorized read resolver.",
+        "No direct table scan, service-role bypass or generic cross-store query authority.",
+        "Framework/license entitlements and evidence access must be complete."
+      ],
+      "limitations": [
+        "No freshness policy defined/adopted by S4. Missing policy is UNKNOWN with assessment NOT_ASSESSED; no stale result may be invented.",
+        "Invalid dependencies cannot silently be counted stale; only a policy explicitly classifying them STALE can do so. Otherwise DEPENDENCY_INVALID makes the output UNKNOWN."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "freshness_policy_ref": null,
+      "grouping_vocabularies": {}
+    },
+    {
+      "kpi_id": "TENANT.GOVERNED_SUPPORTING_DECISIONS",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Governed supporting decisions",
+      "description": "Governed supporting decisions within the exact declared population only.",
+      "scope": "TENANT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "COUNT",
+      "unit": "governance_decision_id",
+      "population_ref": "ADR sections 3, 4 and 8 / AssuranceProjection supporting decision trace",
+      "population_definition": {
+        "identity": "ADR sections 3, 4 and 8 / AssuranceProjection supporting decision trace",
+        "grain": "governance_decision_id",
+        "deduplication_key": [
+          "organisation_id",
+          "governance_decision_id"
+        ],
+        "included_object_kinds": [
+          "governance_decision_id"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "One organisation_id from the verified principal AND one exact subject/intended-use scope_ref; never aggregate tenants. SCOPE_V1 is required; manifest version is an input pin.",
+        "temporal_boundary": "TENANT_BITEMPORAL"
+      },
+      "population_source": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "CLAIMS"
+      ],
+      "authority_requirement": "Sources listed here establish definition lineage only. Runtime facts must preserve original upstream authority through the existing authorized governed read boundary. No documentary product source supplies tenant facts.",
+      "inclusion_predicate": {
+        "all_of": [
+          "Enumerate existing governed decision identities explicitly referenced in the exact scoped assurance projection supporting an exact selected requirement version.",
+          "Both exact decision reference/version and originating governed source/state resolve through the authorized same-tenant read boundary at effective_at and recorded_cutoff.",
+          "Required authorization/policy versions and all supporting source references resolve and are valid; decision type and state are retained in drill-down.",
+          "Count each decision once despite multiple requirements/links; no new decision or authority is created."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "organisation_id",
+        "governance_decision_id"
+      ],
+      "grouping_dimensions": [],
+      "evidence_lineage": [
+        "Exact requirement version -> scoped assurance projection -> source mapping -> admissible typed evidence target/version -> original source/state/decision and authorization/policy pins.",
+        "Preserve every selected subject, scope, upstream version and temporal coordinate; no new evidence store."
+      ],
+      "temporal_model": "TENANT_BITEMPORAL",
+      "effective_at_semantics": "Required caller-supplied exact instant, respecting upstream precision. Resolve governing state valid at this effective_at.",
+      "recorded_cutoff_semantics": "Required exact recorded cutoff and atomic/same-cutoff snapshot token across all reads; include only knowledge recorded by that cutoff. Non-atomic reads yield UNKNOWN.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "MISSING_TENANT_PROJECTION",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "DEFINITION_ONLY",
+      "execution_preconditions": [
+        "Separate explicit authorization for any tenant execution.",
+        "An established verified-principal, org-scoped read projection for every required population and dependency; no projection/API is asserted to exist here.",
+        "Complete same-cutoff atomic reads, identity joins, admissibility decisions and source/definition version pins.",
+        "SCOPE_V1 immutable population manifest and exact source-to-read bindings established and reviewed before evaluation."
+      ],
+      "permission_read_requirements": [
+        "Use verified principal organisation_id at every hop; same subject/scope and existing authorized read resolver.",
+        "No direct table scan, service-role bypass or generic cross-store query authority.",
+        "Framework/license entitlements and evidence access must be complete."
+      ],
+      "limitations": [
+        "Governed decision count != decision quality or sufficiency. No current tenant execution or source projection is established.",
+        "A historical decision may support the selected as-of projection only if the pinned source resolver explicitly selects it; never count all decision history."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {}
+    },
+    {
+      "kpi_id": "PRODUCT.UNRESOLVED_ASSURANCE_GAPS",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Product unresolved assurance gaps by kind",
+      "description": "Product unresolved assurance gaps by kind within the exact declared population only.",
+      "scope": "PRODUCT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "PARTITIONED_COUNT",
+      "unit": "gap_id",
+      "population_ref": "GAPS#/gaps",
+      "population_definition": {
+        "identity": "GAPS#/gaps",
+        "grain": "gap_id",
+        "deduplication_key": [
+          "gap_id"
+        ],
+        "included_object_kinds": [
+          "gap_id"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "GovIA repository only; organisation_id must be null.",
+        "temporal_boundary": "PRODUCT_GIT_SNAPSHOT"
+      },
+      "population_source": [
+        "ADR",
+        "GAPS",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "LEGACY"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "GAPS",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "LEGACY"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "GAPS",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "LEGACY"
+      ],
+      "authority_requirement": "Authority to describe repository metadata only; preserve S0 evidence authority classes. No evidence admission or external assurance authority.",
+      "inclusion_predicate": {
+        "selector": "/gaps",
+        "all_of": [
+          "Select each GAPS.gaps record with status exactly OPEN.",
+          "Use its recorded gap_kind without reclassifying current_state or counting its evidence/capability links.",
+          "Reject duplicate gap_id with conflicting record payloads as DEPENDENCY_INVALID."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "gap_id"
+      ],
+      "grouping_dimensions": [
+        "gap_kind"
+      ],
+      "evidence_lineage": [
+        "Pinned source artifact -> exact JSON record identity/version -> original S0/S1/S2 references.",
+        "Keep drill-down record keys and original evidence qualifiers; no promotion to current execution proof."
+      ],
+      "temporal_model": "PRODUCT_GIT_SNAPSHOT",
+      "effective_at_semantics": "Required artifact-vector identity at the pinned Git snapshot; documentary observation date 2026-10-20, DAY precision, America/Sao_Paulo. No current runtime validity inferred.",
+      "recorded_cutoff_semantics": "Pinned source vector at e56d9d8b9ed729b982f234e20a5658e0f9d60be3; commit identity selects bytes, not a fabricated recorded timestamp. No latest lookup.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "PRODUCT_DOCUMENTARY_ONLY",
+      "execution_preconditions": [
+        "Offline inspection of the exact pinned artifacts with complete identities and access.",
+        "This status permits documentary interpretation only; no operational evaluator exists in S4."
+      ],
+      "permission_read_requirements": [
+        "Repository read access to the pinned artifact vector; no tenant reads."
+      ],
+      "limitations": [
+        "Bounded historical repository metadata; no deployment, current CI or operating-effectiveness proof."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {
+        "gap_kind": [
+          "SOURCE_PENDING",
+          "MAPPING_MISSING",
+          "APPLICABILITY_UNKNOWN",
+          "EVIDENCE_MISSING",
+          "EVIDENCE_STALE",
+          "EVIDENCE_INSUFFICIENT",
+          "CONFLICT",
+          "EXTERNAL_BASIS_MISSING"
+        ]
+      }
+    },
+    {
+      "kpi_id": "PRODUCT.STALE_EVIDENCE_REFERENCES",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Product stale evidence references",
+      "description": "Product stale evidence references within the exact declared population only.",
+      "scope": "PRODUCT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "COUNT",
+      "unit": "evidence_reference_version",
+      "population_ref": "EVIDENCE#/evidence",
+      "population_definition": {
+        "identity": "EVIDENCE#/evidence",
+        "grain": "evidence_reference_version",
+        "deduplication_key": [
+          "EVIDENCE.commit",
+          "evidence_id"
+        ],
+        "included_object_kinds": [
+          "evidence_reference_version"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "GovIA repository only; organisation_id must be null.",
+        "temporal_boundary": "PRODUCT_GIT_SNAPSHOT"
+      },
+      "population_source": [
+        "ADR",
+        "EVIDENCE",
+        "GAPS"
+      ],
+      "authoritative_upstream_sources": [
+        "ADR",
+        "EVIDENCE",
+        "GAPS"
+      ],
+      "allowed_sources": [
+        "ADR",
+        "EVIDENCE",
+        "GAPS"
+      ],
+      "authority_requirement": "Authority to describe repository metadata only; preserve S0 evidence authority classes. No evidence admission or external assurance authority.",
+      "inclusion_predicate": {
+        "selector": "/evidence",
+        "all_of": [
+          "Enumerate each S1 evidence_id once at the pinned EVIDENCE artifact commit, which is its reference version coordinate.",
+          "Include only explicit STALE determined by an approved versioned policy covering this reference and documentary as-of snapshot.",
+          "Missing policy or per-reference currency evaluation yields UNKNOWN; G-FRESHNESS and capability-level UNKNOWN currency are limitations, not stale evidence records."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "EVIDENCE.commit",
+        "evidence_id"
+      ],
+      "grouping_dimensions": [],
+      "evidence_lineage": [
+        "Pinned source artifact -> exact JSON record identity/version -> original S0/S1/S2 references.",
+        "Keep drill-down record keys and original evidence qualifiers; no promotion to current execution proof."
+      ],
+      "temporal_model": "PRODUCT_GIT_SNAPSHOT",
+      "effective_at_semantics": "Required artifact-vector identity at the pinned Git snapshot; documentary observation date 2026-10-20, DAY precision, America/Sao_Paulo. No current runtime validity inferred.",
+      "recorded_cutoff_semantics": "Pinned source vector at e56d9d8b9ed729b982f234e20a5658e0f9d60be3; commit identity selects bytes, not a fabricated recorded timestamp. No latest lookup.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "DEFINITION_ONLY",
+      "execution_preconditions": [
+        "Separately approved versioned freshness policy and complete per-reference evaluation.",
+        "Exact artifact-vector pins and authorized offline evaluation in a later slice."
+      ],
+      "permission_read_requirements": [
+        "Repository read access to the pinned artifact vector; no tenant reads."
+      ],
+      "limitations": [
+        "No freshness policy or per-reference currency population exists in S0-S3. Expected assessability is UNKNOWN / NOT_ASSESSED; this is not a KPI result."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "freshness_policy_ref": null,
+      "grouping_vocabularies": {}
+    },
+    {
+      "kpi_id": "PRODUCT.CAPABILITIES_BY_PROOF_STATUS",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Product capabilities by proof status",
+      "description": "Product capabilities by proof status within the exact declared population only.",
+      "scope": "PRODUCT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "PARTITIONED_COUNT",
+      "unit": "capability_id",
+      "population_ref": "S0#/capabilities",
+      "population_definition": {
+        "identity": "S0#/capabilities",
+        "grain": "capability_id",
+        "deduplication_key": [
+          "capability_id"
+        ],
+        "included_object_kinds": [
+          "capability_id"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "GovIA repository only; organisation_id must be null.",
+        "temporal_boundary": "PRODUCT_GIT_SNAPSHOT"
+      },
+      "population_source": [
+        "S0",
+        "EVIDENCE"
+      ],
+      "authoritative_upstream_sources": [
+        "S0",
+        "EVIDENCE"
+      ],
+      "allowed_sources": [
+        "S0",
+        "EVIDENCE"
+      ],
+      "authority_requirement": "Authority to describe repository metadata only; preserve S0 evidence authority classes. No evidence admission or external assurance authority.",
+      "inclusion_predicate": {
+        "selector": "/capabilities",
+        "all_of": [
+          "Select all pinned S0 capabilities and use each record proof_status verbatim.",
+          "No derivation of proof from evidence count, test source existence or current execution; preserve bounded proven_assertion and limitations."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "capability_id"
+      ],
+      "grouping_dimensions": [
+        "proof_status"
+      ],
+      "evidence_lineage": [
+        "Pinned source artifact -> exact JSON record identity/version -> original S0/S1/S2 references.",
+        "Keep drill-down record keys and original evidence qualifiers; no promotion to current execution proof."
+      ],
+      "temporal_model": "PRODUCT_GIT_SNAPSHOT",
+      "effective_at_semantics": "Required artifact-vector identity at the pinned Git snapshot; documentary observation date 2026-10-20, DAY precision, America/Sao_Paulo. No current runtime validity inferred.",
+      "recorded_cutoff_semantics": "Pinned source vector at e56d9d8b9ed729b982f234e20a5658e0f9d60be3; commit identity selects bytes, not a fabricated recorded timestamp. No latest lookup.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "PRODUCT_DOCUMENTARY_ONLY",
+      "execution_preconditions": [
+        "Offline inspection of the exact pinned artifacts with complete identities and access.",
+        "This status permits documentary interpretation only; no operational evaluator exists in S4."
+      ],
+      "permission_read_requirements": [
+        "Repository read access to the pinned artifact vector; no tenant reads."
+      ],
+      "limitations": [
+        "Bounded historical repository metadata; no deployment, current CI or operating-effectiveness proof."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {
+        "proof_status": [
+          "PROVEN",
+          "PARTIALLY_PROVEN",
+          "NOT_PROVEN",
+          "UNKNOWN"
+        ]
+      }
+    },
+    {
+      "kpi_id": "PRODUCT.MAPPINGS_BY_STATE",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Product capability dispositions by mapping state",
+      "description": "Product capability dispositions by mapping state within the exact declared population only.",
+      "scope": "PRODUCT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "PARTITIONED_COUNT",
+      "unit": "capability_mapping_id",
+      "population_ref": "CROSSWALK#/capability_dispositions",
+      "population_definition": {
+        "identity": "CROSSWALK#/capability_dispositions",
+        "grain": "capability_mapping_id",
+        "deduplication_key": [
+          "mapping_id"
+        ],
+        "included_object_kinds": [
+          "capability_mapping_id"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "GovIA repository only; organisation_id must be null.",
+        "temporal_boundary": "PRODUCT_GIT_SNAPSHOT"
+      },
+      "population_source": [
+        "CATALOG",
+        "CROSSWALK",
+        "S0",
+        "EVIDENCE"
+      ],
+      "authoritative_upstream_sources": [
+        "CATALOG",
+        "CROSSWALK",
+        "S0",
+        "EVIDENCE"
+      ],
+      "allowed_sources": [
+        "CATALOG",
+        "CROSSWALK",
+        "S0",
+        "EVIDENCE"
+      ],
+      "authority_requirement": "Authority to describe repository metadata only; preserve S0 evidence authority classes. No evidence admission or external assurance authority.",
+      "inclusion_predicate": {
+        "selector": "/capability_dispositions",
+        "all_of": [
+          "Select every capability_dispositions record once using mapping_id.",
+          "Use mapping_state MAPPED, NOT_MAPPED or UNKNOWN verbatim; null requirement identity on an UNKNOWN disposition does not mean an unknown population identity.",
+          "Do not union public_reference_gaps or pending_framework_gates into this population."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "mapping_id"
+      ],
+      "grouping_dimensions": [
+        "mapping_state"
+      ],
+      "evidence_lineage": [
+        "Pinned source artifact -> exact JSON record identity/version -> original S0/S1/S2 references.",
+        "Keep drill-down record keys and original evidence qualifiers; no promotion to current execution proof."
+      ],
+      "temporal_model": "PRODUCT_GIT_SNAPSHOT",
+      "effective_at_semantics": "Required artifact-vector identity at the pinned Git snapshot; documentary observation date 2026-10-20, DAY precision, America/Sao_Paulo. No current runtime validity inferred.",
+      "recorded_cutoff_semantics": "Pinned source vector at e56d9d8b9ed729b982f234e20a5658e0f9d60be3; commit identity selects bytes, not a fabricated recorded timestamp. No latest lookup.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "PRODUCT_DOCUMENTARY_ONLY",
+      "execution_preconditions": [
+        "Offline inspection of the exact pinned artifacts with complete identities and access.",
+        "This status permits documentary interpretation only; no operational evaluator exists in S4."
+      ],
+      "permission_read_requirements": [
+        "Repository read access to the pinned artifact vector; no tenant reads."
+      ],
+      "limitations": [
+        "Unit is a capability disposition, not a requirement, a capability-by-framework pair or complete framework population. MAPPED is bounded correspondence only."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {
+        "mapping_state": [
+          "MAPPED",
+          "NOT_MAPPED",
+          "UNKNOWN"
+        ]
+      }
+    },
+    {
+      "kpi_id": "PRODUCT.CLAIM_DRAFTS_BY_ELIGIBILITY",
+      "kpi_version": "1.0.0",
+      "predicate_version": "1.0.0",
+      "supersedes": null,
+      "title": "Product claim drafts by eligibility",
+      "description": "Product claim drafts by eligibility within the exact declared population only.",
+      "scope": "PRODUCT",
+      "purpose": "Expose categorical evidence/projection metadata and its uncertainty for inspection.",
+      "kpi_type": "PARTITIONED_COUNT",
+      "unit": "claim_id",
+      "population_ref": "CLAIMS#/claims",
+      "population_definition": {
+        "identity": "CLAIMS#/claims",
+        "grain": "claim_id",
+        "deduplication_key": [
+          "claim_id"
+        ],
+        "included_object_kinds": [
+          "claim_id"
+        ],
+        "excluded_object_kinds": [
+          "all other grains",
+          "discovery candidates",
+          "findings",
+          "runtime observations",
+          "legacy agents/ai_systems",
+          "legacy ict_incidents"
+        ],
+        "scope_binding": "GovIA repository only; organisation_id must be null.",
+        "temporal_boundary": "PRODUCT_GIT_SNAPSHOT"
+      },
+      "population_source": [
+        "CLAIMS",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "GAPS"
+      ],
+      "authoritative_upstream_sources": [
+        "CLAIMS",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "GAPS"
+      ],
+      "allowed_sources": [
+        "CLAIMS",
+        "S0",
+        "CATALOG",
+        "CROSSWALK",
+        "EVIDENCE",
+        "GAPS"
+      ],
+      "authority_requirement": "Authority to describe repository metadata only; preserve S0 evidence authority classes. No evidence admission or external assurance authority.",
+      "inclusion_predicate": {
+        "selector": "/claims",
+        "all_of": [
+          "Select every claims record with record_disposition exactly DRAFT_NOT_APPROVED.",
+          "Use eligibility verbatim; do not substitute claim_class, claim_ceiling, alignment candidate status or review_approval_state.",
+          "Conflicting duplicate claim_id is DEPENDENCY_INVALID; no approval or publication from a count."
+        ]
+      },
+      "exclusion_predicate": [
+        "Outside the pinned population/scope/time boundary.",
+        "Known excluded grains and prohibited legacy affirmative inputs.",
+        "Do not exclude an unresolved in-scope row to force a complete result; apply UNKNOWN rules."
+      ],
+      "deduplication_key": [
+        "claim_id"
+      ],
+      "grouping_dimensions": [
+        "eligibility"
+      ],
+      "evidence_lineage": [
+        "Pinned source artifact -> exact JSON record identity/version -> original S0/S1/S2 references.",
+        "Keep drill-down record keys and original evidence qualifiers; no promotion to current execution proof."
+      ],
+      "temporal_model": "PRODUCT_GIT_SNAPSHOT",
+      "effective_at_semantics": "Required artifact-vector identity at the pinned Git snapshot; documentary observation date 2026-10-20, DAY precision, America/Sao_Paulo. No current runtime validity inferred.",
+      "recorded_cutoff_semantics": "Pinned source vector at e56d9d8b9ed729b982f234e20a5658e0f9d60be3; commit identity selects bytes, not a fabricated recorded timestamp. No latest lookup.",
+      "known_population_rule": "COMPLETE_EVALUABLE_V1: all identities enumerable; sources/version pins, access, temporal selection, joins and every predicate dependency resolved. This says nothing about estate completeness outside the declared scope.",
+      "UNKNOWN_rule": "UNKNOWN_V1: aggregate value is null with applicable reason codes if any required population/predicate dependency is unresolved. Explicit UNKNOWN categories in a complete categorical population remain countable; they never become false, zero or NOT_APPLICABLE.",
+      "unknown_reasons": [
+        "MISSING_REQUIRED_SOURCE",
+        "ACCESS_DENIED_OR_UNAVAILABLE",
+        "PARTIAL_ACQUISITION",
+        "POPULATION_NOT_ENUMERABLE",
+        "UNRESOLVED_IDENTITY",
+        "MISSING_APPLICABILITY",
+        "UNKNOWN_EVIDENCE_CURRENCY",
+        "INCOMPLETE_TEMPORAL_CUTOFF",
+        "DEPENDENCY_INVALID",
+        "MISSING_FRESHNESS_POLICY",
+        "UNRESOLVED_AXIS_STATE"
+      ],
+      "inaccessible_population_rule": "UNKNOWN, value=null; restricted identities/counts must not be exposed.",
+      "partial_population_rule": "UNKNOWN, value=null; do not publish a partial count as a total or estimate the missing count.",
+      "zero_rule": "ZERO_V1: integer 0 only after complete enumerable population, successful evaluation of every required source and predicate dependency, complete scope access and zero matches.",
+      "not_applicable_rule": "NOT_APPLICABLE is an explicit reviewed applicability category, never an aggregate substitute for UNKNOWN or zero. Do not remove NOT_APPLICABLE rows unless the exact predicate says so.",
+      "execution_status": "PRODUCT_DOCUMENTARY_ONLY",
+      "execution_preconditions": [
+        "Offline inspection of the exact pinned artifacts with complete identities and access.",
+        "This status permits documentary interpretation only; no operational evaluator exists in S4."
+      ],
+      "permission_read_requirements": [
+        "Repository read access to the pinned artifact vector; no tenant reads."
+      ],
+      "limitations": [
+        "Bounded historical repository metadata; no deployment, current CI or operating-effectiveness proof."
+      ],
+      "prohibited_interpretations": [
+        "COMPLIANCE",
+        "REQUIREMENT_SATISFACTION",
+        "GOVERNANCE_COVERAGE",
+        "MATURITY",
+        "CERTIFICATION",
+        "AWARD_LIKELIHOOD",
+        "CUSTOMER_OPERATING_EFFECTIVENESS",
+        "READINESS_FROM_COUNT",
+        "DECISION_QUALITY_OR_SUFFICIENCY"
+      ],
+      "grouping_vocabularies": {
+        "eligibility": [
+          "ELIGIBLE",
+          "INELIGIBLE",
+          "UNKNOWN"
+        ]
+      }
+    }
+  ]
+}

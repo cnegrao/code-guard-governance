@@ -1,3 +1,4 @@
+import { legacyControlEnvelope } from "@/lib/legacy-control-dto";
 import { NextResponse } from "next/server";
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
 import { updateSystemSchema } from "@/lib/validation";
@@ -16,16 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "System not found" }, { status: 404 });
     }
 
-    const compliance = await systemService.getCompliance(orgId, id);
-    const score = systemService.computeScore(compliance);
-    const gaps = systemService.getGapLabels(compliance);
-
-    return NextResponse.json({
-      ...system,
-      compliance,
-      compliance_score: score,
-      compliance_gaps: gaps,
-    });
+    return NextResponse.json(system);
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
@@ -69,14 +61,13 @@ export async function PATCH(
     await systemService.assessCompliance(orgId, id, body);
 
     const compliance = await systemService.getCompliance(orgId, id);
-    const score = systemService.computeScore(compliance);
     const gaps = systemService.getGapLabels(compliance);
 
-    return NextResponse.json({ compliance, compliance_score: score, compliance_gaps: gaps });
+    return NextResponse.json(legacyControlEnvelope(compliance, gaps));
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to assess compliance" },
+      { error: error instanceof Error ? error.message : "Failed to record legacy controls" },
       { status: 400 }
     );
   }

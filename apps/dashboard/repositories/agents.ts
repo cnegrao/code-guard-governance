@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
-import type { Agent, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
+import type { AgentRecord, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
 
 export async function getAgents(
   orgId: string,
   filters?: AgentFilters
-): Promise<{ agents: Agent[]; total: number }> {
+): Promise<{ agents: AgentRecord[]; total: number }> {
   const page = filters?.page ?? 1;
   const limit = filters?.limit ?? 20;
   const offset = (page - 1) * limit;
@@ -23,13 +23,13 @@ export async function getAgents(
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
-  return { agents: (data as Agent[]) ?? [], total: count ?? 0 };
+  return { agents: (data as AgentRecord[]) ?? [], total: count ?? 0 };
 }
 
 export async function getAgentById(
   orgId: string,
   agentId: string
-): Promise<Agent | null> {
+): Promise<AgentRecord | null> {
   const { data } = await db.write
     .from("agents")
     .select("*")
@@ -37,17 +37,13 @@ export async function getAgentById(
     .eq("agent_id", agentId)
     .throwOnError().maybeSingle();
 
-  return (data as Agent) ?? null;
+  return (data as AgentRecord) ?? null;
 }
 
 export async function getAgentWithOwner(
   orgId: string,
   agentId: string
-): Promise<Record<string, unknown> | null> {
-  const { data } = await db.write.rpc("agent_compliance_gaps", {
-    p_organisation_id: orgId,
-  }).throwOnError();
-  const gaps = (data as Array<Record<string, unknown>>) ?? [];
+): Promise<{ agent: AgentRecord; owner_name: string; owner_email: string } | null> {
   const agent = await getAgentById(orgId, agentId);
   if (!agent) return null;
 
@@ -58,13 +54,10 @@ export async function getAgentWithOwner(
     .eq("user_id", agent.owner_user_id)
     .throwOnError().maybeSingle();
 
-  const agentGap = gaps.find((g) => g.agent_id === agentId);
-
   return {
     agent,
     owner_name: owner?.full_name ?? "Unknown",
     owner_email: owner?.email ?? "",
-    compliance_gaps: agentGap ?? null,
   };
 }
 
@@ -72,7 +65,7 @@ export async function createAgent(
   orgId: string,
   userId: string,
   input: Record<string, unknown>
-): Promise<Agent> {
+): Promise<AgentRecord> {
   const { data, error } = await db.write
     .from("agents")
     .insert({
@@ -101,14 +94,14 @@ export async function createAgent(
     .single();
 
   if (error) throw new Error(`Failed to create agent: ${error.message}`);
-  return data as Agent;
+  return data as AgentRecord;
 }
 
 export async function updateAgent(
   orgId: string,
   agentId: string,
   input: Record<string, unknown>
-): Promise<Agent> {
+): Promise<AgentRecord> {
   const { data, error } = await db.write
     .from("agents")
     .update(input)
@@ -118,7 +111,7 @@ export async function updateAgent(
     .single();
 
   if (error) throw new Error(`Failed to update agent: ${error.message}`);
-  return data as Agent;
+  return data as AgentRecord;
 }
 
 export async function getAgentCompliance(

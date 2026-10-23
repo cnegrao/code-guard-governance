@@ -7,14 +7,13 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
-import { CompliancePanel } from "@/components/agents/CompliancePanel";
+import { LegacyControlRecordsPanel } from "@/components/agents/LegacyControlRecordsPanel";
 import type { AISystem } from "@/types/systems";
 
 export default function SystemDetailPage() {
   const params = useParams();
   const [system, setSystem] = useState<(AISystem & { owner_name?: string; agent_count?: number }) | null>(null);
-  const [compliance, setCompliance] = useState<Record<string, import("@/types/agents").ControlState>>({});
-  const [score, setScore] = useState<number | null>(null);
+  const [legacyStates, setLegacyStates] = useState<Record<string, import("@/types/agents").ControlState>>({});
   const [gaps, setGaps] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,10 +25,9 @@ export default function SystemDetailPage() {
         return res.json();
       })
       .then((data) => {
-        setSystem(data.system ?? data);
-        setCompliance(data.compliance ?? {});
-        setScore(data.compliance_score ?? null);
-        setGaps(data.compliance_gaps ?? []);
+        setSystem({ ...data.system, owner_name: data.owner_name, agent_count: data.agent_count });
+        setLegacyStates(data.legacy_control_states ?? {});
+        setGaps(data.legacy_control_gaps ?? []);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -118,9 +116,9 @@ export default function SystemDetailPage() {
         <div>
           <Card>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
-              Compliance
+              Legacy Control Records
             </h3>
-            <CompliancePanel compliance={compliance} score={score} gaps={gaps} />
+            <LegacyControlRecordsPanel states={legacyStates} gaps={gaps} />
           </Card>
         </div>
       </div>

@@ -1,154 +1,51 @@
 import PDFDocument = require('pdfkit');
-import * as fs from 'fs';
-import { ScanResult, Violation } from '../report/types';
+import type { TechnicalScanReport } from '../report/types';
 
 export interface ReportConfig {
-    companyInfo: {
-        name: string;
-        repository: string;
-        framework: string;
-        dpo?: {
-            name: string;
-            email: string;
-        };
-    };
-    template?: 'basic' | 'executive' | 'audit';
-    language?: 'pt-BR' | 'en-US';
+    companyInfo: { name: string; repository: string };
 }
 
-export class CompliancePDFGenerator {
-    private doc: any;
-    private config: ReportConfig;
-    private scanResult: ScanResult;
-    private chunks: Buffer[] = [];
-
-    private colors = {
-        primary: '#2563eb',
-        critical: '#dc2626',
-        high: '#ea580c',
-        medium: '#ca8a04',
-        low: '#16a34a',
-        text: '#1f2937',
-        textLight: '#6b7280',
-        background: '#f9fafb'
-    };
-
-    constructor(scanResult: ScanResult, config: ReportConfig) {
-        this.scanResult = scanResult;
-        this.config = config;
-
-        this.doc = new PDFDocument({
-            size: 'A4',
-            margin: 50,
-            info: {
-                Title: `Compliance Report - ${config.companyInfo.name}`,
-                Author: 'CodeGuard AI',
-            }
-        });
-
-        this.doc.on('data', (chunk: any) => this.chunks.push(chunk));
-    }
+/** Local technical export; consumes exactly the same bounded contract as Quick Scan. */
+export class TechnicalScanPDFGenerator {
+    constructor(private report: TechnicalScanReport, private config: ReportConfig) {}
 
     async generate(): Promise<Buffer> {
-        // Cover Page
-        this.addCoverPage();
-
-        // Executive Summary
-        this.addExecutiveSummary();
-
-        // Violations
-        this.addViolationsList();
-
-        // Footer on all pages
-        this.addFooter();
-
-        this.doc.end();
-
-        return new Promise((resolve) => {
-            this.doc.on('end', () => {
-                resolve(Buffer.concat(this.chunks));
-            });
+        const doc = new PDFDocument({
+            size: 'A4', margin: 50,
+            info: { Title: `Technical Scan Report - ${this.config.companyInfo.name}`, Author: 'CodeGuard AI' },
         });
-    }
-
-    private addCoverPage() {
-        this.doc
-            .fontSize(28)
-            .fillColor(this.colors.primary)
-            .text('TECHNICAL COMPLIANCE REPORT', { align: 'center' })
-            .moveDown();
-
-        this.doc
-            .fontSize(16)
-            .fillColor(this.colors.text)
-            .text(this.config.companyInfo.name, { align: 'center' })
-            .moveDown(2);
-
-        this.doc
-            .fontSize(12)
-            .text(`Repository: ${this.config.companyInfo.repository}`)
-            .text(`Framework: ${this.config.companyInfo.framework}`)
-            .text(`Date: ${new Date().toLocaleDateString()}`)
-            .moveDown(4);
-
-        // Score
-        this.doc
-            .fontSize(40)
-            .fillColor(this.scanResult.grade === 'A' ? this.colors.low : this.colors.critical)
-            .text(`Score: ${this.scanResult.score}/100`, { align: 'center' });
-
-        this.doc.addPage();
-    }
-
-    private addExecutiveSummary() {
-        this.doc
-            .fontSize(18)
-            .fillColor(this.colors.primary)
-            .text('1. Executive Summary')
-            .moveDown();
-
-        const { issues } = this.scanResult;
-
-        this.doc
-            .fontSize(12)
-            .fillColor(this.colors.text)
-            .text(`Analysis detected ${issues.critical} critical issues and ${issues.high} high priority issues.`)
-            .moveDown();
-
-        this.doc
-            .text(`• Critical: ${issues.critical}`)
-            .text(`• High: ${issues.high}`)
-            .text(`• Medium: ${issues.medium}`)
-            .text(`• Low: ${issues.low}`)
-            .moveDown(2);
-    }
-
-    private addViolationsList() {
-        this.doc
-            .fontSize(18)
-            .fillColor(this.colors.primary)
-            .text('2. Critical Violations')
-            .moveDown();
-
-        const criticals = this.scanResult.violations.filter((v: any) => v.severity === 'CRITICAL');
-
-        if (criticals.length === 0) {
-            this.doc.fontSize(12).fillColor(this.colors.low).text('No critical violations found. Great job!');
+        const chunks: Buffer[] = [];
+        const complete = new Promise<Buffer>((resolve, reject) => {
+            doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+            doc.on('error', reject);
+        });
+        doc.fontSize(24).fillColor('#253e68').text('Technical Scan Report').moveDown();
+        doc.fontSize(11).fillColor('#1f2937')
+            .text(this.config.companyInfo.name)
+            .text(`Input group: ${this.config.companyInfo.repository}`)
+            .text(`Timestamp: ${this.report.timestamp}`)
+            .text('Heuristic - Non-authoritative - Scanned input only').moveDown();
+        doc.fontSize(16).text('Analysis Limitations').moveDown(0.5);
+        doc.fontSize(10).text(this.report.summary);
+        for (const limitation of this.report.limitations) doc.text(limitation).moveDown(0.5);
+        doc.text(`Acquisition: ${this.report.acquisition}`)
+            .text(`Boundary: ${JSON.stringify(this.report.analysis_boundary)}`)
+            .text(`Detectors run: ${this.report.detectors_run.join(', ') || 'Not recorded'}`).moveDown();
+        const c = this.report.summary_counts;
+        doc.fontSize(16).text('Detected Findings').moveDown(0.5);
+        doc.fontSize(10).text(`Total: ${c.total} | Critical: ${c.critical} | High: ${c.high} | Medium: ${c.medium} | Low: ${c.low}`)
+            .text(`Shown: ${this.report.reported_counts.total}; omitted: ${this.report.findings_omitted}`).moveDown();
+        for (const [i, f] of this.report.findings.entries()) {
+            doc.fontSize(11).text(`${i + 1}. [${f.severity}] ${f.rule} (${f.category})`);
+            doc.fontSize(10).text(f.message)
+                .text(`Location: ${f.file || this.report.files_analyzed.join(', ')}:${f.line}`)
+                .text(`Recommendation: ${this.report.recommendations[i]?.text || 'Review pattern in context.'}`)
+                .text(`Fixability: ${f.suggestedFix ? 'Suggested fix available; review before applying.' : 'Manual review'}`).moveDown();
         }
-
-        criticals.forEach((v: any, i: number) => {
-            this.doc
-                .fontSize(12)
-                .fillColor(this.colors.critical)
-                .text(`[CRITICAL-${i + 1}] ${v.message}`)
-                .fontSize(10)
-                .fillColor(this.colors.text)
-                .text(`File: ${(v as any).file}:${v.line}`)
-                .moveDown();
-        });
-    }
-
-    private addFooter() {
-        // Simple footer logic (simplified for prototype)
+        doc.fontSize(16).text('Files Analyzed').moveDown(0.5);
+        for (const file of this.report.files_analyzed) doc.fontSize(10).text(file);
+        doc.end();
+        return complete;
     }
 }
