@@ -23,6 +23,63 @@ const count=(xs,key)=>Object.fromEntries([...new Set(xs.map(x=>x[key]))].sort().
 const decisions={V0_DOCUMENTARY_CLOSURE:'PASS',CONTROLLED_DEMO_READINESS:'HOLD',EXTERNAL_PUBLICATION_READINESS:'HOLD',TENANT_ASSURANCE_READINESS:'HOLD',CERTIFICATION_READINESS:'HOLD'};
 const buckets={V0_DOCUMENTARY_BLOCKER:0,V1_IMPLEMENTATION_DEPENDENCY:2,EXTERNAL_PUBLICATION_GATE:49,CUSTOMER_SPECIFIC_DEPENDENCY:3,FUTURE_EXTERNAL_ARTIFACT_DEPENDENCY:2,LEGACY_PRESENTATION_GATE:5};
 const pairs=[['UNKNOWN','FALSE'],['UNKNOWN','ZERO'],['UNKNOWN','NOT_APPLICABLE'],['MAPPED','SATISFIED'],['MAPPED','COMPLIANT'],['EVIDENCE_AVAILABLE','EVIDENCE_SUFFICIENT'],['READY','CERTIFIED'],['INTERNAL_READINESS','EXTERNAL_CERTIFICATION'],['FACTUAL_CAPABILITY','ALIGNMENT'],['ALIGNMENT','COMPLIANCE'],['REPOSITORY_IMPLEMENTATION','DEPLOYED_OPERATION'],['LOCAL_TEST','CI'],['CI','CUSTOMER_DEPLOYMENT'],['DEPLOYMENT','OPERATING_EFFECTIVENESS'],['AWARD_CRITERION_CORRESPONDENCE','AWARD_READINESS'],['AWARD_READINESS','NOMINATION / FINALIST / WINNER'],['KPI_DEFINITION','KPI_EXECUTION'],['PRODUCT_KPI','TENANT_KPI']];
+
+// These are closed historical snapshots, independent of later authorized slices.
+const historicalStart = '38df55d8b1b1009adbb76faed63f3b7c622f914e';
+const historicalClose = 'a8b8bece4f19f105e418b89996693dfaf2d0c9e1';
+const historicalBodies = new Map();
+const at = (commit, path) => {
+  const key = commit + ':' + path;
+  if (!historicalBodies.has(key)) historicalBodies.set(key, execFileSync('git', ['show', key], { encoding: 'utf8', maxBuffer: 30 * 1024 * 1024 }));
+  return historicalBodies.get(key).replace(/\r\n/g, '\n');
+};
+const changed = (paths = []) => git(['diff', '--name-only', historicalStart, historicalClose, '--', ...paths]).trim().split('\n').filter(Boolean);
+function assertClosed(end = historicalClose, begin = historicalStart) {
+  git(['merge-base', '--is-ancestor', begin, end]);
+  git(['merge-base', '--is-ancestor', end, 'HEAD']);
+  assert.equal(begin, historicalStart, 'historical start must remain frozen');
+  assert.equal(end, historicalClose, 'historical close must remain frozen');
+}
+function assertHistoricalPin(p, commit, exactAnchor = false) {
+  assert.equal(p.selection_commit, commit, 'historical selection commit');
+  const body = at(commit, p.path);
+  if (p.git_blob) assert.equal(p.git_blob, git(['rev-parse', commit + ':' + p.path]).trim());
+  assert.equal(createHash('sha256').update(body).digest('hex'), p.sha256_lf_utf8, p.path);
+  if (p.line) {
+    const line = body.split('\n')[p.line - 1];
+    if (exactAnchor) assert.equal(line?.trim(), p.anchor); else assert.ok(line?.includes(p.anchor), 'historical anchor: ' + p.path);
+    // Legacy S5 source observations record commit/path/line without a URL field.
+    if (p.locator !== undefined) assert.equal(p.locator, 'https://github.com/cnegrao/code-guard-governance/blob/' + commit + '/' + p.path + '#L' + p.line);
+  }
+}
+// Existing S1 evidence supplies a recorded hash/anchor/locator for scope-only guards too.
+// No hash or anchor is generated from the body being verified.
+function closureEvidence() {
+  const e = JSON.parse(at(historicalClose, 'docs/trust-assurance/evidence-index-v0.json')).evidence[0];
+  return { path: e.path, line: e.line, anchor: e.anchor, selection_commit: e.source_commit,
+    sha256_lf_utf8: e.content_sha256_lf_utf8, locator: e.exact_locator };
+}
+const evidenceCommit = 'acb95f84036b9bd5759c8afa04460bf1a004595f';
+function verifyHorizon() {
+  assertClosed();
+  assertHistoricalPin(closureEvidence(), evidenceCommit);
+}
+function rejectHistoricalMutations(scopeChecks, pin = closureEvidence(), commit = evidenceCommit) {
+  verifyHorizon();
+  for (const [check, files] of scopeChecks) {
+    check(files);
+    assert.throws(() => check([...files, 'supabase/migrations/__unauthorized_during_slice__.sql']), /scope|unchanged|Expected/i);
+  }
+  assert.throws(() => assertClosed(git(['rev-parse', 'HEAD']).trim()), /historical close/);
+  assert.throws(() => assertClosed(git(['rev-parse', historicalStart + '^']).trim()), /Command failed/);
+  assertHistoricalPin(pin, commit);
+  for (const mutation of [
+    { sha256_lf_utf8: '0'.repeat(64) }, { anchor: '__MUTATED_HISTORICAL_ANCHOR__' },
+    { locator: pin.locator.replace(commit, git(['rev-parse', 'HEAD']).trim()) },
+    { selection_commit: git(['rev-parse', 'HEAD']).trim() },
+  ]) assert.throws(() => assertHistoricalPin({ ...pin, ...mutation }, commit));
+}
+
 function validateReview(x){
  assert.equal(x.review_id,'M17.5-S5-V0-CLOSURE');assert.equal(x.starting_head,start);
  assert.deepEqual(x.decisions,decisions);assert.match(x.overall_milestone,/^OPEN/);
@@ -107,7 +164,7 @@ test('S5: exact inventory Git commits/blobs/digests and immutable S0 -> S4 paren
  }
  for(const a of d.input_inventory){
   assert.equal(a.selection_commit,start);assert.equal(a.last_change_commit,git(['log','-1','--format=%H',start,'--',a.path]));
-  assert.equal(a.git_blob,git(['rev-parse',start+':'+a.path]));assert.equal(hash(readFileSync(a.path,'utf8')),a.sha256_lf_utf8);
+  assert.equal(a.git_blob,git(['rev-parse',start+':'+a.path]));assert.equal(hash(at(a.selection_commit,a.path)),a.sha256_lf_utf8);
   for(const commit of expected.slice(1)){
    if(!git(['ls-tree',commit,'--',a.path]))continue;
    assert.equal(git(['rev-parse',commit+':'+a.path]),a.git_blob,'silent replacement '+a.path+' at '+commit);
@@ -119,8 +176,8 @@ test('S5: exact inventory Git commits/blobs/digests and immutable S0 -> S4 paren
   for(const pin of doc.input_artifacts??doc.source_artifacts){
    const required=doc===gaps||doc===claims?(pin.path===d.input_inventory.find(x=>x.artifact_id==='S0').path?expected[1]:expected[2]):expectedCommit;
    assert.equal(pin.commit,required,'exact historical pin');
-   const text=execFileSync('git',['show',pin.commit+':'+pin.path],{encoding:'utf8'});
-   assert.equal(hash(text),hash(readFileSync(pin.path,'utf8')));if(pin.sha256_lf_utf8)assert.equal(hash(text),pin.sha256_lf_utf8);
+   const text=at(pin.commit,pin.path);
+   assert.equal(hash(text),by(d.input_inventory,'path',pin.path).sha256_lf_utf8);if(pin.sha256_lf_utf8)assert.equal(hash(text),pin.sha256_lf_utf8);
    if(pin.git_blob)assert.equal(git(['rev-parse',pin.commit+':'+pin.path]),pin.git_blob);
   }
  }
@@ -170,10 +227,11 @@ test('S5: lawful source boundary stays bounded; no third-party authority or reco
  assert.match(d.framework_boundary[1].review,/No current operative law/);
 });
 test('S5: legacy locator observations, exclusions and all 12 gates remain explicit; no SAFE promotion',()=>{
- const legacy=readFileSync(d.input_inventory.find(x=>x.artifact_id==='LEGACY').path,'utf8');
+ verifyHorizon(); assertDocumentaryScope();
+ const legacy=at(start,d.input_inventory.find(x=>x.artifact_id==='LEGACY').path);
  for(const g of d.legacy_gates){
   if(g.evidence_ids){assert.ok(legacy.includes('| '+g.surface_id+':'));for(const e of g.evidence_ids)by(index.evidence,'evidence_id',e);}
-  for(const p of [g.source,...g.related_sources??[]].filter(Boolean)){assert.equal(p.selection_commit,start);assert.equal(p.git_blob,git(['rev-parse',start+':'+p.path]));const text=readFileSync(p.path,'utf8');assert.equal(hash(text),p.sha256_lf_utf8);assert.equal(text.split(/\r?\n/)[p.line-1].trim(),p.anchor);}
+  for(const p of [g.source,...g.related_sources??[]].filter(Boolean)) assertHistoricalPin(p,start,true);
  }
  assert.match(d.legacy_review_scope,/No tracked M18 pre-draft document was located/);
  assert.equal(d.legacy_gates.filter(g=>g.classification==='SAFE').length,1);
@@ -198,4 +256,27 @@ test('S5 adversarial: reject fabricated closure/publication, closed gaps, above-
   x=>x.kpi_boundary.executed_results=1,x=>x.kpi_boundary.types.push('PERCENTAGE'),x=>x.delta.UI=1,
  ];
  for(const mutate of mutations){const changed=structuredClone(d);mutate(changed);assert.throws(()=>validateReview(changed));}
+});
+
+// Same original staged-candidate path set, evaluated at its historical closure.
+function assertDocumentaryScope(files = changed()) {
+  assert.deepEqual([...files].sort(), [
+  "docs/agent/ARCHITECTURE_INDEX.md",
+  "docs/codex/evidence/2026-10-20-m17.5-s5-v0-closure.md",
+  "docs/trust-assurance/closure-render-v0.mjs",
+  "docs/trust-assurance/v0-closure-review.json",
+  "docs/trust-assurance/v0-closure-review.md",
+  "docs/trust-assurance/verify-s5-final.test.mjs",
+  "docs/trust-assurance/verify-s5.test.mjs"
+], 'historical documentary scope');
+}
+
+test('verify-s5: historical scope, boundary, hash, anchor and locator mutations fail closed', () => {
+  rejectHistoricalMutations([[assertDocumentaryScope, changed()]]);
+  const p = d.legacy_gates.flatMap(g=>[g.source,...g.related_sources??[]]).find(Boolean);
+  assertHistoricalPin(p, start, true);
+  for (const mutation of [
+    { sha256_lf_utf8: '0'.repeat(64) }, { anchor: '__MUTATED_HISTORICAL_ANCHOR__' },
+    { selection_commit: git(['rev-parse', 'HEAD']) },
+  ]) assert.throws(() => assertHistoricalPin({ ...p, ...mutation }, start, true));
 });

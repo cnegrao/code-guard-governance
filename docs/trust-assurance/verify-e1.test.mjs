@@ -13,6 +13,62 @@ const claims=json('commercial-claims-register-v0'),gaps=json('gap-register-v0');
 const git=args=>execFileSync('git',args,{encoding:'utf8',maxBuffer:20*1024*1024}).trim();
 const hash=s=>createHash('sha256').update(s.replace(/\r\n/g,'\n')).digest('hex');
 const unique=(xs,key)=>assert.equal(new Set(xs.map(x=>x[key])).size,xs.length,key);
+
+// These are closed historical snapshots, independent of later authorized slices.
+const historicalStart = 'a8b8bece4f19f105e418b89996693dfaf2d0c9e1';
+const historicalClose = 'a85f97225777e1dd1fd67109a349c3be6e45d0ad';
+const historicalBodies = new Map();
+const at = (commit, path) => {
+  const key = commit + ':' + path;
+  if (!historicalBodies.has(key)) historicalBodies.set(key, execFileSync('git', ['show', key], { encoding: 'utf8', maxBuffer: 30 * 1024 * 1024 }));
+  return historicalBodies.get(key).replace(/\r\n/g, '\n');
+};
+const changed = (paths = []) => git(['diff', '--name-only', historicalStart, historicalClose, '--', ...paths]).trim().split('\n').filter(Boolean);
+function assertClosed(end = historicalClose, begin = historicalStart) {
+  git(['merge-base', '--is-ancestor', begin, end]);
+  git(['merge-base', '--is-ancestor', end, 'HEAD']);
+  assert.equal(begin, historicalStart, 'historical start must remain frozen');
+  assert.equal(end, historicalClose, 'historical close must remain frozen');
+}
+function assertHistoricalPin(p, commit, exactAnchor = false) {
+  assert.equal(p.selection_commit, commit, 'historical selection commit');
+  const body = at(commit, p.path);
+  if (p.git_blob) assert.equal(p.git_blob, git(['rev-parse', commit + ':' + p.path]).trim());
+  assert.equal(createHash('sha256').update(body).digest('hex'), p.sha256_lf_utf8, p.path);
+  if (p.line) {
+    const line = body.split('\n')[p.line - 1];
+    if (exactAnchor) assert.equal(line?.trim(), p.anchor); else assert.ok(line?.includes(p.anchor), 'historical anchor: ' + p.path);
+    assert.equal(p.locator, 'https://github.com/cnegrao/code-guard-governance/blob/' + commit + '/' + p.path + '#L' + p.line);
+  }
+}
+// Existing S1 evidence supplies a recorded hash/anchor/locator for scope-only guards too.
+// No hash or anchor is generated from the body being verified.
+function closureEvidence() {
+  const e = JSON.parse(at(historicalClose, 'docs/trust-assurance/evidence-index-v0.json')).evidence[0];
+  return { path: e.path, line: e.line, anchor: e.anchor, selection_commit: e.source_commit,
+    sha256_lf_utf8: e.content_sha256_lf_utf8, locator: e.exact_locator };
+}
+const evidenceCommit = 'acb95f84036b9bd5759c8afa04460bf1a004595f';
+function verifyHorizon() {
+  assertClosed();
+  assertHistoricalPin(closureEvidence(), evidenceCommit);
+}
+function rejectHistoricalMutations(scopeChecks, pin = closureEvidence(), commit = evidenceCommit) {
+  verifyHorizon();
+  for (const [check, files] of scopeChecks) {
+    check(files);
+    assert.throws(() => check([...files, 'supabase/migrations/__unauthorized_during_slice__.sql']), /scope|unchanged|Expected/i);
+  }
+  assert.throws(() => assertClosed(git(['rev-parse', 'HEAD']).trim()), /historical close/);
+  assert.throws(() => assertClosed(git(['rev-parse', historicalStart + '^']).trim()), /Command failed/);
+  assertHistoricalPin(pin, commit);
+  for (const mutation of [
+    { sha256_lf_utf8: '0'.repeat(64) }, { anchor: '__MUTATED_HISTORICAL_ANCHOR__' },
+    { locator: pin.locator.replace(commit, git(['rev-parse', 'HEAD']).trim()) },
+    { selection_commit: git(['rev-parse', 'HEAD']).trim() },
+  ]) assert.throws(() => assertHistoricalPin({ ...pin, ...mutation }, commit));
+}
+
 function validate(x){
  assert.equal(x.errata_id,'M17.5-V0-E1');assert.equal(x.reviewed_head,base);
  assert.equal(x.authority.reviewed_head,base);assert.equal(x.authority.reported_P0,0);assert.equal(x.authority.reported_P1,0);
@@ -81,17 +137,17 @@ test('E1: corrected semantics, populations, exposure inputs, mandatory unresolve
  assert.equal(gaps.gaps.length,61);assert.ok(gaps.gaps.every(g=>g.status==='OPEN'));
  assert.equal(claims.claims.length,42);assert.ok(claims.claims.every(c=>c.eligibility==='INELIGIBLE'));validate(d);
 });
-test('E1: all historical S0-S5 inputs retain exact Git blobs and working content',()=>{
+test('E1: all historical S0-S5 inputs retain exact historical Git blobs and content',()=>{
  const tree=new Map(git(['ls-tree','-r',base]).split('\n').map(l=>{const [meta,path]=l.split('\t');return [path,meta.split(' ')[2]];}));
  const expected=[...new Set([...tree.keys()].filter(p=>p.startsWith(root)).concat(s5.input_inventory.map(a=>a.path),'docs/codex/evidence/2026-10-20-m17.5-s5-v0-closure.md'))].sort();
  assert.deepEqual(d.historical_artifacts.map(a=>a.path),expected);
- for(const a of d.historical_artifacts){assert.equal(a.selection_commit,base);assert.equal(a.git_blob,tree.get(a.path));assert.equal(hash(readFileSync(a.path,'utf8')),a.sha256_lf_utf8,a.path);assert.equal(hash(execFileSync('git',['show',base+':'+a.path],{encoding:'utf8',maxBuffer:20*1024*1024})),a.sha256_lf_utf8,a.path+' base content');}
+ for(const a of d.historical_artifacts){assert.equal(a.selection_commit,base);assert.equal(a.git_blob,tree.get(a.path));assert.equal(hash(at(a.selection_commit,a.path)),a.sha256_lf_utf8,a.path+' historical content');}
 });
 test('E1: source locators pin unchanged bytes and actual line anchors, Markdown fully projects JSON',()=>{
- // Shared pins are verified once, avoiding redundant Git subprocesses.
+ verifyHorizon(); assertDocumentaryScope();
+ // Shared source bodies are cached by immutable commit/path.
  const pins=[...d.appended_exposure_gates.flatMap(g=>g.sources),...d.exposure_scope_expansions.flatMap(g=>g.sources)];
- const blobs=new Map();
- for(const p of pins){if(!blobs.has(p.path))blobs.set(p.path,git(['rev-parse',base+':'+p.path]));assert.equal(p.selection_commit,base);assert.equal(p.git_blob,blobs.get(p.path));const body=readFileSync(p.path,'utf8');assert.equal(hash(body),p.sha256_lf_utf8);assert.ok(body.split(/\r?\n/)[p.line-1].includes(p.anchor));assert.equal(p.locator,`https://github.com/cnegrao/code-guard-governance/blob/${base}/${p.path}#L${p.line}`);}
+ for(const p of pins) assertHistoricalPin(p,base);
  for(const p of [d.claim_ceiling_precedence.source,d.populations.assurance_gap_population.source,d.populations.presentation_exposure_gate_population.base_source,d.mandatory_v1_acceptance_inputs[0].historical_source]){
   assert.deepEqual(p,d.historical_artifacts.find(a=>a.path===p.path));
  }
@@ -118,4 +174,21 @@ test('E1 negative mutations reject promotion, omitted audit/PDF, mixed populatio
   x=>x.corrected_interpretations[2].canonical_architecture_at_reviewed_head=true,
  ];
  for(const mutate of mutations){const x=structuredClone(d);mutate(x);assert.throws(()=>validate(x));}
+});
+
+// Same original staged-candidate path set, evaluated at its historical closure.
+function assertDocumentaryScope(files = changed()) {
+  assert.deepEqual([...files].sort(), [
+  "docs/agent/ARCHITECTURE_INDEX.md",
+  "docs/codex/evidence/2026-10-20-m17.5-v0-e1-adversarial-errata.md",
+  "docs/trust-assurance/errata-render-v1.mjs",
+  "docs/trust-assurance/v0-closure-errata-v1.json",
+  "docs/trust-assurance/v0-closure-errata-v1.md",
+  "docs/trust-assurance/verify-e1-final.test.mjs",
+  "docs/trust-assurance/verify-e1.test.mjs"
+], 'historical documentary scope');
+}
+
+test('verify-e1: historical scope, boundary, hash, anchor and locator mutations fail closed', () => {
+  rejectHistoricalMutations([[assertDocumentaryScope, changed()]], d.appended_exposure_gates.flatMap(g=>g.sources)[0], base);
 });

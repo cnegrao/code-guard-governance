@@ -17,6 +17,62 @@ const git = args => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 20 
 const hash = text => createHash('sha256').update(text.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
 const unique = (items, key) => assert.equal(new Set(items.map(x => x[key])).size, items.length, key);
 
+
+// These are closed historical snapshots, independent of later authorized slices.
+const historicalStart = 'c3fcf7228530aa5f165361d78ad76cf5f612feb0';
+const historicalClose = '38314b7ea20e479f4d108ea1b48fd37c78d37ebf';
+const historicalBodies = new Map();
+const at = (commit, path) => {
+  const key = commit + ':' + path;
+  if (!historicalBodies.has(key)) historicalBodies.set(key, execFileSync('git', ['show', key], { encoding: 'utf8', maxBuffer: 30 * 1024 * 1024 }));
+  return historicalBodies.get(key).replace(/\r\n/g, '\n');
+};
+const changed = (paths = []) => git(['diff', '--name-only', historicalStart, historicalClose, '--', ...paths]).trim().split('\n').filter(Boolean);
+function assertClosed(end = historicalClose, begin = historicalStart) {
+  git(['merge-base', '--is-ancestor', begin, end]);
+  git(['merge-base', '--is-ancestor', end, 'HEAD']);
+  assert.equal(begin, historicalStart, 'historical start must remain frozen');
+  assert.equal(end, historicalClose, 'historical close must remain frozen');
+}
+function assertHistoricalPin(p, commit, exactAnchor = false) {
+  assert.equal(p.selection_commit, commit, 'historical selection commit');
+  const body = at(commit, p.path);
+  if (p.git_blob) assert.equal(p.git_blob, git(['rev-parse', commit + ':' + p.path]).trim());
+  assert.equal(createHash('sha256').update(body).digest('hex'), p.sha256_lf_utf8, p.path);
+  if (p.line) {
+    const line = body.split('\n')[p.line - 1];
+    if (exactAnchor) assert.equal(line?.trim(), p.anchor); else assert.ok(line?.includes(p.anchor), 'historical anchor: ' + p.path);
+    assert.equal(p.locator, 'https://github.com/cnegrao/code-guard-governance/blob/' + commit + '/' + p.path + '#L' + p.line);
+  }
+}
+// Existing S1 evidence supplies a recorded hash/anchor/locator for scope-only guards too.
+// No hash or anchor is generated from the body being verified.
+function closureEvidence() {
+  const e = JSON.parse(at(historicalClose, 'docs/trust-assurance/evidence-index-v0.json')).evidence[0];
+  return { path: e.path, line: e.line, anchor: e.anchor, selection_commit: e.source_commit,
+    sha256_lf_utf8: e.content_sha256_lf_utf8, locator: e.exact_locator };
+}
+const evidenceCommit = 'acb95f84036b9bd5759c8afa04460bf1a004595f';
+function verifyHorizon() {
+  assertClosed();
+  assertHistoricalPin(closureEvidence(), evidenceCommit);
+}
+function rejectHistoricalMutations(scopeChecks, pin = closureEvidence(), commit = evidenceCommit) {
+  verifyHorizon();
+  for (const [check, files] of scopeChecks) {
+    check(files);
+    assert.throws(() => check([...files, 'supabase/migrations/__unauthorized_during_slice__.sql']), /scope|unchanged|Expected/i);
+  }
+  assert.throws(() => assertClosed(git(['rev-parse', 'HEAD']).trim()), /historical close/);
+  assert.throws(() => assertClosed(git(['rev-parse', historicalStart + '^']).trim()), /Command failed/);
+  assertHistoricalPin(pin, commit);
+  for (const mutation of [
+    { sha256_lf_utf8: '0'.repeat(64) }, { anchor: '__MUTATED_HISTORICAL_ANCHOR__' },
+    { locator: pin.locator.replace(commit, git(['rev-parse', 'HEAD']).trim()) },
+    { selection_commit: git(['rev-parse', 'HEAD']).trim() },
+  ]) assert.throws(() => assertHistoricalPin({ ...pin, ...mutation }, commit));
+}
+
 function validateSources(c) {
   unique(c.framework_versions, 'framework_version_id');
   unique(c.requirements, 'requirement_id');
@@ -163,10 +219,19 @@ test('Markdown has the same 38 dispositions, 109 evidence rows and all five cont
   for (const l of s0.legacy_surfaces) assert.ok(legacy.includes(`| ${l.surface_id}: ${l.surface} | ${l.classification} |`));
   for (const text of [matrix,walk,evidence,legacy]) assert.doesNotMatch(text,/\b\d+(?:\.\d+)?\s*%/);
 });
+function assertS1Scope(files = changed()) {
+  const allowed = new Set(['docs/agent/ARCHITECTURE_INDEX.md', 'docs/codex/evidence/2026-10-20-m17.5-s1-source-crosswalk.md']);
+  for (const f of files) assert.ok(allowed.has(f) || f.startsWith(root), 'out-of-scope file ' + f);
+}
+
 test('S1 delta is documentation-only, S0 unchanged; no runtime/migration/API/UI/configuration delta',()=>{
-  assert.equal(git(['show',start+':'+inventoryPath]).replace(/\r\n/g,'\n'),readFileSync(inventoryPath,'utf8').replace(/\r\n/g,'\n'));
-  const files=[...git(['diff','--name-only',start,'--']).trim().split('\n'),...git(['ls-files','--others','--exclude-standard']).trim().split('\n')].filter(Boolean);
-  const allowed=new Set(['docs/agent/ARCHITECTURE_INDEX.md','docs/codex/evidence/2026-10-20-m17.5-s1-source-crosswalk.md']);
-  for (const f of files) assert.ok(allowed.has(f)||f.startsWith(root),'out-of-scope file '+f);
-  assert.equal(git(['diff','--name-only',start,'--','docs/architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md','docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.md']).trim(),'');
+  assert.equal(at(start,inventoryPath),at(historicalClose,inventoryPath));
+  verifyHorizon();
+  assertS1Scope();
+  assert.equal(git(['rev-list', '--count', start + '..' + historicalClose]).trim(), '1');
+  assert.equal(git(['diff','--name-only',start,historicalClose,'--','docs/architecture/ADR-GOVIA-TRUST-ASSURANCE-v1.md','docs/codex/evidence/2026-10-20-m17.5-s0-trust-assurance-inventory.md']).trim(),'');
+});
+
+test('verify-v0: historical scope, boundary, hash, anchor and locator mutations fail closed', () => {
+  rejectHistoricalMutations([[assertS1Scope, changed()]]);
 });
