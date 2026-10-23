@@ -15,7 +15,8 @@ export async function semanticCluster(diagnostic:(m:string)=>void) {
   await pg.applyFoundation();
   for(const n of ['20261021134359_m175_v1_s1a1_2a_ledger_v2_write_cutover.sql','20261021201316_m175_v1_s1a1_2b_ledger_v2_tenant_read.sql'])
     await pg.owner(readFileSync(join(ledgerRepo,'supabase/migrations',n),'utf8'));
-  const canonical=readdirSync(join(ledgerRepo,'supabase/migrations')).filter(n=>/^\d{14}_.*\.sql$/.test(n)).sort();
+  // Keep this historical SR1 horizon exact when later additive slices are present.
+  const canonical=readdirSync(join(ledgerRepo,'supabase/migrations')).filter(n=>/^\d{14}_.*\.sql$/.test(n)&&n<=semanticMigration).sort();
   assert.equal(canonical.length,103);assert.equal(canonical.at(-1),semanticMigration);
   const prior=await pg.owner(`SELECT jsonb_agg(to_jsonb(p) ORDER BY oid)::text FROM pg_proc p WHERE pronamespace='gov_repo'::regnamespace`);
   const privileges=await pg.owner(`SELECT jsonb_build_object('tables',(SELECT jsonb_agg(jsonb_build_object('name',relname,'owner',relowner,'acl',relacl,'rls',relrowsecurity) ORDER BY relname) FROM pg_class WHERE relnamespace='gov_repo'::regnamespace),

@@ -231,3 +231,9 @@ A1's exact proposed objective is the typed **technical foundation only**, not an
 A0 CLOSED / ARCHITECTURE PASS. Mandatory product capabilities preserved **by target design only**; implemented parity **NOT PROVEN**, cutover **BLOCKED**. SR1 unchanged. C3 STOPPED; LX03 NEEDS_CONTAINMENT; LX01/LX04/LX05/LX06/LX07 OPEN. V1-S1B/M17.5 OPEN. CONTROLLED_DEMO_READINESS, EXTERNAL_PUBLICATION_READINESS, TENANT_ASSURANCE_READINESS, CERTIFICATION_READINESS and M18 HOLD. Previous contained families unchanged, not retested. No new canonical/Authority Policy/Passport authority, runtime, SQL, database, hosted, provider, deployment or PR delta.
 
 **DO NOT START SR2-A1. RETURN TO ARCHITECTURE REVIEW AFTER A0.**
+
+## 16. Additive A1 implementation checkpoint — 2026-10-23
+
+**A1 IMPLEMENTED / LOCAL PASS.** The A0 stop instruction above records the historical architecture gate. Carlos subsequently authorized the reviewed 24-table design and final reduction from 61 to 59 triggers. [A1 implementation evidence](../codex/evidence/2026-10-23-m17.5-v1-s1b-c3-sr2-a1-typed-technical-foundation.md) records the exact additive migration, identity/catalog pins, zero application capabilities and PostgreSQL acceptance. Seven plural facet families, immutable source admissions and explicit bounded summary source sets resolve the three implementation-design blockers.
+
+This checkpoint implements technical storage only. A2–A6 require their separately authorized work; product parity, provider qualification, population, Talk integration and legacy disconnection remain unproven/deferred. C3 STOPPED, LX03 NEEDS_CONTAINMENT, M17.5 OPEN, all readiness and M18 HOLDs remain.

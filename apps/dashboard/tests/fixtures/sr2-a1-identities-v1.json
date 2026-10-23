@@ -1,0 +1,132 @@
+{
+  "root": "b3e8392c49800c05c609d67959d861ff551c3bf5fa34f0c7a6a8cbfe77dd0467",
+  "snapshot": "bc7f0c36459a72233b4782dccb8d6049197176e13bc08d315cfe6ffcf90155ac",
+  "manifest": "e9a7c17ce041f5f966b549f97d0f61ea21b40141f8fcf7792259e9e69aaf6378",
+  "entries": [
+    "41fc114e885c5abb2148ca86ac4dc9a35685a2179fd4ae4c7946dab28bd2c0ad",
+    "70e74ed276eb303f9ba1ae8a07ca0f144d7308bf9d2db073e447b7f254ddd4d2"
+  ],
+  "locators": [
+    "28c30387a69187fc61bfb67e7b1a5114e484b91607ac2130d24164baf82d04a8",
+    "b80587fad841377f5c5978c4ff13cdbe1b6a23cad4573a37a47ad812cf88c688"
+  ],
+  "subjects": [
+    "3fc647d4a2bf4f004ed55b8d3645d67b5579a0958a229ca7d7763122908b25eb",
+    "ca73762bf1f6a2fcad037ffc97314c6761719f8ac54d655bf4e36f882c9d1d86",
+    "a7904997c10dfb3b8fb92d1f35e7b2e41dc62792259762cf90ed290536485538"
+  ],
+  "admissions": [
+    {
+      "id": "ab421d1a6807cd83fbcb828eb01c4399ed21c91f2bfde6f82a364d7b2ed57f2c",
+      "basis": "13a469ce1d44610533a61742c9c3186095ffddc341260ae431cb50d536c3ba90"
+    },
+    {
+      "id": "c634b5ce4e7f560e5eb5339687a4681500f04ab884dbcfbc0e12f2fea8c6fec0",
+      "basis": "f8c11e76b2565fd7a7bcfa5eba55535bf893317e96a7966c4c9e89ff4b73b30a"
+    }
+  ],
+  "sets": [
+    {
+      "id": "148b8f9f1edc397582f1f0e87dd7a4a164a0500a6772144aad0269d586a1248a",
+      "membership": "a91be4ecdc4d4b5c28fd007e8c2bff0d16e78e01516430d547ce1ea2b601b103"
+    },
+    {
+      "id": "c1dc935882c56300d01f16df47da3f8d7445a157aa80f5581fe523bcf787cb9e",
+      "membership": "e8dc2b2a51f5e0f068ab27aeb1f1ec961d0d2a0c66d45a8def8fb3f7e95bd527"
+    },
+    {
+      "id": "9585ff66a8ae990078274df6a8fa1a6e1f4dcba56d3da89bcca252b093ebf62a",
+      "membership": "a91be4ecdc4d4b5c28fd007e8c2bff0d16e78e01516430d547ce1ea2b601b103"
+    }
+  ],
+  "facets": [
+    {
+      "kind": "MODULE_DESCRIPTOR",
+      "key": "f9d9eee71dccb538e262a2da50f50402b1a782c4b797531c77a96fbbdd5b6d95",
+      "payload": "43d81e7d986a56651d235d129f424b49424aab7ca20cabce53643f4943ab026a"
+    },
+    {
+      "kind": "MODULE_DESCRIPTOR",
+      "key": "9615b8e9bbffc1ca821497e058dd0d29fb2e83e7159fd4c16e2ce5c330323b3e",
+      "payload": "1091c0659bf2b28f03a8e0ffb561d2b732cbd1997615806ccfcdd4ef46397007"
+    },
+    {
+      "kind": "SERVICE_DESCRIPTOR",
+      "key": "11292e3edff6c89d6d924a4c96b87933f4c7b0ff2c5b2c8b76e74b700ef60193",
+      "payload": "e2bf9916394785a2f8865a4c7fc7ed65ec3fc2852c62e86770e9c7172ad16d26"
+    },
+    {
+      "kind": "SERVICE_DESCRIPTOR",
+      "key": "dbfe597af9c7c6f8852504ec9decd2be14f5965c4fcf7e9ccb59280137829b91",
+      "payload": "31dfa0e052d8e778fa60d52c5500804ed4d3e2f387529d8e6326a560c56a8e26"
+    },
+    {
+      "kind": "DEPENDENCY_DESCRIPTOR",
+      "key": "868d2f312cd09ceb600dec3a2721a92941d5287eabf06624ae17a61c1275e743",
+      "payload": "7058929fab94be7f4110a689e0e05458a26e3e6a709d27880d22b1fbfc4be0d0"
+    },
+    {
+      "kind": "DEPENDENCY_DESCRIPTOR",
+      "key": "1e968e320a7dfb3f872d6d4233861aae1ba050a2b1b096a546de28d43e239b22",
+      "payload": "cb5a636386b3ff5b69bd34e2536c53fbb789e54e34279371321ed9e4a3902681"
+    },
+    {
+      "kind": "CONFIGURATION_DESCRIPTOR",
+      "key": "639358909b8f2650900757cbf6826995bc881677290483b523f5b4f46e1ba7b4",
+      "payload": "b9180b979d082f87a449e34858d20d57711a836f3cd4a7d48ca43ee7e2b8d7d2"
+    },
+    {
+      "kind": "CONFIGURATION_DESCRIPTOR",
+      "key": "253d161dcb4b892d4b9546d703a792f8ae2a285c79aa33f5968b6252d99d4364",
+      "payload": "3a19164a457ec1bb972fd1d126ca4765a9cbf370022826af4207ee6b4b480d9f"
+    },
+    {
+      "kind": "TECHNICAL_SUMMARY",
+      "key": "cf29c9ffc1d8dec10cdc425e0317aa55426f678f6f6f3eb396b02bab7aceee31",
+      "payload": "38a2350dcf9a48e8301deb17692231e045c6d46a49db95036c3c4d47186d1c74"
+    },
+    {
+      "kind": "DOMAIN_OBSERVATION",
+      "key": "fc13496be7e31501d4249b2e8649001c10938f3812d552625169d6c463352abb",
+      "payload": "9e6beb97054e884e6c1c4521d8a14e44accba4ad1c686522e4e7d00ec4f270c3"
+    },
+    {
+      "kind": "DOMAIN_OBSERVATION",
+      "key": "ac330b372ed21b4561613ccb2a709a3f9dde0883b77612e80be9b23d83211d43",
+      "payload": "be80d9735902cb7c4336dbb47dda8c8768bfe5768babcd992ee094229bb5a7af"
+    },
+    {
+      "kind": "AGENT_DESCRIPTOR",
+      "key": "a1915283c07055f1ff328eb593a82d74970beab5d86227bd57ea3c7c94f196aa",
+      "payload": "1e8226bd8ae1df801e6034c7a8e0e6d6c28c159cbe342a7c6a2f98daef77d9a5"
+    },
+    {
+      "kind": "AGENT_DESCRIPTOR",
+      "key": "2ff5ab9641dd0d975a5f6876d0829b208701627f27eb547db690b829b78e68a7",
+      "payload": "5c57cf514c24659c25de591dbca73f7768f7fc6e3d51c4b80bf076d0fc84724b"
+    },
+    {
+      "kind": "ENTRYPOINT_DESCRIPTOR",
+      "key": "d87d8a36e5812c09ce4f29c2664364dc395cc8fca75e36d5c3e6718dd4e39eb6",
+      "payload": "0cabca42dde29039ca040dcfa9c1208408e3f0facf03dc7aa2249b4a69fdce29"
+    },
+    {
+      "kind": "ENTRYPOINT_DESCRIPTOR",
+      "key": "0a73bb1890421c2e6b51cf63eda00aaec414eefea0ebd285affbe4c44adf3064",
+      "payload": "31b7771ec5385a3610ff86e0245d118f13659ea66e6cf675abf316bd63e9cedc"
+    }
+  ],
+  "collections": [
+    "493f3b4b040b1bfef35c7d960396c1f8b0a9c2743e62e71a88d8259ecfc775fb",
+    "b304a7f4c01cc80ac9512b675ab0142f6eb6d300a3cab405244a9b4ca43870cc",
+    "dfa24d492ead9584269e33951e0ca060e6bca5dd45d139e9ee00e1d0de40df98",
+    "2f7ed2c7ec3ceeba478b786f0ee2d2f30d79f260a1cc441de4bdf030d8c033b6",
+    "3b5e5c10aaf72c554f5205b766cb663ad540ce01c80e323f239b5f78619b868c",
+    "e11c1ba728fc9fae67acb0bd646908bdfa669deb66d418c1d56c2d613907fc46",
+    "eacb25a78c1da43a0fb2cb07b6ee7b4896bc932a8eda0e4f01fd63eecd92769f",
+    "849a542067f4c4b8a2fa44abb64d3cfa36d1cc62cc8aa448242a87d9f4e85dfe"
+  ],
+  "projection": "61e8dad821caa850bb48de83b65dd085362dedfb1ff8f734db4a0006aa1be495",
+  "content": "76fe2e9859d6e9427b3f41033ee08637bbffa2f65d087f3db2fc461f061e3abc",
+  "representation": "81ab9f88308b68e2d642d06733b6bb8cfedf0c7a00c0c79ee4989e78f0c01c9b"
+}
