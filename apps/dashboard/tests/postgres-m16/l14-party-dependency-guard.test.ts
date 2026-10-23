@@ -87,11 +87,42 @@ test('M16 S1C.1R1 Party dependency commit-boundary closure (disposable PG17)', {
     assert.equal(await one(`select coalesce(proacl::text,'-')||'|'||array_to_string(proconfig,';')||'|'||prosecdef::text||'|'||pg_get_userbyid(proowner)
       from pg_proc where oid='${DECIDE}'::regprocedure`), decideBefore, 'same ACL, config, SECURITY DEFINER, owner');
     const newBody = JSON.parse(await one(`select to_json(prosrc) from pg_proc where oid='${DECIDE}'::regprocedure`)) as string;
-    const strip = (body: string) => body.replace(/^\s*--.*$\n/gm, '');
-    assert.equal(strip(newBody).replace(`  IF p_outcome = 'VALIDATE' THEN
+    // Canonicalize transport line endings only for this body comparison. Raw catalog hashes stay untouched.
+    const comparisonBody = (body: string) => body.replace(/\r\n/g, '\n').replace(/^\s*--.*$\n/gm, '');
+    const guardBlock = `  IF p_outcome = 'VALIDATE' THEN
     PERFORM gov_repo.l14_lock_party_dependency_guard_shared_v1(v_org, v_proposal.governance_party_id);
   END IF;
-`, ''), strip(JSON.parse(oldBody) as string), 'the body is the merged S1C.1 body plus exactly the VALIDATE-only shared Party guard');
+`;
+    const assertBodyDelta = (before: string, after: string) => {
+      const expected = comparisonBody(before);
+      const actual = comparisonBody(after);
+      assert.equal(actual.split(guardBlock).length - 1, 1, 'exactly one frozen VALIDATE-only Party guard block');
+      const offset = actual.indexOf(guardBlock);
+      const withoutGuard = actual.slice(0, offset) + actual.slice(offset + guardBlock.length);
+      assert.equal(withoutGuard.includes('PERFORM gov_repo.l14_lock_party_dependency_guard_shared_v1('), false,
+        'the exact Party dependency call is removed from the comparison');
+      assert.equal(withoutGuard, expected,
+        'the body is the merged S1C.1 body plus exactly the VALIDATE-only shared Party guard');
+    };
+    const beforeBody = JSON.parse(oldBody) as string;
+    assertBodyDelta(beforeBody, newBody);
+    const beforeLf = beforeBody.replace(/\r\n/g, '\n');
+    const afterLf = newBody.replace(/\r\n/g, '\n');
+    const beforeCrlf = beforeLf.replace(/\n/g, '\r\n');
+    const afterCrlf = afterLf.replace(/\n/g, '\r\n');
+    assert.notEqual(afterLf, afterCrlf, 'controlled transport representations differ');
+    assert.equal(comparisonBody(afterLf), comparisonBody(afterCrlf), 'only CRLF/LF representation is equivalent');
+    for (const before of [beforeLf, beforeCrlf]) for (const after of [afterLf, afterCrlf]) assertBodyDelta(before, after);
+    const frozenToken = "'RESPONSIBILITY_ASSIGNMENT_ALREADY_VALIDATED'";
+    assert.equal(afterLf.split(frozenToken).length - 1, 1, 'the semantic drift anchor exists exactly once');
+    for (const after of [afterLf, afterCrlf]) {
+      const drifted = after.replace(frozenToken, "'RESPONSIBILITY_ASSIGNMENT_ALREADY_VALIDATED_X'");
+      assert.equal(drifted.includes(frozenToken), false, 'the original semantic token is absent');
+      assert.throws(() => assertBodyDelta(beforeLf, drifted), /the body is the merged S1C\.1 body/,
+        'a real semantic change still fails the exact comparison');
+      assert.throws(() => assertBodyDelta(beforeLf, after.replace(guardBlock.trim().split('\n')[0], 'IF  p_outcome = \'VALIDATE\' THEN')),
+        /exactly one frozen/, 'substantive whitespace is not canonicalized');
+    }
     const after = await inventory();
     assert.equal(after.filter(p => p.app).length, 37);
     assert.equal(after.filter(p => p.app && p.owner_store).length, 27);

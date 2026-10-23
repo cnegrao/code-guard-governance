@@ -451,6 +451,29 @@ test('M16 S1C.5 privilege closure, preflight, postflight negative controls (disp
       'submit', (select encode(convert_to(prosrc,'UTF8'),'hex') from pg_proc where oid='${NEW_RPCS[0]}'::regprocedure))::text`)) as { decide: string; submit: string };
     invertDecideGuards(Buffer.from(stored.decide, 'hex').toString('utf8'));
     removeWaiverRefusal(Buffer.from(stored.submit, 'hex').toString('utf8'));
+    const driftBody = (body: string) => {
+      const originalToken = "'CONTROL_ASSESSMENT_ALREADY_VALIDATED'";
+      const mutatedToken = "'CONTROL_ASSESSMENT_ALREADY_VALIDATED_X'";
+      const offset = uniqueOffset(body, originalToken);
+      assert.equal(body.includes(mutatedToken), false, 'the drift marker is initially absent');
+      const mutated = body.slice(0, offset) + mutatedToken + body.slice(offset + originalToken.length);
+      assert.notEqual(mutated, body, 'body drift really changes the source');
+      assert.equal(mutated.includes(originalToken), false, 'the exact frozen token is absent');
+      uniqueOffset(mutated, mutatedToken);
+      const calls = [authorityCall, definitionCall, applicabilityCall, factCall, commandCall, 'IF gov_repo.l14_replay_arbitrate_v1('];
+      assertGuardOrder(body, calls);
+      assertGuardOrder(mutated, calls);
+      assert.equal(mutated.slice(0, offset), body.slice(0, offset), 'all preceding SQL is unchanged');
+      assert.equal(mutated.slice(offset + mutatedToken.length), body.slice(offset + originalToken.length),
+        'all following SQL is unchanged');
+      return mutated;
+    };
+    const bodyDrift = driftBody(decideSrc);
+    const lf = decideSrc.replace(/\r\n/g, '\n');
+    const crlf = lf.replace(/\n/g, '\r\n');
+    assert.equal(driftBody(crlf).replace(/\r\n/g, '\n'), driftBody(lf), 'body drift is equivalent for CRLF and LF');
+    assert.throws(() => driftBody(lf.replace("'CONTROL_ASSESSMENT_ALREADY_VALIDATED'", "'UNEXPECTED_TOKEN'")),
+      /missing frozen semantic anchor/, 'an absent token cannot silently become a body-hash probe');
     const outcomes = (table: string, list: string) => `alter table gov_repo.${table} drop constraint ${table}_assessment_outcome_check;
       alter table gov_repo.${table} add constraint ${table}_assessment_outcome_check check (assessment_outcome in (${list}));`;
     const controls: Array<[string, string, RegExp]> = [
@@ -487,7 +510,7 @@ test('M16 S1C.5 privilege closure, preflight, postflight negative controls (disp
       ['overload of a new RPC', `set local role postgres; create function gov_repo.l14_submit_control_assessment_proposal_v1(uuid) returns integer language sql security definer
         set search_path = pg_catalog, pg_temp as 'select 1'; revoke all on function gov_repo.l14_submit_control_assessment_proposal_v1(uuid) from public; reset role;`,
       /overload|twenty-five post-S1C\.4 \+ two S1C\.5|ACL\/definer shape/],
-      ['decide RPC body drift', decideReplace(decideSrc.replace('CONTROL_ASSESSMENT_ALREADY_VALIDATED', 'CONTROL_ASSESSMENT_ALREADY_VALIDATED_X')), /body hash changed/],
+      ['decide RPC body drift', decideReplace(bodyDrift), /body hash changed/],
       ['decide no longer takes the applicability dependency guard', decideReplace(noAppGuard), /lock order drifted|body hash changed/],
       ['decide lock order inverted (assessment KEY before the dependency guards)', decideReplace(inverted), /lock order drifted|body hash changed/],
       ['submit no longer refuses WAIVED explicitly', submitReplace(noWaiverRefusal), /WAIVED refusal drifted|body hash changed/],
