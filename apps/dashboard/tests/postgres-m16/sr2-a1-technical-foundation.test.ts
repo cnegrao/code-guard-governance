@@ -25,7 +25,7 @@ test('SR2-A1 real PG17 + pgvector: additive technical identities, assembly, cont
  await owner(source);
  // Physical planner counters can change from reads; security/schema/old routine rows cannot.
  const after=await owner(priorQuery);assert.equal(after,prior,'all prior routine/table/default/member catalog rows unchanged');
- const canonical=readdirSync(join(ledgerRepo,'supabase/migrations')).filter(n=>/^\d{14}_[a-z0-9_]+\.sql$/.test(n)).sort();
+ const canonical=readdirSync(join(ledgerRepo,'supabase/migrations')).filter(n=>/^\d{14}_[a-z0-9_]+\.sql$/.test(n)&&n<=a1Migration).sort();
  assert.equal(canonical.length,104);assert.equal(canonical.at(-1),a1Migration);t.diagnostic('Canonical replay from empty: 103 prior + A1 = 104; PG17.11 / pgvector 0.8.7');
  const catalog=JSON.parse(await owner(catalogQuery));
  const counts={tables:catalog.tables.length,indexes:catalog.indexes.length,checks:catalog.constraints.filter((c:any)=>c.type==='c').length,fks:catalog.constraints.filter((c:any)=>c.type==='f').length,uniques:catalog.constraints.filter((c:any)=>c.type==='u').length,functions:catalog.functions.length,triggers:catalog.triggers.length};
@@ -151,7 +151,7 @@ test('SR2-A1 real PG17 + pgvector: additive technical identities, assembly, cont
   assert.equal(await owner(`SELECT count(*) FROM gov_repo.sr2_projections_v1 WHERE projection_id=${lit(p.row.projection_id)}`),'0');
  });
  await testCase('late distinct children cannot alter sealed manifests, source sets, plural collections, fragments or admissions',async()=>{
-  const newEntry={...s.entries[0],relative_path:'src/late.ts'};newEntry.entry_id=H('SOURCE_ENTRY',...keys(newEntry),newEntry.relative_path,newEntry.entry_kind,newEntry.provider_object_id,newEntry.source_fingerprint,newEntry.encoding_id,newEntry.line_count);
+  const newEntry:Row={...s.entries[0],relative_path:'src/late.ts'};newEntry.entry_id=H('SOURCE_ENTRY',...keys(newEntry),newEntry.relative_path,newEntry.entry_kind,newEntry.provider_object_id,newEntry.source_fingerprint,newEntry.encoding_id,newEntry.line_count);
   await bad([{table:'manifest_entries',row:newEntry}],/SR2_MANIFEST_COUNT/);
   await bad([{table:'source_set_members',row:{...primary.children[0],source_subject_id:s.subjects[4].subject_id,entry_id:s.entries[4].entry_id,source_fingerprint:s.entries[4].source_fingerprint}}],/SR2_SOURCE_SET_COUNT/);
   const newItem=facet(s.k,s.rootSubject,grounding.row,2,'late');newItem.row.projection_id=full.row.projection_id;await bad([newItem],/SR2_FACET_COUNT/);
@@ -199,7 +199,7 @@ test('SR2-A1 real PG17 + pgvector: additive technical identities, assembly, cont
   await bad([...selected.rows,...sets.flatMap(x=>x.rows),...rejected.rows],/SR2_PROJECTION_BOUND/);
  });
  await testCase('recomputed valid identities cannot bypass tenant-inclusive FK edges',async()=>{
-  const foreignRoot={...r.row,organisation_id:orgB};foreignRoot.repository_id=H('ROOT',orgB,foreignRoot.connection_id,foreignRoot.source_system_id,foreignRoot.provider_code,foreignRoot.provider_instance_id,foreignRoot.provider_repository_id);
+  const foreignRoot:Row={...r.row,organisation_id:orgB};foreignRoot.repository_id=H('ROOT',orgB,foreignRoot.connection_id,foreignRoot.source_system_id,foreignRoot.provider_code,foreignRoot.provider_instance_id,foreignRoot.provider_repository_id);
   await bad([{table:'repositories',row:foreignRoot}],/SR2_REPOSITORY_ATTESTATION|23503/);
   const forged=snapshot({...r.row,organisation_id:orgB},1,'7'.repeat(40));await bad(forged.rows,/23503/);
   const sub=subject(s.k,'REPOSITORY_CHUNK',sB.entries[0].source_fingerprint,sB.entries[0].entry_id,null,sB.locators[0].locator_id,null);await bad([{table:'subjects',row:sub}],/23503/);
@@ -220,7 +220,7 @@ test('SR2-A1 real PG17 + pgvector: additive technical identities, assembly, cont
  });
  await testCase('all 24 tables reject zero-row UPDATE, DELETE, TRUNCATE CASCADE and replica mutation',async()=>{
   for(const table of catalog.tables){
-   for(const command of [`UPDATE gov_repo.${table.name} SET organisation_id=organisation_id WHERE false`,`DELETE FROM gov_repo.${table.name} WHERE false`,`TRUNCATE gov_repo.${table.name} CASCADE`])await assert.rejects(owner('BEGIN;'+command+';ROLLBACK;'),/55000.*SR2_IMMUTABLE/s);
+   for(const command of [`UPDATE gov_repo.${table.name} SET organisation_id=organisation_id WHERE false`,`DELETE FROM gov_repo.${table.name} WHERE false`,`TRUNCATE gov_repo.${table.name} CASCADE`])await assert.rejects(owner('BEGIN;'+command+';ROLLBACK;'),/55000[\s\S]*SR2_IMMUTABLE/);
    await assert.rejects(pg.bootstrapSql(`BEGIN;SET LOCAL session_replication_role=replica;DELETE FROM gov_repo.${table.name} WHERE false;ROLLBACK;`),/SR2_IMMUTABLE/);
   }
  });
