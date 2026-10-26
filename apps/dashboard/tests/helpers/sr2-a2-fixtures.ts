@@ -28,7 +28,8 @@ export async function technicalCluster(diagnostic:(message:string)=>void){
   await pg.owner(a2Source()+'\nCOMMIT;');
   const after=JSON.parse(await routines());assert.equal(after.length,438);
   assert.deepEqual(after.filter((p:any)=>before.some((b:any)=>b.oid===p.oid)),before);
-  const canonical=readdirSync(join(ledgerRepo,'supabase/migrations')).filter(n=>/^\d{14}_[a-z0-9_]+\.sql$/.test(n)).sort();
+  // A2 owns the history through its migration only; additive successors must not rewrite this historical fixture.
+  const canonical=readdirSync(join(ledgerRepo,'supabase/migrations')).filter(n=>/^\d{14}_[a-z0-9_]+\.sql$/.test(n)&&n<=a2Migration).sort();
   assert.equal(canonical.length,105);assert.equal(canonical.at(-1),a2Migration);
   diagnostic('Empty canonical 105-file replay PASS; real non-extension catalog 436 -> 438');
   return pg;

@@ -1,0 +1,630 @@
+{
+  "tables": [
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "name": "sr2_operational_agent_heads_v1",
+      "owner": "postgres",
+      "comment": "DERIVED_ANALYTICAL_NON_AUTHORITATIVE; explicit operational observation admission head."
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "name": "sr2_operational_agent_observations_v1",
+      "owner": "postgres",
+      "comment": "DERIVED_ANALYTICAL_NON_AUTHORITATIVE; immutable legacy agent observation; source data is untrusted."
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres}",
+      "rls": true,
+      "name": "sr2_operational_agent_representations_v1",
+      "owner": "postgres",
+      "comment": "DERIVED_ANALYTICAL_NON_AUTHORITATIVE; immutable exact-space operational representation."
+    }
+  ],
+  "columns": [
+    {
+      "name": "organisation_id",
+      "type": "uuid",
+      "table": "sr2_operational_agent_heads_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "source_record_id",
+      "type": "uuid",
+      "table": "sr2_operational_agent_heads_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "purpose_code",
+      "type": "text",
+      "table": "sr2_operational_agent_heads_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "observation_id",
+      "type": "text",
+      "table": "sr2_operational_agent_heads_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "enabled",
+      "type": "boolean",
+      "table": "sr2_operational_agent_heads_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "head_revision",
+      "type": "bigint",
+      "table": "sr2_operational_agent_heads_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "organisation_id",
+      "type": "uuid",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "source_record_id",
+      "type": "uuid",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "subject_id",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "observation_id",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "source_descriptor_recipe",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "source_descriptor_fingerprint",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "acquisition_method_code",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "acquisition_method_version",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "projection_recipe_id",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "projection_recipe_version",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "projection_schema_version",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "handling_recipe_id",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "handling_recipe_version",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "document_recipe",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "agent_code_label",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "agent_name_label",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "agent_type",
+      "type": "gov_repo.agent_type",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "business_domain_label",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": false,
+      "collation": "C"
+    },
+    {
+      "name": "description_disposition",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "description_text",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": false,
+      "collation": "C"
+    },
+    {
+      "name": "related_system_state",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "related_system_record_id",
+      "type": "uuid",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": false,
+      "collation": null
+    },
+    {
+      "name": "related_system_code_label",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": false,
+      "collation": "C"
+    },
+    {
+      "name": "related_system_name_label",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": false,
+      "collation": "C"
+    },
+    {
+      "name": "projection_id",
+      "type": "text",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "observed_at",
+      "type": "timestamp with time zone",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "recorded_at",
+      "type": "timestamp with time zone",
+      "table": "sr2_operational_agent_observations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "organisation_id",
+      "type": "uuid",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "source_record_id",
+      "type": "uuid",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "observation_id",
+      "type": "text",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "representation_id",
+      "type": "text",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "projection_schema_version",
+      "type": "text",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "provider_id",
+      "type": "text",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "model_id",
+      "type": "text",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "model_version",
+      "type": "text",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "dimension",
+      "type": "integer",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "document_recipe",
+      "type": "text",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": "C"
+    },
+    {
+      "name": "embedding",
+      "type": "vector",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "generated_at",
+      "type": "timestamp with time zone",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    },
+    {
+      "name": "recorded_at",
+      "type": "timestamp with time zone",
+      "table": "sr2_operational_agent_representations_v1",
+      "default": false,
+      "not_null": true,
+      "collation": null
+    }
+  ],
+  "indexes": [
+    {
+      "name": "sr2_operational_agent_heads_v1_pkey",
+      "definition": "CREATE UNIQUE INDEX sr2_operational_agent_heads_v1_pkey ON gov_repo.sr2_operational_agent_heads_v1 USING btree (organisation_id, source_record_id, purpose_code)",
+      "access_method": "btree"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_pkey",
+      "definition": "CREATE UNIQUE INDEX sr2_operational_agent_observations_v1_pkey ON gov_repo.sr2_operational_agent_observations_v1 USING btree (organisation_id, source_record_id, observation_id)",
+      "access_method": "btree"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_pkey",
+      "definition": "CREATE UNIQUE INDEX sr2_operational_agent_representations_v1_pkey ON gov_repo.sr2_operational_agent_representations_v1 USING btree (organisation_id, source_record_id, observation_id, projection_schema_version, provider_id, model_id, model_version, dimension, representation_id)",
+      "access_method": "btree"
+    }
+  ],
+  "policies": null,
+  "triggers": [
+    {
+      "name": "sr2_operational_agent_heads_v1_no_remove",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER sr2_operational_agent_heads_v1_no_remove BEFORE DELETE OR TRUNCATE ON gov_repo.sr2_operational_agent_heads_v1 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.sr2_immutable_v1()"
+    },
+    {
+      "name": "sr2_operational_agent_heads_v1_transition",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER sr2_operational_agent_heads_v1_transition BEFORE INSERT OR UPDATE ON gov_repo.sr2_operational_agent_heads_v1 FOR EACH ROW EXECUTE FUNCTION gov_repo.sr2_operational_agent_head_guard_v1()"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_immutable",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER sr2_operational_agent_observations_v1_immutable BEFORE DELETE OR UPDATE OR TRUNCATE ON gov_repo.sr2_operational_agent_observations_v1 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.sr2_immutable_v1()"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_record_time",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER sr2_operational_agent_observations_v1_record_time BEFORE INSERT ON gov_repo.sr2_operational_agent_observations_v1 FOR EACH ROW EXECUTE FUNCTION gov_repo.sr2_record_time_guard_v1()"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_immutable",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER sr2_operational_agent_representations_v1_immutable BEFORE DELETE OR UPDATE OR TRUNCATE ON gov_repo.sr2_operational_agent_representations_v1 FOR EACH STATEMENT EXECUTE FUNCTION gov_repo.sr2_immutable_v1()"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_record_time",
+      "enabled": "A",
+      "definition": "CREATE TRIGGER sr2_operational_agent_representations_v1_record_time BEFORE INSERT ON gov_repo.sr2_operational_agent_representations_v1 FOR EACH ROW EXECUTE FUNCTION gov_repo.sr2_record_time_guard_v1()"
+    }
+  ],
+  "functions": [
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=5s"
+      ],
+      "result": "jsonb",
+      "strict": false,
+      "definer": true,
+      "defaults": 0,
+      "identity": "gov_repo.operational_agent_semantic_context_search_v1(uuid,uuid,bigint,bigint,timestamp with time zone,__vector__.vector,text,text,text,integer,text,text,integer,double precision)",
+      "language": "plpgsql",
+      "parallel": "u",
+      "arguments": "p_verified_organisation_id uuid, p_verified_actor_user_id uuid, p_verified_session_iat bigint, p_verified_session_exp bigint, p_verified_credential_epoch timestamp with time zone, p_query __vector__.vector, p_provider text, p_model text, p_version text, p_dimension integer, p_schema text, p_query_recipe text, p_limit integer, p_threshold double precision",
+      "leakproof": false,
+      "volatility": "v",
+      "body_sha256": "3a72fbf08fb9fb220ff4e090c6c9e7807729c75ebca8604f6d4331dbf70567da"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "result": "trigger",
+      "strict": false,
+      "definer": false,
+      "defaults": 0,
+      "identity": "gov_repo.sr2_operational_agent_head_guard_v1()",
+      "language": "plpgsql",
+      "parallel": "u",
+      "arguments": "",
+      "leakproof": false,
+      "volatility": "v",
+      "body_sha256": "ba6470402d053f4c0a0fdea614a9a38acc3b51ed620475042cb46c2bf9770944"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "sr2_operational_agent_heads_v1_c1",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((purpose_code = 'OPERATIONAL_AGENT_CONTEXT_V1'::text) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_heads_v1_c2",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((head_revision >= 1) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_heads_v1_f1",
+      "type": "f",
+      "deferred": false,
+      "definition": "FOREIGN KEY (organisation_id, source_record_id, observation_id) REFERENCES gov_repo.sr2_operational_agent_observations_v1(organisation_id, source_record_id, observation_id)"
+    },
+    {
+      "name": "sr2_operational_agent_heads_v1_pkey",
+      "type": "p",
+      "deferred": false,
+      "definition": "PRIMARY KEY (organisation_id, source_record_id, purpose_code)"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c1",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((subject_id = encode(sha256(convert_to(gov_repo.frame_identity(ARRAY['GOVIA_SR2_OPERATIONAL_SUBJECT_V1'::text, (organisation_id)::text, 'LEGACY_AGENT_RECORD'::text, (source_record_id)::text]), 'UTF8'::name)), 'hex'::text)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c10",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((observation_id = encode(sha256(convert_to(gov_repo.frame_identity(ARRAY['GOVIA_SR2_OPERATIONAL_AGENT_OBSERVATION_V1'::text, (organisation_id)::text, (source_record_id)::text, subject_id, source_descriptor_recipe, source_descriptor_fingerprint, acquisition_method_code, acquisition_method_version, projection_recipe_id, projection_recipe_version, projection_schema_version, projection_id, handling_recipe_id, handling_recipe_version, document_recipe]), 'UTF8'::name)), 'hex'::text)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c11",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((isfinite(observed_at) AND isfinite(recorded_at) AND (observed_at <= recorded_at)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c2",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK ((((source_descriptor_recipe = 'GOVIA_SR2_OPERATIONAL_AGENT_SOURCE_DESCRIPTOR_V1'::text) AND (source_descriptor_fingerprint ~ '^[0-9a-f]{64}$'::text)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c3",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((((octet_length(acquisition_method_code) >= 1) AND (octet_length(acquisition_method_code) <= 512)) AND (acquisition_method_code ~ '[^[:space:]]'::text) AND (acquisition_method_code !~ '[[:cntrl:]]'::text) AND ((octet_length(acquisition_method_version) >= 1) AND (octet_length(acquisition_method_version) <= 512)) AND (acquisition_method_version ~ '[^[:space:]]'::text) AND (acquisition_method_version !~ '[[:cntrl:]]'::text) AND (lower(btrim(acquisition_method_version)) <> ALL (ARRAY['latest'::text, 'default'::text, 'unknown'::text]))) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c4",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK ((((projection_recipe_id = 'GOVIA_SR2_OPERATIONAL_AGENT_PROJECTION_V1'::text) AND (projection_recipe_version = '1'::text) AND (handling_recipe_id = 'GOVIA_SR2_OPERATIONAL_HANDLING_V1'::text) AND (handling_recipe_version = '1'::text) AND (document_recipe = 'GOVIA_OPERATIONAL_CONTEXT_V1'::text) AND ((octet_length(projection_schema_version) >= 1) AND (octet_length(projection_schema_version) <= 512)) AND (projection_schema_version ~ '[^[:space:]]'::text) AND (projection_schema_version !~ '[[:cntrl:]]'::text) AND (lower(btrim(projection_schema_version)) <> ALL (ARRAY['latest'::text, 'default'::text, 'unknown'::text]))) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c5",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((((octet_length(agent_code_label) >= 1) AND (octet_length(agent_code_label) <= 512)) AND (agent_code_label ~ '[^[:space:]]'::text) AND (agent_code_label !~ '[[:cntrl:]]'::text) AND ((octet_length(agent_name_label) >= 1) AND (octet_length(agent_name_label) <= 512)) AND (agent_name_label ~ '[^[:space:]]'::text) AND (agent_name_label !~ '[[:cntrl:]]'::text)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c6",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK ((((business_domain_label IS NULL) OR (((octet_length(business_domain_label) >= 1) AND (octet_length(business_domain_label) <= 512)) AND (business_domain_label ~ '[^[:space:]]'::text) AND (business_domain_label !~ '[[:cntrl:]]'::text))) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c7",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((((description_disposition = 'WITHHELD'::text) AND (description_text IS NULL)) OR ((description_disposition = 'PROJECTED'::text) AND ((octet_length(description_text) >= 1) AND (octet_length(description_text) <= 1024)) AND (description_text ~ '[^[:space:]]'::text) AND (description_text !~ '[[:cntrl:]]'::text))) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c8",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((((related_system_state = 'ABSENT'::text) AND (related_system_record_id IS NULL) AND (related_system_code_label IS NULL) AND (related_system_name_label IS NULL)) OR ((related_system_state = 'PRESENT_SAME_TENANT'::text) AND (related_system_record_id IS NOT NULL) AND ((octet_length(related_system_code_label) >= 1) AND (octet_length(related_system_code_label) <= 512)) AND (related_system_code_label ~ '[^[:space:]]'::text) AND (related_system_code_label !~ '[[:cntrl:]]'::text) AND ((octet_length(related_system_name_label) >= 1) AND (octet_length(related_system_name_label) <= 512)) AND (related_system_name_label ~ '[^[:space:]]'::text) AND (related_system_name_label !~ '[[:cntrl:]]'::text))) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_c9",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((projection_id = encode(sha256(convert_to(gov_repo.frame_identity(ARRAY['GOVIA_SR2_OPERATIONAL_AGENT_PROJECTION_V1'::text, '1'::text, (organisation_id)::text, (source_record_id)::text, subject_id, projection_schema_version, handling_recipe_id, handling_recipe_version, document_recipe, agent_code_label, agent_name_label, (agent_type)::text,\nCASE\n    WHEN (business_domain_label IS NULL) THEN 'BUSINESS_DOMAIN_ABSENT'::text\n    ELSE 'BUSINESS_DOMAIN_PRESENT'::text\nEND, COALESCE(business_domain_label, ''::text), description_disposition, COALESCE(description_text, ''::text), related_system_state, COALESCE((related_system_record_id)::text, ''::text), COALESCE(related_system_code_label, ''::text), COALESCE(related_system_name_label, ''::text)]), 'UTF8'::name)), 'hex'::text)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_f1",
+      "type": "f",
+      "deferred": false,
+      "definition": "FOREIGN KEY (organisation_id) REFERENCES gov_repo.organisations(organisation_id)"
+    },
+    {
+      "name": "sr2_operational_agent_observations_v1_pkey",
+      "type": "p",
+      "deferred": false,
+      "definition": "PRIMARY KEY (organisation_id, source_record_id, observation_id)"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_c1",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK ((((document_recipe = 'GOVIA_OPERATIONAL_CONTEXT_V1'::text) AND ((octet_length(projection_schema_version) >= 1) AND (octet_length(projection_schema_version) <= 512)) AND (projection_schema_version ~ '[^[:space:]]'::text) AND (projection_schema_version !~ '[[:cntrl:]]'::text) AND (lower(btrim(projection_schema_version)) <> ALL (ARRAY['latest'::text, 'default'::text, 'unknown'::text])) AND gov_repo.sr2_list_valid_v1(ARRAY[provider_id, model_id, model_version], 3) AND (lower(btrim(provider_id)) <> ALL (ARRAY['latest'::text, 'default'::text, 'unknown'::text])) AND (lower(btrim(model_id)) <> ALL (ARRAY['latest'::text, 'default'::text, 'unknown'::text])) AND (lower(btrim(model_version)) <> ALL (ARRAY['latest'::text, 'default'::text, 'unknown'::text]))) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_c2",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((((dimension >= 1) AND (dimension <= 16000)) AND (vector_dims(embedding) = dimension)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_c3",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK ((((vector_norm(embedding) > (0)::double precision) AND (vector_norm(embedding) <> ALL (ARRAY['NaN'::double precision, 'Infinity'::double precision]))) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_c4",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((representation_id = encode(sha256(convert_to(gov_repo.frame_identity(ARRAY['GOVIA_SR2_OPERATIONAL_AGENT_REPRESENTATION_V1'::text, (organisation_id)::text, (source_record_id)::text, observation_id, projection_schema_version, provider_id, model_id, model_version, (dimension)::text]), 'UTF8'::name)), 'hex'::text)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_c5",
+      "type": "c",
+      "deferred": false,
+      "definition": "CHECK (((isfinite(generated_at) AND isfinite(recorded_at) AND (generated_at <= recorded_at)) IS TRUE))"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_f1",
+      "type": "f",
+      "deferred": false,
+      "definition": "FOREIGN KEY (organisation_id, source_record_id, observation_id) REFERENCES gov_repo.sr2_operational_agent_observations_v1(organisation_id, source_record_id, observation_id)"
+    },
+    {
+      "name": "sr2_operational_agent_representations_v1_pkey",
+      "type": "p",
+      "deferred": false,
+      "definition": "PRIMARY KEY (organisation_id, source_record_id, observation_id, projection_schema_version, provider_id, model_id, model_version, dimension, representation_id)"
+    }
+  ]
+}
