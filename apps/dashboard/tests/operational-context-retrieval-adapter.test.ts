@@ -6,6 +6,7 @@ import { createOperationalQueryEmbeddingSource,OPERATIONAL_DOCUMENT_RECIPE,OPERA
  OPERATIONAL_QUERY_SEMANTICS } from '../lib/governance/operational-query-embedding';
 import { createTechnicalQueryEmbeddingSource,TECHNICAL_DOCUMENT_RECIPE,TECHNICAL_QUERY_RECIPE } from '../lib/governance/technical-query-embedding';
 import { operationalSpace,orgA } from './helpers/sr2-a3-fixtures';
+import { canonicalUuidCorpus,noncanonicalUuidCorpus } from './helpers/sr2-storage-parity-corpus';
 
 const principal={organisationId:orgA,userId:'22222222-2222-4222-8222-222222222222',credentialEpoch:'2026-01-01T00:00:00Z',
  issuedAtSeconds:1,expiresAtSeconds:2,informational:{}};
@@ -26,6 +27,23 @@ test('adapter executes the exact 14-argument RPC in a bounded transaction',async
  assert.equal(result.reason,'NO_COMPATIBLE_REPRESENTATIONS');const rpc=calls.find(x=>x.sql.startsWith('SELECT gov_repo.'))!;
  assert.match(rpc.sql,/operational_agent_semantic_context_search_v1\(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14\)/);
  assert.equal(rpc.values?.length,14);assert.equal(calls.at(-1)?.sql,'COMMIT');assert.equal(p.released,false);
+});
+
+test('authorization uses canonical PostgreSQL UUID syntax for both principal fields',async()=>{
+ const admitted=await query();
+ for(const id of canonicalUuidCorpus){
+  let received:unknown[]|undefined;
+  const p=pool(async(sql,values)=>{if(sql.startsWith('SELECT gov_repo.')){received=values;return {rows:[{result:unavailable}]};}return {rows:[]};});
+  await createOperationalRetrievalAdapter(p as any).retrieveOperationalContext({...principal,organisationId:id,userId:id},admitted,
+   {limit:1,threshold:0,policy_version:'EXACT_COSINE_V1'});
+  assert.deepEqual(received?.slice(0,2),[id,id]);
+ }
+ for(const id of noncanonicalUuidCorpus)for(const key of ['organisationId','userId']){
+  let connected=false;const p={async connect(){connected=true;throw Error('unexpected connection');}};
+  await assert.rejects(createOperationalRetrievalAdapter(p as any).retrieveOperationalContext({...principal,[key]:id},admitted,
+   {limit:1,threshold:0,policy_version:'EXACT_COSINE_V1'}),OperationalAuthorizationError);
+  assert.equal(connected,false);
+ }
 });
 test('adapter rejects forged and cross-domain query brands before SQL',async()=>{
  let connected=false;const p={async connect(){connected=true;throw new Error('must not connect');}};

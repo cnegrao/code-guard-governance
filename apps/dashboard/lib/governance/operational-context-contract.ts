@@ -20,14 +20,25 @@ export class OperationalTransportError extends Error {
 }
 
 const hashPattern = /^[0-9a-f]{64}$/;
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const control = /[\u0000-\u001f\u007f]/;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** PostgreSQL output form, independent of version/variant; never canonicalize identity input. */
+export const isCanonicalOperationalUuid = (x: unknown): x is string =>
+  typeof x === "string" && x.length === 36 && uuidPattern.test(x);
+const control = /[\u0000-\u001f\u007f-\u009f]/;
 const spaceKeys = ["projection_schema_version", "provider_id", "model_id", "model_version", "dimension"] as const;
 const record = (x: unknown): x is Record<string, unknown> => x !== null && typeof x === "object" && !Array.isArray(x);
 const closed = (x: Record<string, unknown>, keys: readonly string[]) =>
   Reflect.ownKeys(x).length === keys.length && keys.every(k => Object.hasOwn(x, k));
-const text = (x: unknown, max = 512) => typeof x === "string" && Buffer.byteLength(x, "utf8") >= 1 &&
-  Buffer.byteLength(x, "utf8") <= max && !!x.match(/\S/u) && !control.test(x);
+/** A3 storage CHECK under COLLATE "C", not the future SAFE writer policy. */
+export const isOperationalStorageText = (x: unknown, max = 512): x is string => typeof x === "string" &&
+  Buffer.byteLength(x, "utf8") >= 1 && Buffer.byteLength(x, "utf8") <= max &&
+  /[^\t\n\v\f\r ]/.test(x) && !control.test(x) && Buffer.from(x, "utf8").toString("utf8") === x;
+const text = isOperationalStorageText;
+// C-collation lower(btrim(...)): ASCII case and SPACE only, with an absolute end assertion.
+const unspecifiedIdentity = (x: string) => /^ *(?:latest|default|unknown) *(?![\s\S])/i.test(x);
+export const operationalAgentTypes: readonly string[] = Object.freeze([
+  "autonomous", "assistive", "supervisory", "gateway", "orchestrator", "retrieval", "classifier",
+]);
 const instant = (x: unknown) => typeof x === "string" && Number.isFinite(Date.parse(x));
 const fail = (): never => { throw new OperationalTransportError("MALFORMED_RESULT"); };
 const eq = (a: unknown, b: unknown) => { if (a !== b) fail(); };
@@ -45,6 +56,7 @@ export interface OperationalProjectionInput {
   related_system_record_id: string | null; related_system_code_label: string | null; related_system_name_label: string | null;
 }
 export function buildOperationalDocument(value: OperationalProjectionInput) {
+  validateOperationalProjection(value);
   const lines = [`Agent: ${value.agent_name_label}`, `Code: ${value.agent_code_label}`, `Type: ${value.agent_type}`];
   if (value.business_domain_label !== null) lines.push(`Business domain: ${value.business_domain_label}`);
   if (value.related_system_state === "PRESENT_SAME_TENANT")
@@ -53,6 +65,22 @@ export function buildOperationalDocument(value: OperationalProjectionInput) {
   const result = lines.join("\n");
   if (result.endsWith("\n") || result.includes("\r")) fail();
   return result;
+}
+
+/** Validate only the stored fields used by GOVIA_OPERATIONAL_CONTEXT_V1. Preserve their bytes. */
+function validateOperationalProjection(value: unknown): asserts value is OperationalProjectionInput {
+  if (!record(value)) throw new OperationalTransportError("MALFORMED_RESULT");
+  if (!text(value.agent_code_label) || !text(value.agent_name_label) || typeof value.agent_type !== "string" ||
+      !operationalAgentTypes.includes(value.agent_type) ||
+      (value.business_domain_label !== null && !text(value.business_domain_label))) fail();
+  if (value.description_disposition === "WITHHELD" ? value.description_text !== null :
+      value.description_disposition !== "PROJECTED" || !text(value.description_text, 1024)) fail();
+  if (value.related_system_state === "ABSENT") {
+    if ([value.related_system_record_id, value.related_system_code_label, value.related_system_name_label].some(x => x !== null)) fail();
+  } else if (value.related_system_state === "PRESENT_SAME_TENANT") {
+    if (!isCanonicalOperationalUuid(value.related_system_record_id) || !text(value.related_system_code_label) ||
+        !text(value.related_system_name_label)) fail();
+  } else fail();
 }
 
 export interface OperationalContextResult {
@@ -68,7 +96,7 @@ export interface OperationalContextResult {
 }
 function parseSpace(x: unknown): SemanticSpace {
   if (!record(x) || !closed(x, spaceKeys) || !spaceKeys.slice(0, 4).every(k => text(x[k]) &&
-      !["latest", "default", "unknown"].includes(String(x[k]).trim().toLowerCase())) ||
+      !unspecifiedIdentity(String(x[k]))) ||
       !Number.isInteger(x.dimension) || Number(x.dimension) < 1 || Number(x.dimension) > 16000) return fail();
   return { projection_schema_version: String(x.projection_schema_version), provider_id: String(x.provider_id),
     model_id: String(x.model_id), model_version: String(x.model_version), dimension: Number(x.dimension) };
@@ -80,7 +108,7 @@ function validateHit(hit: unknown, org: string, expectedSpace: SemanticSpace, ex
   if (!record(hit)) throw new OperationalTransportError("MALFORMED_RESULT");
   const h: Record<string, unknown>=hit;
   if (!closed(h, hitKeys) || !hashPattern.test(String(h.subject_id)) ||
-      !uuidPattern.test(String(h.source_record_id)) || !hashPattern.test(String(h.representation_id)) ||
+      !isCanonicalOperationalUuid(h.source_record_id) || !hashPattern.test(String(h.representation_id)) ||
       h.authority !== "DERIVED_ANALYTICAL_NON_AUTHORITATIVE" || h.source_classification !== "LEGACY_OPERATIONAL_RECORD_NON_CANONICAL" ||
       h.canonical_decision !== false || h.governed_relationships !== false || h.assurance !== false) fail();
   const sourceId = String(h.source_record_id), subjectId = String(h.subject_id);
@@ -96,7 +124,7 @@ function validateHit(hit: unknown, org: string, expectedSpace: SemanticSpace, ex
   if (!record(observation.acquisition_method)) throw new OperationalTransportError("MALFORMED_RESULT");
   const method: Record<string, unknown> = observation.acquisition_method;
   if (!closed(method, ["code", "version"]) || !text(method.code) || !text(method.version) ||
-      ["latest", "default", "unknown"].includes(String(method.version).trim().toLowerCase())) fail();
+      unspecifiedIdentity(String(method.version))) fail();
   if (!record(h.projection)) throw new OperationalTransportError("MALFORMED_RESULT");
   const projection: Record<string, unknown> = h.projection;
   const projectionKeys = ["projection_id", "projection_schema_version", "document_recipe", "handling_recipe", "agent_code_label",
@@ -104,20 +132,11 @@ function validateHit(hit: unknown, org: string, expectedSpace: SemanticSpace, ex
     "related_system_record_id", "related_system_code_label", "related_system_name_label", "source_data_classification"];
   if (!closed(projection, projectionKeys) || !hashPattern.test(String(projection.projection_id)) ||
       projection.projection_schema_version !== expectedSpace.projection_schema_version || projection.document_recipe !== "GOVIA_OPERATIONAL_CONTEXT_V1" ||
-      projection.source_data_classification !== "UNTRUSTED_SOURCE_DATA" || !text(projection.agent_code_label) || !text(projection.agent_name_label) ||
-      !text(projection.agent_type) || (projection.business_domain_label !== null && !text(projection.business_domain_label)) ||
+      projection.source_data_classification !== "UNTRUSTED_SOURCE_DATA" ||
       !record(projection.handling_recipe) || !closed(projection.handling_recipe, ["id", "version"]) ||
       projection.handling_recipe.id !== "GOVIA_SR2_OPERATIONAL_HANDLING_V1" || projection.handling_recipe.version !== "1") fail();
-  if ((projection.description_disposition === "WITHHELD" && projection.description_text !== null) ||
-      (projection.description_disposition === "PROJECTED" && !text(projection.description_text, 1024)) ||
-      !["WITHHELD", "PROJECTED"].includes(String(projection.description_disposition))) fail();
+  validateOperationalProjection(projection);
   const related = projection.related_system_state;
-  if (related === "ABSENT") {
-    if ([projection.related_system_record_id, projection.related_system_code_label, projection.related_system_name_label].some(x => x !== null)) fail();
-  } else if (related === "PRESENT_SAME_TENANT") {
-    if (!uuidPattern.test(String(projection.related_system_record_id)) || !text(projection.related_system_code_label) ||
-        !text(projection.related_system_name_label)) fail();
-  } else fail();
   const expectedProjection = operationalIdentity(["GOVIA_SR2_OPERATIONAL_AGENT_PROJECTION_V1", "1", org, sourceId, subjectId,
     expectedSpace.projection_schema_version, "GOVIA_SR2_OPERATIONAL_HANDLING_V1", "1", "GOVIA_OPERATIONAL_CONTEXT_V1",
     String(projection.agent_code_label), String(projection.agent_name_label), String(projection.agent_type),

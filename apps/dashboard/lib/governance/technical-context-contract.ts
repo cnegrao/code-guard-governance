@@ -27,12 +27,16 @@ type Parsed<P> = P extends Parser<infer T> ? T : never;
 const literal = <const T extends string | number | boolean | null>(expected: T): Parser<T> => value => value === expected ? expected : fail();
 const enumeration = <const T extends readonly string[]>(values: T): Parser<T[number]> => value =>
   typeof value === "string" && values.includes(value) ? value as T[number] : fail();
-const text = (max: number): Parser<string> => value => typeof value === "string" && !!value.trim() &&
-  Buffer.byteLength(value, "utf8") <= max && Buffer.from(value, "utf8").toString("utf8") === value ? value : fail();
+/** A1/A2 storage text under COLLATE "C". Controls are restricted separately for paths. */
+export const isTechnicalStorageText = (value: unknown, max = 512): value is string => typeof value === "string" &&
+  Buffer.byteLength(value, "utf8") >= 1 && Buffer.byteLength(value, "utf8") <= max &&
+  /[^\t\n\v\f\r ]/.test(value) && !value.includes("\u0000") && Buffer.from(value, "utf8").toString("utf8") === value;
+const text = (max: number): Parser<string> => value => isTechnicalStorageText(value, max) ? value : fail();
 const scalar = text(512);
 const identityScalar: Parser<string> = (value, context) => {
   const result = scalar(value, context);
-  if (["latest", "default", "unknown"].includes(result.trim().toLowerCase())) fail();
+  // SQL lower(btrim(...)) in C collation only folds ASCII and strips SPACE.
+  if (/^ *(?:latest|default|unknown) *(?![\s\S])/i.test(result)) fail();
   return result;
 };
 const pattern = (expression: RegExp): Parser<string> => value => typeof value === "string" && expression.test(value) ? value : fail();
@@ -45,7 +49,7 @@ const decimal = (positive: boolean): Parser<string> => value => typeof value ===
   value.length <= 19 && BigInt(value) <= BigInt("9223372036854775807") ? value : fail();
 const path: Parser<string> = (value, context) => {
   const result = text(1024)(value, context);
-  return /(^\/|\/$|\/\/|(^|\/)\.{1,2}(\/|$)|[\\:?#\u0000-\u001f\u007f])/.test(result) ? fail() : result;
+  return /(^\/|\/$|\/\/|(^|\/)\.{1,2}(\/|$)|[\\:?#\u0000-\u001f\u007f-\u009f])/.test(result) ? fail() : result;
 };
 const directory: Parser<string> = (value, context) => value === "." ? "." : path(value, context);
 const nullable = <T>(parser: Parser<T>): Parser<T | null> => (value, context) => value === null ? null : parser(value, context);
@@ -130,6 +134,7 @@ const protectedContent = object({ structural_summary: text(1024), literal_handli
   projection_mark: literal("CONTENT_PROJECTED"), untrusted_source: literal(true), fragments: array(fragment, 4), facets });
 const projection = object({ projection_id: hash, projection_fingerprint: hash, source_fingerprint: hash, projection_schema_version: identityScalar,
   document_recipe: literal("GOVIA_TECHNICAL_CONTEXT_V1"), record_contract: literal("GOVIA_SR2_TYPED_PROJECTION_RECORD_V1"),
+  // AVAILABLE mirrors the RPC disclosure bound; SQL storage permits 1024 independently.
   extraction_recipe: recipe, handling_recipe: recipe, content_class: literal("PROTECTED_CONTEXT_V1"), safe_label: scalar, safe_description: scalar,
   primary_source_set_id: hash, admission_basis_set_fingerprint: hash, admission_record_set_fingerprint: hash,
   admitted_at: instant, recorded_at: instant, protected: protectedContent });

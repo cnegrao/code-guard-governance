@@ -3,7 +3,7 @@ import type { VerifiedGovernancePrincipal } from "../auth/session-token";
 import { parseCredentialEpochMillis } from "../auth/credential-epoch";
 import type { SemanticSqlClient, SemanticSqlPool } from "./semantic-context-retrieval";
 import { isAdmittedOperationalQuery, type OperationalQueryEmbeddingIdentity } from "./operational-query-embedding";
-import { parseOperationalContextResult, OperationalAuthorizationError, OperationalInputError, OperationalTransportError,
+import { parseOperationalContextResult, isCanonicalOperationalUuid, OperationalAuthorizationError, OperationalInputError, OperationalTransportError,
   type OperationalContextResult } from "./operational-context-contract";
 
 export interface OperationalRetrievalOptions {
@@ -13,15 +13,14 @@ export interface OperationalRetrievalPort {
   retrieveOperationalContext(principal: VerifiedGovernancePrincipal, query: OperationalQueryEmbeddingIdentity,
     options: OperationalRetrievalOptions): Promise<OperationalContextResult>;
 }
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const timeout = () => new OperationalTransportError("QUERY_TIMEOUT");
 
 /** Dedicated server-owned connection. No composition root imports this dormant adapter in A3. */
 export function createOperationalRetrievalAdapter(pool: SemanticSqlPool): OperationalRetrievalPort {
   return Object.freeze({ async retrieveOperationalContext(principal: VerifiedGovernancePrincipal,
     query: OperationalQueryEmbeddingIdentity, options: OperationalRetrievalOptions) {
-    if (!principal || typeof principal.organisationId !== "string" || !uuid.test(principal.organisationId) ||
-        typeof principal.userId !== "string" || !uuid.test(principal.userId) || typeof principal.credentialEpoch !== "string" ||
+    if (!principal || !isCanonicalOperationalUuid(principal.organisationId) ||
+        !isCanonicalOperationalUuid(principal.userId) || typeof principal.credentialEpoch !== "string" ||
         !Number.isFinite(parseCredentialEpochMillis(principal.credentialEpoch)) || !Number.isSafeInteger(principal.issuedAtSeconds) ||
         !Number.isSafeInteger(principal.expiresAtSeconds) || principal.issuedAtSeconds < 0 ||
         principal.expiresAtSeconds <= principal.issuedAtSeconds) throw new OperationalAuthorizationError();

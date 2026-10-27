@@ -1,14 +1,50 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {parseTechnicalContextResult,TechnicalTransportError,technicalDbReasons} from '../lib/governance/technical-context-contract';
+import {parseTechnicalContextResult,TechnicalTransportError,technicalDbReasons,isTechnicalStorageText} from '../lib/governance/technical-context-contract';
 import {createTechnicalScopeSource} from '../lib/governance/technical-context-scope';
 import {technicalFixture,technicalDto,technicalSpace,orgA,projection,representation} from './helpers/sr2-a2-fixtures';
+import {storageTextCorpus} from './helpers/sr2-storage-parity-corpus';
 const fixture=technicalFixture({facets:true,count:2});
 const principal={organisationId:orgA,userId:orgA,credentialEpoch:'2026-10-01T00:00:00.000000Z',issuedAtSeconds:1,expiresAtSeconds:2,informational:{}};
 const resolved=createTechnicalScopeSource({bindings:[{selection_key:'x',organisation_id:orgA,repository_id:fixture.root.row.repository_id,snapshot_id:fixture.s.snap.snapshot_id}]})(principal,'x');
 if(!('scope'in resolved))throw Error();const scope=resolved.scope;
 const parse=(x:unknown)=>parseTechnicalContextResult(x,orgA,scope,technicalSpace,20);
 const bad=(x:unknown)=>assert.throws(()=>parse(x),(e:any)=>e instanceof TechnicalTransportError&&e.reason==='MALFORMED_RESULT');
+
+function parseFixture(f:ReturnType<typeof technicalFixture>){
+ const binding=createTechnicalScopeSource({bindings:[{selection_key:'parity',organisation_id:orgA,repository_id:f.root.row.repository_id,snapshot_id:f.s.snap.snapshot_id}]})(principal,'parity');
+ assert.ok('scope'in binding);return parseTechnicalContextResult(technicalDto(f),orgA,binding.scope,technicalSpace,20);
+}
+test('A2 storage corpus exercises the production predicate and complete identity-valid parser',()=>{
+ for(const item of storageTextCorpus){
+  assert.equal(isTechnicalStorageText(item.value),item.a2,item.name);
+  const f=technicalFixture({label:item.value});
+  if(item.a2)assert.equal(parseFixture(f).hits[0].projection.safe_label,item.value,item.name);
+  else assert.throws(()=>parseFixture(f),TechnicalTransportError,item.name);
+ }
+ for(const value of ['\ud800','\udfff'])assert.equal(isTechnicalStorageText(value),false,'not representable in UTF-8');
+});
+test('A2 AVAILABLE safe_description mirrors 512-byte disclosure while storage permits 1024',()=>{
+ for(const description of ['x','x'.repeat(512),'é'.repeat(256),'x'.repeat(513),'é'.repeat(256)+'x','x'.repeat(1024),'x'.repeat(1025)]){
+  const size=Buffer.byteLength(description,'utf8');
+  assert.equal(isTechnicalStorageText(description,1024),size<=1024);
+  const f=technicalFixture();f.p=projection(f.s,f.primary.row,f.admissions,[],{description,fragments:[]});
+  f.rep=representation(f.p.row,f.s.capture);
+  if(size<=512)assert.equal(parseFixture(f).hits[0].projection.safe_description,description);
+  else assert.throws(()=>parseFixture(f),(error:unknown)=>error instanceof TechnicalTransportError&&error.reason==='MALFORMED_RESULT');
+ }
+});
+test('A2 paths retain their SQL-specific C0/C1 prohibition',()=>{
+ for(const cp of [1,31,127,133,155,159])assert.throws(()=>parseFixture(technicalFixture({entryOverrides:{relative_path:`a${String.fromCodePoint(cp)}b`}})),TechnicalTransportError);
+});
+test('A2 identity scalars follow C lower/btrim and preserve exact whitespace',()=>{
+ for(const version of ['\u00a0latest\u00a0','\ufeffunknown\ufeff','UN\u212aNOWN','latest\n','DEFAULT\t',' latest ','UNKNOWN']){
+  const space={...technicalSpace,model_version:version},value:any=technicalDto(fixture);
+  value.embedding_space=space;value.status='NO_MATCHES_IN_QUERIED_SEMANTIC_SPACE';value.hits=[];
+  if([' latest ','UNKNOWN'].includes(version))assert.throws(()=>parseTechnicalContextResult(value,orgA,scope,space,20),TechnicalTransportError);
+  else assert.equal(parseTechnicalContextResult(value,orgA,scope,space,20).embedding_space.model_version,version);
+ }
+});
 test('complete typed graph, seven plural facets, explicit summary and dictionaries are immutable owned copies',()=>{
  const dto=technicalDto(fixture),parsed=parse(dto);assert.equal(parsed.hits.length,1);assert.ok(Object.isFrozen(parsed.hits[0].projection.protected.facets.modules!.items));
  dto.hits[0].repository.safe_label='changed';assert.equal(parsed.hits[0].repository.safe_label,'Same display');
