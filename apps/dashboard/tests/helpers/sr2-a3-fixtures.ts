@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { technicalCluster, scopedRead, lit, orgA, orgB, type Row } from './sr2-a2-fixtures';
 import { ledgerRepo } from './ledger-v2-foundation-fixtures';
 import type { Actor } from './semantic-retrieval-fixtures';
+import { assertA3Horizon } from './sr2-dependency-manifest';
 
 export { scopedRead, lit, orgA, orgB };
 export const a3Migration='20261026124744_m175_c3_sr2_a3_operational_semantic_context_v1.sql';
@@ -35,7 +36,8 @@ export async function operationalCluster(diagnostic:(message:string)=>void){
   const after=JSON.parse(await routines());assert.equal(after.length,440);
   assert.deepEqual(after.filter((p:any)=>before.some((b:any)=>b.oid===p.oid)),before);
   const canonical=readdirSync(join(ledgerRepo,'supabase/migrations')).filter(n=>/^\d{14}_[a-z0-9_]+\.sql$/.test(n)).sort();
-  assert.equal(canonical.length,106);assert.equal(canonical.at(-1),a3Migration);
+  // A3 owns exactly 106 historical files; later additive successors belong to their own replay.
+  assertA3Horizon(canonical);
   diagnostic('Empty canonical 106-file replay PASS; real non-extension catalog 438 -> 440');return pg;
  }catch(error){pg.stop();throw error;}
 }
