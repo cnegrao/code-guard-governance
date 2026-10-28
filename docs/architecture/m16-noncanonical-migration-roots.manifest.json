@@ -35,6 +35,20 @@
     "S1B2-I7": "DASHBOARD_LEDGER_CANONICAL_READ_PATH: unresolved follow-up for later M16 closure/demo-readiness; apps/dashboard/repositories/dashboard.ts countAuditEvents30Days and getGovernanceQuestions still read governance_ledger through db.read; explicitly out of R5 scope"
   },
   "files": {
+    "apps/dashboard/tests/helpers/sr2-dependency-manifest-v1.sql": {
+      "sha256": "2d015a6e4a8b3cb85f88a5aab934b74fde09c35cccbd5ed5af62acf630e0e2b3",
+      "root": "READ_ONLY_CATALOG_TEST_HELPER",
+      "conflicts": [
+        "H1_V1_READ_ONLY_DEPENDENCY_MANIFEST: frozen A3-horizon catalog collection helper; no installed object or canonical migration authority"
+      ]
+    },
+    "apps/dashboard/tests/helpers/sr2-dependency-manifest-v2.sql": {
+      "sha256": "15b57ce50fbaefda2a475244c5f7453752f4613738a06fd438cb57f6c6221fc8",
+      "root": "READ_ONLY_CATALOG_TEST_HELPER",
+      "conflicts": [
+        "H1_V2_READ_ONLY_DEPENDENCY_MANIFEST: M1 successor-horizon catalog collection helper; no installed object or canonical migration authority"
+      ]
+    },
     "apps/dashboard/supabase-setup-8.2.sql": {
       "sha256": "5a9d4887a715318c1af1179b44867a523d1375bb9d89a318a6545c56f62270d4",
       "root": "DASHBOARD_SETUP_SCRIPT",
