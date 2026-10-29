@@ -153,6 +153,8 @@ The existing authority and evidence invariants remain mandatory:
     - ISO/IEC 23894
     - NIST AI RMF
     - EU AI Act
+    - BCB Resolução Conjunta nº 18/2025 — future regulatory profile under M18
+      below; ROADMAP / PROFILE NOT YET IMPLEMENTED
 
     **V1 — Trust & Assurance Hub:**
 
@@ -209,6 +211,77 @@ The existing authority and evidence invariants remain mandatory:
     - CISO / Security
     - Compliance / Auditor
     - AI / Data Owner
+
+    **Standards, Regulatory Frameworks & Assurance — roadmap record (2026-10-29)**
+
+    Alongside the ISO, NIST, EU AI Act, DAMA-DMBOK, EDM Council / DCAM and
+    related framework mappings above, record the following future regulatory
+    profile. **M18 remains HOLD.** This documentation does not expand M18
+    implementation or alter current pre-A4/demo milestones, sequencing or gates.
+
+    | Field | Roadmap value |
+    | --- | --- |
+    | Name | BCB Resolução Conjunta nº 18/2025 |
+    | Instrument | Resolução Conjunta nº 18, de 28/11/2025 — BCB/CMN |
+    | Type | `REGULATION` |
+    | Jurisdiction | `BR` |
+    | Authority | Banco Central do Brasil / Conselho Monetário Nacional |
+    | Scope | Quality of information provided to BCB by regulated institutions |
+    | Effective date | `2026-01-01` |
+    | Adequacy deadline | `2026-12-31` |
+    | Status in GovIA | `ROADMAP / PROFILE NOT YET IMPLEMENTED` |
+    | Future profile name | `GOVIA_BCB_RC18_PROFILE_V1` |
+
+    Source: [official BCB RC18 text](https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=18&tipo=Resolu%C3%A7%C3%A3o%20Conjunta),
+    arts. 1–3 and 11–14, checked 2026-10-29. Article 12's sole paragraph
+    provides a specific adequacy rule for qualifying virtual-asset service
+    providers; institution-specific applicability remains to be assessed.
+
+    Future conceptual mapping only:
+
+    ```text
+    REGULATION
+    → REQUIREMENT
+    → CONTROL
+    → EVIDENCE REQUIREMENT
+    → GOVERNED / OBSERVED EVIDENCE
+    → ASSESSMENT / GAP / ACTION PLAN
+    ```
+
+    These labels describe a future profile mapping, not new canonical object
+    kinds, relationships, database objects or governance authority.
+
+    Current GovIA architecture already provides substantial enabling
+    capabilities for governance and responsibility; provenance and
+    traceability; integrity and immutable history; automated validation;
+    evidence; risk/assessment/treatment; access/authority controls; and
+    versioning and revocation. Architectural anchors are the existing
+    [M16 governance/control foundation](./ADR-GOVIA-OWNERSHIP-BUSINESS-POLICY-CONTROL-ENRICHMENT-v1.md),
+    [M17 risk foundation](./ADR-GOVIA-RISK-INTELLIGENCE-v1.md) and
+    [evidence index](../trust-assurance/evidence-index-v0.md), with their
+    recorded implementation and evidence limits.
+
+    This is **architectural alignment / compliance-enablement**, **NOT
+    certification** and **NOT a declaration that GovIA or a client is
+    compliant with RC18**. Existing capabilities do not establish RC18
+    requirement coverage, evidence sufficiency or operating effectiveness.
+
+    Future RC18-specific gaps — all pending, profile not implemented:
+
+    - 12 quality dimensions: requirement mapping and assessment criteria.
+    - Regulatory information inventory.
+    - Quality-test catalog.
+    - Reconciliation of reported information with internal systems.
+    - Irregularity/remediation workflow.
+    - Semiannual quality report.
+    - Board/director approval workflow.
+    - Internal audit workflow.
+    - BCB communications.
+    - Five-year retention evidence for policy documentation and quality
+      reports, including the policy-version retention starting point.
+
+    Profile implementation requires separate authorization and applicable
+    architecture gates; this entry authorizes documentation only.
 
 19. **ENTERPRISE CONNECTORS EXPANSION — COMMERCIAL V0**
     Initial V0 scope ONLY:
