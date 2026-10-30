@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type { SemanticSpace } from "./semantic-context-retrieval";
 
 export const operationalDbReasons = ["EXECUTION_BUDGET_REQUIRED", "SCAN_BOUND", "NO_COMPATIBLE_REPRESENTATIONS",
-  "SOURCE_UNAVAILABLE", "SOURCE_CHANGED", "INVALID_SOURCE_SUPPORT", "CONTENT_BOUND", "RESPONSE_BOUND"] as const;
+  "SOURCE_UNAVAILABLE", "SOURCE_CHANGED", "INVALID_SOURCE_SUPPORT", "CONTENT_BOUND", "RESPONSE_BOUND", "CONTENT_WITHHELD"] as const;
 export type OperationalUnavailableReason = typeof operationalDbReasons[number];
 export class OperationalAuthorizationError extends Error {
   constructor() { super("Operational semantic access denied"); this.name = "OperationalAuthorizationError"; }
