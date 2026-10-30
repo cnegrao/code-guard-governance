@@ -434,6 +434,133 @@ These tests are implementation acceptance duties, not claims of existing passing
 - **P3-REV F-2 — ownership:** assign ownership of T, S and scope barriers before A4 writers/population. Their functional names do not assign that ownership.
 - **P3-REV F-3 — invalidation versus denial:** clarify source-ineligibility invalidation versus durable denial and the exact A2 admission-revocation scope before implementation; this close does not expand those scopes.
 - **P3-REV F-4 — acceptance additions:** add explicit A2 no-resurrection proof after new capture/reconciliation/re-evaluation and pin transaction isolation in race tests. The over-bound case is now recorded as REV-X04 by this close; it is not executed here.
+
 - **P3-REV F-5 — denial lift:** require admitted immutable/current governed state as the basis for an explicit valid lift, never an unchecked operator toggle. No lift mechanism is implemented here.
 
 **PRE_A4_REV_OWNER_CLOSED; P3-REV CLOSED; PRE-A4 WAVE 0 CLOSED.** H1 V1 unchanged; P1-FRAME CLOSED; P1-H2 CLOSED. A3 remains CLOSED; **A4 NOT STARTED; A5 NOT STARTED; A6 NOT STARTED; M18 HOLD**. No migration, production/parser code, DB object, semantic population, Talk, legacy search or GPU/M3 product integration change. Owner authorization permits committing the complete clarified documentation candidate and pushing only the expected feature branch; no PR, merge, deployment or hosted Supabase access.
+
+## 21. M3 / A3-B D2 + D3 local successor — 2026-10-29
+
+**M3_A3_BINDING_DISCLOSURE_OWNER_CLOSED; M3 CLOSED — 2026-10-30.**
+Carlos approved the reviewed checkpoint 58b5855f128139c6170f01d19f481cd055572211 under
+CLAUDE_M3_REVIEW_PASS_WITH_FOLLOWUPS_READY_FOR_OWNER_CLOSE, with official commit/push
+on feat/m17.5-c3-sr2-semantic-replacement. F-1 changes owner-close metadata only.
+The reviewed migration 109, H1 V4 and production behavior remain unchanged.
+Carlos authorized only operational disclosure,
+source binding and the exact SAFE contract below, including the character corpus supplied
+in this implementation session. This supersedes the earlier missing-SAFE implementation
+blocker, not historical H2 read/storage parity or any broader readiness gate.
+Migration: 20261029195734_m175_pre_a4_m3_a3_binding_disclosure_v1.sql.
+
+### 21.1 Frozen GOVIA_SR2_OPERATIONAL_HANDLING_V1 admission
+
+General text is 1–512 UTF-8 bytes; PROJECTED description is 1–1024 bytes. PostgreSQL
+UTF8 text must be well formed (the native text type also cannot represent U+0000).
+Never trim, normalize, truncate or substitute text. The exact SAFE prohibited corpus is:
+
+- U+0001–U+001F, U+007F–U+009F;
+- U+00AD, U+061C, U+180E;
+- U+200B–U+200F, U+2028–U+202E;
+- U+2060–U+2064, U+2066–U+2069;
+- U+FEFF.
+
+Text must include a character outside ASCII whitespace, U+00A0, U+1680,
+U+2000–U+200A, U+202F, U+205F and U+3000. No other code point is prohibited
+by SAFE. In particular combining marks, non-Latin scripts, emoji, decomposed Unicode,
+and mixed ordinary/Unicode whitespace preserve their exact bytes.
+
+Code/name/type copy the live same-tenant agent verbatim or reject the observation.
+Business domain is NULL only when the source is NULL; otherwise copy verbatim and
+require SAFE. Description is either exact present SAFE PROJECTED text or WITHHELD
+with NULL, regardless of whether the withheld source description would pass SAFE.
+Related system is ABSENT only when the source agent has no system; otherwise ID/code/name
+must exactly match the same-tenant live system and projected labels must pass SAFE.
+Admission metadata text also obeys the general text bound and SAFE. Existing projection,
+observation, subject, representation and document identity recipes do not change.
+
+The ALWAYS observation admission trigger checks the live source and the existing raw
+descriptor fingerprint before persistence. The O guard repeats admission on enable or
+target advance, including a target advance that remains disabled. A disable needs no
+live source. The read repeats verbatim/SAFE binding for selected hits, so pre-successor
+forged projections with self-consistent identities and matching raw-source hashes cannot
+be disclosed. Selected stale sources still fail closed with no fallback.
+
+### 21.2 Durable D controls and valid re-entry
+
+Two owner-private tables implement D: immutable
+sr2_operational_disclosure_admissions_v1 and mutable, non-removable
+sr2_operational_disclosure_heads_v1. Both are keyed by organisation, fixed
+OPERATIONAL_AGENT_CONTEXT_V1 purpose, scope kind and source UUID; admission adds
+an explicit admission UUID. ORGANISATION uses the zero UUID as its scope key;
+SOURCE accepts any source UUID, including zero, in its distinct scope kind.
+Admissions pin handling V1/version 1, the existing document recipe, and an explicit
+SAFE owner-recorded policy-basis reference. They attest disclosure admission only,
+not governance authority, source truth or a generic policy evaluator.
+
+An enabled organisation D with its exact immutable admission is mandatory. Optional
+SOURCE D intersects it: absent SOURCE D inherits the organisation scope; disabled
+SOURCE D denies. A narrow permit never overrides broad denial. Disabled D may be
+inserted with no admission and with no existing source or semantic head. No default
+permit/backfill is created. No application role may create admissions or mutate D.
+
+Initial head revision is 1; actual enabled/target transitions require exactly +1,
+immutable keys and no overflow/no-op. Decision/admission timestamps are server-owned.
+Each admission captures the current head revision (zero for an absent scope) under the
+scope barrier; enabling requires that exact prior revision, independently of clock movement.
+Enabling after denial requires a different, freshly recorded valid admission.
+Old immutable admission presence cannot lift a
+newer denial. D cannot be deleted/truncated; admissions cannot be updated/deleted/truncated.
+Denial commits independently of O repair. Failed/incomplete repair and completed repair
+both leave D denial intact until explicit fresh admission. This adds the M3 primitives,
+not a population worker, reconciliation implementation or the future T/S universe.
+
+### 21.3 Snapshot, serialization and object/capability budget
+
+D and source/projection checks occur in the existing single acquisition/hydration
+statement snapshot, honoring §20.7. Missing/disabled broad disclosure or selected denied
+source returns SEMANTIC_CONTEXT_UNAVAILABLE / CONTENT_WITHHELD with empty hits.
+The parser admits that one additional closed reason; healthy DTOs are unchanged.
+Broad D requires one exact scope lookup plus its exact admission. Each selected hit
+requires at most one optional SOURCE scope and admission lookup, with full-key
+parameterized subqueries and no traversal of historical observations or scope fan-out.
+Existing scan, score, top-N, content and response bounds remain.
+
+M3 conservatively serializes operational admission/control writes with a single global
+A3 advisory transaction barrier (175003,1). BEFORE STATEMENT ALWAYS triggers acquire
+it before D/O row locks, including zero-row/absent scopes. Only READ COMMITTED writes
+are admitted. Binding then locks broad D, optional SOURCE D, live agent, related system,
+in that order; source SHARE locks last until transaction completion. Legacy tables gain
+no triggers or SR2 barrier acquisition. The global writer barrier is a deliberate bounded
+M3 implementation choice; future A4 work must preserve its ordering or separately review
+a finer-grained replacement. It does not serialize ordinary reads or legacy source writes.
+
+Budget: exactly two tables, two PK indexes, three FKs, eleven CHECKs, nine additional ALWAYS
+triggers, zero policies/extra indexes, and five private invoker helpers:
+sr2_operational_safe_v1(text,integer), sr2_operational_scope_lock_v1(),
+sr2_operational_disclosure_guard_v1(),
+sr2_operational_binding_v1(gov_repo.sr2_operational_agent_observations_v1) and
+sr2_operational_observation_admit_v1().
+The existing O guard and fourteen-argument A3 RPC receive body-only replacements.
+Starting body/capability checks fail closed; OID/signature/config/ACL/owner/security
+properties stay unchanged. All new tables/helpers belong to postgres; tables enable RLS,
+zero policies, and revoke PUBLIC/anon/authenticated/service_role access. Helpers use
+search_path=pg_catalog,pg_temp and revoke application/PUBLIC execution. SAFE alone is
+IMMUTABLE/PARALLEL SAFE; four trigger/binding helpers are VOLATILE/PARALLEL UNSAFE.
+The existing postgres owner exception remains; no new application writer or definer.
+
+H1 V4 explicitly adds these dependencies at the 109-migration horizon. V1/V2/V3 and
+historical migrations remain frozen. SR1/A2 routine bytes/capabilities stay unchanged.
+M18, A4 population, A5/Talk, M19 connectors, hosted access, deployment and production
+activation are outside this slice; existing readiness HOLDs remain.
+
+### 21.4 Owner-close follow-ups
+
+Only the following M3 review follow-ups carry forward; neither is implemented here:
+
+- **F-2:** Source-denied candidates may still participate in ranking and reveal proximity
+  or block the result if selected. A4 must decide whether to exclude denied scopes before ranking.
+- **F-3:** A4 writer design must account for SHARE locks on legacy agents / ai_systems
+  and replace the current global-lock strategy appropriately.
+
+**A4 NOT STARTED; A5 NOT STARTED; M18 NOT STARTED; M19 expansion NOT STARTED.**
+No hosted access or additional review is part of this owner close.
