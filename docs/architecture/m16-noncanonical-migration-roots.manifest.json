@@ -49,6 +49,20 @@
         "H1_V2_READ_ONLY_DEPENDENCY_MANIFEST: M1 successor-horizon catalog collection helper; no installed object or canonical migration authority"
       ]
     },
+    "apps/dashboard/tests/helpers/sr2-dependency-manifest-v3.sql": {
+      "sha256": "a8ccdcc41e890f55eb02d4d509ec14f0e32750969ccaf9f340424913d3b0b5a0",
+      "root": "READ_ONLY_CATALOG_TEST_HELPER",
+      "conflicts": [
+        "H1_V3_READ_ONLY_DEPENDENCY_MANIFEST: M2 successor-horizon catalog collection helper; no installed object or canonical migration authority"
+      ]
+    },
+    "apps/dashboard/tests/helpers/sr2-dependency-manifest-v4.sql": {
+      "sha256": "eb84b063355eacf5501911cc24c0ffc09b3240ef75251ae7e2f69d53a2104f08",
+      "root": "READ_ONLY_CATALOG_TEST_HELPER",
+      "conflicts": [
+        "H1_V4_READ_ONLY_DEPENDENCY_MANIFEST: M3 successor-horizon catalog collection helper; no installed object or canonical migration authority"
+      ]
+    },
     "apps/dashboard/supabase-setup-8.2.sql": {
       "sha256": "5a9d4887a715318c1af1179b44867a523d1375bb9d89a318a6545c56f62270d4",
       "root": "DASHBOARD_SETUP_SCRIPT",
