@@ -231,3 +231,336 @@ A1's exact proposed objective is the typed **technical foundation only**, not an
 A0 CLOSED / ARCHITECTURE PASS. Mandatory product capabilities preserved **by target design only**; implemented parity **NOT PROVEN**, cutover **BLOCKED**. SR1 unchanged. C3 STOPPED; LX03 NEEDS_CONTAINMENT; LX01/LX04/LX05/LX06/LX07 OPEN. V1-S1B/M17.5 OPEN. CONTROLLED_DEMO_READINESS, EXTERNAL_PUBLICATION_READINESS, TENANT_ASSURANCE_READINESS, CERTIFICATION_READINESS and M18 HOLD. Previous contained families unchanged, not retested. No new canonical/Authority Policy/Passport authority, runtime, SQL, database, hosted, provider, deployment or PR delta.
 
 **DO NOT START SR2-A1. RETURN TO ARCHITECTURE REVIEW AFTER A0.**
+
+## 16. Additive A1 implementation checkpoint — 2026-10-23
+
+**A1 IMPLEMENTED / LOCAL PASS.** The A0 stop instruction above records the historical architecture gate. Carlos subsequently authorized the reviewed 24-table design and final reduction from 61 to 59 triggers. [A1 implementation evidence](../codex/evidence/2026-10-23-m17.5-v1-s1b-c3-sr2-a1-typed-technical-foundation.md) records the exact additive migration, identity/catalog pins, zero application capabilities and PostgreSQL acceptance. Seven plural facet families, immutable source admissions and explicit bounded summary source sets resolve the three implementation-design blockers.
+
+This checkpoint implements technical storage only. A2–A6 require their separately authorized work; product parity, provider qualification, population, Talk integration and legacy disconnection remain unproven/deferred. C3 STOPPED, LX03 NEEDS_CONTAINMENT, M17.5 OPEN, all readiness and M18 HOLDs remain.
+
+## 17. Additive A2 implementation candidate and Numeric Safety Amendment — 2026-10-23
+
+**SR2_A2_PASS_READY_FOR_CLAUDE_REREVIEW.** Carlos separately authorized the principal-bound technical read and subsequently approved a narrow numeric amendment after the original partial candidate stopped on reproducible pgvector float32 cosine overflow/underflow. The [A2 implementation evidence](../codex/evidence/2026-10-23-m17.5-c3-sr2-a2-principal-bound-technical-read.md) preserves that STOP, the owner-reported independent adversarial findings, exact catalog/body/dependency pins, numerical cases, controlled timing and complete local acceptance results. The repaired candidate remains intact, uncommitted and unpushed pending independent Claude Code rereview; this checkpoint does not claim that rereview has passed.
+
+The admitted vector domain remains exact dimension, finite float32 components and at least one nonzero float32-rounded component. The A2 RPC normalizes its validated query once with the installed extension namespace's `l2_normalize(vector)`, normalizes each scored stored representation and uses the qualified cosine operator. A complete-score invariant rejects any value outside [-1,1], including NaN/null/infinity, with `TECHNICAL_NUMERIC_INVARIANT` / XX000 through the existing internal-error transport path. Thresholds, ordering, exact-snapshot latest selection/no fallback, disclosure, hydration, DTO and authority boundaries are unchanged. No magnitude envelope, producer normalization requirement, A1 CHECK/identity/schema rewrite or semantic-space identity field is added. `l2_normalize(vector)` is the only added extension dependency beyond the original A2 candidate closure.
+
+One new local migration adds the admitted three disclosure tables, private transition guard and principal-bound application read, with six ALWAYS triggers and the single exact-space nonconstraint B-tree. All 104 historical canonical Git blobs and all prior routine body/config/ACL rows remain unchanged; real empty PostgreSQL 17.11/pgvector 0.8.7 replay contains 105 files and the non-extension routine universe is 436→438. The evidence distinguishes pre-existing Windows CRLF checkout differences from canonical Git content. Complete A2, A1, frozen SR1, Node/Q1 and dashboard typecheck pass. No new provider is composed or activated; GPU-Q1 retains `normalize_embeddings = false` and PASS / DORMANT.
+
+Future A4 writer admission must enforce exact dimension, finite float32 components and a nonzero float32-rounded component. Producer L2 normalization is optional; A2 always normalizes both operands at read time, independent of CUDA/MPS/MLX/future Bruno compute. **SR1_NUMERIC_COSINE_SAFETY_REVIEW_REQUIRED** records the owner-reported latent analogous SR1 issue; SR1 remains byte/config/ACL/dependency frozen here and needs its own authorized micro-slice after A2 closure, before semantic production activation. Its passing existing regressions do not resolve that finding.
+
+Do not commit, push or start A3 from this local result. A3–A6, provider qualification, population, Talk parity/integration, cutover and legacy disconnection remain deferred. C3 STOPPED, LX03 NEEDS_CONTAINMENT, M17.5 OPEN, all readiness and M18 HOLDs remain; no canonical/Authority Policy/Passport/assurance authority or hosted/deployment delta.
+
+## 18. Additive A3 operational semantic context candidate — 2026-10-26
+
+**SR2_A3_PASS_READY_FOR_CLAUDE_REREVIEW.** Carlos separately authorized the frozen A3 admission. The [A3 implementation evidence](../codex/evidence/2026-10-26-m17.5-c3-sr2-a3-operational-semantic-context.md) records the uncommitted local candidate, exact schema/routine budget, identity and dependency pins, real PostgreSQL replay, adversarial tests and measured capacity results. This checkpoint does not claim that independent Claude Code rereview has passed.
+
+One additive migration introduces three owner-private operational tables, three PKs, three FKs, eighteen CHECKs, no extra indexes or policies, six ALWAYS triggers, one private head guard and one service-role-only read RPC. Immutable observations and exact-space representations remain separate from mutable legacy `agents`/`ai_systems`; an explicit CAS-compatible head selects one observation with no timestamp currentness and no older fallback. The read revalidates the current agent, optional related system and exact structural descriptor in one acquisition query snapshot. Full subject, projection, observation and representation identities are revalidated only for the selected top twenty.
+
+Operational query and document recipes are disjoint from SR1 and A2. Every nullable identity slot uses a non-null presence/state marker plus a paired coalesced value. Query normalization occurs once; stored vectors are normalized at the sole cosine site; every scored relevance is required to be within [-1,1] or the RPC raises `OPERATIONAL_NUMERIC_INVARIANT` / XX000. The three-phase scan enforces 10,000 enabled heads, deterministic rank-only output, bounded selected-hit hydration and fail-closed source/content/response reasons. Real-RPC acceptance passed 1k/2k/5k/10k at 384 dimensions, 10k at 1536 dimensions, 10% 64 KiB live descriptions and 1k subjects with twenty historical observations.
+
+No writer, semantic population, provider activation, GPU activation, Talk import, API composition, product cutover, hosted mutation or deployment is added. `agents`, `ai_systems`, SR1, A1, A2 and Q1 production behavior remain unchanged. Preserve `A2_CAPACITY_SCALING_REVIEW_REQUIRED_BEFORE_A4_A5`, `SR1_NUMERIC_COSINE_SAFETY_REVIEW_REQUIRED`, `FRAME_IDENTITY_NULL_COLLISION_REVIEW_REQUIRED_BEFORE_A4` and `A4_SOURCE_REVOCATION_FANOUT_REQUIRED`. A4–A6 remain not started; C3 remains OPEN, LX03 NEEDS_CONTAINMENT and M18 HOLD.
+
+### Blocking B1/B2 repair after independent rereview — 2026-10-26
+
+The uncommitted migration was repaired in place without changing its object budget. Phase 1 now scores only immutable admitted head/observation/exact-space representation rows. Tenant-bound live agent/system joins, eligibility checks and the complete legacy description descriptor fingerprint execute only after deterministic selection of at most twenty rows. A selected invalid source still fails the whole domain with unchanged reason precedence; there is no fallback or rank-21 substitution. Strengthened real-RPC tests cover 10,000 rows with 100% 64 KiB descriptions and 500/1,000 rows with 1 MiB descriptions under the unchanged five-second budget.
+
+The strict operational DTO parser now rejects duplicate subject, source record, observation or representation identities without deduplication and includes the admitted authority/shape/leakage adversarial cases. Preserve the existing gates plus `A4_OPERATIONAL_HANDLING_RECIPE_AND_PROJECTION_SOURCE_BINDING_REQUIRED`; H1 migration preflight/dependency pinning and H2 SQL↔TypeScript text/UUID predicate alignment remain pre-A4/hosted follow-ups. This repair does not resolve H3/F1–F6.
+
+### A3 owner close after Claude delta rereview — 2026-10-26
+
+**SR2_A3_OWNER_CLOSED.** Claude independently returned `CLAUDE_SR2_A3_DELTA_REREVIEW_PASS_WITH_FOLLOWUPS_READY_FOR_OWNER_CLOSE`: B1 and B2 are fixed, with no blocking or new HIGH findings. The owner-required N1 test-only correction replaces malformed duplicate fixtures with an exact valid identity clone at rank 2 and a same-source hit carrying a different, correctly recomputed observation and representation. Each hit parses successfully in isolation before the combined result is required to fail uniqueness, so the test no longer relies on broken derived identities.
+
+This close changes no parser, migration, database object or production behavior. Preserve `A2_CAPACITY_SCALING_REVIEW_REQUIRED_BEFORE_A4_A5`, `SR1_NUMERIC_COSINE_SAFETY_REVIEW_REQUIRED`, `FRAME_IDENTITY_NULL_COLLISION_REVIEW_REQUIRED_BEFORE_A4`, `A4_SOURCE_REVOCATION_FANOUT_REQUIRED` and `A4_OPERATIONAL_HANDLING_RECIPE_AND_PROJECTION_SOURCE_BINDING_REQUIRED`. H1/H2/H3 and F1–F6 remain open follow-ups. A4–A6 are not started; C3 remains OPEN, Talk is unchanged, there is no semantic population or GPU/M3 product integration, and M18 remains HOLD.
+
+## 19. Pre-A4 P1-FRAME identity admission rule — 2026-10-27
+
+Every new A4+ `frame_identity` recipe MUST use an explicit presence/state marker for every nullable semantic field. Nullable list elements are prohibited. New identity recipes must have SQL↔TypeScript golden vectors before admission. Markers must distinguish NULL from present-empty wherever empty is representable; values are framed as their exact encoded bytes, without trimming or Unicode normalization.
+
+Every variable-length list participating in a `frame_identity` recipe MUST frame its element count before its elements. Nullable list elements remain prohibited. Any expression that may evaluate to NULL MUST have an explicit presence/state marker or a guard proving non-NULL before framing. This applies, where relevant, to outer-join columns, scalar subqueries, aggregates, JSON/text extraction such as `->>`, and future expressions whose nullability is not guaranteed by catalog NOT NULL.
+
+The primitive drops NULL elements and returns SQL NULL for an empty/all-NULL input. Existing A1/A2/A3 recipes remain frozen. The permanent [catalog and golden-vector regression](../../apps/dashboard/tests/postgres-m16/sr2-frame-identity.test.ts) closes and protects the A1–A3 canonical horizon, auditing its admitted recipe set, marker/state CHECKs, dynamic trigger/read bodies and input nullability against frozen H1 V1. It does not automatically discover every future `frame_identity` caller. Successor horizons MUST rerun and adapt the audit against their own replay head, using an exhaustive inventory appropriate to that horizon. Changing the primitive or refreshing H1 V1 is not an admission shortcut.
+
+A4 admission carries these P1-FRAME review obligations; none is implemented by this close:
+
+- **H-1 — successor-horizon audit:** run the frame audit on the A4 replay head with an exhaustive inventory of every object depending on `frame_identity`, every relevant `gov_repo` routine caller, and views or other executable surfaces using it. Classify nullable columns across all relevant SR2 tables and verify the semantics of markers, non-NULL guards, list validators, element-count prefixes and state coupling.
+- **F-1 — semantic negative controls:** strengthen negative controls so the semantic checks themselves are directly exercised.
+- **F-2 — production TypeScript parity:** bind future A4 SQL↔TypeScript golden vectors to the production TypeScript implementation, beyond test helpers alone.
+
+**PRE_A4_FRAME_OWNER_CLOSED.** Carlos approved P1-FRAME after `CLAUDE_PRE_A4_FRAME_REVIEW_PASS_WITH_FOLLOWUPS_READY_FOR_OWNER_CLOSE`, requiring the H-1 wording correction and F-3 normative rules above. P1-FRAME is CLOSED; `FRAME_IDENTITY_NULL_COLLISION_REVIEW_REQUIRED_BEFORE_A4` is CLOSED for A1–A3 only. H-1/F-1/F-2 remain A4 admission obligations; P1-FRAME F-4 remains a follow-up. No existing identity recipe, production code, migration or H1 V1 artifact changes. A3 remains CLOSED; P1-H2 and A4 are NOT STARTED; population and hosted operations are not authorized; M18 remains HOLD.
+
+## 20. Pre-A4 P3-REV revocation fan-out contract — 2026-10-27
+
+**SPECIFICATION ONLY / PRE_A4_REV_OWNER_CLOSED.** Carlos approved closure under `CLAUDE_PRE_A4_REV_REVIEW_PASS_WITH_FOLLOWUPS_READY_FOR_OWNER_CLOSE`, requiring H-1 (§20.5, REV-X04) and F-6 wording cleanup. PRE-A4 WAVE 0 CLOSED is documentary closure, not closure of future implementation prerequisites. Architecture gate supplied by Carlos: `CLAUDE_PRE_A4_HARDENING_ARCHITECTURE_READY`. [P3-REV evidence](../codex/evidence/2026-10-27-m17.5-pre-a4-p3-rev-revocation-fanout.md) pins the baseline and validation. This section freezes future writer/read obligations; it implements no writer, scope object, trigger, RPC successor or population. It does not declare the required implementation gates closed.
+
+### 20.1 CLOSED facts versus OWNER DECISIONS
+
+**CLOSED facts at the 106-migration A3 horizon:** A1 supplies immutable repository/snapshot/manifest/admission/projection/representation records; A2 adds mutable disclosure-profile and source-admission heads and a principal-bound technical read; A3 supplies immutable operational observations/representations, mutable observation heads and a principal-bound operational read. A3 is `SR2_A3_OWNER_CLOSED`. H1 V1 is frozen; `PRE_A4_H1_OWNER_CLOSED`, `PRE_A4_FRAME_OWNER_CLOSED` and `PRE_A4_H2_OWNER_CLOSED` are committed prior gates. Later owner closes supersede the historical NOT STARTED/candidate wording above; none implies A4 has begun.
+
+The existing head guards enforce immutable keys, initial revision 1, exact revision +1, overflow rejection and rejection of unchanged target/enabled pairs. They do **not** themselves enforce caller CAS predicates, complete fan-out, durable policy denial or operational projection/source equality. The current A3 read validates live source/descriptor only for selected hits. A2 currently validates source-admission/disclosure during hydration; D1/D1b below are successor requirements, not a claim about that SQL today.
+
+**OWNER DECISIONS — approved inputs to successors:**
+
+| Decision | Frozen contract |
+| --- | --- |
+| D1 — A2 fault semantics | Faults outside selected top-N do not poison the entire read. A faulty selected hit fails the domain closed. Never substitute rank N+1. |
+| D1b — revoked admission before ranking | Exclude a subject with invalid current admission/revocation state before ranking. This is eligibility exclusion, never fallback to an older observation, projection or representation. |
+| D2 — operational disclosure head | A4 must have durable operational disclosure-head control with constant-cost read verification. Policy/disclosure revocation cannot depend solely on retiring an RPC. |
+| D3 — operational handling | `GOVIA_SR2_OPERATIONAL_HANDLING_V1` is normative: projection is source-bound verbatim or WITHHELD. SAFE is writer admission. No truncation or normalization. |
+
+**Derived consequences, not additional owner decisions:** D1 does not waive query/domain validation or capacity bounds. Under D3, required fields failing admission make the observation unavailable; optional withholding uses the admitted typed state/null coupling. Trimming, Unicode rewriting and sanitized substitutions cannot satisfy verbatim binding under the same recipe. D3 does not widen existing byte/disclosure bounds or claim SAFE is implemented. A recipe change requires separately versioned admission and compatible embedding/projection identities. D2/D3 objects are deferred to M3 A3-B (§20.10).
+
+### 20.2 Head and durable-state vocabulary — A4 REQUIRED
+
+Existing physical keys are authoritative for locating rows:
+
+| Symbol | Existing head / exact key |
+| --- | --- |
+| O | `sr2_operational_agent_heads_v1`: `(organisation_id, source_record_id, purpose_code)`; current purpose `OPERATIONAL_AGENT_CONTEXT_V1`. |
+| P | `sr2_disclosure_profile_heads_v1`: `(organisation_id, repository_id, purpose_code)`; current purpose `TECHNICAL_CONTEXT_HYDRATION_V1`. |
+| A | `sr2_source_admission_heads_v1`: `(organisation_id, repository_id, snapshot_id, entry_id, purpose_code)`. |
+
+**D** denotes future durable operational disclosure/scope control, covering organisation + purpose + handling scope, including source-specific denial where applicable. O has no handling or space key today: resolve its handling through the referenced observation, and intersect it with D. Do not invent extra columns on O or rewrite historical identities. **T** denotes durable technical restrictions over repository/access, connection, source/path/blob and admission/profile scope. **S** denotes durable exact provider/space withdrawal control in either domain. D/T/S are functional requirements, not SQL names, table/index counts or a new governance authority model. Their physical admission belongs to the authorized successors.
+
+Durable controls must identify the exact affected scope, current decision/revision, denied or permitted state and the valid admission/policy basis for a transition. Persist denial even if no semantic head exists yet; an empty fan-out must not erase the restriction. Scope decisions are disclosure controls over derived context, not new Authority Policy actions, canonical facts or permission inferred from source existence. Existing disabled O/P/A rows persist; immutable admission/profile records retain their basis but are not proof that a newer denial has been lifted. Effective eligibility is the conjunction of all applicable current controls: a narrower permit never overrides a broader denial. Missing, stale or ambiguous required control fails closed.
+
+D read verification must use a fixed bounded number of keyed scope/head checks per request/hit, independent of the number of affected agents or historical observations. No policy-time traversal of all dependent agents and no RPC-retirement-only solution. S must cover the exact five-field space (§8), document/query recipe pair and the intended provider-withdrawal scope; a provider-wide withdrawal covers every matching space. O itself is not space-specific: space-only withdrawal disables S, without disabling unrelated admitted spaces on that O. Technical P similarly controls disclosure rather than embedding space.
+
+### 20.3 REVOCATION MATRIX — A4 REQUIRED
+
+Every actual disable, enable or target advance increments that mutable head revision exactly once; a requested disable of an already-disabled unchanged row is a comparison-only no-op. “Read sufficient?” labels **CURRENT** implemented containment versus **SUCCESSOR** obligations. Read validation alone does not complete dependent-head repair; a committed durable denial must independently prevent disclosure while repair is incomplete (§20.5). “Durable” names state that every re-enable/reconciliation must consult. Disable-first is the required invalidation path; replacement advance is a later transaction after current source/admission checks, unless the complete valid replacement is ready in the same logical transaction.
+
+| Event | Advance / disable heads | Read sufficient? | Required atomic writer fan-out | Durable before re-entry |
+| --- | --- | --- | --- | --- |
+| A3 agent descriptor field changes | Disable every affected O; later advance O to a new valid observation. D permission does not change merely because text changed. | CURRENT: selected live descriptor mismatch contains stale content; insufficient for head repair. | O set for organisation/source/purpose/handling, including all impacted scopes. | D and source-specific denial/eligibility; fresh D3 binding. |
+| A3 agent becomes ineligible | Disable affected O; record current ineligibility, retaining existing denials. | CURRENT: live eligibility rejects a selected hit; insufficient for durable exclusion. | All O for the source in the affected scopes. | D plus current source eligibility; status recovery alone cannot override a separate deny. |
+| A3 agent deleted | Disable O; persist source denial even if source is absent. | CURRENT: selected source absence contains disclosure; insufficient for sticky removal. | All existing O for the deleted source; no live read needed to disable. | D/source denial; recreating the same UUID is not re-admission. |
+| A3 agent moves tenant | Disable old-tenant O and deny old scope; never mutate its key or transfer its observation. | CURRENT: old-tenant live join fails; insufficient for re-entry control. | Union of old/new tenant source scopes; destination heads, if any, stay blocked absent independent admission. | Old denial persists; destination requires its own current D/handling/source admission. |
+| A3 related system renamed | Disable every dependent O; later advance observations with exact new labels. | CURRENT: selected descriptor mismatch contains disclosure only. | Dependent set defined in §20.4, not just the triggering agent. | D, source eligibility and current tenant-safe system binding. |
+| A3 related system recoded | Same disable/advance rule as rename. | CURRENT: selected descriptor mismatch only. | Every dependent O across all affected purposes/handling scopes. | Same D/source/system checks; no label-based identity continuity. |
+| A3 related system moves tenant | Disable dependent old-scope O; do not carry foreign system context into a replacement. | CURRENT: tenant-safe selected join rejects invalid relation. | Old/new scope union, including heads still pointing to the old system observation. | D plus live tenant-safe relationship; only an independently valid new observation may enter. |
+| A3 agent-system link changes | Disable affected O, then advance from current link state. | CURRENT: selected descriptor mismatch only. | All source O and old/current relationship dependency union. | D and current source/link binding, including ABSENT/PRESENT coupling. |
+| A3 org/purpose disclosure revoked | Disable relevant D; disable all O in that disclosure scope. | SUCCESSOR: D gives constant-cost new-read rejection while repair remains required. CURRENT: no durable D gate. | D denial independently committable; complete O scope is its own atomic set (§20.5). | Current D denial persists until explicit valid policy admission. |
+| A3 handling policy changes | Advance D to the new policy basis, disabled until admitted; disable all O bound to the replaced handling basis. | SUCCESSOR: D mismatch/deny rejects in constant cost. CURRENT: source fingerprint alone cannot detect policy change. | D denial independently committable; all affected O form one atomic set, even when source bytes are unchanged. | Current D policy/handling revision and D3/SAFE admission; new observations where identity changes. |
+| A3 provider/space withdrawn | Disable S (revision +1); O stays unchanged if only a space is withdrawn. | SUCCESSOR: current S check contains withdrawal. CURRENT: A3 SQL alone is insufficient. | S denial independently committable; any dependent D/O repair is atomic if their basis is also revoked. Immutable representations remain stored. | S withdrawal plus all D/source/handling controls; configured provider existence does not permit re-entry. |
+| A2 source file/path/blob revoked | Disable every matching A; preserve P if repository disclosure remains valid. Later A target advance requires a new valid admission. | SUCCESSOR: M2 excludes dependent subjects before ranking and consults durable denial. CURRENT: hydration-only checks are insufficient. | T denial independently committable; complete A set across every relevant snapshot/root/repository, not only the requested snapshot. | T restriction + current A/P; old immutable admission is not renewed permission. |
+| A2 admission revoked | Disable affected A; record the revoked admission basis so an older admission cannot replace it. | SUCCESSOR: D1b excludes before ranking and consults persistent state. CURRENT: hydration checks current A for selected support. | T denial independently committable; all A covered by the admission revocation form one atomic set, including affected entry scopes. | T and current A/P admission/profile; no older-target fallback. |
+| A2 repository access revoked | Disable repository P and all A; deny T root/access scope. | CURRENT: disabled P rejects during hydration; structural connection equality is not access authorization. SUCCESSOR: T denies access independently of repair. | T denial independently committable; complete affected repository purposes/snapshots/P/A and dependent root repair. | T access denial, current connection ownership/eligibility, P and A. |
+| A2 connection re-pointing / provider-source identity change | Deny affected connection/root scope in T; disable every affected P/A. Immutable repository roots are not retargeted. | CURRENT: connection source-system/provider identity mismatch rejects old root; insufficient for durable denial or other roots. SUCCESSOR: T denies affected scope. | T denial independently committable; every root attached to the affected connection, not one caller-supplied repository. | T old-basis denial; independently verify/admit changed provider-source identity as a new root with P/A. |
+| A2 repository disclosure profile changes | Disable P or advance it to a currently valid new immutable profile; disable A admitted solely under superseded basis until re-admitted. | CURRENT: P/profile binding rejects incompatible projections. SUCCESSOR: T denies revoked basis during incomplete repair. | Applicable T denial independently committable; complete P/A set invalidated by replaced basis, plus root/connection repair only if permission changes. | T restrictions, current P profile and each current A; matching old source bytes is insufficient. |
+| A2 provider/space withdrawn | Disable affected S; P/A remain unchanged for a space-only withdrawal. | SUCCESSOR: reject withdrawn S before ranking. CURRENT: A2 has no such durable gate. | S denial independently committable; any dependent P/A/root repair is atomic if their admission basis is also revoked. | S plus T/P/A; no provider/space substitution or older-version fallback. |
+
+Physical immutable subjects, observations, projections, source admissions, profiles and representations are never rewritten/deleted as a revocation mechanism. Ordinary technical deletion/move in a newer revision is distinct from an explicit historical path/blob revocation: §9's historical-snapshot permission survives only while current disclosure/admission allows it.
+
+### 20.4 FAN-OUT MODEL — A4 REQUIRED
+
+**A3 source set:** enumerate every O whose organisation/source key is affected, over all admitted purposes and handling scopes resolved through its observation. Do not partition this logical event by representation, model, observation age or arbitrary page size. For a related-system event, take the union of (a) heads whose live tenant-bound agent references the system and (b) heads whose referenced observation records that system. The union prevents an already-changed/deleted link or moved system from hiding a stale head. For a link change, include old and new endpoints. For tenant moves, lock both old/new scopes and preserve old-tenant denial; no cross-tenant copy grants admission. A source-specific disable uses persisted keys/dependencies; it must not require reading the now-missing legacy row.
+
+**A2 source set:** first resolve the restriction's explicit tenant/connection/provider-repository scope and selector (exact entry, exact relative path, source blob fingerprint or explicit combined selector). No display-name match, implicit path normalization, same-hash cross-tenant expansion or guessed rename continuity. Traverse canonical manifest entries across **every** snapshot/repository root covered by that selector, including entries not currently represented and disabled admission heads. Matching A rows form the mutation set; durable T covers matching entries/heads created later. Include every projection subject supported by a denied entry, including snapshot summaries, multi-source summaries, symbols/chunks and facet support. Invalidating its support A excludes the whole dependent subject; never silently drop a support item and claim complete provenance.
+
+Repository/profile/access fan-out is the union of affected P, all affected A and applicable root/connection controls; connection events include every attached repository root. A profile-only change leaves independent valid admissions unchanged, with the expected changed versus unchanged sets explicitly asserted. Cross-repository or provider-wide dependent-head fan-out takes the union of all covered scope sets; it is not split into independently committed subsets. The denial-only durable transition is independently committable under §20.5.
+
+**Completeness and concurrent membership:** freeze the scope before enumerating members. All A4 head creation, admission, enable, source-link membership changes and reconciliation must participate in the same scope serialization protocol as revocation. Recheck membership under that barrier before mutation; concurrent insertion cannot escape an enumerated set or a durable denial. Legacy writers without that protocol are not a trusted change feed: selected read-side source validation remains mandatory, and newly discovered changes trigger reconciliation/fan-out. This contract promises atomic controlled revocation, not automatic capture of every unobserved legacy mutation. No denormalized index/table is chosen here; successors must prove complete discovery from the existing source/observation/manifest/support relations and admitted scope controls.
+
+### 20.5 TRANSACTION / CAS — A4 REQUIRED
+
+**H-1 — durable denial first:** a denial-only durable transition in D/T/S that the successor read path consults MUST be committable independently of the size of the downstream fan-out. Commit that denial without requiring dependent-head enumeration or mutation to fit the fan-out execution bound. It MUST NOT be rolled back merely because the complete dependent-head fan-out is too large. Once denial commits, new reads fail closed through it; incomplete fan-out cannot leave the content disclosable. This is a required successor contract, not behavior implemented in the frozen A2/A3 reads.
+
+**Fan-out remains atomic:** the complete dependent-head fan-out is its own atomic set, with one database transaction for all its head mutations, relevant controlled membership changes and any immutable replacement records prepared in that transaction. It commits completely or rolls back completely, preserves CAS/count assertions and never partially acknowledges success. No batching semantics are introduced here. A failed member/CAS/count assertion rolls back every write in the fan-out transaction, but cannot undo an independently committed durable denial.
+
+**Failure handling:** failed or over-bound fan-out is escalated and remains visible as incomplete operational repair. Reconciliation/fan-out can complete later under the same denial. Failure NEVER silently restores disclosure and NEVER removes the durable denial. Completion of repair does not lift denial; only an explicit valid lift can do so. Success acknowledgement distinguishes committed denial from complete fan-out; neither a prefix nor pending repair is acknowledged as complete.
+
+Acquire locks in this deterministic hierarchy for every participating writer:
+
+1. Applicable broad disclosure/provider/connection scope barriers first, ordered by domain (A3 then A2), organisation and exact scope key. Multi-tenant/root events acquire the whole sorted parent set before any child. Scope locks must work even when no head exists; their physical mechanism is deferred, not a reason to skip serialization.
+2. A3: disclosure/scope head D first; then affected O rows by full PK, text components under `COLLATE "C"` (UUIDs in native deterministic order). A2: repository/root scope lock first; then P rows by full PK; then A rows by full PK with text under C ordering. Never interleave a late parent lock after child locks.
+3. For advance/enable only, read and stabilize applicable live source/system/connection and policy/admission basis in that transaction, in deterministic table/key order. Controlled source mutators use the same parent-first protocol. If discovery requires an additional earlier-sorting scope, roll back and recompute the whole set instead of acquiring it out of order. Read-only legacy/source checks do not grant permission or replace the scope barriers.
+
+Every mutable head update predicates on **expected current revision**, writes **next revision exactly +1**, and asserts the **expected affected row count** (one per changed PK and exact total for the complete mutation set). Row locking alone is not CAS. Compare desired target/enabled state under lock first; unchanged rows are verified but not updated and are excluded from the expected mutation count. Initial insertion requires absence under the scope barrier, revision 1 and exactly one inserted row; an unexpected conflict is not an upsert or replay success. Missing expected rows, revision overflow, CAS miss, membership change or row-count mismatch abort the transaction being attempted; an independently committed denial remains in force. The orchestration layer then rereads durable controls/source, recomputes membership/expected revisions and retries a fresh transaction under bounded retry policy. Never retry an individual child update inside a partially applied set.
+
+### 20.6 DISABLE / ADVANCE / ENABLE and STICKY REVOCATION — A4 REQUIRED
+
+**Disable:** use current persisted scope/head keys and expected revision; no live source read is required. A deleted, inaccessible, foreign or malformed source cannot prevent immediate disable. Do not force a target change to make an already-disabled row pass the no-op guard. Its durable restriction may still need recording for future heads even when zero head rows change.
+
+**Advance:** selecting a different observation/admission/profile requires a live source read in the same transaction and current admission/source-binding, handling and disclosure validation. Technical source verification uses the pinned verified capture/manifest/admission for the immutable requested revision and current connection/access checks; it does not fetch arbitrary live repository content during a read. Immutable technical root keys cannot advance to a new connection. Source instability rolls back or leaves the old head disabled, never labels stale data current.
+
+**Enable / re-enable:** consult every applicable durable D/T/S restriction and current O/P/A basis in that transaction, even when target bytes are identical. Re-entry requires an explicit currently valid admission/policy state for the exact subject/scope/purpose/handling/space. It must supersede or validly lift the relevant denial; a historical permit cannot override a newer deny. Regeneration may reuse an exactly valid immutable identity, but source existence, successful embedding, elapsed time, policy row existence or a reconciliation job is never re-admission authority.
+
+> Revocation must be sticky until an explicit currently valid admission/policy state permits re-entry.
+
+A3's durable D disclosure/source denial governs O and future source heads; T restrictions plus current A/P govern technical admission/profile and future snapshots. S governs withdrawn providers/spaces in both domains. Disable flags are durable barriers for existing heads, not a complete future-scope deny store on their own. Reconciliation must never automatically enable content merely because the legacy source or a historical admission/profile still exists. No new governance authority or generic permission evaluator is introduced by these requirements.
+
+### 20.7 SNAPSHOT SEMANTICS — accepted boundary
+
+**authorization / disclosure as-of statement snapshot**: a read whose acquisition/hydration statement snapshot precedes revocation commit may complete using that prior PostgreSQL statement snapshot. After commit, a new acquisition/hydration statement must observe the committed revoked/advanced state. Request start time, an earlier authentication statement or transaction start alone is not the disclosure snapshot. No guarantee of impossible cross-statement instantaneous revocation is required. A4 successors must acquire controls, exact head/space selection and protected hydration in one statement snapshot, preserving the admitted isolation/session rules; no cached permission or separate stale disclosure snapshot bypasses a committed denial.
+
+### 20.8 RECONCILIATION — A4 REQUIRED, repair not authority
+
+Legacy sources have no trusted change feed. A4 therefore requires periodic or explicit reconciliation over covered scopes, with coverage/failure evidence and a bounded retry policy. Stale heads can cause availability failures until repaired; reads must fail closed on selected stale source-bound data, never silently serve old content, choose an older observation or fetch a substitute. Reconciliation detects source drift, enumerates the complete logical fan-out, disables invalid heads and prepares replacement immutable observations/admissions when permitted. It is availability/repair machinery, not authority, and obeys exactly the same scope locks, CAS/count assertions, durable denial, source-binding, handling/SAFE and disclosure rules as any writer. A failed or delayed repair does not lift denial. Absent sources/heads and zero-member revoked scopes remain covered by durable state.
+
+### 20.9 A4 ACCEPTANCE obligations — permanent, NOT executed by P3-REV
+
+| ID | Required future proof |
+| --- | --- |
+| REV-O01 | Descriptor change makes old O unusable; selected mismatch fails closed until valid replacement; no older observation or N+1 substitution. |
+| REV-O02 | Delete/ineligibility disables every affected O; disable works without live source; recreation/status recovery cannot override retained denial. |
+| REV-O03 | Tenant move denies old tenant, changes no old key, and grants no destination admission implicitly. |
+| REV-O04 | System rename/recode/move and link change invalidate **all** dependent heads, including stale observation-only links and concurrent membership changes. |
+| REV-O05 | Org/purpose disclosure revocation gives constant-cost read rejection, independent of number of agents/history, without relying solely on RPC retirement. Handling-policy changes invalidate unchanged source bytes under the old basis. |
+| REV-O06 | Reconciliation and direct re-enable cannot resurrect denied content; explicit valid current admission permits re-entry only in its scope. D3 source-bound verbatim/WITHHELD and SAFE writer admission reject truncation/normalization and inadmissible required fields. |
+| REV-O07 | Two concurrent writers with the same expected revision: a CAS conflict on any member rolls back the complete fan-out transaction, including its prepared writes; an independently committed denial remains in force. |
+| REV-T01 | Revoked/invalid current admission excludes every dependent subject **before ranking**, including summary/multi-source support. Revoked high-score subjects do not poison top-N; valid lower-ranked subjects can rank after eligibility exclusion. |
+| REV-T02 | File/path/blob revocation fans out across all covered snapshots/roots/repositories, includes disabled/unrepresented entries via durable restriction, and does not cross the declared tenant/selector scope. |
+| REV-T03 | Repository access/profile revocation blocks reads through current P/T; connection re-pointing / provider-source identity change covers every affected root and never retargets immutable root identity. |
+| REV-T04 | D1: faulty selected hit fails the whole domain; out-of-selected-hit faults do not poison it; no N+1 substitution. D1b excludes revoked subjects without falling back to older representation/projection/admission or another snapshot. |
+| REV-T05 | Failure/CAS miss/count mismatch on first, middle or last child commits no partial P/A/root repair or immutable replacement writes; independently committed durable denial remains in force. |
+| REV-X01 | Provider/exact-space withdrawal blocks both domains where affected, survives reconciliation/reconfiguration, and preserves unrelated admitted spaces. |
+| REV-X02 | An acquisition statement started before revocation commit may finish old-state; the next statement after commit observes denial/advance. Test a real interleaving, not only timestamps. |
+| REV-X03 | Concurrent head insertion/enable cannot escape revocation scope; zero-member denial prevents later auto-admission. Multi-scope lock order, count assertions, no-op handling and revision overflow are tested. |
+| REV-X04 | Over-bound revocation: (1) complete fan-out exceeds the configured operational bound; (2) durable denial still commits; (3) the next read is denied; (4) dependent-head fan-out is not partially committed; (5) later reconciliation completes the fan-out under the same denial; (6) denial remains until an explicit valid lift. |
+
+These tests are implementation acceptance duties, not claims of existing passing runtime behavior. Their eventual successor-horizon frame/manifest/SQL↔TypeScript admission tests remain independently mandatory.
+
+### 20.10 M2 / M3 dependencies and deferred hosted checks
+
+**M2 — future A2 capacity successor:** D1 and D1b are required inputs. Freeze exact-snapshot/latest-in-space selection first, exclude currently revoked subjects before ranking, hydrate only selected hits and fail selected faults without N+1 or older-version fallback. No A2 SQL changes here; this contract does not close `A2_CAPACITY_SCALING_REVIEW_REQUIRED_BEFORE_A4_A5` or the separate SR1 numeric successor gate.
+
+**M3 — later A3-B successor migration:** implement D2 operational disclosure-head object(s), D3 handling/source-binding trigger/function, SAFE writer admission and an A3 RPC successor if required for the current disclosure check. Freeze exact object/ACL/dependency/identity budget in that slice. D/T/S scope persistence/serialization must be admitted before A4 writers/population; P3-REV only freezes their functional contract. No GPU/M3 product integration, provider qualification or writer begins here. A3 remains CLOSED at its historical horizon; its residual source-revocation and handling/binding gates remain implementation prerequisites for A4.
+
+**P1-H2 F-2 stays OPEN:** RPC parameter collation, list/default-collation predicates and hosted `datcollate` verification. This is distinct from P1-FRAME F-2 and H1 F-2. Do not infer database-default behavior from C-collated scalar CHECK parity or solve it in this slice. H1 hosted equality remains OPEN before a hosted-bound successor preflight; H1 V2 horizon and P1-FRAME successor admission duties remain unchanged. No hosted checks, hosted mutations or deployment are performed/authorized here.
+
+### 20.11 Preserved review follow-ups — OPEN, not implemented by this close
+
+- **P3-REV F-1 — lock-order hardening:** define total ordering for global/provider-wide barriers before admission; the generic hierarchy in §20.5 is not that complete specification. Legacy triggers must not acquire SR2 barrier/head locks. Freeze D3 live-source read ordering in implementation.
+- **P3-REV F-2 — ownership:** assign ownership of T, S and scope barriers before A4 writers/population. Their functional names do not assign that ownership.
+- **P3-REV F-3 — invalidation versus denial:** clarify source-ineligibility invalidation versus durable denial and the exact A2 admission-revocation scope before implementation; this close does not expand those scopes.
+- **P3-REV F-4 — acceptance additions:** add explicit A2 no-resurrection proof after new capture/reconciliation/re-evaluation and pin transaction isolation in race tests. The over-bound case is now recorded as REV-X04 by this close; it is not executed here.
+
+- **P3-REV F-5 — denial lift:** require admitted immutable/current governed state as the basis for an explicit valid lift, never an unchecked operator toggle. No lift mechanism is implemented here.
+
+**PRE_A4_REV_OWNER_CLOSED; P3-REV CLOSED; PRE-A4 WAVE 0 CLOSED.** H1 V1 unchanged; P1-FRAME CLOSED; P1-H2 CLOSED. A3 remains CLOSED; **A4 NOT STARTED; A5 NOT STARTED; A6 NOT STARTED; M18 HOLD**. No migration, production/parser code, DB object, semantic population, Talk, legacy search or GPU/M3 product integration change. Owner authorization permits committing the complete clarified documentation candidate and pushing only the expected feature branch; no PR, merge, deployment or hosted Supabase access.
+
+## 21. M3 / A3-B D2 + D3 local successor — 2026-10-29
+
+**M3_A3_BINDING_DISCLOSURE_OWNER_CLOSED; M3 CLOSED — 2026-10-30.**
+Carlos approved the reviewed checkpoint 58b5855f128139c6170f01d19f481cd055572211 under
+CLAUDE_M3_REVIEW_PASS_WITH_FOLLOWUPS_READY_FOR_OWNER_CLOSE, with official commit/push
+on feat/m17.5-c3-sr2-semantic-replacement. F-1 changes owner-close metadata only.
+The reviewed migration 109, H1 V4 and production behavior remain unchanged.
+Carlos authorized only operational disclosure,
+source binding and the exact SAFE contract below, including the character corpus supplied
+in this implementation session. This supersedes the earlier missing-SAFE implementation
+blocker, not historical H2 read/storage parity or any broader readiness gate.
+Migration: 20261029195734_m175_pre_a4_m3_a3_binding_disclosure_v1.sql.
+
+### 21.1 Frozen GOVIA_SR2_OPERATIONAL_HANDLING_V1 admission
+
+General text is 1–512 UTF-8 bytes; PROJECTED description is 1–1024 bytes. PostgreSQL
+UTF8 text must be well formed (the native text type also cannot represent U+0000).
+Never trim, normalize, truncate or substitute text. The exact SAFE prohibited corpus is:
+
+- U+0001–U+001F, U+007F–U+009F;
+- U+00AD, U+061C, U+180E;
+- U+200B–U+200F, U+2028–U+202E;
+- U+2060–U+2064, U+2066–U+2069;
+- U+FEFF.
+
+Text must include a character outside ASCII whitespace, U+00A0, U+1680,
+U+2000–U+200A, U+202F, U+205F and U+3000. No other code point is prohibited
+by SAFE. In particular combining marks, non-Latin scripts, emoji, decomposed Unicode,
+and mixed ordinary/Unicode whitespace preserve their exact bytes.
+
+Code/name/type copy the live same-tenant agent verbatim or reject the observation.
+Business domain is NULL only when the source is NULL; otherwise copy verbatim and
+require SAFE. Description is either exact present SAFE PROJECTED text or WITHHELD
+with NULL, regardless of whether the withheld source description would pass SAFE.
+Related system is ABSENT only when the source agent has no system; otherwise ID/code/name
+must exactly match the same-tenant live system and projected labels must pass SAFE.
+Admission metadata text also obeys the general text bound and SAFE. Existing projection,
+observation, subject, representation and document identity recipes do not change.
+
+The ALWAYS observation admission trigger checks the live source and the existing raw
+descriptor fingerprint before persistence. The O guard repeats admission on enable or
+target advance, including a target advance that remains disabled. A disable needs no
+live source. The read repeats verbatim/SAFE binding for selected hits, so pre-successor
+forged projections with self-consistent identities and matching raw-source hashes cannot
+be disclosed. Selected stale sources still fail closed with no fallback.
+
+### 21.2 Durable D controls and valid re-entry
+
+Two owner-private tables implement D: immutable
+sr2_operational_disclosure_admissions_v1 and mutable, non-removable
+sr2_operational_disclosure_heads_v1. Both are keyed by organisation, fixed
+OPERATIONAL_AGENT_CONTEXT_V1 purpose, scope kind and source UUID; admission adds
+an explicit admission UUID. ORGANISATION uses the zero UUID as its scope key;
+SOURCE accepts any source UUID, including zero, in its distinct scope kind.
+Admissions pin handling V1/version 1, the existing document recipe, and an explicit
+SAFE owner-recorded policy-basis reference. They attest disclosure admission only,
+not governance authority, source truth or a generic policy evaluator.
+
+An enabled organisation D with its exact immutable admission is mandatory. Optional
+SOURCE D intersects it: absent SOURCE D inherits the organisation scope; disabled
+SOURCE D denies. A narrow permit never overrides broad denial. Disabled D may be
+inserted with no admission and with no existing source or semantic head. No default
+permit/backfill is created. No application role may create admissions or mutate D.
+
+Initial head revision is 1; actual enabled/target transitions require exactly +1,
+immutable keys and no overflow/no-op. Decision/admission timestamps are server-owned.
+Each admission captures the current head revision (zero for an absent scope) under the
+scope barrier; enabling requires that exact prior revision, independently of clock movement.
+Enabling after denial requires a different, freshly recorded valid admission.
+Old immutable admission presence cannot lift a
+newer denial. D cannot be deleted/truncated; admissions cannot be updated/deleted/truncated.
+Denial commits independently of O repair. Failed/incomplete repair and completed repair
+both leave D denial intact until explicit fresh admission. This adds the M3 primitives,
+not a population worker, reconciliation implementation or the future T/S universe.
+
+### 21.3 Snapshot, serialization and object/capability budget
+
+D and source/projection checks occur in the existing single acquisition/hydration
+statement snapshot, honoring §20.7. Missing/disabled broad disclosure or selected denied
+source returns SEMANTIC_CONTEXT_UNAVAILABLE / CONTENT_WITHHELD with empty hits.
+The parser admits that one additional closed reason; healthy DTOs are unchanged.
+Broad D requires one exact scope lookup plus its exact admission. Each selected hit
+requires at most one optional SOURCE scope and admission lookup, with full-key
+parameterized subqueries and no traversal of historical observations or scope fan-out.
+Existing scan, score, top-N, content and response bounds remain.
+
+M3 conservatively serializes operational admission/control writes with a single global
+A3 advisory transaction barrier (175003,1). BEFORE STATEMENT ALWAYS triggers acquire
+it before D/O row locks, including zero-row/absent scopes. Only READ COMMITTED writes
+are admitted. Binding then locks broad D, optional SOURCE D, live agent, related system,
+in that order; source SHARE locks last until transaction completion. Legacy tables gain
+no triggers or SR2 barrier acquisition. The global writer barrier is a deliberate bounded
+M3 implementation choice; future A4 work must preserve its ordering or separately review
+a finer-grained replacement. It does not serialize ordinary reads or legacy source writes.
+
+Budget: exactly two tables, two PK indexes, three FKs, eleven CHECKs, nine additional ALWAYS
+triggers, zero policies/extra indexes, and five private invoker helpers:
+sr2_operational_safe_v1(text,integer), sr2_operational_scope_lock_v1(),
+sr2_operational_disclosure_guard_v1(),
+sr2_operational_binding_v1(gov_repo.sr2_operational_agent_observations_v1) and
+sr2_operational_observation_admit_v1().
+The existing O guard and fourteen-argument A3 RPC receive body-only replacements.
+Starting body/capability checks fail closed; OID/signature/config/ACL/owner/security
+properties stay unchanged. All new tables/helpers belong to postgres; tables enable RLS,
+zero policies, and revoke PUBLIC/anon/authenticated/service_role access. Helpers use
+search_path=pg_catalog,pg_temp and revoke application/PUBLIC execution. SAFE alone is
+IMMUTABLE/PARALLEL SAFE; four trigger/binding helpers are VOLATILE/PARALLEL UNSAFE.
+The existing postgres owner exception remains; no new application writer or definer.
+
+H1 V4 explicitly adds these dependencies at the 109-migration horizon. V1/V2/V3 and
+historical migrations remain frozen. SR1/A2 routine bytes/capabilities stay unchanged.
+M18, A4 population, A5/Talk, M19 connectors, hosted access, deployment and production
+activation are outside this slice; existing readiness HOLDs remain.
+
+### 21.4 Owner-close follow-ups
+
+Only the following M3 review follow-ups carry forward; neither is implemented here:
+
+- **F-2:** Source-denied candidates may still participate in ranking and reveal proximity
+  or block the result if selected. A4 must decide whether to exclude denied scopes before ranking.
+- **F-3:** A4 writer design must account for SHARE locks on legacy agents / ai_systems
+  and replace the current global-lock strategy appropriately.
+
+**A4 NOT STARTED; A5 NOT STARTED; M18 NOT STARTED; M19 expansion NOT STARTED.**
+No hosted access or additional review is part of this owner close.

@@ -7,9 +7,15 @@ import { ledgerRepo } from '../helpers/ledger-v2-foundation-fixtures';
 import { Pool } from 'pg';
 import { createSemanticRetrievalAdapter,createQueryEmbeddingSource,QUERY_RECIPE,SemanticAuthorizationError } from '../../lib/governance/semantic-context-retrieval';
 import { space } from '../helpers/semantic-retrieval-fixtures';
+import { operationalCluster } from '../helpers/sr2-a3-fixtures';
+import { applyM1, m1Sr1Postflight } from '../helpers/sr1-numeric-fixtures';
 
 test('C3-SR1 real PG17/pgvector canonical replay and bounded principal read',{timeout:900000},async t=>{
- const pg=await semanticCluster(m=>t.diagnostic(m));t.after(()=>pg.stop());
+ const atM1=process.env.GOVIA_SR1_TEST_M1==='1';
+ const pg=await (atM1?operationalCluster:semanticCluster)(m=>t.diagnostic(m));t.after(()=>pg.stop());
+ if(atM1)await applyM1(pg);
+ const postflight=atM1?await m1Sr1Postflight(pg.owner,successorPostflight()):successorPostflight();
+ t.diagnostic(`SR1 complete regression horizon: ${atM1?'M1 / 107 migrations':'historical SR1 / 103 migrations'}`);
  const {owner,svc,bootstrapSql}=pg;
  await bootstrapSql(`BEGIN; SET LOCAL session_replication_role=replica; ${fixture} COMMIT;`);
  const a=await pg.actor(orgA),b=await pg.actor(orgB);
@@ -19,9 +25,9 @@ test('C3-SR1 real PG17/pgvector canonical replay and bounded principal read',{ti
  const unavailable=async(sql:string,reason='INVALID_REPRESENTATION_SUPPORT')=>{
    const x=await corrupt(sql);assert.equal(x.status,'SEMANTIC_CONTEXT_UNAVAILABLE');assert.equal(x.reason,reason);assert.deepEqual(x.hits,[]);
  };
- await t.test('102 historical canonical files + exactly one additive applies once; old routines intact',async()=>{
+ await t.test('admitted horizon preserves prior routines and rejects historical SR1 reapplication',async()=>{
    await assert.rejects(owner(semanticSource()),/SR1_UNAPPROVED_STARTING_CATALOG/);
-   await owner(successorPostflight());
+   await owner(postflight);
    assert.equal(await owner("SELECT count(*) FROM pg_proc WHERE pronamespace='gov_repo'::regnamespace AND proname='coding_memory_search'"),'0');
    const expected=JSON.parse(readFileSync(join(ledgerRepo,'apps/dashboard/tests/fixtures/semantic-retrieval-catalog-v1.json'),'utf8'));
    assert.equal(expected.routines.length,424);assert.ok(expected.routines.find((r:any)=>r.identity.includes('agent_semantic_search')));
@@ -229,13 +235,13 @@ test('C3-SR1 real PG17/pgvector canonical replay and bounded principal read',{ti
    default_public:`ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT EXECUTE ON ROUTINES TO PUBLIC;`,
    default_service:`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA gov_repo GRANT EXECUTE ON ROUTINES TO service_role;`
  })) await t.test(`successor rejects tampering: ${label}`,async()=>{
-   await assert.rejects(bootstrapSql(`BEGIN; ${sql} ${successorPostflight()} ROLLBACK;`),/SR1_.*DRIFT|SR1_EXACT_IDENTITY_REQUIRED/);
+   await assert.rejects(bootstrapSql(`BEGIN; ${sql} ${postflight} ROLLBACK;`),/SR1_.*DRIFT|SR1_EXACT_IDENTITY_REQUIRED/);
  });
  await t.test('postgres exception is explicit: new callable static body has no governed DML, no legacy dependency',async()=>{
    const body=await owner(`SELECT prosrc FROM pg_proc WHERE oid='${sig}'::regprocedure`);
    assert.doesNotMatch(body,/\b(INSERT|UPDATE|DELETE|TRUNCATE|MERGE|EXECUTE|CALL)\b/i);
    assert.doesNotMatch(body,/agent_semantic_search|coding_memory|ledger_append|l14_.*policy/);
    assert.equal(await owner(`SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid='${sig}'::regprocedure`),'postgres');
-   await owner(successorPostflight());
+   await owner(postflight);
  });
 });

@@ -15,6 +15,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      # Fetch the approved object explicitly: availability must not depend on a
+      # feature branch surviving merge/deletion, or on checkout's shallow depth.
+      # Deterministic tests only read these local objects; they never fetch.
+      - name: Fetch the approved immutable migration checkpoint
+        run: git fetch --no-tags --depth=1 origin 5cb86faa9130ec5df3429b69c8d87652b59000a6
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -22,7 +27,7 @@ jobs:
       - run: npm ci
       - name: Execute M17 static acceptance, including exact historical migration order
         working-directory: apps/dashboard
-        run: node --conditions=react-server --import tsx --test tests/m17-s0-authority-contract.test.ts tests/m17-s*-static-acceptance.test.ts
+        run: node --conditions=react-server --import tsx --test tests/m17-s0-authority-contract.test.ts tests/m17-s*-static-acceptance.test.ts tests/m17-migration-chain-contract.test.ts tests/noncanonical-migration-roots-contract.test.ts
       # ubuntu-24.04 runners ship PostgreSQL 16 by default, not the canonical
       # M16 profile (17). Native package installation from the official PGDG
       # apt repository is the simplest reliable way to pin an exact major
