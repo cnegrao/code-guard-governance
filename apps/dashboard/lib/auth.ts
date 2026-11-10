@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { recordE1Authentication } from "./auth/e1-diagnostics";
 import {
   SESSION_COOKIE_NAME,
   GOVERNANCE_SESSION_MAX_AGE_SECONDS, verifyGovernanceSessionToken,
@@ -24,7 +25,11 @@ export async function requireVerifiedGovernancePrincipal(): Promise<VerifiedGove
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) throw new SessionAuthenticationError();
-  try { return await verifyGovernanceSessionToken(token); }
+  try {
+    const principal = await verifyGovernanceSessionToken(token);
+    recordE1Authentication("node-jwt-verified");
+    return principal;
+  }
   catch { throw new SessionAuthenticationError(); }
 }
 

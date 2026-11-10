@@ -4,6 +4,7 @@ import { loginSchema } from "@/lib/validation";
 import { setTokenCookie } from "@/lib/auth";
 import * as authService from "@/services/auth";
 import { AuthPublicError, GENERIC_AUTH_ERROR_MESSAGE } from "@/lib/auth/errors";
+import { recordE1Authentication } from "@/lib/auth/e1-diagnostics";
 
 export async function POST(request: Request) {
   try {
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
       org: result.session.org,
     });
     response.headers.set("Set-Cookie", setTokenCookie(result.session.token));
+    recordE1Authentication("cookie-issued");
     return response;
   } catch (error) {
     if (error instanceof ZodError) {

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,6 +18,7 @@ export function LoginForm() {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -29,8 +28,9 @@ export function LoginForm() {
         throw new Error(body.error ?? "Login failed");
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      // A full same-origin navigation makes the next request pass through the
+      // middleware with the freshly persisted HttpOnly cookie.
+      window.location.replace("/governance/reviews");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
