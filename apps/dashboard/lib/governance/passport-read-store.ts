@@ -31,7 +31,10 @@ export interface ProfileRow extends TenantRow {
   entrypoint_reference: string | null; configuration_reference: string | null;
   revision: number; updated_at: string;
 }
-interface DecisionRow extends TenantRow { decision_id: string; decided_at: string; outcome: string }
+interface DecisionRow extends TenantRow {
+  decision_id: string; decided_at: string; outcome: string; family: string; subject_candidate_id: string | null;
+  canonical_object_id: string | null; canonical_object_kind: string | null; authority_kind: string; authority_reference: string | null;
+}
 interface AssertionRow extends TenantRow {
   assertion_id: string; source_connection_id: string; source_external_type: string; source_external_id: string;
   method_code: string; trust_state: TrustState; observed_at: string; recorded_at: string; run_id: string;
@@ -60,11 +63,15 @@ interface Tables {
   agent_version_technical_profiles: ProfileRow;
   agent_version_technical_profile_field_assertions: TenantRow & { canonical_object_id: string; field_name: ProfileField; assertion_id: string };
   agent_version_technical_profile_field_evidence: TenantRow & { canonical_object_id: string; field_name: ProfileField; evidence_id: string };
+  agent_version_technical_profile_proposals: TenantRow & { proposal_id: string; agent_version_candidate_id: string; created_at: string };
+  agent_version_technical_profile_materializations: TenantRow & { materialization_id: string; canonical_object_id: string; proposal_id: string; status: string; applied_at: string; created_at: string };
+  discovery_candidates: TenantRow & { candidate_id: string; candidate_kind: string; finding_id: string; source_connection_id: string; source_external_type: string; source_external_id: string };
   reconciliation_decisions: DecisionRow;
   reconciliation_decision_assertions: TenantRow & { decision_id: string; assertion_id: string };
   reconciliation_decision_evidence: TenantRow & { decision_id: string; evidence_id: string };
-  reconciliation_invocations: TenantRow & { reconciliation_decision_id: string; review_subject_id: string | null };
-  review_subjects: TenantRow & { review_subject_id: string };
+  reconciliation_invocations: TenantRow & { invocation_id: string; reconciliation_decision_id: string; review_subject_id: string | null; actor_kind: string; actor_reference: string | null };
+  review_subjects: TenantRow & { review_subject_id: string; finding_id: string; candidate_kind: string };
+  review_audit_events: TenantRow & { event_id: string; review_subject_id: string; finding_id: string; new_state: string; actor_kind: string; actor_reference: string | null; occurred_at: string; recorded_at: string };
   source_assertions: AssertionRow;
   discovery_evidence: TenantRow & { evidence_id: string; handling: string; captured_at: string };
   acquisition_runs: TenantRow & { run_id: string; source_system_id: string };
@@ -85,11 +92,15 @@ const columns: { [K in keyof Tables]: readonly (keyof Tables[K] & string)[] } = 
   agent_version_technical_profiles: ['canonical_object_id','source_proposal_id','behavior_fingerprint_algorithm','behavior_fingerprint_schema_version','behavior_fingerprint_value','build_reference','runtime_framework_reference','entrypoint_reference','configuration_reference','revision','updated_at'],
   agent_version_technical_profile_field_assertions: ['canonical_object_id','field_name','assertion_id'],
   agent_version_technical_profile_field_evidence: ['canonical_object_id','field_name','evidence_id'],
-  reconciliation_decisions: ['decision_id','decided_at','outcome'],
+  agent_version_technical_profile_proposals: ['proposal_id','agent_version_candidate_id','created_at'],
+  agent_version_technical_profile_materializations: ['materialization_id','canonical_object_id','proposal_id','status','applied_at','created_at'],
+  discovery_candidates: ['candidate_id','candidate_kind','finding_id','source_connection_id','source_external_type','source_external_id'],
+  reconciliation_decisions: ['decision_id','decided_at','outcome','family','subject_candidate_id','canonical_object_id','canonical_object_kind','authority_kind','authority_reference'],
   reconciliation_decision_assertions: ['decision_id','assertion_id'],
   reconciliation_decision_evidence: ['decision_id','evidence_id'],
-  reconciliation_invocations: ['reconciliation_decision_id','review_subject_id'],
-  review_subjects: ['review_subject_id'],
+  reconciliation_invocations: ['invocation_id','reconciliation_decision_id','review_subject_id','actor_kind','actor_reference'],
+  review_subjects: ['review_subject_id','finding_id','candidate_kind'],
+  review_audit_events: ['event_id','review_subject_id','finding_id','new_state','actor_kind','actor_reference','occurred_at','recorded_at'],
   source_assertions: ['assertion_id','source_connection_id','source_external_type','source_external_id','method_code','trust_state','observed_at','recorded_at','run_id'],
   discovery_evidence: ['evidence_id','handling','captured_at'],
   acquisition_runs: ['run_id','source_system_id'],

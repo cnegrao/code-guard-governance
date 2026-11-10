@@ -7,7 +7,7 @@ import { SignJWT } from 'jose';
 import { signToken } from '../lib/auth/session-token';
 import { readFileSync } from 'node:fs';
 import { getDynamicParam } from 'next/dist/shared/lib/router/utils/get-dynamic-param';
-import { PASSPORT_FAMILIES, type AgentPassport360, type DataFieldFact, type PassportFamily } from '@/lib/governance/agent-passport';
+import { PASSPORT_FAMILIES, type AgentPassport360, type DataFieldFact, type PassportFamily, type ProfileFact } from '@/lib/governance/agent-passport';
 
 const org='11111111-1111-1111-1111-111111111111';
 const secret='passport-fixture-signing-key-only-for-local-tests';
@@ -55,6 +55,35 @@ test('real Passport component renders exactly 16 accessible and navigable sectio
   assert.ok(html.includes('UNKNOWN')); assert.ok(html.includes('canonical:agent'));assert.ok(html.includes('Current AgentVersion: UNKNOWN'));
   assert.ok(html.includes('Selected AgentVersion: UNKNOWN')); assert.ok(html.includes('version%3A1'));assert.ok(html.includes('version%3A2'));
   assert.ok(html.includes('<details'));assert.ok(html.includes('Source, trust and provenance')); assert.ok(!html.includes('17. Risk'));
+});
+
+function profileTraceView(missing=false): AgentPassport360 {
+  const fact:ProfileFact={type:'profile',id:'version:1:framework',versionId:'version:1',field:'runtimeFrameworkReference',value:'LangGraph',
+    provenance:{storage:'agent_version_technical_profiles',authority:'GOVERNED_PROFILE',profileOriginProposalId:'profile:proposal',
+      sources:[{assertionId:'assertion:framework',connectionId:'repo',externalType:'file',externalId:'src/agent.py',trust:'INFERRED',method:'framework-import-declaration',runId:'run:1',observedAt:'observed-time',recordedAt:'source-recorded-time'}],
+      evidence:[{evidenceId:'evidence:framework',handling:'NON_SENSITIVE',capturedAt:'captured-time'}],
+      profileGovernance:{versionId:'version:1',originProposalId:'profile:proposal',applications:[{proposalId:'profile:proposal',origin:true,candidateId:'candidate:version',proposedAt:'proposal-time',
+        discovery:{findingId:'finding:version',connectionId:'repo',externalType:'file',externalId:'src/agent.py'},
+        certifications:missing?[]:[{eventId:'certification:event',reviewSubjectId:'review:version',actorReference:'human:certifier',occurredAt:'certification-time',recordedAt:'certification-recorded-time'}],
+        reconciliations:[{decisionId:'identity:decision',outcome:'CREATE_NEW',actorReference:'human:reconciler',decidedAt:'reconciliation-time',mappingIds:['mapping:version'],reviewSubjectIds:['review:version']}],
+        materialization:missing?undefined:{materializationId:'technical:receipt',status:'APPLIED',appliedAt:'materialization-time',recordedAt:'materialization-recorded-time'},
+        unknowns:missing?['Human certification of the AgentVersion review: UNKNOWN.','Technical profile materialization: UNKNOWN.']:[]}]}}};
+  return {...passport,selectedVersionId:'version:1',families:passport.families.map(s=>s.id==='technology'||s.id==='provenance'?{...s,status:'PARTIAL',facts:[fact]}:s) as PassportFamily[]};
+}
+test('profile provenance renders three separate real audit stages without presenting identity reconciliation as field approval',()=>{
+  const html=renderToStaticMarkup(createElement(Component,{passport:profileTraceView()}));
+  const technology=html.slice(html.indexOf('id="passport-technology"'),html.indexOf('id="passport-model"'));
+  for(const label of ['Human certification of the AgentVersion review','AgentVersion identity reconciliation','Technical profile materialization',
+    'certification:event','identity:decision','technical:receipt','certification-time','reconciliation-time','materialization-time',
+    'Discovery candidate: candidate:version','finding:version','profile:proposal','Individual field approval: UNKNOWN','INFERRED','evidence:framework'])assert.ok(technology.includes(label),label);
+  assert.ok(technology.includes('review%3Aversion'));assert.ok(!technology.includes('Decision: </dt>'));
+  assert.equal((html.match(/<section /g)??[]).length,16);
+});
+test('profile provenance renders absent audit records as UNKNOWN without changing source trust',()=>{
+  const html=renderToStaticMarkup(createElement(Component,{passport:profileTraceView(true)}));
+  assert.ok(html.includes('Human certification of the AgentVersion review: UNKNOWN.'));
+  assert.ok(html.includes('Technical profile materialization: UNKNOWN.'));
+  assert.ok(html.includes('INFERRED'));assert.ok(html.includes('LangGraph'));assert.ok(!html.includes('certification:event'));
 });
 
 test('O72 risk overlay attaches to existing families without changing the 16-family coverage statuses',()=>{

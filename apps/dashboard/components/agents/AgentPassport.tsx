@@ -3,13 +3,55 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import type { AgentPassport360, PassportFact, PassportProvenance } from '@/lib/governance/agent-passport';
 
-function Provenance({ context }: { context: PassportProvenance }) {
+function ProfileGovernance({ context }: { context: PassportProvenance }) {
+  const trace = context.profileGovernance;
+  if (!trace) return null;
+  return <div className="mt-3 space-y-2 text-gray-300">
+    <h4 className="font-semibold">Technical profile governance chain</h4>
+    <p>Human certification concerns the AgentVersion review. Reconciliation concerns its canonical identity. These records do not establish individual approval of this technical field.</p>
+    <p>Individual field approval: UNKNOWN. Original per-field source assertions, evidence and trust are listed separately below.</p>
+    <p className="break-words">Canonical AGENT_VERSION: {trace.versionId}</p>
+    <ol aria-label="Technical profile governance applications" className="space-y-3">
+      {trace.applications.map(app => <li key={app.proposalId} className="border-l border-border-dark pl-3 break-words">
+        <p className="font-semibold">{app.origin ? 'Origin technical proposal' : 'Other applied technical proposal'}: {app.proposalId}</p>
+        <p>Proposed at: {app.proposedAt ?? 'UNKNOWN'}</p>
+        <p>Discovery candidate: {app.candidateId ?? 'UNKNOWN'}</p>
+        {app.discovery && <>
+          <p>Discovery finding: {app.discovery.findingId}</p>
+          <p>Source: {app.discovery.connectionId} · {app.discovery.externalType}: {app.discovery.externalId}</p>
+        </>}
+        <p className="mt-2 font-semibold">Human certification of the AgentVersion review</p>
+        {app.certifications.map(cert => <div key={cert.eventId}>
+          <p>Certification event: {cert.eventId} · HUMAN {cert.actorReference}</p>
+          <p>Certified at: {cert.occurredAt} · recorded {cert.recordedAt}</p>
+          <Link className="text-primary underline" href={`/governance/reviews/${encodeURIComponent(cert.reviewSubjectId)}`}>Open certified AgentVersion review</Link>
+        </div>)}
+        <p className="mt-2 font-semibold">AgentVersion identity reconciliation</p>
+        {app.reconciliations.map(decision => <div key={decision.decisionId}>
+          <p>Reconciliation decision: {decision.decisionId} · {decision.outcome}</p>
+          <p>HUMAN {decision.actorReference} · decided {decision.decidedAt}</p>
+          <p>Identity mappings: {decision.mappingIds.join(', ')}</p>
+        </div>)}
+        <p className="mt-2 font-semibold">Technical profile materialization</p>
+        {app.materialization && <>
+          <p>Materialization receipt: {app.materialization.materializationId} · {app.materialization.status}</p>
+          <p>Applied at: {app.materialization.appliedAt} · recorded {app.materialization.recordedAt}</p>
+        </>}
+        {app.unknowns.map(unknown => <p key={unknown} className="mt-1">{unknown}</p>)}
+      </li>)}
+    </ol>
+  </div>;
+}
+
+export function Provenance({ context }: { context: PassportProvenance }) {
   return <details className="mt-2 text-xs text-gray-400">
     <summary className="cursor-pointer text-primary">Source, trust and provenance</summary>
     <dl className="mt-2 space-y-1 break-words">
       <div><dt className="inline">Authority: </dt><dd className="inline">{context.authority} · {context.storage}</dd></div>
-      <div><dt className="inline">Decision: </dt><dd className="inline">{context.decisionId ?? 'UNKNOWN'}</dd></div>
-      <div><dt className="inline">Decision time: </dt><dd className="inline">{context.decidedAt ?? 'UNKNOWN'}</dd></div>
+      {!context.profileGovernance && <>
+        <div><dt className="inline">Decision: </dt><dd className="inline">{context.decisionId ?? 'UNKNOWN'}</dd></div>
+        <div><dt className="inline">Decision time: </dt><dd className="inline">{context.decidedAt ?? 'UNKNOWN'}</dd></div>
+      </>}
       <div><dt className="inline">Recorded / effective from: </dt><dd className="inline">{context.recordedAt ?? 'UNKNOWN'} / {context.validFrom ?? 'UNKNOWN'}</dd></div>
       {context.validTo && <div>Effective until (exclusive): {context.validTo}</div>}
       {context.revision !== undefined && <div>Governed revision: {context.revision}</div>}
@@ -27,6 +69,7 @@ function Provenance({ context }: { context: PassportProvenance }) {
       </>}
       {context.policy && context.policy.acceptedVersion !== context.policy.activeVersion && <p>Historical acceptance policy. Current authority is not established by that earlier decision; the accepted fact remains governed until a new decision changes it.</p>}
     </dl>
+    <ProfileGovernance context={context} />
     {context.sources.length === 0 && <p className="mt-2">Source assertion / trust: UNKNOWN</p>}
     {context.sources.map(source => <div key={source.assertionId} className="mt-2 border-l border-border-dark pl-3 break-words">
       <p>Source trust: <strong className="text-gray-200">{source.trust}</strong> · {source.assertionId}</p>

@@ -9,6 +9,7 @@ import { readPassportDataFields } from './passport-field-query';
 import { readPassportExecution } from './passport-execution-query';
 import { readPassportGovernedFacts } from './passport-governance-read';
 import { readPassportRiskOverlay } from './passport-risk-overlay-read';
+import { readProfileGovernance } from './passport-profile-provenance';
 
 /**
  * Server-only CQRS read composition. No command port, write RPC, provider or generated facts. Families 3 / 4 / 12 / 14 consume
@@ -126,6 +127,7 @@ export async function getAgentPassport(principal: GovernanceWritePrincipal, cano
   if (selected) {
     const [profile] = await read('agent_version_technical_profiles', { canonical_object_id: selected });
     if (profile) {
+      const profileGovernance = await readProfileGovernance(read, profile);
       const assertions = await read('agent_version_technical_profile_field_assertions', { canonical_object_id: selected });
       const evidence = await read('agent_version_technical_profile_field_evidence', { canonical_object_id: selected });
       const values: readonly [ProfileField, string | null][] = [
@@ -138,6 +140,7 @@ export async function getAgentPassport(principal: GovernanceWritePrincipal, cano
         profileFacts.push({ type: 'profile', id: `${selected}:${field}`, versionId: selected, field, value,
           provenance: { storage: 'agent_version_technical_profiles', authority: 'GOVERNED_PROFILE', revision: profile.revision,
             profileOriginProposalId: profile.source_proposal_id,
+            profileGovernance,
             recordedAt: profile.updated_at, ...await support(assertions.filter(a => a.field_name === field).map(a => a.assertion_id),
               evidence.filter(e => e.field_name === field).map(e => e.evidence_id)) } });
       }

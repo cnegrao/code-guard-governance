@@ -28,6 +28,22 @@ export interface PassportSource {
   runId: string;
   sourceSystemId?: string;
 }
+/** Read-only audit metadata. Version governance never becomes individual field approval. */
+export interface PassportProfileGovernance {
+  versionId: string;
+  originProposalId: string;
+  applications: readonly {
+    proposalId: string;
+    origin: boolean;
+    candidateId?: string;
+    proposedAt?: string;
+    discovery?: { findingId: string; connectionId: string; externalType: string; externalId: string };
+    certifications: readonly { eventId: string; reviewSubjectId: string; actorReference: string; occurredAt: string; recordedAt: string }[];
+    reconciliations: readonly { decisionId: string; outcome: string; actorReference: string; decidedAt: string; mappingIds: readonly string[]; reviewSubjectIds: readonly string[] }[];
+    materialization?: { materializationId: string; status: 'APPLIED'; appliedAt: string; recordedAt: string };
+    unknowns: readonly string[];
+  }[];
+}
 export interface PassportProvenance {
   storage: 'canonical_objects' | 'canonical_normalized_object_mappings' | 'canonical_object_source_mappings'
     | 'agent_version_technical_profiles' | 'canonical_relationships' | 'technical_field_states' | 'execution_field_states'
@@ -44,6 +60,7 @@ export interface PassportProvenance {
   validTo?: string;
   revision?: number;
   profileOriginProposalId?: string;
+  profileGovernance?: PassportProfileGovernance;
   policy?: { policyId: string; acceptedVersion: string; activeVersion?: string };
   snapshotId?: string;
   observedAt?: string;

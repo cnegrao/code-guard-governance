@@ -1,0 +1,103 @@
+{
+  "status": "IMPLEMENTED_READ_ONLY_REAL_DATA_VALIDATED",
+  "worktree": "D:/code-guard-governance/.worktrees/e1-operator-unblock",
+  "branch": "fix/e1-operator-unblock",
+  "head": "a5f85bf099fdbf0a24f1a369e4428730a042a162",
+  "realValidation": {
+    "status": "PASS_REAL_PASSPORT_PROFILE_PROVENANCE",
+    "target": "zkqfvqwqdypgpzauzinw",
+    "capturedAt": "2026-11-10T01:35:20.357Z",
+    "framework": "LangGraph",
+    "certification": {
+      "eventId": "review-transition:867dc36411d9046e14a6164ac91e142d",
+      "reviewSubjectId": "review-subject:discovery:94ab3bbabbd6398d3bd25c83ebf875a551854842bcf09437a59cd9ee7718af4f",
+      "actorReference": "e2bfd522-481e-461d-881b-465aa24a4953",
+      "occurredAt": "2026-11-08T23:24:03.182+00:00",
+      "recordedAt": "2026-11-08T23:24:04.020397+00:00"
+    },
+    "reconciliation": {
+      "decisionId": "reconciliation-decision:f9e291117ae6ddbd4eb2193a9307297d",
+      "outcome": "CREATE_NEW",
+      "actorReference": "e2bfd522-481e-461d-881b-465aa24a4953",
+      "decidedAt": "2026-11-08T23:28:23.391+00:00",
+      "mappingIds": [
+        "1f4a37e5-0dd6-4809-813e-cec0ab8e2c38"
+      ],
+      "reviewSubjectIds": [
+        "review-subject:discovery:94ab3bbabbd6398d3bd25c83ebf875a551854842bcf09437a59cd9ee7718af4f"
+      ]
+    },
+    "materialization": {
+      "materializationId": "ceb7f82b-3207-4a1f-8374-24df028fb403",
+      "status": "APPLIED",
+      "appliedAt": "2026-11-09T23:29:16.741+00:00",
+      "recordedAt": "2026-11-09T23:29:16.904797+00:00"
+    },
+    "evidenceIds": [
+      "evidence:127932415e4d6542a6563af45b87498e"
+    ],
+    "sourceTrust": [
+      "INFERRED"
+    ],
+    "profileUnchanged": true,
+    "individualFieldDecisionId": null,
+    "originalSourceSupportPreserved": true,
+    "readOnly": true,
+    "localSsrRendered": true,
+    "authenticatedBrowserInspected": false,
+    "cookiesExported": false
+  },
+  "tests": {
+    "passportQueries": 82,
+    "passportUi": 23,
+    "totalPass": 105,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "PASS_INCREMENTAL_FALSE",
+    "diffCheck": "PASS"
+  },
+  "render": {
+    "scope": "Production Provenance component rendered locally with the real field support and new production lineage reader",
+    "file": "D:/code-guard-governance/.worktrees/e1-operator-unblock/.artifacts/agent/technical-profile-apply-2026-11-09T22-35-56-926Z/passport-trace-real.html",
+    "sha256": "27140a89cf4565b10ae16d1ed35dd8436ed85c8ffcfbf57d6467a81d0815a288"
+  },
+  "files": [
+    {
+      "file": "apps/dashboard/lib/governance/agent-passport.ts",
+      "sha256": "7b78a9c194deeeebe26ff799c4c88b214cee8f7d34af13ff4675042d3cc06c70"
+    },
+    {
+      "file": "apps/dashboard/lib/governance/passport-read-store.ts",
+      "sha256": "45634cb6303f976cdab03978bb14e64e3b9ccbe3023f61682c07d73b3cda0c10"
+    },
+    {
+      "file": "apps/dashboard/lib/governance/passport-profile-provenance.ts",
+      "sha256": "9b88ae75b701b5c95a12162cabb1a8c77ee5237c0f42760125ee1c142034c86a"
+    },
+    {
+      "file": "apps/dashboard/lib/governance/passport-query.ts",
+      "sha256": "51d932bc5574960d0e3125d743d0b2d122b8e1698d7c6b2fd1a5d12113cab511"
+    },
+    {
+      "file": "apps/dashboard/components/agents/AgentPassport.tsx",
+      "sha256": "2d7300482a82b4fb6acbc5b8bfddd321c81731a0a3a5ccda1a632517bb461d4c"
+    },
+    {
+      "file": "apps/dashboard/tests/passport-query.test.ts",
+      "sha256": "34f2794d045e7bd5dde6f308f98f407f8952b5ccf30060d55c18a1b07f6454eb"
+    },
+    {
+      "file": "apps/dashboard/tests/passport-ui-route.test.ts",
+      "sha256": "c686741a22135afda1fe7e5796d998b136a1a43860517a44fc1e05ffa4b33d33"
+    }
+  ],
+  "restrictions": {
+    "hostedMutations": 0,
+    "migrationsChanged": 0,
+    "canonicalContractsChanged": 0,
+    "decisionsCreated": 0,
+    "certificationsCreated": 0,
+    "materializationsInvoked": 0,
+    "cookiesExported": false
+  }
+}

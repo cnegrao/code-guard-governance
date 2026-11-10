@@ -106,6 +106,21 @@ function addProfile(id = 'version:1') {
     add('agent_version_technical_profile_field_evidence', { canonical_object_id: id, field_name: field, evidence_id: `evidence:d:${id}` });
   }
 }
+function addProfileTrace() {
+  addVersion('version:1'); addProfile();
+  const mapping=tables.canonical_normalized_object_mappings[0];
+  mapping.normalized_object_identity=mapping.candidate_id;
+  Object.assign(tables.reconciliation_decisions.find(d=>d.decision_id==='d:version:1')!,{
+    family:'OBJECT',subject_candidate_id:'candidate:version:1',canonical_object_id:'version:1',canonical_object_kind:'AGENT_VERSION',
+    authority_kind:'HUMAN',authority_reference:'human:reconciler',
+  });
+  add('agent_version_technical_profile_proposals',{proposal_id:'profile:proposal',agent_version_candidate_id:'candidate:version:1',created_at:'2026-09-10T00:00:00Z'});
+  add('agent_version_technical_profile_materializations',{materialization_id:'profile:receipt',canonical_object_id:'version:1',proposal_id:'profile:proposal',status:'APPLIED',applied_at:'2026-09-14T13:00:00Z',created_at:'2026-09-14T13:00:01Z'});
+  add('discovery_candidates',{candidate_id:'candidate:version:1',candidate_kind:'AGENT_VERSION',finding_id:'finding:version',source_connection_id:'repo',source_external_type:'file',source_external_id:'src/agent.ts'});
+  add('reconciliation_invocations',{reconciliation_decision_id:'d:version:1',review_subject_id:'review:version',actor_kind:'HUMAN',actor_reference:'human:reconciler'});
+  add('review_subjects',{review_subject_id:'review:version',finding_id:'finding:version',candidate_kind:'AGENT_VERSION'});
+  add('review_audit_events',{event_id:'cert:version',review_subject_id:'review:version',finding_id:'finding:version',new_state:'CERTIFIED',actor_kind:'HUMAN',actor_reference:'human:certifier',occurred_at:'2026-09-13T12:00:00Z',recorded_at:'2026-09-13T12:00:01Z'});
+}
 function addEdge(type = 'USES_MODEL', target = 'model', targetKind = 'MODEL', source = 'version:1', sourceKind = 'AGENT_VERSION') {
   const id = `edge:${source}:${type}:${target}`;
   add('canonical_relationships', { relationship_id: id, relationship_state_id: `state:${id}`, relationship_type: type,
@@ -267,6 +282,88 @@ test('ambiguous or missing parent association is excluded without blocking root'
   addVersion('v'); add('canonical_normalized_object_mappings',{...tables.canonical_normalized_object_mappings[0],mapping_id:'m:other',parent_canonical_object_id:'other-agent'});
   assert.deepEqual((await getPassport(viewer(org),'agent'))!.versionContexts,[]); assert.equal(await getPassport(viewer(org),'agent','v'),undefined);
   tables.canonical_normalized_object_mappings=[]; assert.deepEqual((await getPassport(viewer(org),'agent'))!.versionContexts,[]);
+});
+
+test('profile trace separates certification, identity reconciliation and technical receipt without changing field support',async()=>{
+  addProfileTrace();
+  addSupport('identity:extra','VALIDATED');
+  add('reconciliation_decision_assertions',{decision_id:'d:version:1',assertion_id:'assert:identity:extra'});
+  add('reconciliation_decision_evidence',{decision_id:'d:version:1',evidence_id:'evidence:identity:extra'});
+  const p=(await getPassport(viewer(org),'agent','version:1'))!;
+  const fact=section(p,'technology').facts[0];
+  assert.equal(fact.type,'profile');assert.equal(fact.provenance.decisionId,undefined,'identity decision is never a field decision');
+  assert.deepEqual(fact.provenance.sources.map(s=>[s.assertionId,s.trust]),[['assert:d:version:1','INFERRED']]);
+  assert.deepEqual(fact.provenance.evidence.map(e=>e.evidenceId),['evidence:d:version:1']);
+  const chain=fact.provenance.profileGovernance!;assert.equal(chain.versionId,'version:1');
+  const app=chain.applications[0];assert.equal(app.proposalId,'profile:proposal');assert.equal(app.origin,true);
+  assert.equal(app.candidateId,'candidate:version:1');assert.equal(app.discovery?.findingId,'finding:version');
+  assert.equal(app.certifications[0].eventId,'cert:version');assert.equal(app.certifications[0].actorReference,'human:certifier');
+  assert.equal(app.reconciliations[0].decisionId,'d:version:1');assert.equal(app.reconciliations[0].actorReference,'human:reconciler');
+  assert.deepEqual(app.reconciliations[0].mappingIds,['m:version:1']);
+  assert.equal(app.materialization?.materializationId,'profile:receipt');assert.deepEqual(app.unknowns,[]);
+  assert.ok(section(p,'provenance').facts.some(f=>f.id===fact.id&&f.provenance.profileGovernance===chain));
+  assert.ok(calls.every(c=>c.filters.some(([k,v])=>k==='organisation_id'&&v===org)));
+  assert.ok(calls.every(c=>!c.selection.includes('*')&&!c.selection.includes('envelope')),'scalar read projections only');
+});
+test('missing profile certification or receipt remains UNKNOWN while preserving a persisted INFERRED fact',async()=>{
+  addProfileTrace();tables.review_audit_events=[];tables.agent_version_technical_profile_materializations=[];
+  const fact=section((await getPassport(viewer(org),'agent','version:1'))!,'technology').facts[0];
+  const app=fact.provenance.profileGovernance!.applications[0];
+  assert.deepEqual(app.certifications,[]);assert.equal(app.materialization,undefined);assert.equal(app.reconciliations.length,1);
+  assert.ok(app.unknowns.some(s=>s.includes('certification')&&s.includes('UNKNOWN')));
+  assert.ok(app.unknowns.some(s=>s.includes('materialization')&&s.includes('UNKNOWN')));
+  assert.equal(fact.provenance.sources[0].trust,'INFERRED');assert.equal(fact.provenance.decisionId,undefined);
+});
+test('profile trace never imports another tenant certificate or receipt',async()=>{
+  addProfileTrace();tables.review_audit_events[0].organisation_id=otherOrg;tables.agent_version_technical_profile_materializations[0].organisation_id=otherOrg;
+  const app=section((await getPassport(viewer(org),'agent','version:1'))!,'technology').facts[0].provenance.profileGovernance!.applications[0];
+  assert.deepEqual(app.certifications,[]);assert.equal(app.materialization,undefined);
+  assert.ok(calls.every(c=>c.filters.some(([k,v])=>k==='organisation_id'&&v===org)));
+});
+for(const [name,change] of [
+  ['candidate kind',()=>{tables.discovery_candidates[0].candidate_kind='MODEL';}],
+  ['normalized identity',()=>{tables.canonical_normalized_object_mappings[0].normalized_object_identity='partial-id';}],
+  ['reconciliation version',()=>{tables.reconciliation_decisions.find(d=>d.decision_id==='d:version:1')!.canonical_object_id='version:other';}],
+  ['reconciliation candidate',()=>{tables.reconciliation_decisions.find(d=>d.decision_id==='d:version:1')!.subject_candidate_id='candidate:other';}],
+  ['review finding',()=>{tables.review_subjects[0].finding_id='finding:other';}],
+  ['certification finding',()=>{tables.review_audit_events[0].finding_id='finding:other';}],
+] as const) test(`profile trace rejects mismatched ${name}`,async()=>{
+  addProfileTrace();change();await assert.rejects(getPassport(viewer(org),'agent','version:1'),/PASSPORT_PROFILE_LINEAGE_INVALID/);
+});
+test('profile origin and all applied proposals remain distinct; no latest receipt becomes field approval',async()=>{
+  addProfileTrace();add('agent_version_technical_profile_proposals',{...tables.agent_version_technical_profile_proposals[0],proposal_id:'another:proposal'});
+  add('agent_version_technical_profile_materializations',{...tables.agent_version_technical_profile_materializations[0],proposal_id:'another:proposal',materialization_id:'another:receipt',applied_at:'2026-09-14T14:00:00Z'});
+  const chain=section((await getPassport(viewer(org),'agent','version:1'))!,'technology').facts[0].provenance.profileGovernance!;
+  assert.equal(chain.originProposalId,'profile:proposal');assert.equal(chain.applications.length,2);
+  assert.equal(chain.applications.find(a=>a.origin)?.materialization?.materializationId,'profile:receipt');
+  assert.equal(chain.applications.find(a=>!a.origin)?.materialization?.materializationId,'another:receipt');
+});
+test('profile trace legacy mapping is proved by its exact candidate decision, not source path coincidence',async()=>{
+  addProfileTrace();tables.canonical_normalized_object_mappings[0].candidate_id='association:candidate';
+  add('canonical_object_source_mappings',{mapping_id:'legacy:profile',canonical_object_id:'version:1',canonical_object_kind:'AGENT_VERSION',source_connection_id:'repo',source_external_type:'file',source_external_id:'src/agent.ts',created_by_decision_id:'d:version:1',valid_from:at,valid_to:null});
+  const app=section((await getPassport(viewer(org),'agent','version:1'))!,'technology').facts[0].provenance.profileGovernance!.applications[0];
+  assert.deepEqual(app.reconciliations[0].mappingIds,['legacy:profile']);
+  tables.reconciliation_decisions.find(d=>d.decision_id==='d:version:1')!.subject_candidate_id='candidate:same-path';
+  await assert.rejects(getPassport(viewer(org),'agent','version:1'),/PASSPORT_PROFILE_LINEAGE_INVALID/);
+});
+test('profile trace preserves a historical mapping active when applied even after its validity ends',async()=>{
+  addProfileTrace();tables.canonical_normalized_object_mappings[0].candidate_id='association:candidate';
+  add('canonical_object_source_mappings',{mapping_id:'legacy:ended',canonical_object_id:'version:1',canonical_object_kind:'AGENT_VERSION',source_connection_id:'repo',source_external_type:'file',source_external_id:'src/agent.ts',created_by_decision_id:'d:version:1',valid_from:at,valid_to:'2026-09-14T14:00:00Z'});
+  const app=section((await getPassport(viewer(org),'agent','version:1'))!,'technology').facts[0].provenance.profileGovernance!.applications[0];
+  assert.deepEqual(app.reconciliations[0].mappingIds,['legacy:ended']);
+});
+test('a certification after the identity reconciliation is never substituted into its historical chain',async()=>{
+  addProfileTrace();tables.review_audit_events[0].occurred_at='2026-09-14T14:00:00Z';
+  const app=section((await getPassport(viewer(org),'agent','version:1'))!,'technology').facts[0].provenance.profileGovernance!.applications[0];
+  assert.deepEqual(app.certifications,[]);assert.ok(app.unknowns.some(s=>s.includes('certification')));
+});
+test('profile trace storage failure is an error; absent proposal does not reconstruct one from raw evidence',async()=>{
+  addProfileTrace();dbError='agent_version_technical_profile_materializations';
+  await assert.rejects(getPassport(viewer(org),'agent','version:1'),/PASSPORT_READ_FAILED/);
+  dbError=undefined;tables.agent_version_technical_profile_proposals=[];
+  const app=section((await getPassport(viewer(org),'agent','version:1'))!,'technology').facts[0].provenance.profileGovernance!.applications[0];
+  assert.equal(app.candidateId,undefined);assert.equal(app.discovery,undefined);assert.deepEqual(app.certifications,[]);
+  assert.ok(app.unknowns.some(s=>s.includes('proposal')&&s.includes('UNKNOWN')));
 });
 test('foreign version and mapping cannot enter local version contexts', async () => {
   addVersion('foreign-version'); tables.canonical_objects.find(r => r.canonical_object_id === 'foreign-version')!.organisation_id=otherOrg;
