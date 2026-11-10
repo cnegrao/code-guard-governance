@@ -237,6 +237,29 @@
         "GRAPHOS_SUBSYSTEM_ROOT: never composed into the canonical chain"
       ]
     },
+    "ops/agent-version-profile-v1/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql": {
+      "sha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6",
+      "root": "VERSIONED_MIGRATION_REVIEW_ARTIFACT",
+      "conflicts": [
+        "EXACT_CANONICAL_MIGRATION_COPY: version 20261109191942 is registered only through supabase/migrations/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql; this byte-identical reviewed package copy is not an additional migration authority or a second application",
+        "EXPLICIT_DEFINER_SURFACE_CHANGE: technical-profile materializer correction and governed wrapper; this inventory entry grants no execution or deployment authorization"
+      ]
+    },
+    "ops/agent-version-profile-v1/deployment.sql": {
+      "sha256": "477f6b8dccb1a316c0e32bb376ed22fc29ddd8693c6add2a8a8108e9d50d9aab",
+      "root": "OPERATIONAL_DEPLOYMENT_ARTIFACT",
+      "conflicts": [
+        "SINGLE_VERSION_DEPLOYMENT_ENVELOPE: wraps version 20261109191942 with target checks, transaction lock and atomic history registration; operational artifact, not an additional historical migration; do not reapply an already registered version",
+        "HOSTED_SCOPE_GUARD_PRESERVED: deployment.sql remains subject to the preflight/handoff deployment-scope guard; quarantine classification grants no hosted mutation or execution authorization"
+      ]
+    },
+    "ops/agent-version-profile-v1/integrity.sql": {
+      "sha256": "dfffaf1658eeda0e1c4db9ffcf88f98ae84cd85020a87c2bf5bf01eb3cf0ca09",
+      "root": "READ_ONLY_INTEGRITY_VERIFICATION",
+      "conflicts": [
+        "READ_ONLY_REPEATABLE_SNAPSHOT: organisation-scoped counts, row hashes and catalog/security checks for technical-profile preservation; no installed object, data mutation or canonical migration authority"
+      ]
+    },
     "supabase/legacy-migrations/20260618-monolithic/20260618001000_gov_repo_types_and_organisations.sql": {
       "sha256": "fc88b2073f9ae443fd993b5ef762cb6b7a6f12c18af449e80ac04363136f4d33",
       "root": "SUPERSEDED_LEGACY_MONOLITH",
