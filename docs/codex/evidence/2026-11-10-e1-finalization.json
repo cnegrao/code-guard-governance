@@ -1,0 +1,205 @@
+{
+  "status": "CONSOLIDATED_LOCALLY_DOCUMENTATION_COMMIT_IS_THIS_TREE",
+  "date": "2026-11-10",
+  "branch": "fix/e1-operator-unblock",
+  "base": "a5f85bf099fdbf0a24f1a369e4428730a042a162",
+  "commits": [
+    {
+      "id": "C1",
+      "sha": "a145375b1c3efb75f4fd826b864c701ff245509e",
+      "title": "feat(auth): add governed operator invitation",
+      "tree": "9031991ce9de9ee16632ad90c8b341e0cf4b3ed8"
+    },
+    {
+      "id": "C2",
+      "sha": "9178ae40f7ecd3a36fe3dc37bb0f36974983dcf9",
+      "title": "fix(auth): stabilize E1 localhost login and diagnostics",
+      "tree": "28519736cb26f506f08bc7a938c7309dc7164cf8"
+    },
+    {
+      "id": "C3",
+      "sha": "fa9f876556ab0c5d7a09936b78cdf0ba1f322268",
+      "title": "fix(routes): decode canonical and review identifiers once",
+      "tree": "009242ef9bf2ddcbd5cc997a6f6c04c3359e31c5"
+    },
+    {
+      "id": "C4",
+      "sha": "2a7d1ac67b50903f5d7c4a7ada38d443776bf26c",
+      "title": "docs(e1): record Passport alignment and real profile governance",
+      "tree": "1c7b6ec983e82dc35652ff860529b95ac78b05bb"
+    },
+    {
+      "id": "C5",
+      "sha": "138f42f5a8111d51052745a2b7413dfd29e30ea5",
+      "title": "fix(governance): materialize exact governed technical profiles",
+      "tree": "7e8a4dae494b3d278e6914ed0485bf293f250fda"
+    },
+    {
+      "id": "C6",
+      "sha": "18628c6501824eda61034f7d74edc8c2a9825e41",
+      "title": "fix(passport): project technical profile governance lineage",
+      "tree": "7059e668441ad50ecbb9f606826b3b2acf44e75d"
+    }
+  ],
+  "documentationCommit": {
+    "id": "C7",
+    "subject": "docs(e1): record consolidation inventory and session handoff",
+    "resolve": "git log -1 --format=%H -- docs/agent/E1_HANDOFF.md"
+  },
+  "validation": [
+    {
+      "id": "C1",
+      "status": "PASS_INDEX_PREFIX",
+      "tree": "9031991ce9de9ee16632ad90c8b341e0cf4b3ed8",
+      "logs": [
+        {
+          "label": "unit",
+          "exitCode": 0
+        },
+        {
+          "label": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "checkedAt": "2026-11-10T12:19:50.285Z"
+    },
+    {
+      "id": "C2",
+      "status": "PASS_INDEX_PREFIX",
+      "tree": "28519736cb26f506f08bc7a938c7309dc7164cf8",
+      "logs": [
+        {
+          "label": "unit",
+          "exitCode": 0
+        }
+      ],
+      "checkedAt": "2026-11-10T12:29:46.435Z"
+    },
+    {
+      "id": "C3",
+      "status": "PASS_INDEX_PREFIX",
+      "tree": "009242ef9bf2ddcbd5cc997a6f6c04c3359e31c5",
+      "logs": [
+        {
+          "label": "unit",
+          "exitCode": 0
+        },
+        {
+          "label": "ui",
+          "exitCode": 0
+        }
+      ],
+      "checkedAt": "2026-11-10T12:36:28.634Z"
+    },
+    {
+      "id": "C4",
+      "status": "PASS_INDEX_PREFIX",
+      "tree": "1c7b6ec983e82dc35652ff860529b95ac78b05bb",
+      "logs": [],
+      "checkedAt": "2026-11-10T12:42:19.301Z"
+    },
+    {
+      "id": "C5",
+      "status": "PASS_INDEX_PREFIX",
+      "tree": "7e8a4dae494b3d278e6914ed0485bf293f250fda",
+      "logs": [
+        {
+          "label": "unit",
+          "exitCode": 0
+        },
+        {
+          "label": "typecheck",
+          "exitCode": 0
+        },
+        {
+          "label": "package",
+          "exitCode": 0
+        }
+      ],
+      "checkedAt": "2026-11-10T12:43:28.804Z"
+    },
+    {
+      "id": "C6",
+      "status": "PASS_INDEX_PREFIX",
+      "tree": "7059e668441ad50ecbb9f606826b3b2acf44e75d",
+      "logs": [
+        {
+          "label": "unit",
+          "exitCode": 0
+        },
+        {
+          "label": "ui",
+          "exitCode": 0
+        },
+        {
+          "label": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "checkedAt": "2026-11-10T12:51:04.587Z"
+    }
+  ],
+  "tests": {
+    "distinctCovered": 155,
+    "prefixExecutions": 200,
+    "cli": 5,
+    "invitationApi": 5,
+    "auth": 4,
+    "review": 2,
+    "profileIntegration": 5,
+    "migrationInventory": 29,
+    "passportQuery": 82,
+    "passportUi": 23,
+    "typecheck": [
+      "C1",
+      "C5",
+      "C6"
+    ],
+    "allPassed": true
+  },
+  "registration": {
+    "status": "CANONICAL_SOURCE_REGISTERED_NO_SQL_REAPPLIED",
+    "date": "2026-11-10",
+    "project": "zkqfvqwqdypgpzauzinw",
+    "version": "20261109191942",
+    "name": "agent_version_technical_profile_governed_mapping_v1",
+    "sha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6",
+    "canonicalFile": "supabase/migrations/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql",
+    "approvedArtifact": "ops/agent-version-profile-v1/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql",
+    "hostedReadOnlyVerification": {
+      "organisation": "GOVIA_DEMO",
+      "historyCount": 101,
+      "statementCount": 1,
+      "version": "20261109191942",
+      "name": "agent_version_technical_profile_governed_mapping_v1",
+      "statementSha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6"
+    },
+    "frozenBaseline": 109,
+    "explicitSuccessors": [
+      "20261108002618_governance_operator_invitation_v1.sql",
+      "20261109191942_agent_version_technical_profile_governed_mapping_v1.sql"
+    ],
+    "localCanonicalCount": 111,
+    "historicalMigrationsChanged": false,
+    "canonicalContractsChanged": false,
+    "hostedDdlExecuted": false
+  },
+  "preservation": {
+    "historicalMigrationsChanged": 0,
+    "canonicalContractsChanged": 0,
+    "otherWorktreeCodeCopied": false,
+    "privateArtifactsStaged": false,
+    "partialStagingCases": 3,
+    "hostedDdlExecuted": 0,
+    "push": false,
+    "merge": false,
+    "rebase": false
+  },
+  "remaining": [
+    "Separate consolidation of passport-compat-v1; 65 artifact hashes recorded in the integration backlog."
+  ],
+  "resolvedFailures": [
+    "New rejection test initially omitted the required regex; fixed and all 29 inventory tests passed.",
+    "First index export used a nested Git root; corrected validation environment GIT_DIR/GIT_WORK_TREE without changing product guards; C1 passed."
+  ]
+}

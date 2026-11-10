@@ -1,0 +1,834 @@
+{
+  "worktree": "D:/code-guard-governance/.worktrees/e1-operator-unblock",
+  "branch": "fix/e1-operator-unblock",
+  "head": "a5f85bf099fdbf0a24f1a369e4428730a042a162",
+  "origin": "https://github.com/cnegrao/code-guard-governance.git",
+  "stagedFiles": [],
+  "trackedModified": 16,
+  "untrackedInitial": 39,
+  "files": [
+    {
+      "file": "apps/dashboard/app/(auth)/accept-invitation/page.tsx",
+      "status": "untracked",
+      "bytes": 774,
+      "sha256": "cefef92c80a6fbe38a45467bf4923af8ce67f9257c929cd54a833c6b8f198452",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/app/(dashboard)/agents/canonical/[canonicalObjectId]/page.tsx",
+      "status": "modified",
+      "bytes": 1085,
+      "sha256": "487bbebf410acd8f55d84d4ec59cff37441271607d9dd135b68adf2862c29629",
+      "plannedCommits": [
+        "C3"
+      ]
+    },
+    {
+      "file": "apps/dashboard/app/(dashboard)/governance/reviews/[id]/page.tsx",
+      "status": "modified",
+      "bytes": 36347,
+      "sha256": "d0d0a5d627ef8b4d5c114c71f6fba652351bdebc0c533ec153df082567992327",
+      "plannedCommits": [
+        "C3",
+        "C5"
+      ]
+    },
+    {
+      "file": "apps/dashboard/app/api/auth/login/route.ts",
+      "status": "modified",
+      "bytes": 1399,
+      "sha256": "b759045c249297fa6136a5917717745704a25ad3d00eba800655b5a095180c42",
+      "plannedCommits": [
+        "C2"
+      ]
+    },
+    {
+      "file": "apps/dashboard/app/api/auth/operator-invitation/route.ts",
+      "status": "untracked",
+      "bytes": 2656,
+      "sha256": "73f0726fba50f4fc0fecd11e2dcb981c90f9cf862d0a33cfa8ebe29233ee6da9",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/app/api/governance/workspace/reviews/[id]/route.ts",
+      "status": "modified",
+      "bytes": 5521,
+      "sha256": "f83d51f505a17c64d2038a379ea3bdba10c9ddc4c8792ee3322743c9e6b6fd77",
+      "plannedCommits": [
+        "C3"
+      ]
+    },
+    {
+      "file": "apps/dashboard/app/api/governance/workspace/reviews/[id]/technical-profile/route.ts",
+      "status": "untracked",
+      "bytes": 2242,
+      "sha256": "bdabece1e491686637833ecdbb28cec133fb401eef444af6d1bd9bd3253766fe",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "apps/dashboard/components/agents/AgentPassport.tsx",
+      "status": "modified",
+      "bytes": 16701,
+      "sha256": "2d7300482a82b4fb6acbc5b8bfddd321c81731a0a3a5ccda1a632517bb461d4c",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "apps/dashboard/components/auth/LoginForm.tsx",
+      "status": "modified",
+      "bytes": 1927,
+      "sha256": "c5263550f281b6a3b240e2e16bda161f82ae9d4159a8e4dd6417c36ecb636d2c",
+      "plannedCommits": [
+        "C2"
+      ]
+    },
+    {
+      "file": "apps/dashboard/components/auth/OperatorInvitationForm.tsx",
+      "status": "untracked",
+      "bytes": 3577,
+      "sha256": "89e031ca38a512c79cdb0309b726d16fe83770c45205d46f1e535915ef8ef6eb",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/components/workspace/TechnicalProfileMaterialization.tsx",
+      "status": "untracked",
+      "bytes": 3213,
+      "sha256": "80d9f2a2fa535170586dfa83fefd043662a05695f284b0e9fb3e6a529dee8f8a",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/auth.ts",
+      "status": "modified",
+      "bytes": 2518,
+      "sha256": "b86dce5249225ef85b362b1c768a3b6d87f847ee872d9e9ea66dc65c74985578",
+      "plannedCommits": [
+        "C2"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/auth/e1-diagnostics.ts",
+      "status": "untracked",
+      "bytes": 730,
+      "sha256": "a035d69c0ae2f40d7fed13d7b45e7853740f9a8b6519b9e6f51cad2c14266ff9",
+      "plannedCommits": [
+        "C2"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/auth/operator-invitation.ts",
+      "status": "untracked",
+      "bytes": 1909,
+      "sha256": "70d4fb0e70672c36c102bdf071eff0f9510c6d73497f801530c41b7fe399e6b7",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/governance/agent-passport.ts",
+      "status": "modified",
+      "bytes": 9539,
+      "sha256": "7b78a9c194deeeebe26ff799c4c88b214cee8f7d34af13ff4675042d3cc06c70",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/governance/agent-version-technical-profile-persistence.ts",
+      "status": "modified",
+      "bytes": 5035,
+      "sha256": "1ccf63772330819da143e8c0620573485f5fda1ac261913d3e65890162a661ed",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/governance/passport-profile-provenance.ts",
+      "status": "untracked",
+      "bytes": 7384,
+      "sha256": "9b88ae75b701b5c95a12162cabb1a8c77ee5237c0f42760125ee1c142034c86a",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/governance/passport-query.ts",
+      "status": "modified",
+      "bytes": 18940,
+      "sha256": "51d932bc5574960d0e3125d743d0b2d122b8e1698d7c6b2fd1a5d12113cab511",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/governance/passport-read-store.ts",
+      "status": "modified",
+      "bytes": 11213,
+      "sha256": "45634cb6303f976cdab03978bb14e64e3b9ccbe3023f61682c07d73b3cda0c10",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/governance/review-subject-route.ts",
+      "status": "untracked",
+      "bytes": 378,
+      "sha256": "bce5ee25492d08cca2f69314f03db5b692f5aa531c1eb012cf5f5b1f1813cba9",
+      "plannedCommits": [
+        "C3"
+      ]
+    },
+    {
+      "file": "apps/dashboard/lib/governance/technical-profile-materialization.ts",
+      "status": "untracked",
+      "bytes": 4556,
+      "sha256": "539c78d08acc2076b00258152482e13f259871a2f3459f64593f233dcc6b2fd9",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "apps/dashboard/middleware.ts",
+      "status": "modified",
+      "bytes": 2039,
+      "sha256": "95b62c63c309d765088fe751aa5c18bc39452e503852549347bdf4f1bf44d870",
+      "plannedCommits": [
+        "C1",
+        "C2"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/e1-auth-flow.test.ts",
+      "status": "untracked",
+      "bytes": 4852,
+      "sha256": "68b3f4c91802cfee8cb0814b7c7220f1049bc67e679592b3a7465dad0fe32f48",
+      "plannedCommits": [
+        "C2"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/helpers/m17-canonical-migration-chain.ts",
+      "status": "modified",
+      "bytes": 7129,
+      "sha256": "26b71d19980bbd6d7b4552333e9d4eb71516e9b897df53bcdaf8b645f5b7f025",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/m17-migration-chain-contract.test.ts",
+      "status": "modified",
+      "bytes": 7149,
+      "sha256": "c4f820dc61e69596851767ee683a79944f9e62e96b050ea68993c5dc52aa06da",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/operator-invitation-route.test.ts",
+      "status": "untracked",
+      "bytes": 3915,
+      "sha256": "4144dda5921f9518379a4c1279ad90c8c04b423916a539fb405f5a1ce6a24f5e",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/passport-query.test.ts",
+      "status": "modified",
+      "bytes": 54966,
+      "sha256": "34f2794d045e7bd5dde6f308f98f407f8952b5ccf30060d55c18a1b07f6454eb",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/passport-ui-route.test.ts",
+      "status": "modified",
+      "bytes": 21246,
+      "sha256": "c686741a22135afda1fe7e5796d998b136a1a43860517a44fc1e05ffa4b33d33",
+      "plannedCommits": [
+        "C3",
+        "C6"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/postgres-m16/operator-invitation.test.ts",
+      "status": "untracked",
+      "bytes": 9028,
+      "sha256": "8eab5f89addc1f50c17dd7696c2080f5bba539b28dbb51c98ecd500ffe020e0a",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/postgres-m16/technical-profile-mapping.test.ts",
+      "status": "untracked",
+      "bytes": 15383,
+      "sha256": "6fb3aa478f277c22d905ece736221bf5387a94040cf53e6a73ffdad1dfc67963",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/review-subject-route.test.ts",
+      "status": "untracked",
+      "bytes": 1141,
+      "sha256": "d793c7a7dad6593a2677b1b0cd13cec128f62b066ba84bc4f963b1ba1d5bfb03",
+      "plannedCommits": [
+        "C3"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/technical-profile-materialization.test.ts",
+      "status": "untracked",
+      "bytes": 5766,
+      "sha256": "e2a42d28866c3eadc2e6ca84b1b1c3d26cd09a2e770b08c085e5bd3753850e08",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-07-e1-localhost-auth-correction.md",
+      "status": "untracked",
+      "bytes": 8813,
+      "sha256": "a993c49ab49e4c5cf8e0e64a6eead1a2ca542fc8883822571e1b7951f02d4f01",
+      "plannedCommits": [
+        "C3"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-07-e1-operator-invitation.md",
+      "status": "untracked",
+      "bytes": 7574,
+      "sha256": "23da412ac4bb7048a27d73f00b08a1420e9c9fcd7f76e56e910c26e26679aabb",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-08-e1-governance-review-access-verified.md",
+      "status": "untracked",
+      "bytes": 6046,
+      "sha256": "e9cf306c476d46b1654ce6adee05af36899ec94806a58a85688a3928f838a410",
+      "plannedCommits": [
+        "C3"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-08-passport-route-404.md",
+      "status": "untracked",
+      "bytes": 6260,
+      "sha256": "2112be0d85cfb17a2b1c7795b1d0745abc2fa679f2eeb71e0d6c64621c40c23c",
+      "plannedCommits": [
+        "C3"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-passport-controlled-m16-m17.json",
+      "status": "untracked",
+      "bytes": 19395,
+      "sha256": "b5872f86da7771583d40c0e01e91fa9eabb99dbe76a263525603c3b7c1dfd648",
+      "plannedCommits": [
+        "C4"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-passport-controlled-m16-m17.md",
+      "status": "untracked",
+      "bytes": 10670,
+      "sha256": "3006f0e4bf934ecd8f0fa919be4e60b69c3dd5bf82c81ebe284b4319edece3f5",
+      "plannedCommits": [
+        "C4"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-passport-profile-provenance.json",
+      "status": "untracked",
+      "bytes": 3856,
+      "sha256": "1e3ce4c35eff53f261356997c089bcbf2cee01ed05c158f291c58eae2d5c7578",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-passport-profile-provenance.md",
+      "status": "untracked",
+      "bytes": 9164,
+      "sha256": "1945f68cc163a2c49dda5be1c68223a1e084cc9f145100d285ec7b1d861ef136",
+      "plannedCommits": [
+        "C6"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-real-agent-technical-profile-governance.json",
+      "status": "untracked",
+      "bytes": 5287,
+      "sha256": "55043f9d002e00b9fe05bbd6b03e61de1c57560de35d3ad37fdd547fcc96e6e5",
+      "plannedCommits": [
+        "C4"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-real-agent-technical-profile-governance.md",
+      "status": "untracked",
+      "bytes": 9334,
+      "sha256": "da68f5f6661b76316742f2a51580302b1238e4acf757ebfa1e6698b75f88a338",
+      "plannedCommits": [
+        "C4"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-technical-profile-applied.json",
+      "status": "untracked",
+      "bytes": 6233,
+      "sha256": "bac986887c152da752ed79ca312cd39da1ac72612a5c6b90e3a6cf4258fc18ee",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-technical-profile-applied.md",
+      "status": "untracked",
+      "bytes": 8316,
+      "sha256": "dddcdcd42d02228113e74e7410201b98ad0a7a24ccd6f9f2f4a71b4d1d4fb4b1",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-technical-profile-final-gate.md",
+      "status": "untracked",
+      "bytes": 10149,
+      "sha256": "683b46cfc6fdd014ba72829a85a7a6afc471412fd93f0b3b66c013221acc7c16",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "docs/codex/evidence/2026-11-09-technical-profile-materialization-patch.md",
+      "status": "untracked",
+      "bytes": 10376,
+      "sha256": "7b3dc706d3c3f4ac09c3622e8097efd1931ceafa52432563534489a1c1237f79",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "ops/agent-version-profile-v1/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql",
+      "status": "untracked",
+      "bytes": 27829,
+      "sha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "ops/agent-version-profile-v1/README.md",
+      "status": "untracked",
+      "bytes": 8408,
+      "sha256": "a20b8ee69ba1d44b0f71c72b94031b420e7573160b826ba0d78e204d39907b2f",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "ops/agent-version-profile-v1/deployment.sql",
+      "status": "untracked",
+      "bytes": 56600,
+      "sha256": "477f6b8dccb1a316c0e32bb376ed22fc29ddd8693c6add2a8a8108e9d50d9aab",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "ops/agent-version-profile-v1/integrity.sql",
+      "status": "untracked",
+      "bytes": 9732,
+      "sha256": "dfffaf1658eeda0e1c4db9ffcf88f98ae84cd85020a87c2bf5bf01eb3cf0ca09",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "ops/agent-version-profile-v1/manifest.json",
+      "status": "untracked",
+      "bytes": 2931,
+      "sha256": "d6c81b9f34f9d42699be21f852dc07b398479f56f02da74616561efd35fc6894",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "ops/agent-version-profile-v1/package.mjs",
+      "status": "untracked",
+      "bytes": 4228,
+      "sha256": "79f7ebd6708f42e747fabce6cf5198270c9a7481a024a92459d753cf95c3f2e0",
+      "plannedCommits": [
+        "C5"
+      ]
+    },
+    {
+      "file": "scripts/admin/README.md",
+      "status": "untracked",
+      "bytes": 3785,
+      "sha256": "6ebd41516e95aae3e186467889ba000d41d4a854c1cf864f72fdb37dada01292",
+      "plannedCommits": [
+        "C2"
+      ]
+    },
+    {
+      "file": "scripts/admin/issue-operator-invitation.mjs",
+      "status": "untracked",
+      "bytes": 5530,
+      "sha256": "fea42ce682da7b0a915aa444ce9dfc71429bb7a6def182a3def25b9aa64769b1",
+      "plannedCommits": [
+        "C1"
+      ]
+    },
+    {
+      "file": "supabase/migrations/20261108002618_governance_operator_invitation_v1.sql",
+      "status": "untracked",
+      "bytes": 11350,
+      "sha256": "2aa8821a4e3b01043f907a1b38b8ed2a2d862cc44ce752ef3d85845674173878",
+      "plannedCommits": [
+        "C1"
+      ]
+    }
+  ],
+  "sensitiveLiteralScan": {
+    "scope": "55 explicit E1 candidates only; no private ignored files opened; signatures are a bounded check, not proof that every possible secret format is absent",
+    "findings": []
+  },
+  "reusedPassportEvidence": {
+    "tests": 105,
+    "sourceHashes": [
+      {
+        "file": "apps/dashboard/lib/governance/agent-passport.ts",
+        "hashMatches": true
+      },
+      {
+        "file": "apps/dashboard/lib/governance/passport-read-store.ts",
+        "hashMatches": true
+      },
+      {
+        "file": "apps/dashboard/lib/governance/passport-profile-provenance.ts",
+        "hashMatches": true
+      },
+      {
+        "file": "apps/dashboard/lib/governance/passport-query.ts",
+        "hashMatches": true
+      },
+      {
+        "file": "apps/dashboard/components/agents/AgentPassport.tsx",
+        "hashMatches": true
+      },
+      {
+        "file": "apps/dashboard/tests/passport-query.test.ts",
+        "hashMatches": true
+      },
+      {
+        "file": "apps/dashboard/tests/passport-ui-route.test.ts",
+        "hashMatches": true
+      }
+    ]
+  },
+  "historicalMigrationDiff": "",
+  "canonicalContractDiff": "",
+  "planningArtifacts": [
+    "docs/codex/evidence/2026-11-09-e1-consolidation-plan.md",
+    "docs/codex/evidence/2026-11-09-e1-consolidation-inventory.json",
+    "docs/agent/E1_HANDOFF.md"
+  ],
+  "commitsExecuted": 0,
+  "pushExecuted": false,
+  "mergeExecuted": false,
+  "status": "PLAN_ONLY_STOPPED_BEFORE_STAGING_OR_COMMITS",
+  "createdAt": "2026-11-10T02:13:37.002Z",
+  "commits": [
+    {
+      "id": "C1",
+      "title": "feat(auth): add governed operator invitation",
+      "dependsOn": [],
+      "files": [
+        "apps/dashboard/app/(auth)/accept-invitation/page.tsx",
+        "apps/dashboard/app/api/auth/operator-invitation/route.ts",
+        "apps/dashboard/components/auth/OperatorInvitationForm.tsx",
+        "apps/dashboard/lib/auth/operator-invitation.ts",
+        "scripts/admin/issue-operator-invitation.mjs",
+        "apps/dashboard/tests/operator-invitation-route.test.ts",
+        "apps/dashboard/tests/postgres-m16/operator-invitation.test.ts",
+        "supabase/migrations/20261108002618_governance_operator_invitation_v1.sql",
+        "apps/dashboard/tests/helpers/m17-canonical-migration-chain.ts",
+        "apps/dashboard/tests/m17-migration-chain-contract.test.ts",
+        "docs/codex/evidence/2026-11-07-e1-operator-invitation.md"
+      ],
+      "partial": [
+        {
+          "file": "apps/dashboard/middleware.ts",
+          "include": "Only pathname === /accept-invitation in the public-path condition; leave alias handling and diagnostics to C2."
+        }
+      ],
+      "checks": [
+        "operator-invitation-route: 5 PASS in closure",
+        "migration-chain-contract: 24 PASS in closure",
+        "operator-invitation PG17: prior 7 PASS; not rerun",
+        "CLI node --check: PASS; no committed CLI-specific regression found"
+      ],
+      "commitSha": null
+    },
+    {
+      "id": "C2",
+      "title": "fix(auth): stabilize E1 localhost login and diagnostics",
+      "dependsOn": [
+        "C1"
+      ],
+      "files": [
+        "apps/dashboard/app/api/auth/login/route.ts",
+        "apps/dashboard/components/auth/LoginForm.tsx",
+        "apps/dashboard/lib/auth.ts",
+        "apps/dashboard/lib/auth/e1-diagnostics.ts",
+        "apps/dashboard/tests/e1-auth-flow.test.ts",
+        "scripts/admin/README.md"
+      ],
+      "partial": [
+        {
+          "file": "apps/dashboard/middleware.ts",
+          "include": "All remaining hunks: diagnostic import/events, exact development localhost alias redirect and POST refusal. Public invitation path already belongs to C1."
+        }
+      ],
+      "checks": [
+        "e1-auth-flow: 4 PASS in closure",
+        "same-origin HttpOnly session, strict JWT and diagnostics covered"
+      ],
+      "commitSha": null
+    },
+    {
+      "id": "C3",
+      "title": "fix(routes): decode canonical and review identifiers once",
+      "dependsOn": [
+        "C2"
+      ],
+      "files": [
+        "apps/dashboard/app/(dashboard)/agents/canonical/[canonicalObjectId]/page.tsx",
+        "apps/dashboard/app/api/governance/workspace/reviews/[id]/route.ts",
+        "apps/dashboard/lib/governance/review-subject-route.ts",
+        "apps/dashboard/tests/review-subject-route.test.ts",
+        "docs/codex/evidence/2026-11-07-e1-localhost-auth-correction.md",
+        "docs/codex/evidence/2026-11-08-e1-governance-review-access-verified.md",
+        "docs/codex/evidence/2026-11-08-passport-route-404.md"
+      ],
+      "partial": [
+        {
+          "file": "apps/dashboard/app/(dashboard)/governance/reviews/[id]/page.tsx",
+          "include": "Only reviewSubjectIdFromRouteParam import and params.id decoding; leave TechnicalProfileMaterialization import/render to C5."
+        },
+        {
+          "file": "apps/dashboard/tests/passport-ui-route.test.ts",
+          "include": "Only getDynamicParam import and the three route decoding regressions. Leave ProfileFact type, profileTraceView and two provenance UI tests to C6."
+        }
+      ],
+      "checks": [
+        "review-subject-route: 2 PASS in closure",
+        "Passport route regressions included in reused 23/23 current UI receipt"
+      ],
+      "commitSha": null
+    },
+    {
+      "id": "C4",
+      "title": "docs(e1): record Passport alignment and real profile governance",
+      "dependsOn": [
+        "C3"
+      ],
+      "files": [
+        "docs/codex/evidence/2026-11-09-passport-controlled-m16-m17.json",
+        "docs/codex/evidence/2026-11-09-passport-controlled-m16-m17.md",
+        "docs/codex/evidence/2026-11-09-real-agent-technical-profile-governance.json",
+        "docs/codex/evidence/2026-11-09-real-agent-technical-profile-governance.md"
+      ],
+      "partial": [],
+      "checks": [
+        "Historical sanitized receipts only; do not rerun any migration or old governance step",
+        "passport-compat-v1 implementation belongs to another worktree and is not imported by this commit"
+      ],
+      "commitSha": null
+    },
+    {
+      "id": "C5",
+      "title": "fix(governance): materialize exact governed technical profiles",
+      "dependsOn": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "files": [
+        "apps/dashboard/lib/governance/agent-version-technical-profile-persistence.ts",
+        "apps/dashboard/lib/governance/technical-profile-materialization.ts",
+        "apps/dashboard/app/api/governance/workspace/reviews/[id]/technical-profile/route.ts",
+        "apps/dashboard/components/workspace/TechnicalProfileMaterialization.tsx",
+        "apps/dashboard/tests/postgres-m16/technical-profile-mapping.test.ts",
+        "apps/dashboard/tests/technical-profile-materialization.test.ts",
+        "ops/agent-version-profile-v1/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql",
+        "ops/agent-version-profile-v1/README.md",
+        "ops/agent-version-profile-v1/deployment.sql",
+        "ops/agent-version-profile-v1/integrity.sql",
+        "ops/agent-version-profile-v1/manifest.json",
+        "ops/agent-version-profile-v1/package.mjs",
+        "docs/codex/evidence/2026-11-09-technical-profile-materialization-patch.md",
+        "docs/codex/evidence/2026-11-09-technical-profile-final-gate.md",
+        "docs/codex/evidence/2026-11-09-technical-profile-applied.md",
+        "docs/codex/evidence/2026-11-09-technical-profile-applied.json"
+      ],
+      "partial": [
+        {
+          "file": "apps/dashboard/app/(dashboard)/governance/reviews/[id]/page.tsx",
+          "include": "Only TechnicalProfileMaterialization import and AGENT_VERSION card render; route decoding already belongs to C3."
+        }
+      ],
+      "checks": [
+        "technical-profile-materialization: 5 PASS in closure",
+        "package.mjs --check: PASS, all 12 files and approved SQL payload exact",
+        "PG17 mapping/transport: prior 8 PASS, exact manifest source hashes preserved",
+        "Applied SQL is currently in ops only; canonical successor registration is a separate pending closure item"
+      ],
+      "commitSha": null
+    },
+    {
+      "id": "C6",
+      "title": "fix(passport): project technical profile governance lineage",
+      "dependsOn": [
+        "C3",
+        "C5"
+      ],
+      "files": [
+        "apps/dashboard/lib/governance/agent-passport.ts",
+        "apps/dashboard/lib/governance/passport-read-store.ts",
+        "apps/dashboard/lib/governance/passport-profile-provenance.ts",
+        "apps/dashboard/lib/governance/passport-query.ts",
+        "apps/dashboard/components/agents/AgentPassport.tsx",
+        "apps/dashboard/tests/passport-query.test.ts",
+        "docs/codex/evidence/2026-11-09-passport-profile-provenance.json",
+        "docs/codex/evidence/2026-11-09-passport-profile-provenance.md"
+      ],
+      "partial": [
+        {
+          "file": "apps/dashboard/tests/passport-ui-route.test.ts",
+          "include": "Only ProfileFact type import, profileTraceView and the two provenance tests. Transport regressions/getDynamicParam already belong to C3."
+        }
+      ],
+      "checks": [
+        "82 query + 23 UI = 105 PASS, reused with all seven source hashes verified current",
+        "Dashboard typecheck previously PASS at this final combined implementation",
+        "Real tenant SELECT + scoped production SSR PASS; no authenticated-browser screenshot claimed"
+      ],
+      "commitSha": null
+    },
+    {
+      "id": "C7",
+      "title": "docs(e1): record consolidation inventory and session handoff",
+      "dependsOn": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "files": [
+        "docs/codex/evidence/2026-11-09-e1-consolidation-plan.md",
+        "docs/codex/evidence/2026-11-09-e1-consolidation-inventory.json",
+        "docs/agent/E1_HANDOFF.md"
+      ],
+      "partial": [],
+      "checks": [
+        "Explicit inventory covers all 55 original candidates",
+        "Keep historical evidence immutable; this handoff supersedes earlier pending-state instructions",
+        "Actual commit SHAs must be filled only after later execution is authorized"
+      ],
+      "commitSha": null
+    }
+  ],
+  "sharedFiles": [
+    {
+      "file": "apps/dashboard/app/(dashboard)/governance/reviews/[id]/page.tsx",
+      "plannedCommits": [
+        "C3",
+        "C5"
+      ]
+    },
+    {
+      "file": "apps/dashboard/middleware.ts",
+      "plannedCommits": [
+        "C1",
+        "C2"
+      ]
+    },
+    {
+      "file": "apps/dashboard/tests/passport-ui-route.test.ts",
+      "plannedCommits": [
+        "C3",
+        "C6"
+      ]
+    }
+  ],
+  "closureIssues": [
+    {
+      "id": "I1",
+      "classification": "CANONICAL_MIGRATION_INVENTORY_INCOMPLETE",
+      "blockingScope": "Definitive canonical migration closure, not preservation of existing audited local code",
+      "detail": "Migration 20261109191942 is applied and hash-pinned under ops; supabase/migrations and its exact operational successor test currently contain only the invitation beyond frozen 109.",
+      "nextAction": "Prepare a separate exact-byte canonical source registration and explicit successor receipt/test under review. Do not edit any historical migration or reapply hosted SQL."
+    },
+    {
+      "id": "I2",
+      "classification": "AUTOMATED_TEST_COVERAGE_GAP",
+      "blockingScope": "Administrative CLI direct regression coverage",
+      "detail": "issue-operator-invitation.mjs has a passing syntax check and prior real execution evidence; API and DB have tests, but no committed test directly exercises validateInvitationInput or the CLI orchestration.",
+      "nextAction": "Add an offline CLI test before declaring this administrative surface fully covered; do not issue another invitation to test it."
+    },
+    {
+      "id": "I3",
+      "classification": "EXTERNAL_WORKTREE_PACKAGE_NOT_INCLUDED",
+      "blockingScope": "Consolidation of passport-compat-v1 itself",
+      "detail": "The historical 25-migration compatibility package is referenced by E1 receipts and remains a separate worktree responsibility.",
+      "nextAction": "Do not copy or stage its files in E1; consolidate that worktree separately if requested."
+    },
+    {
+      "id": "I4",
+      "classification": "KNOWN_AUTOMATIC_HANDOFF_SCOPE_CLASSIFICATION",
+      "blockingScope": "Automatic handoff tool only",
+      "detail": "The preserved proposed/application transport deployment.sql was previously classified as hosted/deployment scope by the local handoff guard.",
+      "nextAction": "Use the explicit documentary handoff; preserve the guard, and do not claim an automatic handoff PASS."
+    }
+  ],
+  "executionConstraints": {
+    "gitAddRun": false,
+    "commitsRun": false,
+    "pushRun": false,
+    "mergeRun": false,
+    "hostedConnections": 0,
+    "otherWorktreeChangesImported": false,
+    "eachPrefixTested": false,
+    "stagedReviewRequiredAfterApproval": true
+  },
+  "exclusions": [
+    ".artifacts/**: dumps, readable SQL backups, activation codes, session signing key, local runtime and temporary logs",
+    "node_modules/**, .next/**, out/**, .env* and private Supabase local state",
+    "Any file or change from another worktree"
+  ],
+  "lineEndings": {
+    "coreAutocrlf": true,
+    "repositoryAttributes": "* text=auto eol=lf",
+    "approvedSqlAndManifestFiles": "eol=lf confirmed; preserve approved raw hashes and do not rebuild manifests to hide drift"
+  }
+}
