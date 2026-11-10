@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  APPROVED_OPERATOR_INVITATION, assertCanonicalMigrationSuffix, readApprovedMigrationBaseline,
+  APPROVED_OPERATOR_INVITATION, APPROVED_E1_TECHNICAL_PROFILE, assertCanonicalMigrationSuffix, readApprovedMigrationBaseline,
+  validateCanonicalChainWithE1Successors,
   validateCanonicalChainWithOperatorInvitation, validateCanonicalMigrationChain,
   type FrozenDependencyManifest, type MigrationEntry,
 } from './helpers/m17-canonical-migration-chain';
@@ -124,4 +125,36 @@ test('operational successor: missing invitation, non-file entry and historical m
   rejects(() => validateCanonicalChainWithOperatorInvitation([...entries(), { ...invitationEntry(), kind: 'symlink' }], fixture(), approved, approved[0]!.name), /regular file/);
   const historical = entries(); historical[0]!.contents += '\nSELECT 1;';
   rejects(() => validateCanonicalChainWithOperatorInvitation([...historical, invitationEntry()], fixture(), approved, approved[0]!.name), /historical migration mutation/);
+});
+
+const technicalEntry = (): MigrationEntry => ({ name: APPROVED_E1_TECHNICAL_PROFILE.name, kind: 'file',
+  contents: readFileSync(new URL('../../../supabase/migrations/' + APPROVED_E1_TECHNICAL_PROFILE.name, import.meta.url), 'utf8') });
+const e1Entries = () => [...entries(), invitationEntry(), technicalEntry()];
+test('E1 successors: exact invitation and applied technical profile preserve the frozen checkpoint',()=>{
+  validateCanonicalChainWithE1Successors(e1Entries(),fixture(),approved,approved[0]!.name);
+});
+test('E1 successors: missing, reordered, duplicate and unapproved entries are rejected',()=>{
+  for(const actual of [[...entries(),invitationEntry()],[...entries(),technicalEntry(),invitationEntry()],
+    [...e1Entries(),technicalEntry()],[...e1Entries(),{...technicalEntry(),name:'99991231235959_unapproved.sql'}]])
+    rejects(()=>validateCanonicalChainWithE1Successors(actual,fixture(),approved,approved[0]!.name),/successor inventory/);
+});
+test('E1 successors: changed SQL and historical mutation cannot be self-authorized',()=>{
+  const changed=e1Entries();changed.at(-1)!.contents+='\nSELECT 1;';
+  rejects(()=>validateCanonicalChainWithE1Successors(changed,fixture(),approved,approved[0]!.name),/immutable receipt/);
+  const historical=e1Entries();historical[0]!.contents+='\nSELECT 1;';
+  rejects(()=>validateCanonicalChainWithE1Successors(historical,fixture(),approved,approved[0]!.name),/historical migration mutation/);
+});
+test('E1 successors: the technical SQL must be a regular file',()=>{
+  for(const kind of ['directory','symlink','other'] as const){const actual=e1Entries();actual.at(-1)!.kind=kind;
+    rejects(()=>validateCanonicalChainWithE1Successors(actual,fixture(),approved,approved[0]!.name),/regular file/);}
+});
+test('E1 successors: canonical SQL is byte-exact with the audited artifact and hosted application receipt',()=>{
+  const name=APPROVED_E1_TECHNICAL_PROFILE.name;
+  const canonical=readFileSync(new URL('../../../supabase/migrations/'+name,import.meta.url));
+  const artifact=readFileSync(new URL('../../../ops/agent-version-profile-v1/'+name,import.meta.url));
+  assert.deepEqual(canonical,artifact);
+  assert.equal(createHash('sha256').update(canonical).digest('hex'),APPROVED_E1_TECHNICAL_PROFILE.sha256_lf);
+  const receipt=JSON.parse(readFileSync(new URL('../../../docs/codex/evidence/2026-11-09-technical-profile-applied.json',import.meta.url),'utf8'));
+  assert.equal(receipt.migration.version,name.slice(0,14));assert.equal(receipt.migration.sqlSha256,APPROVED_E1_TECHNICAL_PROFILE.sha256_lf);
+  assert.equal(receipt.migration.historyAfter,101);assert.equal(receipt.migration.exactHistorySqlVerified,true);
 });

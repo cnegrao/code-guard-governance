@@ -1,0 +1,189 @@
+{
+  "status": "APPLIED_AND_VERIFIED_AWAITING_HUMAN_MATERIALIZATION",
+  "target": "zkqfvqwqdypgpzauzinw",
+  "worktree": "D:/code-guard-governance/.worktrees/e1-operator-unblock",
+  "branch": "fix/e1-operator-unblock",
+  "head": "a5f85bf099fdbf0a24f1a369e4428730a042a162",
+  "migration": {
+    "version": "20261109191942",
+    "name": "agent_version_technical_profile_governed_mapping_v1",
+    "applied": 1,
+    "failed": 0,
+    "startedAt": "2026-11-09T22:51:40.3648782Z",
+    "completedAt": "2026-11-09T22:51:45.4268284Z",
+    "historyBefore": 100,
+    "historyAfter": 101,
+    "sqlSha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6",
+    "transportSha256": "477f6b8dccb1a316c0e32bb376ed22fc29ddd8693c6add2a8a8108e9d50d9aab",
+    "exactHistorySqlVerified": true
+  },
+  "backup": {
+    "status": "PASS_CONSISTENT_LOGICAL_BACKUP_AND_READBACK",
+    "startedAt": "2026-11-09T22:35:58.222Z",
+    "verifiedAt": "2026-11-09T22:36:37.994Z",
+    "snapshot": "0000002A-000007C2-1",
+    "migrationHistory": 100,
+    "governanceTables": 198,
+    "files": [
+      {
+        "file": "database.dump",
+        "bytes": 5548859,
+        "sha256": "656dc0033039543b78b633915d16910540f40b05fdf7db628bd7f999eae3f46a"
+      },
+      {
+        "file": "database-readable.sql",
+        "bytes": 10087705,
+        "sha256": "ca2a1235dc9bc888aa42e1e5b2ff6b169553eab4c17fbea8ab59db963761379b"
+      },
+      {
+        "file": "governance-critical.dump",
+        "bytes": 417194,
+        "sha256": "59cea09084c3ece1747bd116c73493f799ac16670d5dfdd2634b8b9a51e98506"
+      },
+      {
+        "file": "governance-critical-readable.sql",
+        "bytes": 1711228,
+        "sha256": "52eee61e7a927bb86ad15ddee58cab57421a7619850877b48db2837d6010528d"
+      },
+      {
+        "file": "roles.sql",
+        "bytes": 11401,
+        "sha256": "9024cfd5a05fb5eb515e2b007a74b277f07efbb4d2c31fe4e5bf4b7060050c2f"
+      },
+      {
+        "file": "database.toc.txt",
+        "bytes": 540940,
+        "sha256": "cb589c4ecc9f6ef95c0f874809afe33bb3ad3fa14b593dafedcdd2ff0c546fac"
+      },
+      {
+        "file": "governance-critical.toc.txt",
+        "bytes": 14649,
+        "sha256": "625f0c20610bde7d0924d389251ba555c3c585e6e1edc2f61367c9318a87389c"
+      },
+      {
+        "file": "inventory-before.json",
+        "bytes": 33768,
+        "sha256": "893eda4f637438fab6aa2ebb8f6cbf85059b830c126898d48de44e99d0cb9d3b"
+      }
+    ],
+    "privateNtfsAcl": true,
+    "restoreExecuted": false
+  },
+  "integrity": {
+    "allGovRepoTables": 198,
+    "passportDomainTables": 25,
+    "countsAndHashesUnchanged": true,
+    "previousHistoryUnchanged": true,
+    "canonicalObjects": 2,
+    "reviewState": "CERTIFIED",
+    "profiles": 0,
+    "profileMaterializations": 0
+  },
+  "security": {
+    "raw": {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "hash": "ba3da89770f9607424b682bdd81d0ac8f400d95abd78173253dcad19ddf65c22",
+      "owner": "postgres",
+      "definer": false
+    },
+    "wrapper": {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "hash": "db10565201d08b9b14a6cd0c83d7e07aab9fa5dc1d7bc645461d8b133b9c1e2c",
+      "owner": "postgres",
+      "config": [
+        "search_path=pg_catalog, pg_temp",
+        "lock_timeout=5s"
+      ],
+      "definer": true
+    },
+    "rawServiceExecute": false,
+    "wrapperServiceExecute": true,
+    "wrapperAnonExecute": false,
+    "wrapperAuthenticatedExecute": false,
+    "stores": [
+      {
+        "table": "agent_version_technical_profile_field_assertions",
+        "service_dml": false,
+        "service_read": true
+      },
+      {
+        "table": "agent_version_technical_profile_field_evidence",
+        "service_dml": false,
+        "service_read": true
+      },
+      {
+        "table": "agent_version_technical_profile_materializations",
+        "service_dml": false,
+        "service_read": true
+      },
+      {
+        "table": "agent_version_technical_profiles",
+        "service_dml": false,
+        "service_read": true
+      }
+    ]
+  },
+  "tests": {
+    "integrationAndInventory": 29,
+    "passportQueries": 68,
+    "passportUi": 21,
+    "postgres": 8,
+    "totalPass": 126,
+    "failed": 0,
+    "skipped": 0,
+    "dashboardTypecheck": "PASS_INCREMENTAL_FALSE",
+    "packageCheck": "PASS"
+  },
+  "ui": {
+    "at": "2026-11-09T23:07:57.285Z",
+    "target": "zkqfvqwqdypgpzauzinw",
+    "realUiCoordinator": {
+      "status": "READY",
+      "proposalId": "agent-version-technical-profile-proposal:14e70c6d806b1d2dfc5c4d5993ac27967c450a40d0e78688b3bc3235aa80d40f",
+      "canonicalVersionId": "canonical-object:1e85ebd0823bc0355300fa46d0fefaee8c45281658ce27a200feac8e2e4efec1",
+      "values": {
+        "runtimeFrameworkReference": "LangGraph",
+        "buildReference": null,
+        "entrypointReference": null,
+        "configurationReference": null
+      }
+    },
+    "buttonCondition": "READY -> Materialize technical profile",
+    "authenticatedBrowserSessionInspected": false,
+    "cookiesExported": false,
+    "postsSent": 0,
+    "http": [
+      {
+        "route": "/login",
+        "status": 200,
+        "location": null
+      },
+      {
+        "route": "/governance/reviews/review-subject%3Adiscovery%3A94ab3bbabbd6398d3bd25c83ebf875a551854842bcf09437a59cd9ee7718af4f",
+        "status": 307,
+        "location": "http://localhost:3101/login"
+      },
+      {
+        "route": "/api/governance/workspace/reviews/review-subject%3Adiscovery%3A94ab3bbabbd6398d3bd25c83ebf875a551854842bcf09437a59cd9ee7718af4f/technical-profile",
+        "status": 307,
+        "location": "http://localhost:3101/login"
+      }
+    ]
+  },
+  "privateEvidenceDirectory": "D:/code-guard-governance/.worktrees/e1-operator-unblock/.artifacts/agent/technical-profile-apply-2026-11-09T22-35-56-926Z",
+  "restrictions": {
+    "onlyApprovedMigration": true,
+    "governanceDataChanged": false,
+    "automaticMaterialization": false,
+    "humanCertificationRepeated": false,
+    "cookiesExported": false,
+    "historicalMigrationsEdited": false,
+    "otherHostedProjectsAccessed": false
+  },
+  "nextAction": "Human GOVERNANCE_ADMIN opens the exact certified review, checks proposal and evidence, then explicitly clicks Materialize technical profile."
+}

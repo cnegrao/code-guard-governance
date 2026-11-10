@@ -1,0 +1,27 @@
+{
+  "status": "CANONICAL_SOURCE_REGISTERED_NO_SQL_REAPPLIED",
+  "date": "2026-11-10",
+  "project": "zkqfvqwqdypgpzauzinw",
+  "version": "20261109191942",
+  "name": "agent_version_technical_profile_governed_mapping_v1",
+  "sha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6",
+  "canonicalFile": "supabase/migrations/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql",
+  "approvedArtifact": "ops/agent-version-profile-v1/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql",
+  "hostedReadOnlyVerification": {
+    "organisation": "GOVIA_DEMO",
+    "historyCount": 101,
+    "statementCount": 1,
+    "version": "20261109191942",
+    "name": "agent_version_technical_profile_governed_mapping_v1",
+    "statementSha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6"
+  },
+  "frozenBaseline": 109,
+  "explicitSuccessors": [
+    "20261108002618_governance_operator_invitation_v1.sql",
+    "20261109191942_agent_version_technical_profile_governed_mapping_v1.sql"
+  ],
+  "localCanonicalCount": 111,
+  "historicalMigrationsChanged": false,
+  "canonicalContractsChanged": false,
+  "hostedDdlExecuted": false
+}

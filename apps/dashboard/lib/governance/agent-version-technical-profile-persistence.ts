@@ -9,14 +9,17 @@ import type {
 } from "@council/governance-review";
 
 import { privilegedDb } from "./persistence";
+import type { GovernanceWritePrincipal } from "../auth/governance-write-principal";
+import { GovernedWriteError } from "./governed-write-errors";
 
 /**
  * Technical Profile Persistence V1 (ADR-GOVIA-TECHNICAL-PROFILE-PERSISTENCE-v1)
  * — server-only Supabase adapter, first instance scoped to
  * AgentVersionTechnicalProfile only. Mirrors materialization.ts exactly:
  * the sole caller of the privileged gov_repo.record_agent_version_technical_profile_proposal
- * / gov_repo.materialize_agent_version_technical_profile RPCs, both SECURITY
- * INVOKER and service_role-only, reusing the same privileged client.
+ * (SECURITY INVOKER). The explicit human write uses the principal-bound
+ * materialize_agent_version_technical_profile_governed_v1 wrapper; its raw
+ * implementation and canonical profile stores are owner-only for writes.
  */
 
 interface ProposalRow {
@@ -30,7 +33,7 @@ interface MaterializationRow {
   canonical_object_id: string;
 }
 
-export const agentVersionTechnicalProfilePersistence: AgentVersionTechnicalProfilePersistencePort = {
+export const agentVersionTechnicalProfilePersistence: Pick<AgentVersionTechnicalProfilePersistencePort, "recordAgentVersionTechnicalProfileProposal"> = {
   async recordAgentVersionTechnicalProfileProposal(
     input: AgentVersionTechnicalProfileProposalInput,
   ): Promise<AgentVersionTechnicalProfileProposalResult> {
@@ -63,16 +66,26 @@ export const agentVersionTechnicalProfilePersistence: AgentVersionTechnicalProfi
     return { replay: row.replay, proposalId: row.proposal_id };
   },
 
-  async materializeAgentVersionTechnicalProfile(
+};
+
+/** Only a server-verified principal can enter the profile write boundary. */
+export function createGovernedAgentVersionTechnicalProfilePersistence(principal: GovernanceWritePrincipal):
+  Pick<AgentVersionTechnicalProfilePersistencePort, "materializeAgentVersionTechnicalProfile"> {
+  return { async materializeAgentVersionTechnicalProfile(
     input: AgentVersionTechnicalProfileMaterializationInput,
   ): Promise<AgentVersionTechnicalProfileMaterializationResult> {
-    const { data, error } = await privilegedDb.rpc("materialize_agent_version_technical_profile", {
-      p_organisation_id: input.organisationId,
+    if (input.organisationId !== principal.organisationId) throw new Error("Profile principal organisation mismatch");
+    const { data, error } = await privilegedDb.rpc("materialize_agent_version_technical_profile_governed_v1", {
+      p_verified_organisation_id: principal.organisationId,
+      p_verified_actor_user_id: principal.actorUserId,
+      p_verified_session_iat: principal.issuedAtSeconds,
+      p_verified_session_exp: principal.expiresAtSeconds,
+      p_verified_credential_epoch: principal.credentialEpoch,
       p_canonical_object_id: input.canonicalObjectId,
       p_proposal_id: input.proposalId,
       p_occurred_at: input.occurredAt,
     });
-    if (error) throw new Error(`materialize_agent_version_technical_profile failed: ${error.message}`);
+    if (error) throw new GovernedWriteError("Technical profile materialization rejected", error.code);
     const row = (Array.isArray(data) ? data[0] : data) as MaterializationRow;
 
     return {
@@ -80,5 +93,5 @@ export const agentVersionTechnicalProfilePersistence: AgentVersionTechnicalProfi
       status: row.status,
       canonicalObjectId: row.canonical_object_id,
     };
-  },
-};
+  } };
+}

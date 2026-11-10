@@ -22,6 +22,11 @@ export const APPROVED_OPERATOR_INVITATION = {
   name: '20261108002618_governance_operator_invitation_v1.sql',
   sha256_lf: '2aa8821a4e3b01043f907a1b38b8ed2a2d862cc44ce752ef3d85845674173878',
 } as const;
+// 2026-11-10: owner-approved source registration of SQL already applied to the E1 test project.
+export const APPROVED_E1_TECHNICAL_PROFILE = {
+  name: '20261109191942_agent_version_technical_profile_governed_mapping_v1.sql',
+  sha256_lf: '9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6',
+} as const;
 const root = new URL('../../../../', import.meta.url);
 const migrationsRoot = new URL('supabase/migrations/', root);
 const migrationName = /^\d{14}_[a-z0-9_]+\.sql$/;
@@ -110,5 +115,20 @@ export const assertCanonicalMigrationSuffix = (anchor: string) => {
   }));
   actual.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   const frozen = JSON.parse(readFileSync(new URL('../fixtures/sr2-dependency-manifest-v4.json', import.meta.url), 'utf8')) as FrozenDependencyManifest;
-  validateCanonicalChainWithOperatorInvitation(actual, frozen, readApprovedMigrationBaseline(), anchor);
+  validateCanonicalChainWithE1Successors(actual, frozen, readApprovedMigrationBaseline(), anchor);
+};
+
+export const validateCanonicalChainWithE1Successors = (
+  actual: readonly MigrationEntry[], frozen: FrozenDependencyManifest,
+  approved: readonly Migration[], anchor: string,
+) => {
+  validateCanonicalChainWithOperatorInvitation(actual.slice(0, approved.length + 1), frozen, approved, anchor);
+  const successors = actual.slice(approved.length + 1);
+  assert.deepEqual(successors.map(entry => entry.name), [APPROVED_E1_TECHNICAL_PROFILE.name],
+    'E1 technical profile successor inventory must match the exact applied migration');
+  const technical = successors[0]!;
+  assert.equal(technical.kind, 'file', 'technical profile successor must be a regular file');
+  assert.equal(typeof technical.contents, 'string', 'technical profile successor content required');
+  assert.equal(sha256Lf(technical.contents!), APPROVED_E1_TECHNICAL_PROFILE.sha256_lf,
+    'technical profile successor differs from its applied immutable receipt');
 };

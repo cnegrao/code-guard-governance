@@ -1,0 +1,69 @@
+{
+  "package": "agent-version-profile-v1",
+  "status": "PROPOSED_NOT_APPLIED",
+  "projectRef": "zkqfvqwqdypgpzauzinw",
+  "organisationId": "082ef694-e016-4893-908c-1eef373f53af",
+  "version": "20261109191942",
+  "expectedPreviousMaterializerProsrcSha256": "8754262bf27e47c7b5e502d8f2f9bcd1e18aeb482b3930b30e9f7d8c6759ecdd",
+  "securityDelta": {
+    "addedDefiners": [
+      "gov_repo.materialize_agent_version_technical_profile_governed_v1(uuid,uuid,bigint,bigint,timestamptz,text,text,timestamptz)"
+    ],
+    "closedRawServiceExecute": true,
+    "closedServiceProfileTableDml": true
+  },
+  "files": [
+    {
+      "file": "supabase/migrations/20260908120000_agent_version_technical_profile_persistence_v1.sql",
+      "sha256": "268fc30d270088a86c753e2e9bcd33505d7f971c00af9f41dc94f4fcb75f945d"
+    },
+    {
+      "file": "ops/agent-version-profile-v1/20261109191942_agent_version_technical_profile_governed_mapping_v1.sql",
+      "sha256": "9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6"
+    },
+    {
+      "file": "ops/agent-version-profile-v1/package.mjs",
+      "sha256": "79f7ebd6708f42e747fabce6cf5198270c9a7481a024a92459d753cf95c3f2e0"
+    },
+    {
+      "file": "ops/agent-version-profile-v1/README.md",
+      "sha256": "a20b8ee69ba1d44b0f71c72b94031b420e7573160b826ba0d78e204d39907b2f"
+    },
+    {
+      "file": "ops/agent-version-profile-v1/integrity.sql",
+      "sha256": "dfffaf1658eeda0e1c4db9ffcf88f98ae84cd85020a87c2bf5bf01eb3cf0ca09"
+    },
+    {
+      "file": "apps/dashboard/lib/governance/agent-version-technical-profile-persistence.ts",
+      "sha256": "1ccf63772330819da143e8c0620573485f5fda1ac261913d3e65890162a661ed"
+    },
+    {
+      "file": "apps/dashboard/lib/governance/technical-profile-materialization.ts",
+      "sha256": "539c78d08acc2076b00258152482e13f259871a2f3459f64593f233dcc6b2fd9"
+    },
+    {
+      "file": "apps/dashboard/app/api/governance/workspace/reviews/[id]/technical-profile/route.ts",
+      "sha256": "bdabece1e491686637833ecdbb28cec133fb401eef444af6d1bd9bd3253766fe"
+    },
+    {
+      "file": "apps/dashboard/components/workspace/TechnicalProfileMaterialization.tsx",
+      "sha256": "80d9f2a2fa535170586dfa83fefd043662a05695f284b0e9fb3e6a529dee8f8a"
+    },
+    {
+      "file": "apps/dashboard/app/(dashboard)/governance/reviews/[id]/page.tsx",
+      "sha256": "d0d0a5d627ef8b4d5c114c71f6fba652351bdebc0c533ec153df082567992327"
+    },
+    {
+      "file": "apps/dashboard/tests/postgres-m16/technical-profile-mapping.test.ts",
+      "sha256": "6fb3aa478f277c22d905ece736221bf5387a94040cf53e6a73ffdad1dfc67963"
+    },
+    {
+      "file": "apps/dashboard/tests/technical-profile-materialization.test.ts",
+      "sha256": "e2a42d28866c3eadc2e6ca84b1b1c3d26cd09a2e770b08c085e5bd3753850e08"
+    }
+  ],
+  "deployment": {
+    "file": "ops/agent-version-profile-v1/deployment.sql",
+    "sha256": "477f6b8dccb1a316c0e32bb376ed22fc29ddd8693c6add2a8a8108e9d50d9aab"
+  }
+}

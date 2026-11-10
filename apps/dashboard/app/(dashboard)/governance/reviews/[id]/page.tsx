@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { StateBadge } from "@/components/workspace/StateBadge";
+import { TechnicalProfileMaterialization } from "@/components/workspace/TechnicalProfileMaterialization";
 import { LifecycleStepper, type LifecycleStage, type LifecycleStageStatus } from "@/components/workspace/LifecycleStepper";
 
 interface EvidenceHash {
@@ -795,6 +796,7 @@ export default function ReviewSubjectDetailPage() {
               )}
             </Card>
           )}
+          {detail.candidateKind === "AGENT_VERSION" && <TechnicalProfileMaterialization reviewSubjectId={reviewSubjectId} />}
         </div>
       </div>
     </div>
