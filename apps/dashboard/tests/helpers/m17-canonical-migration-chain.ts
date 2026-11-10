@@ -15,6 +15,13 @@ export type FrozenDependencyManifest = {
 // CI explicitly fetches this SHA; local/historical runs require this commit and its blobs.
 // An unavailable object fails closed. Tests never fetch or regenerate an authority fixture.
 export const APPROVED_MIGRATION_CHECKPOINT = '5cb86faa9130ec5df3429b69c8d87652b59000a6';
+// Carlos explicitly authorized reconciliation of this legitimate E1 successor
+// on 2026-11-09. The frozen 109-file M3 checkpoint and V4 fixture stay unchanged.
+// This is an exact additional receipt, not a generic append/suffix exception.
+export const APPROVED_OPERATOR_INVITATION = {
+  name: '20261108002618_governance_operator_invitation_v1.sql',
+  sha256_lf: '2aa8821a4e3b01043f907a1b38b8ed2a2d862cc44ce752ef3d85845674173878',
+} as const;
 const root = new URL('../../../../', import.meta.url);
 const migrationsRoot = new URL('supabase/migrations/', root);
 const migrationName = /^\d{14}_[a-z0-9_]+\.sql$/;
@@ -80,6 +87,21 @@ export const validateCanonicalMigrationChain = (
   assert.deepEqual(actual.slice(anchorIndex).map(entry => entry.name), approvedNames.slice(anchorIndex), `${anchor}: exact ordered successors`);
 };
 
+export const validateCanonicalChainWithOperatorInvitation = (
+  actual: readonly MigrationEntry[], frozen: FrozenDependencyManifest,
+  approved: readonly Migration[], anchor: string,
+) => {
+  validateCanonicalMigrationChain(actual.slice(0, approved.length), frozen, approved, anchor);
+  const successors = actual.slice(approved.length);
+  assert.deepEqual(successors.map(entry => entry.name), [APPROVED_OPERATOR_INVITATION.name],
+    'operational successor inventory must match the exact owner-approved invitation');
+  const invitation = successors[0]!;
+  assert.equal(invitation.kind, 'file', 'operator invitation must be a regular file');
+  assert.equal(typeof invitation.contents, 'string', 'operator invitation content required');
+  assert.equal(sha256Lf(invitation.contents!), APPROVED_OPERATOR_INVITATION.sha256_lf,
+    'operator invitation differs from its owner-approved immutable receipt');
+};
+
 export const assertCanonicalMigrationSuffix = (anchor: string) => {
   const actual: MigrationEntry[] = readdirSync(migrationsRoot, { withFileTypes: true }).map(entry => ({
     name: entry.name,
@@ -88,5 +110,5 @@ export const assertCanonicalMigrationSuffix = (anchor: string) => {
   }));
   actual.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   const frozen = JSON.parse(readFileSync(new URL('../fixtures/sr2-dependency-manifest-v4.json', import.meta.url), 'utf8')) as FrozenDependencyManifest;
-  validateCanonicalMigrationChain(actual, frozen, readApprovedMigrationBaseline(), anchor);
+  validateCanonicalChainWithOperatorInvitation(actual, frozen, readApprovedMigrationBaseline(), anchor);
 };

@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  assertCanonicalMigrationSuffix, readApprovedMigrationBaseline, validateCanonicalMigrationChain,
+  APPROVED_OPERATOR_INVITATION, assertCanonicalMigrationSuffix, readApprovedMigrationBaseline,
+  validateCanonicalChainWithOperatorInvitation, validateCanonicalMigrationChain,
   type FrozenDependencyManifest, type MigrationEntry,
 } from './helpers/m17-canonical-migration-chain';
 
@@ -99,4 +101,27 @@ test('migration chain: immutable checkpoint objects are available and the real c
   const baseline = readApprovedMigrationBaseline();
   assert.equal(baseline.length, 109, 'approved M3 checkpoint inventory');
   assertCanonicalMigrationSuffix(baseline[0]!.name);
+});
+
+const invitationEntry = (): MigrationEntry => ({
+  name: APPROVED_OPERATOR_INVITATION.name, kind: 'file',
+  contents: readFileSync(new URL('../../../supabase/migrations/' + APPROVED_OPERATOR_INVITATION.name, import.meta.url), 'utf8'),
+});
+
+test('operational successor: exact approved invitation preserves the frozen checkpoint', () => {
+  validateCanonicalChainWithOperatorInvitation([...entries(), invitationEntry()], fixture(), approved, approved[0]!.name);
+});
+
+test('operational successor: changed bytes, renamed entry and extra append remain rejected', () => {
+  const valid = invitationEntry();
+  rejects(() => validateCanonicalChainWithOperatorInvitation([...entries(), { ...valid, contents: valid.contents + '\nSELECT 1;' }], fixture(), approved, approved[0]!.name), /immutable receipt/);
+  rejects(() => validateCanonicalChainWithOperatorInvitation([...entries(), { ...valid, name: '99991231235959_unapproved.sql' }], fixture(), approved, approved[0]!.name), /successor inventory/);
+  rejects(() => validateCanonicalChainWithOperatorInvitation([...entries(), valid, valid], fixture(), approved, approved[0]!.name), /successor inventory/);
+});
+
+test('operational successor: missing invitation, non-file entry and historical mutation remain rejected', () => {
+  rejects(() => validateCanonicalChainWithOperatorInvitation(entries(), fixture(), approved, approved[0]!.name), /successor inventory/);
+  rejects(() => validateCanonicalChainWithOperatorInvitation([...entries(), { ...invitationEntry(), kind: 'symlink' }], fixture(), approved, approved[0]!.name), /regular file/);
+  const historical = entries(); historical[0]!.contents += '\nSELECT 1;';
+  rejects(() => validateCanonicalChainWithOperatorInvitation([...historical, invitationEntry()], fixture(), approved, approved[0]!.name), /historical migration mutation/);
 });
