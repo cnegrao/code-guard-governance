@@ -1,0 +1,406 @@
+{
+  "status": "SEPARATE_INTEGRATION_REQUIRED_NO_CODE_COPIED",
+  "sourceWorktree": "D:/code-guard-governance/.worktrees/passport-compat-package",
+  "sourceBranch": "feat/passport-test-compat-package",
+  "sourceHead": "a5f85bf099fdbf0a24f1a369e4428730a042a162",
+  "package": "ops/passport-compat-v1",
+  "bundleSha256": "51a27ae2c5a49aa5e7e8ac25cb67e2521a801bd1ec8c9301ba826cf11429497f",
+  "metadataOnly": true,
+  "files": [
+    {
+      "file": "bundle-sha256.json",
+      "sha256": "51a27ae2c5a49aa5e7e8ac25cb67e2521a801bd1ec8c9301ba826cf11429497f"
+    },
+    {
+      "file": "README.md",
+      "sha256": "85eeb3d63f299b102cda9116b8e608ad17e356ef40b67cf2397e6a31a00b7a60"
+    },
+    {
+      "file": "build.mjs",
+      "sha256": "98f270000c88a57f416550ac334b0a06e49335ee6bb587d44fc210e1c59c20d0"
+    },
+    {
+      "file": "gate-matrix.md",
+      "sha256": "a8d158ff084fd01610cdca4611e31d17ef74827fd97e38c509ab648fbd04c8d6"
+    },
+    {
+      "file": "inventory.json",
+      "sha256": "0b0bb34100977e2cfb4a9ad149de1bfb1ece9fdecffa51e9f31f81ddee20557b"
+    },
+    {
+      "file": "package.mjs",
+      "sha256": "70c253fcbcb4dd6dc4c5130a5466d9c23c2f1cecedbbe7ad7e99b6a646e450cb"
+    },
+    {
+      "file": "patches/20261007120000_m16_s1b3_policy_admission_v1.patch",
+      "sha256": "0dda85c8bb18d4814daa6ded4e498f91e2adffad58f2eaa80c58f15d13871a87"
+    },
+    {
+      "file": "patches/20261008120000_m16_s1b4_policy_version_validation_v1.patch",
+      "sha256": "ae47d4702d95f23504ffcac8ce0b588362b4b32b9064b6b7bc3d85c9d16569a9"
+    },
+    {
+      "file": "patches/20261008180000_m16_s1b5_domain_registries_v1.patch",
+      "sha256": "5cb47165976364f44d1b5d96b004b9d0c0dc49074d52f6af350b7a8e25e7e154"
+    },
+    {
+      "file": "patches/20261008200000_m16_s1b6_control_definition_registry_v1.patch",
+      "sha256": "e88a9dc62cdff0405b578759a65747e9252b6dc0f807bbfc2f89754d0f6b5a87"
+    },
+    {
+      "file": "patches/20261008220000_m16_s1c1_responsibility_assignment_v1.patch",
+      "sha256": "1be1663e817ebdfef1019737ff817bf46facdfee78a74f6e746d994886a5b4ff"
+    },
+    {
+      "file": "patches/20261009120000_m16_s1c2_business_context_assignment_v1.patch",
+      "sha256": "24a1384845ef0443c15a203ea3a6a5e2e537188bea5916d3cc7c79b397f5329d"
+    },
+    {
+      "file": "patches/20261009121000_m16_s1c1r1_party_dependency_guard_v1.patch",
+      "sha256": "6f4646442f855c3b646021d32215de118cf7c679768edefcced74d5a720e55c1"
+    },
+    {
+      "file": "patches/20261009130000_m16_s1c3_policy_applicability_v1.patch",
+      "sha256": "4722ffd95d75628d9dd8deed9ebeb1223e3336c470a0a5bdea56f17968098ab2"
+    },
+    {
+      "file": "patches/20261009220000_m16_s1c4_control_applicability_v1.patch",
+      "sha256": "7ecb9a27021fd4d869b834461f9960d98fd30ea8f242111e83853566a4821a1f"
+    },
+    {
+      "file": "patches/20261010120000_m16_s1c5_control_assessment_v1.patch",
+      "sha256": "a4a057466471b6aa8cdbcc960702f3bba06c18a5fcc47e96d80bd445bc08c501"
+    },
+    {
+      "file": "patches/20261012120000_m16_read_projection_closure_v1.patch",
+      "sha256": "8a785f62f62becb39ad714e7a0c06f0dad8119499a6c0df8b9e7352aff03d439"
+    },
+    {
+      "file": "patches/20261012200000_m17_s0_authority_policy_l15_extension_v1.patch",
+      "sha256": "26244f12be6d1b3c6672efa773bc9ed9de167e4d682cc4e992e3b8fd55d0517d"
+    },
+    {
+      "file": "patches/20261012210000_m17_s1_signals_hypotheses_support_v1.patch",
+      "sha256": "f3a3375ee4470445be4613da5b0d89a774766f9f6f1f176dcae50ee9a7de1515"
+    },
+    {
+      "file": "patches/20261012220000_m17_s1r1_machine_intake_login_closure_v1.patch",
+      "sha256": "d8fcd87b9f318d1797491744586c7b56c5110b4ae4dc3fb121483cb697b7fd6c"
+    },
+    {
+      "file": "patches/20261013120000_m17_s2_scenario_methodology_registries_v1.patch",
+      "sha256": "985f667a0ac27d6a7e8532a9e0d4d53c03e271ce9fc37939072d06424b338044"
+    },
+    {
+      "file": "patches/20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.patch",
+      "sha256": "75634a4fc958cbed1dbb53c43e245bf893aa47288501b789e39378cc72aab488"
+    },
+    {
+      "file": "patches/20261013140000_m17_s3_governed_risk_v1.patch",
+      "sha256": "755909c8b839f569f4cf865295e55c6f43535eaefb42d8ec92a75b9fdec841fd"
+    },
+    {
+      "file": "patches/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.patch",
+      "sha256": "0d0fcadb5cc65d4610e7c6e929b0e0297c3bda5e25d7aa0b54af90d40dcb4ca7"
+    },
+    {
+      "file": "patches/20261013160000_m17_s4_inherent_risk_assessment_v1.patch",
+      "sha256": "9e58bfa9d7e662a1b6e61a83c9c0932b7c72b29d48957b1b8419f321c1afe4d2"
+    },
+    {
+      "file": "patches/20261015122639_m17_s5_risk_treatment_v1.patch",
+      "sha256": "60e89c56f9be9daef68592565854212de0850fe6d1d08f66c0f37e4c81933cf3"
+    },
+    {
+      "file": "patches/20261016021012_m17_s6_residual_risk_acceptance_v1.patch",
+      "sha256": "86bb4fa2d5bd48efdc4bc79f299bd20097d7fec57cbf4503344f0504425293ce"
+    },
+    {
+      "file": "patches/20261017020733_m17_s7a_read_projections_v1.patch",
+      "sha256": "a7c6e9de61d5c93492afd68c7b90c14e1c7bca720fb788b78c5d00b70b8db573"
+    },
+    {
+      "file": "patches/20261019130000_m17_s7b_passport_risk_overlay_v1.patch",
+      "sha256": "58630114907c33a03fae13ee2ccebf1d2d87683e7939c9b56b8f0d7cfd5aad67"
+    },
+    {
+      "file": "patches/20261019140000_m17_s7c_final_security_closure_v1.patch",
+      "sha256": "7edc59b57e5d6a623729a4ceaf3ac138bbef5e69fddf7d59db223ffd95b8b2b4"
+    },
+    {
+      "file": "patches/20261020031523_m17_s7d_adversarial_corrective_v1.patch",
+      "sha256": "0df9efc388aa8af35d3bf0b2cb82e5adec6c7b498b036916f8675f4e04bad2d2"
+    },
+    {
+      "file": "rehearsal-checks.sql",
+      "sha256": "1199fa1b7f3edddf0163f9940a41a39c3644977118edf37d76552d5d3db1aa8a"
+    },
+    {
+      "file": "sources.json",
+      "sha256": "e6a51e9db2301e61ebb2eb4dde295922b8aebf7f9c3b2ae8d00afe507feaf341"
+    },
+    {
+      "file": "templates/preservation-after.sql",
+      "sha256": "4154caec4ba5fa5afd69b77d941f96886aeb811fdc1c4e356b5b9d2b13bd38f9"
+    },
+    {
+      "file": "templates/preservation-before.sql",
+      "sha256": "065618bc3979422fc96347c4951cdaf646cd6b41f6dc32a4c64159feeec950fa"
+    },
+    {
+      "file": "templates/vendor-guard.sql",
+      "sha256": "2130e0adc39dd678c0aabc9fb53cc368b2abd4d78479475048907de46d9db74c"
+    },
+    {
+      "file": "tests/compatibility.test.mjs",
+      "sha256": "1574370d6273b3d295e788ac025a30869d4c26ae4a87db3ece4a612728530cef"
+    },
+    {
+      "file": "tests/observed-catalog.json",
+      "sha256": "f88446c0bf6c2f07bc0e7cbe50dc53d009e3578c0720c6a96aec7913c4fb607b"
+    },
+    {
+      "file": "tests/vendor-readonly-receipt.json",
+      "sha256": "62674803890506af46e5714d648ed96f89b28b793b09fc11395fa6e734e1713d"
+    },
+    {
+      "file": "variants/20261007120000_m16_s1b3_policy_admission_v1.sql",
+      "sha256": "32115fadbe167597e38946d94278e5fa7c34ebff16d014ed9b41d9c8fb3e66d6"
+    },
+    {
+      "file": "variants/20261008120000_m16_s1b4_policy_version_validation_v1.sql",
+      "sha256": "c432278694159c1342aadd842aa585105a066cd129735d6b3e6feedd05b151ba"
+    },
+    {
+      "file": "variants/20261008180000_m16_s1b5_domain_registries_v1.sql",
+      "sha256": "fb8a1a9271e7c0bccc73bde5ef8dbab10705022d5adea69d35786bfbfe4dec34"
+    },
+    {
+      "file": "variants/20261008200000_m16_s1b6_control_definition_registry_v1.sql",
+      "sha256": "25a2ac1f194ac149a6d915e0864a18fa431af5579b00722fd5a76ccfd92b9b39"
+    },
+    {
+      "file": "variants/20261008220000_m16_s1c1_responsibility_assignment_v1.sql",
+      "sha256": "ee39d85aef92027801b854f3c2f989a7ea485c3d83c77798347b81d31e7603ea"
+    },
+    {
+      "file": "variants/20261009120000_m16_s1c2_business_context_assignment_v1.sql",
+      "sha256": "314ce151ffb7f4cb5ffc5b42b0954425e9d4e221fcfe2ee73e61123903a35957"
+    },
+    {
+      "file": "variants/20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql",
+      "sha256": "f60f0e14cfd89caece15d62d3f9c2b861164cdee676c084f8b8c70cbc738d873"
+    },
+    {
+      "file": "variants/20261009130000_m16_s1c3_policy_applicability_v1.sql",
+      "sha256": "2510298abec4d06da1552494f1da60eef842e7cc7af18c2620be5b0fd47f980a"
+    },
+    {
+      "file": "variants/20261009220000_m16_s1c4_control_applicability_v1.sql",
+      "sha256": "27cfdb84ef010180d009e10033c3d399f9d184d631440355ca139cb2d50a63c2"
+    },
+    {
+      "file": "variants/20261010120000_m16_s1c5_control_assessment_v1.sql",
+      "sha256": "417bd7b8ac9df5b672f800f18677cb9feec49d4321a1f32491f31be7450c22a9"
+    },
+    {
+      "file": "variants/20261012120000_m16_read_projection_closure_v1.sql",
+      "sha256": "03b87953e2d90c947fb7ad1fa49486e480ae84b48ae6a9eab3d05d201338451d"
+    },
+    {
+      "file": "variants/20261012200000_m17_s0_authority_policy_l15_extension_v1.sql",
+      "sha256": "2e2c5b42e934b1dbbfe69ad7fea180c0e03f27829c6fbebe81cda3895e1b4acd"
+    },
+    {
+      "file": "variants/20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+      "sha256": "a54fed214c0f1b5a1a6e71b2e33e9875f05d5c7b7acb543881ea54b54c1232b4"
+    },
+    {
+      "file": "variants/20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql",
+      "sha256": "501b58b16a2616787810c82a1233c5f2340f0ef282af23e79190f6f7e13af693"
+    },
+    {
+      "file": "variants/20261013120000_m17_s2_scenario_methodology_registries_v1.sql",
+      "sha256": "3dcd382715841ff73ec7a2d6d343e19edeb1f711bb3fbd198fec506d9ab5a7a1"
+    },
+    {
+      "file": "variants/20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql",
+      "sha256": "f0aae63da5c87d937236a224dbebe064d12a99ab2235731ac3487b2552a90292"
+    },
+    {
+      "file": "variants/20261013140000_m17_s3_governed_risk_v1.sql",
+      "sha256": "6c56f2d1114da1696f0bb4bf74c8652ad1d01c95f1340060bbefd0f093549afb"
+    },
+    {
+      "file": "variants/20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql",
+      "sha256": "a0eb3df5967232e337f1ee38b060c7689ee55cc6342ad2b196ef779e9811c2db"
+    },
+    {
+      "file": "variants/20261013160000_m17_s4_inherent_risk_assessment_v1.sql",
+      "sha256": "aea4a6580b539932df6db597db6f179b6c771f1466c5d6223dcd3a6df0be463e"
+    },
+    {
+      "file": "variants/20261015122639_m17_s5_risk_treatment_v1.sql",
+      "sha256": "921ca633cdc674ebc5663a6b5f7df8f81e61d7c64d4ce2ee283e75e0e7d9c0bd"
+    },
+    {
+      "file": "variants/20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+      "sha256": "9ff0cc67ab45592fe7132e6efffe4c4bd2dfa19d409618d4226e177fe5bc7954"
+    },
+    {
+      "file": "variants/20261017020733_m17_s7a_read_projections_v1.sql",
+      "sha256": "469f34f13c39acbadd315ce2151182b57657d08ccbe0ccb29b1d42263f0ea1f9"
+    },
+    {
+      "file": "variants/20261019130000_m17_s7b_passport_risk_overlay_v1.sql",
+      "sha256": "17001ee39e384bb02435d4e002fe8df0cf1ec2d586cc885888e9bdb79395dfb7"
+    },
+    {
+      "file": "variants/20261019140000_m17_s7c_final_security_closure_v1.sql",
+      "sha256": "47563ccf17324e67f54a1103ecda2bee31059c2b8034eb7dd26da0ed4842c7bc"
+    },
+    {
+      "file": "variants/20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+      "sha256": "e3a828067812b17932c2616b2e0a6bdbbaf5a573f78b56698e496fe9e2b52ba4"
+    },
+    {
+      "file": "vendor-policy.json",
+      "sha256": "a355a7fbcccf5173e365b2352935a5b694e32a393012beafe2ac51271db088a9"
+    }
+  ],
+  "appliedVariants": [
+    {
+      "file": "20261007120000_m16_s1b3_policy_admission_v1.sql",
+      "sha256": "32115fadbe167597e38946d94278e5fa7c34ebff16d014ed9b41d9c8fb3e66d6",
+      "order": 1
+    },
+    {
+      "file": "20261008120000_m16_s1b4_policy_version_validation_v1.sql",
+      "sha256": "c432278694159c1342aadd842aa585105a066cd129735d6b3e6feedd05b151ba",
+      "order": 2
+    },
+    {
+      "file": "20261008180000_m16_s1b5_domain_registries_v1.sql",
+      "sha256": "fb8a1a9271e7c0bccc73bde5ef8dbab10705022d5adea69d35786bfbfe4dec34",
+      "order": 3
+    },
+    {
+      "file": "20261008200000_m16_s1b6_control_definition_registry_v1.sql",
+      "sha256": "25a2ac1f194ac149a6d915e0864a18fa431af5579b00722fd5a76ccfd92b9b39",
+      "order": 4
+    },
+    {
+      "file": "20261008220000_m16_s1c1_responsibility_assignment_v1.sql",
+      "sha256": "ee39d85aef92027801b854f3c2f989a7ea485c3d83c77798347b81d31e7603ea",
+      "order": 5
+    },
+    {
+      "file": "20261009120000_m16_s1c2_business_context_assignment_v1.sql",
+      "sha256": "314ce151ffb7f4cb5ffc5b42b0954425e9d4e221fcfe2ee73e61123903a35957",
+      "order": 6
+    },
+    {
+      "file": "20261009121000_m16_s1c1r1_party_dependency_guard_v1.sql",
+      "sha256": "f60f0e14cfd89caece15d62d3f9c2b861164cdee676c084f8b8c70cbc738d873",
+      "order": 7
+    },
+    {
+      "file": "20261009130000_m16_s1c3_policy_applicability_v1.sql",
+      "sha256": "2510298abec4d06da1552494f1da60eef842e7cc7af18c2620be5b0fd47f980a",
+      "order": 8
+    },
+    {
+      "file": "20261009220000_m16_s1c4_control_applicability_v1.sql",
+      "sha256": "27cfdb84ef010180d009e10033c3d399f9d184d631440355ca139cb2d50a63c2",
+      "order": 9
+    },
+    {
+      "file": "20261010120000_m16_s1c5_control_assessment_v1.sql",
+      "sha256": "417bd7b8ac9df5b672f800f18677cb9feec49d4321a1f32491f31be7450c22a9",
+      "order": 10
+    },
+    {
+      "file": "20261012120000_m16_read_projection_closure_v1.sql",
+      "sha256": "03b87953e2d90c947fb7ad1fa49486e480ae84b48ae6a9eab3d05d201338451d",
+      "order": 11
+    },
+    {
+      "file": "20261012200000_m17_s0_authority_policy_l15_extension_v1.sql",
+      "sha256": "2e2c5b42e934b1dbbfe69ad7fea180c0e03f27829c6fbebe81cda3895e1b4acd",
+      "order": 12
+    },
+    {
+      "file": "20261012210000_m17_s1_signals_hypotheses_support_v1.sql",
+      "sha256": "a54fed214c0f1b5a1a6e71b2e33e9875f05d5c7b7acb543881ea54b54c1232b4",
+      "order": 13
+    },
+    {
+      "file": "20261012220000_m17_s1r1_machine_intake_login_closure_v1.sql",
+      "sha256": "501b58b16a2616787810c82a1233c5f2340f0ef282af23e79190f6f7e13af693",
+      "order": 14
+    },
+    {
+      "file": "20261013120000_m17_s2_scenario_methodology_registries_v1.sql",
+      "sha256": "3dcd382715841ff73ec7a2d6d343e19edeb1f711bb3fbd198fec506d9ab5a7a1",
+      "order": 15
+    },
+    {
+      "file": "20261013130000_m17_s2r1_l15_allow_guard_execution_context_v1.sql",
+      "sha256": "f0aae63da5c87d937236a224dbebe064d12a99ab2235731ac3487b2552a90292",
+      "order": 16
+    },
+    {
+      "file": "20261013140000_m17_s3_governed_risk_v1.sql",
+      "sha256": "6c56f2d1114da1696f0bb4bf74c8652ad1d01c95f1340060bbefd0f093549afb",
+      "order": 17
+    },
+    {
+      "file": "20261013150000_m17_s3r1_governed_risk_support_currency_lineage_v1.sql",
+      "sha256": "a0eb3df5967232e337f1ee38b060c7689ee55cc6342ad2b196ef779e9811c2db",
+      "order": 18
+    },
+    {
+      "file": "20261013160000_m17_s4_inherent_risk_assessment_v1.sql",
+      "sha256": "aea4a6580b539932df6db597db6f179b6c771f1466c5d6223dcd3a6df0be463e",
+      "order": 19
+    },
+    {
+      "file": "20261015122639_m17_s5_risk_treatment_v1.sql",
+      "sha256": "921ca633cdc674ebc5663a6b5f7df8f81e61d7c64d4ce2ee283e75e0e7d9c0bd",
+      "order": 20
+    },
+    {
+      "file": "20261016021012_m17_s6_residual_risk_acceptance_v1.sql",
+      "sha256": "9ff0cc67ab45592fe7132e6efffe4c4bd2dfa19d409618d4226e177fe5bc7954",
+      "order": 21
+    },
+    {
+      "file": "20261017020733_m17_s7a_read_projections_v1.sql",
+      "sha256": "469f34f13c39acbadd315ce2151182b57657d08ccbe0ccb29b1d42263f0ea1f9",
+      "order": 22
+    },
+    {
+      "file": "20261019130000_m17_s7b_passport_risk_overlay_v1.sql",
+      "sha256": "17001ee39e384bb02435d4e002fe8df0cf1ec2d586cc885888e9bdb79395dfb7",
+      "order": 23
+    },
+    {
+      "file": "20261019140000_m17_s7c_final_security_closure_v1.sql",
+      "sha256": "47563ccf17324e67f54a1103ecda2bee31059c2b8034eb7dd26da0ed4842c7bc",
+      "order": 24
+    },
+    {
+      "file": "20261020031523_m17_s7d_adversarial_corrective_v1.sql",
+      "sha256": "e3a828067812b17932c2616b2e0a6bdbbaf5a573f78b56698e496fe9e2b52ba4",
+      "order": 25
+    }
+  ],
+  "nextStage": [
+    "Consolidate the package in its own worktree under a separate owner instruction.",
+    "Verify all listed raw hashes and run the package offline compatibility tests.",
+    "Review and commit only the package and its own evidence, then plan explicit integration of that commit.",
+    "Do not reapply the 25 variants or rewrite canonical historical SQL."
+  ],
+  "hostedChangesAuthorized": false,
+  "pushMergeAuthorized": false
+}

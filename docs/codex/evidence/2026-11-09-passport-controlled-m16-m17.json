@@ -1,0 +1,509 @@
+{
+  "status": "25_APPLIED_PASSPORT_OPERATOR_CONFIRMED",
+  "target": "zkqfvqwqdypgpzauzinw",
+  "application": "http://localhost:3101",
+  "worktree": "D:\\code-guard-governance\\.worktrees\\e1-operator-unblock",
+  "branch": "fix/e1-operator-unblock",
+  "head": "a5f85bf099fdbf0a24f1a369e4428730a042a162",
+  "bundleSha256": "51a27ae2c5a49aa5e7e8ac25cb67e2521a801bd1ec8c9301ba826cf11429497f",
+  "applied": 25,
+  "failedMigrations": [],
+  "historyBefore": 75,
+  "historyAfter": 100,
+  "backup": {
+    "status": "PASS_CONSISTENT_LOGICAL_BACKUP_AND_READBACK",
+    "target": "zkqfvqwqdypgpzauzinw",
+    "startedAt": "2026-11-09T14:56:58.542Z",
+    "verifiedAt": "2026-11-09T14:57:31.327Z",
+    "clientVersion": "pg_dump 17.11",
+    "serverVersion": "17.6",
+    "snapshot": "0000000F-00000548-1",
+    "fullDatabaseSchemaAndData": true,
+    "migrationHistoryIncluded": true,
+    "criticalGovernanceTables": 132,
+    "rolePasswordsExported": false,
+    "fullRestoreRehearsal": false,
+    "privateNTFSAcl": true,
+    "files": [
+      {
+        "file": "database.dump",
+        "bytes": 2950525,
+        "sha256": "762ed2b154a1df75100274d08b09feda899670d95394157df280a388b3d5f25f"
+      },
+      {
+        "file": "database-readable.sql",
+        "bytes": 5040322,
+        "sha256": "4c3371b0ff50cc4f978585f3fb1753c109955a7dbf4ff89e140fa7d298480bf6"
+      },
+      {
+        "file": "governance-critical.dump",
+        "bytes": 384355,
+        "sha256": "731d42dae41b01fcf0ac0a79036e379a2c492071a3ed6dd2711d3e98ce0d7363"
+      },
+      {
+        "file": "governance-critical-readable.sql",
+        "bytes": 1683933,
+        "sha256": "284593e6d7ada8b75d7437a1a5660eded08abdbd6708968435f00a9456c5e04a"
+      },
+      {
+        "file": "roles.sql",
+        "bytes": 10715,
+        "sha256": "6e46d0f72c084100aca6a4b2a9e2639b21234a4c7ca6e66d9a96d2d48afb8d78"
+      },
+      {
+        "file": "database.toc.txt",
+        "bytes": 329411,
+        "sha256": "15ece1fc2b8c0b9f1ec81df35245ddca09aaf97296e3d9bb869497b27546c34c"
+      },
+      {
+        "file": "governance-critical.toc.txt",
+        "bytes": 9695,
+        "sha256": "3d7844605493605f00168cbecea440535ee6652076dded56c990b0bcc3cd922e"
+      },
+      {
+        "file": "inventory-before.json",
+        "bytes": 22333,
+        "sha256": "18bacd5b34b176834b95fba339434a06129576335da2a8a84bdb9ca5322569f8"
+      }
+    ],
+    "privateDirectory": "D:/code-guard-governance/.worktrees/e1-operator-unblock/.artifacts/agent/passport-controlled-2026-11-09T14-56-55-143Z",
+    "credentialsIncludedInPublicEvidence": false
+  },
+  "migrationResults": [
+    {
+      "order": 1,
+      "version": "20261007120000",
+      "name": "m16_s1b3_policy_admission_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "32115fadbe167597e38946d94278e5fa7c34ebff16d014ed9b41d9c8fb3e66d6",
+      "executionSha256": "a144d2df775d2406113e7bf5f62e36b298738712c8a8b8fdf5a9eacdefc19b08",
+      "at": "2026-11-09T15:01:57.793Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 76
+    },
+    {
+      "order": 2,
+      "version": "20261008120000",
+      "name": "m16_s1b4_policy_version_validation_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "c432278694159c1342aadd842aa585105a066cd129735d6b3e6feedd05b151ba",
+      "executionSha256": "7ae6350b9d65a1e5507252dd9ed5458be8641043ccd9ddc8138a22c1dd81ab04",
+      "at": "2026-11-09T15:02:02.276Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 77
+    },
+    {
+      "order": 3,
+      "version": "20261008180000",
+      "name": "m16_s1b5_domain_registries_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "fb8a1a9271e7c0bccc73bde5ef8dbab10705022d5adea69d35786bfbfe4dec34",
+      "executionSha256": "ae13ddb5c7951b545d34203fa4ae2f3c713331e9f12a92fb215f235d2f1d55f0",
+      "at": "2026-11-09T15:02:06.781Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 78
+    },
+    {
+      "order": 4,
+      "version": "20261008200000",
+      "name": "m16_s1b6_control_definition_registry_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "25a2ac1f194ac149a6d915e0864a18fa431af5579b00722fd5a76ccfd92b9b39",
+      "executionSha256": "15376d7986a82efa51fd1ab811d96763a55988c97970188094f4def45b3e957a",
+      "at": "2026-11-09T15:02:11.522Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 79
+    },
+    {
+      "order": 5,
+      "version": "20261008220000",
+      "name": "m16_s1c1_responsibility_assignment_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "ee39d85aef92027801b854f3c2f989a7ea485c3d83c77798347b81d31e7603ea",
+      "executionSha256": "ad759eb986b6683e7e5aec025c7c1fdf6b430b2e31f672371ca1c5290a2d9f59",
+      "at": "2026-11-09T15:02:16.533Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 80
+    },
+    {
+      "order": 6,
+      "version": "20261009120000",
+      "name": "m16_s1c2_business_context_assignment_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "314ce151ffb7f4cb5ffc5b42b0954425e9d4e221fcfe2ee73e61123903a35957",
+      "executionSha256": "36fb1e72b9df9629e3049f53955efbfec7027401d30e3eb5bd275affc0229305",
+      "at": "2026-11-09T15:02:21.313Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 81
+    },
+    {
+      "order": 7,
+      "version": "20261009121000",
+      "name": "m16_s1c1r1_party_dependency_guard_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "f60f0e14cfd89caece15d62d3f9c2b861164cdee676c084f8b8c70cbc738d873",
+      "executionSha256": "49fa15e52ee6af3b9b609904aa980103a668973ac0b727f8df13565ae36c5945",
+      "at": "2026-11-09T15:02:25.783Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 82
+    },
+    {
+      "order": 8,
+      "version": "20261009130000",
+      "name": "m16_s1c3_policy_applicability_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "2510298abec4d06da1552494f1da60eef842e7cc7af18c2620be5b0fd47f980a",
+      "executionSha256": "f0d0f779f6cae23ab81c22d3b3282891c2b582d8d9c4665422c36e00c64ce500",
+      "at": "2026-11-09T15:02:31.293Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 83
+    },
+    {
+      "order": 9,
+      "version": "20261009220000",
+      "name": "m16_s1c4_control_applicability_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "27cfdb84ef010180d009e10033c3d399f9d184d631440355ca139cb2d50a63c2",
+      "executionSha256": "683a263c708a5b7915b956fe87293e118d4ee446d3724f21f8404e492add7121",
+      "at": "2026-11-09T15:02:37.140Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 84
+    },
+    {
+      "order": 10,
+      "version": "20261010120000",
+      "name": "m16_s1c5_control_assessment_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "417bd7b8ac9df5b672f800f18677cb9feec49d4321a1f32491f31be7450c22a9",
+      "executionSha256": "5dd28070adc379d3c79e2a9f1522bab04ee0d5f8cd4ba620b31fce7cd5130143",
+      "at": "2026-11-09T15:02:42.823Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 85
+    },
+    {
+      "order": 11,
+      "version": "20261012120000",
+      "name": "m16_read_projection_closure_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "03b87953e2d90c947fb7ad1fa49486e480ae84b48ae6a9eab3d05d201338451d",
+      "executionSha256": "41add0d6e29e59968a5c69e1546ced0efbab5ba759de226f5ef7680bfc65bdc9",
+      "at": "2026-11-09T15:02:47.083Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 86
+    },
+    {
+      "order": 12,
+      "version": "20261012200000",
+      "name": "m17_s0_authority_policy_l15_extension_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "2e2c5b42e934b1dbbfe69ad7fea180c0e03f27829c6fbebe81cda3895e1b4acd",
+      "executionSha256": "416d6fa85d71e21c821e554628d513c0598cc919330c98c043e18dc28199e65f",
+      "at": "2026-11-09T15:02:52.353Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 87
+    },
+    {
+      "order": 13,
+      "version": "20261012210000",
+      "name": "m17_s1_signals_hypotheses_support_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "a54fed214c0f1b5a1a6e71b2e33e9875f05d5c7b7acb543881ea54b54c1232b4",
+      "executionSha256": "6fbd616ebb39cacd9a35fff53dbee491406426307545ed00c2ebcb1e6ae75fa2",
+      "at": "2026-11-09T15:02:57.508Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 88
+    },
+    {
+      "order": 14,
+      "version": "20261012220000",
+      "name": "m17_s1r1_machine_intake_login_closure_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "501b58b16a2616787810c82a1233c5f2340f0ef282af23e79190f6f7e13af693",
+      "executionSha256": "449154b44d8943ffc4fd7a15d4d71fa03eb61b4837fadf931f39453166c3d8fa",
+      "at": "2026-11-09T15:03:00.974Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 89
+    },
+    {
+      "order": 15,
+      "version": "20261013120000",
+      "name": "m17_s2_scenario_methodology_registries_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "3dcd382715841ff73ec7a2d6d343e19edeb1f711bb3fbd198fec506d9ab5a7a1",
+      "executionSha256": "9311832ecdf326d0ac34fc0c7097d52ca735d12b6f493c447efdcd2a0b2d0595",
+      "at": "2026-11-09T15:03:08.496Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 90
+    },
+    {
+      "order": 16,
+      "version": "20261013130000",
+      "name": "m17_s2r1_l15_allow_guard_execution_context_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "f0aae63da5c87d937236a224dbebe064d12a99ab2235731ac3487b2552a90292",
+      "executionSha256": "08e1acbf6f10b137e69fed58dee5fb41d5014acf3805b5032550203d430a834c",
+      "at": "2026-11-09T15:03:12.444Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 91
+    },
+    {
+      "order": 17,
+      "version": "20261013140000",
+      "name": "m17_s3_governed_risk_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "6c56f2d1114da1696f0bb4bf74c8652ad1d01c95f1340060bbefd0f093549afb",
+      "executionSha256": "627cee32b409685f3ed2509d479ef374f471b8e036e67a562fc084d908ef09c2",
+      "at": "2026-11-09T15:03:18.288Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 92
+    },
+    {
+      "order": 18,
+      "version": "20261013150000",
+      "name": "m17_s3r1_governed_risk_support_currency_lineage_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "a0eb3df5967232e337f1ee38b060c7689ee55cc6342ad2b196ef779e9811c2db",
+      "executionSha256": "894c00b4fda63f11bf2fd10d9648accced8d4a4df62c1135746ef0268006c9aa",
+      "at": "2026-11-09T15:03:22.103Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 93
+    },
+    {
+      "order": 19,
+      "version": "20261013160000",
+      "name": "m17_s4_inherent_risk_assessment_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "aea4a6580b539932df6db597db6f179b6c771f1466c5d6223dcd3a6df0be463e",
+      "executionSha256": "ee2d8136d7ccc312c4c47b045aea742c41650c49e1c42373a2da87edbb38d8d1",
+      "at": "2026-11-09T15:03:28.327Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 94
+    },
+    {
+      "order": 20,
+      "version": "20261015122639",
+      "name": "m17_s5_risk_treatment_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "921ca633cdc674ebc5663a6b5f7df8f81e61d7c64d4ce2ee283e75e0e7d9c0bd",
+      "executionSha256": "8565e206f11b3d118e1c461640512edd959670079babb3e472e08f51e0f4e0dd",
+      "at": "2026-11-09T15:03:32.911Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 95
+    },
+    {
+      "order": 21,
+      "version": "20261016021012",
+      "name": "m17_s6_residual_risk_acceptance_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "9ff0cc67ab45592fe7132e6efffe4c4bd2dfa19d409618d4226e177fe5bc7954",
+      "executionSha256": "701b6af5484f770c686cd969672d52c81a19eb54197579b20415ad60cec54b8e",
+      "at": "2026-11-09T15:03:38.202Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 96
+    },
+    {
+      "order": 22,
+      "version": "20261017020733",
+      "name": "m17_s7a_read_projections_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "469f34f13c39acbadd315ce2151182b57657d08ccbe0ccb29b1d42263f0ea1f9",
+      "executionSha256": "691d3dea760a8b1367031310c6a43dd4f7579e8ee46dee91ce66eda42ee583dd",
+      "at": "2026-11-09T15:03:41.750Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 97
+    },
+    {
+      "order": 23,
+      "version": "20261019130000",
+      "name": "m17_s7b_passport_risk_overlay_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "17001ee39e384bb02435d4e002fe8df0cf1ec2d586cc885888e9bdb79395dfb7",
+      "executionSha256": "3000a21d5ab23ef220bf887af7b7c1786e14861105c0ccc92bca3a4857a31690",
+      "at": "2026-11-09T15:03:45.449Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 98
+    },
+    {
+      "order": 24,
+      "version": "20261019140000",
+      "name": "m17_s7c_final_security_closure_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "47563ccf17324e67f54a1103ecda2bee31059c2b8034eb7dd26da0ed4842c7bc",
+      "executionSha256": "6c7a48809cea1da3593b2d1821340d49dbeea5844ceef206fe3bf361fb5d087e",
+      "at": "2026-11-09T15:03:48.909Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 99
+    },
+    {
+      "order": 25,
+      "version": "20261020031523",
+      "name": "m17_s7d_adversarial_corrective_v1",
+      "status": "APPLIED_AND_VERIFIED",
+      "variantSha256": "e3a828067812b17932c2616b2e0a6bdbbaf5a573f78b56698e496fe9e2b52ba4",
+      "executionSha256": "ebc57433e14a07cbb9b56f193c119ab1d24fa07eb6c02d239724161a7f5aa4f1",
+      "at": "2026-11-09T15:03:52.511Z",
+      "originalTablesPreserved": 132,
+      "historyCount": 100
+    }
+  ],
+  "validation": {
+    "status": "PASS_HOSTED_CATALOG_SECURITY_LINEAGE_AND_PRESERVATION",
+    "target": "zkqfvqwqdypgpzauzinw",
+    "rpcs": [
+      {
+        "name": "l14_read_passport_governance_v1",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp",
+          "lock_timeout=5s"
+        ],
+        "definer": true,
+        "signature": "gov_repo.l14_read_passport_governance_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,timestamp with time zone,timestamp with time zone)",
+        "body_sha256": "1d99930bd7569148637d137387410b774c221f48770f1d77a3080004e8ceca47",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "name": "l15_read_passport_risk_overlay_v1",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog, pg_temp",
+          "lock_timeout=5s"
+        ],
+        "definer": true,
+        "signature": "gov_repo.l15_read_passport_risk_overlay_v1(uuid,uuid,bigint,bigint,timestamp with time zone,text,text,timestamp with time zone,timestamp with time zone)",
+        "body_sha256": "d5933d65d5fce751cb98d85dbb7a98da15c6f21fdf166775da472f952941bb20",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      }
+    ],
+    "roots": [
+      {
+        "id": "canonical-object:06b5f654e2b57694e6fd973d42275309a1149313792569ee2e9ed2cfe2eb1d81",
+        "kind": "AGENT",
+        "decision": "reconciliation-decision:98a5c01e1e0a91e7b4e5ee3db2e76c63",
+        "evidence_links": 1,
+        "assertion_links": 1,
+        "decision_exists": true,
+        "missing_evidence": 0,
+        "missing_assertions": 0
+      },
+      {
+        "id": "canonical-object:1e85ebd0823bc0355300fa46d0fefaee8c45281658ce27a200feac8e2e4efec1",
+        "kind": "AGENT_VERSION",
+        "decision": "reconciliation-decision:f9e291117ae6ddbd4eb2193a9307297d",
+        "evidence_links": 3,
+        "assertion_links": 3,
+        "decision_exists": true,
+        "missing_evidence": 0,
+        "missing_assertions": 0
+      }
+    ],
+    "association": [
+      {
+        "parent_id": "canonical-object:06b5f654e2b57694e6fd973d42275309a1149313792569ee2e9ed2cfe2eb1d81",
+        "mapping_id": "1f4a37e5-0dd6-4809-813e-cec0ab8e2c38",
+        "valid_from": "2026-11-08T23:28:23.391+00:00",
+        "version_id": "canonical-object:1e85ebd0823bc0355300fa46d0fefaee8c45281658ce27a200feac8e2e4efec1"
+      }
+    ],
+    "captured_at": "2026-11-09T15:05:57.896332+00:00",
+    "l15_definers": 36,
+    "history_count": 100,
+    "governed_data_counts": {
+      "l14_fact_states": 0,
+      "l15_governed_risk_states": 0
+    },
+    "originalTablesPreserved": 132,
+    "vendorGuard": "PASS",
+    "rpcSecurityChecks": "PASS",
+    "databaseFunctionCallsWithVerifiedHumanSession": "PASSPORT_PAGE_CONFIRMED_BY_OPERATOR",
+    "operatorValidation": {
+      "confirmedAt": "2026-11-09T15:12:26.100Z",
+      "method": "Direct operator response in this session; existing real GOVIA_DEMO login, no cookies exported",
+      "question": "Does the canonical Passport load the AGENT and offer AGENT_VERSION?",
+      "answer": "Carregou o AGENT e a versão",
+      "automatedAuthenticatedBodyCapture": false
+    }
+  },
+  "http": {
+    "at": "2026-11-09T15:09:51.496Z",
+    "target": "zkqfvqwqdypgpzauzinw",
+    "rpcTransport": [
+      {
+        "rpc": "l14_read_passport_governance_v1",
+        "httpStatus": 400,
+        "errorCode": "GV001",
+        "missingVerifiedSessionRejected": true
+      },
+      {
+        "rpc": "l15_read_passport_risk_overlay_v1",
+        "httpStatus": 400,
+        "errorCode": "GV001",
+        "missingVerifiedSessionRejected": true
+      }
+    ],
+    "localUnauthenticated": [
+      {
+        "route": "/login",
+        "status": 200,
+        "location": null
+      },
+      {
+        "route": "/agents/canonical",
+        "status": 307,
+        "location": "http://localhost:3101/login"
+      },
+      {
+        "route": "/agents/canonical/canonical-object%3A06b5f654e2b57694e6fd973d42275309a1149313792569ee2e9ed2cfe2eb1d81",
+        "status": 307,
+        "location": "http://localhost:3101/login"
+      }
+    ],
+    "operatorAuthenticatedConfirmation": "User confirmed AGENT loaded and AGENT_VERSION offered in the real GOVIA_DEMO session",
+    "cookiesExported": false
+  },
+  "tests": {
+    "passportQueries": {
+      "pass": 68,
+      "fail": 0
+    },
+    "passportUi": {
+      "pass": 21,
+      "fail": 0
+    },
+    "migrationInventory": {
+      "pass": 24,
+      "fail": 0
+    },
+    "m17OverlayStatic": {
+      "pass": 4,
+      "fail": 0
+    },
+    "totalPass": 117,
+    "totalFail": 0,
+    "dashboardTypecheck": "PASS --incremental false",
+    "offlinePackage49": "Reused prior PASS after all 64 bundle files matched; not rerun",
+    "databaseSqlChecks": "PASS exact RPC body/signature/ACL, L15 surface36, no authority-store grants, exact managed vendor guard"
+  },
+  "invitation": {
+    "file": "20261108002618_governance_operator_invitation_v1.sql",
+    "sha256": "2aa8821a4e3b01043f907a1b38b8ed2a2d862cc44ce752ef3d85845674173878",
+    "hostedHistoryExactMatch": true,
+    "original109CheckpointAndV4FixtureChanged": false
+  },
+  "sourceChangesThisTurn": [
+    "apps/dashboard/tests/helpers/m17-canonical-migration-chain.ts",
+    "apps/dashboard/tests/m17-migration-chain-contract.test.ts"
+  ],
+  "restrictions": {
+    "otherProjectsAccessed": false,
+    "dockerUsed": false,
+    "alternativeEnvironmentsCreated": false,
+    "canonicalHistoricalMigrationsChanged": false,
+    "managedFunctionsChanged": false,
+    "governanceDataFabricated": false
+  }
+}

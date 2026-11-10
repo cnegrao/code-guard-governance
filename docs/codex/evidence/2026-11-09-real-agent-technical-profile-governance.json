@@ -1,0 +1,136 @@
+{
+  "projectRef": "zkqfvqwqdypgpzauzinw",
+  "capturedAt": "2026-11-09T18:04:15.278317+00:00",
+  "readOnly": true,
+  "status": "PASS_PROPOSAL_AND_EVIDENCE_INTEGRITY_BLOCKED_MATERIALIZATION",
+  "proposal": {
+    "agent_version_candidate_id": "candidate:agent-version:bfd834e05e6d1579106c5518eca9fd85",
+    "behavior_fingerprint_algorithm": "sha256",
+    "behavior_fingerprint_schema_version": "1.0",
+    "behavior_fingerprint_value": "01b4e279d914a1e00593de92fd0c1fc3",
+    "build_reference": null,
+    "configuration_reference": null,
+    "contract_version": "1.0",
+    "created_at": "2026-11-07T23:49:37.589794+00:00",
+    "entrypoint_reference": null,
+    "organisation_id": "082ef694-e016-4893-908c-1eef373f53af",
+    "proposal_id": "agent-version-technical-profile-proposal:14e70c6d806b1d2dfc5c4d5993ac27967c450a40d0e78688b3bc3235aa80d40f",
+    "runtime_framework_reference": "LangGraph"
+  },
+  "integrity": {
+    "status": "PASS_PROPOSAL_AND_EVIDENCE_INTEGRITY_BLOCKED_MATERIALIZATION",
+    "proposalId": "agent-version-technical-profile-proposal:14e70c6d806b1d2dfc5c4d5993ac27967c450a40d0e78688b3bc3235aa80d40f",
+    "candidateId": "candidate:agent-version:bfd834e05e6d1579106c5518eca9fd85",
+    "canonicalVersion": "canonical-object:1e85ebd0823bc0355300fa46d0fefaee8c45281658ce27a200feac8e2e4efec1",
+    "verifiedEnvelopeHashes": [
+      {
+        "kind": "evidence",
+        "id": "evidence:2b3b041b213167513bde6c803ce46bd5",
+        "sha256": "c2b44b73c5d36a60721375a42628fa5a45bbea3994fed4f66afd0ef9e4c39cca"
+      },
+      {
+        "kind": "evidence",
+        "id": "evidence:ee319624a26a3fdc407639077203c5ec",
+        "sha256": "4b095b7cff541bc6c3cb455dd24ae63a143c724490ff7e6cf7d55f7ba1e65ea9"
+      },
+      {
+        "kind": "evidence",
+        "id": "evidence:127932415e4d6542a6563af45b87498e",
+        "sha256": "d3e8e1122f58f1065fecb92841c986ba469aad252ccd16fb3eaf5ed9529ec434"
+      },
+      {
+        "kind": "assertion",
+        "id": "source-assertion:ee319624a26a3fdc407639077203c5ec",
+        "sha256": "cb613ca9bfb39ef8e038f8be70d77202c316823e6d14ae639b4236b55f9d1c1b"
+      },
+      {
+        "kind": "assertion",
+        "id": "source-assertion:127932415e4d6542a6563af45b87498e",
+        "sha256": "c38ea57fcd48965a5d80cedf7c624f34c5b8aa88d9f826b4a665e9770979ba50"
+      },
+      {
+        "kind": "assertion",
+        "id": "source-assertion:2b3b041b213167513bde6c803ce46bd5",
+        "sha256": "de69b9480f4cc04f603fc71ffb38df7493009e43819abca3986b06120369df12"
+      },
+      {
+        "kind": "reconciliation",
+        "id": "reconciliation-decision:f9e291117ae6ddbd4eb2193a9307297d",
+        "sha256": "a55c08fc43e191f885b10192fe9dd91a90562c64cfa2b1b214561a270cb6a132"
+      }
+    ],
+    "proposalIdRecomputed": true,
+    "reviewCertifiedByHuman": true,
+    "identityMaterialized": true,
+    "frameworkTrust": "INFERRED",
+    "frameworkEvidence": {
+      "id": "evidence:127932415e4d6542a6563af45b87498e",
+      "contentHash": "7779ea0924dac37f6475b19eade149788d293aaa3dda59b37bf6890c204165d0",
+      "locations": [
+        {
+          "commit": "cfa95f1ade234443435d4bd16c617fc847e35d91",
+          "kind": "REPOSITORY",
+          "lineEnd": 10,
+          "lineStart": 10,
+          "locator": "src/govia_agent_source/agent.py",
+          "path": "src/govia_agent_source/agent.py"
+        }
+      ],
+      "excerpt": "from langgraph.graph import StateGraph, START, END"
+    },
+    "coarseMappingCount": 0,
+    "normalizedMappingCount": 1,
+    "profileCount": 0,
+    "materializationCount": 0,
+    "liveGate": {
+      "requires_active_coarse_mapping": true,
+      "source_sha256": "8754262bf27e47c7b5e502d8f2f9bcd1e18aeb482b3930b30e9f7d8c6759ecdd",
+      "uses_coarse_mapping": true,
+      "uses_normalized_mapping": false
+    },
+    "blockers": [
+      "No application command/route invokes the existing technical-profile materialization adapter",
+      "Live profile RPC requires a coarse source mapping; the real version has only an exact normalized mapping"
+    ],
+    "writesExecuted": 0
+  },
+  "reviewHistory": [
+    {
+      "actor_kind": "DETERMINISTIC_RULE",
+      "actor_reference": null,
+      "event_id": "review-transition:f1c6a71ed4b1ed8c4427bcc3610d012d",
+      "new_state": "PROPOSED",
+      "occurred_at": "2026-11-07T23:49:37.531675+00:00",
+      "previous_state": "DETECTED",
+      "reason_code": null
+    },
+    {
+      "actor_kind": "HUMAN",
+      "actor_reference": "e2bfd522-481e-461d-881b-465aa24a4953",
+      "event_id": "review-transition:3a1f0d82bfb028dfffa81b00ff99f148",
+      "new_state": "CONFIRMED",
+      "occurred_at": "2026-11-08T23:16:03.59+00:00",
+      "previous_state": "PROPOSED",
+      "reason_code": null
+    },
+    {
+      "actor_kind": "HUMAN",
+      "actor_reference": "e2bfd522-481e-461d-881b-465aa24a4953",
+      "event_id": "review-transition:867dc36411d9046e14a6164ac91e142d",
+      "new_state": "CERTIFIED",
+      "occurred_at": "2026-11-08T23:24:03.182+00:00",
+      "previous_state": "CONFIRMED",
+      "reason_code": "SOURCE_BOUND_AGENT_VERSION_VERIFIED_FROM_GITHUB"
+    }
+  ],
+  "profileCount": 0,
+  "profileMaterializationCount": 0,
+  "tests": {
+    "sqlAndPassport": 100,
+    "discoveryProfile": 7,
+    "fail": 0,
+    "typecheck": "PASS"
+  },
+  "databaseWrites": 0,
+  "productionCodeChanged": false
+}
