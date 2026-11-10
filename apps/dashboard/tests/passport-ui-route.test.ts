@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { SignJWT } from 'jose';
 import { signToken } from '../lib/auth/session-token';
 import { readFileSync } from 'node:fs';
+import { getDynamicParam } from 'next/dist/shared/lib/router/utils/get-dynamic-param';
 import { PASSPORT_FAMILIES, type AgentPassport360, type DataFieldFact, type PassportFamily } from '@/lib/governance/agent-passport';
 
 const org='11111111-1111-1111-1111-111111111111';
@@ -96,6 +97,25 @@ test('governed projection principal fails closed exactly like the tenant read',a
 });
 test('unknown root returned by canonical query is 404',async()=>{
   available=false; await assert.rejects(Page({params:Promise.resolve({canonicalObjectId:'unknown'}),searchParams:Promise.resolve({})}),/NOT_FOUND/);
+});
+
+test('Next dynamic params recover the exact canonical identity linked by the list',async()=>{
+  const id='canonical-object:06b5f654e2b57694e6fd973d42275309a1149313792569ee2e9ed2cfe2eb1d81';
+  const segment=getDynamicParam({canonicalObjectId:id},'canonicalObjectId','d','/agents/canonical/[canonicalObjectId]',null);
+  assert.equal(segment.value,encodeURIComponent(id));
+  await Page({params:Promise.resolve({canonicalObjectId:segment.value as string}),searchParams:Promise.resolve({version:'version:1'})});
+  assert.deepEqual(received.slice(1),[id,'version:1']);
+});
+
+test('Passport route decodes one transport layer and preserves literal escapes in opaque IDs',async()=>{
+  const id='canonical-object:literal%3Avalue';
+  await Page({params:Promise.resolve({canonicalObjectId:encodeURIComponent(id)}),searchParams:Promise.resolve({})});
+  assert.deepEqual(received.slice(1),[id,undefined]);
+});
+
+test('malformed Passport route escapes fail closed before the canonical query',async()=>{
+  await assert.rejects(Page({params:Promise.resolve({canonicalObjectId:'canonical-object%broken'}),searchParams:Promise.resolve({})}),/NOT_FOUND/);
+  assert.deepEqual(received,[]);
 });
 test('repeated version query parameters fail closed',async()=>{
   await assert.rejects(Page({params:Promise.resolve({canonicalObjectId:'canonical:agent'}),searchParams:Promise.resolve({version:['one','two']})}),/NOT_FOUND/);

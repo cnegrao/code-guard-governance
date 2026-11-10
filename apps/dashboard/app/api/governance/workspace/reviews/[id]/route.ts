@@ -1,5 +1,6 @@
 import { resolveCurrentGovernanceRole } from "@/lib/auth/current-authorization";
 import { NextResponse } from "next/server";
+import { recordE1Authentication } from "@/lib/auth/e1-diagnostics";
 import { asOrganisationId } from "@council/canonical-contracts";
 import { REVIEW_STATE, type ReviewState } from "@council/governance-review";
 
@@ -33,6 +34,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     }
 
     const allowedActions = deriveAllowedGovernanceActions(detail.state, hasGovernanceReviewAuthority(role));
+    recordE1Authentication("review-detail", { path: `/api/governance/workspace/reviews/${id}`, evidenceCount: detail.evidence?.length, assertionCount: detail.assertions?.length });
     return NextResponse.json({ ...detail, allowedActions });
   } catch (error) {
     if (error instanceof SessionAuthenticationError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

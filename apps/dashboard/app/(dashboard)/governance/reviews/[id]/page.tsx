@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { reviewSubjectIdFromRouteParam } from "@/lib/governance/review-subject-route";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -222,7 +223,7 @@ type PendingAction = "PROPOSE" | "CONFIRM" | "CERTIFY" | "REJECT" | null;
 export default function ReviewSubjectDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const reviewSubjectId = params.id;
+  const reviewSubjectId = reviewSubjectIdFromRouteParam(params.id);
 
   const [detail, setDetail] = useState<ReviewSubjectDetail | null>(null);
   const [loading, setLoading] = useState(true);

@@ -13,7 +13,12 @@ export default async function CanonicalAgentPassportPage({ params, searchParams 
   const { canonicalObjectId } = await params;
   const { version } = await searchParams;
   if (Array.isArray(version)) notFound();
-  const passport = await getAgentPassport(principal, canonicalObjectId, version);
+  // Next's dynamic segment value retains one URI transport layer. Query the
+  // persisted opaque identity, including literal percent escapes, exactly once.
+  let objectId: string;
+  try { objectId = decodeURIComponent(canonicalObjectId); }
+  catch { notFound(); }
+  const passport = await getAgentPassport(principal, objectId, version);
   if (!passport) notFound();
   return <AgentPassport passport={passport} />;
 }
