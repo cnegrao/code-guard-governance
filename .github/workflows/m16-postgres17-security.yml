@@ -71,22 +71,23 @@ jobs:
           module_mock_tests=(
             tests/postgres-m16/audit-v2-routes-integration.test.ts
             tests/postgres-m16/ledger-v2-writers-integration.test.ts
+            tests/postgres-m16/sec01-transactional-workspace.test.ts
           )
           core_tests=()
           for test_file in "${all_tests[@]}"; do
             case "$test_file" in
-              tests/postgres-m16/audit-v2-routes-integration.test.ts|tests/postgres-m16/ledger-v2-writers-integration.test.ts) ;;
+              tests/postgres-m16/audit-v2-routes-integration.test.ts|tests/postgres-m16/ledger-v2-writers-integration.test.ts|tests/postgres-m16/sec01-transactional-workspace.test.ts) ;;
               *) core_tests+=("$test_file") ;;
             esac
           done
           for test_file in "${module_mock_tests[@]}"; do
             test -f "$test_file"
           done
-          test "${#module_mock_tests[@]}" -eq 2
+          test "${#module_mock_tests[@]}" -eq 3
           test "${#core_tests[@]}" -gt 0
           test "$(( ${#core_tests[@]} + ${#module_mock_tests[@]} ))" -eq "${#all_tests[@]}"
           printf 'M16 test files: %s normal + %s module mocks = %s total\n' "${#core_tests[@]}" "${#module_mock_tests[@]}" "${#all_tests[@]}"
           node --conditions=react-server --import tsx --test "${core_tests[@]}"
-      - name: Execute PG17 route integrations requiring Node module mocks
+      - name: Execute PG17 integrations requiring Node module mocks
         working-directory: apps/dashboard
-        run: node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/postgres-m16/audit-v2-routes-integration.test.ts tests/postgres-m16/ledger-v2-writers-integration.test.ts
+        run: node --conditions=react-server --experimental-test-module-mocks --import tsx --test tests/postgres-m16/audit-v2-routes-integration.test.ts tests/postgres-m16/ledger-v2-writers-integration.test.ts tests/postgres-m16/sec01-transactional-workspace.test.ts
