@@ -23,6 +23,12 @@ export async function readPassportRiskOverlay(principal: GovernanceWritePrincipa
     p_subject_canonical_object_id: subjectCanonicalObjectId, p_effective_at: null, p_recorded_cutoff: null,
   });
   if (error) throw new Error('PASSPORT_RISK_OVERLAY_READ_FAILED');
+  return decodePassportRiskOverlay(data, subjectKind, subjectCanonicalObjectId);
+}
+
+/** Shared validation for the same projection acquired inside the SEC-01 transaction. */
+export function decodePassportRiskOverlay(data: unknown, subjectKind: 'AGENT'|'AGENT_VERSION',
+  subjectCanonicalObjectId: string): PassportRiskOverlay {
   const row = (Array.isArray(data) ? data[0] : data) as Row | undefined;
   if (!row || !['PRESENT','UNKNOWN'].includes(String(row.overlay_status))) fail();
   const items = array(row.items).map(raw => {

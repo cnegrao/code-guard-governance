@@ -118,7 +118,7 @@ test("conflict adapter fails closed on any shape outside the closed contract (ne
   nextError = null;
 });
 
-test("the conflict adapter has no HTTP route / UI consumer in this slice; the Passport adapter is consumed only by the Passport query", () => {
+test("the conflict adapter has no HTTP route / UI consumer; Passport and the transactional Executive read share projection validation", () => {
   const root = fileURLToPath(new URL("../", import.meta.url));
   const consumers: string[] = [];
   const walk = (dir: string) => {
@@ -133,6 +133,9 @@ test("the conflict adapter has no HTTP route / UI consumer in this slice; the Pa
     }
   };
   walk(`${root}app`); walk(`${root}lib`); walk(`${root}components`);
-  assert.deepEqual(consumers, ["lib/governance/passport-query.ts"]);
+  assert.deepEqual(consumers, ["lib/governance/passport-query.ts", "lib/workspace/executive-query.ts"]);
   assert.doesNotMatch(readFileSync(`${root}lib/governance/passport-query.ts`, "utf8"), /readFactConflict/);
+  const executive = readFileSync(`${root}lib/workspace/executive-query.ts`, "utf8");
+  assert.match(executive, /decodePassportGovernedFacts/);
+  assert.doesNotMatch(executive, /readFactConflict|readPassportGovernedFacts|passportReader|privilegedDb\.from\(/);
 });

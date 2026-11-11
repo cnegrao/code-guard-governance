@@ -90,6 +90,14 @@ export async function readPassportGovernedFacts(principal: GovernanceWritePrinci
   Promise<readonly L14PassportGovernedFact[]> {
   const rows = await rpc(PASSPORT_RPC, { ...principalArgs(principal), p_agent_canonical_object_id: agentId,
     p_agent_version_canonical_object_id: selectedVersionId, p_effective_at: null, p_recorded_cutoff: null });
+  return decodePassportGovernedFacts(rows, agentId, selectedVersionId);
+}
+
+/** Shared validation for the same projection acquired inside the SEC-01 transaction. */
+export function decodePassportGovernedFacts(data: unknown, agentId: string, selectedVersionId: string | null):
+  readonly L14PassportGovernedFact[] {
+  if (!Array.isArray(data) || data.some(row => !row || typeof row !== 'object' || Array.isArray(row))) fail();
+  const rows = data as Row[];
   const facts = rows.map(row => {
     const targetKind = closed(row.target_kind, ['AGENT', 'AGENT_VERSION'] as const);
     const targetCanonicalObjectId = text(row.target_canonical_object_id);
