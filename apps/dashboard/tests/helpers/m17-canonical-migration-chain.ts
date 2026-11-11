@@ -27,6 +27,13 @@ export const APPROVED_E1_TECHNICAL_PROFILE = {
   name: '20261109191942_agent_version_technical_profile_governed_mapping_v1.sql',
   sha256_lf: '9c22c983eb1cd9cd48329b7d153b555de48ba2c4475ffe7b5eb70f55726e60a6',
 } as const;
+// 2026-11-11: Carlos authorized this exact SEC-01 successor for integration.
+// Receipt of the SQL in 76e5676a1ca085f0d9448d4ef3e32bba0b51417e;
+// no hosted application, frozen-checkpoint change or future append authority.
+export const APPROVED_SEC01_TRANSACTIONAL_WORKSPACE = {
+  name: '20261111123119_sec01_transactional_workspace_acquisition_v1.sql',
+  sha256_lf: '0e97a5bfbb3330f66a765224883a0ace12fdc07b0af40e20b144d94ce0faebfc',
+} as const;
 const root = new URL('../../../../', import.meta.url);
 const migrationsRoot = new URL('supabase/migrations/', root);
 const migrationName = /^\d{14}_[a-z0-9_]+\.sql$/;
@@ -115,7 +122,7 @@ export const assertCanonicalMigrationSuffix = (anchor: string) => {
   }));
   actual.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   const frozen = JSON.parse(readFileSync(new URL('../fixtures/sr2-dependency-manifest-v4.json', import.meta.url), 'utf8')) as FrozenDependencyManifest;
-  validateCanonicalChainWithE1Successors(actual, frozen, readApprovedMigrationBaseline(), anchor);
+  validateCanonicalChainWithSec01Successor(actual, frozen, readApprovedMigrationBaseline(), anchor);
 };
 
 export const validateCanonicalChainWithE1Successors = (
@@ -131,4 +138,19 @@ export const validateCanonicalChainWithE1Successors = (
   assert.equal(typeof technical.contents, 'string', 'technical profile successor content required');
   assert.equal(sha256Lf(technical.contents!), APPROVED_E1_TECHNICAL_PROFILE.sha256_lf,
     'technical profile successor differs from its applied immutable receipt');
+};
+
+export const validateCanonicalChainWithSec01Successor = (
+  actual: readonly MigrationEntry[], frozen: FrozenDependencyManifest,
+  approved: readonly Migration[], anchor: string,
+) => {
+  validateCanonicalChainWithE1Successors(actual.slice(0, approved.length + 2), frozen, approved, anchor);
+  const successors = actual.slice(approved.length + 2);
+  assert.deepEqual(successors.map(entry => entry.name), [APPROVED_SEC01_TRANSACTIONAL_WORKSPACE.name],
+    'SEC-01 successor inventory must match the exact owner-approved migration');
+  const workspace = successors[0]!;
+  assert.equal(workspace.kind, 'file', 'SEC-01 successor must be a regular file');
+  assert.equal(typeof workspace.contents, 'string', 'SEC-01 successor content required');
+  assert.equal(sha256Lf(workspace.contents!), APPROVED_SEC01_TRANSACTIONAL_WORKSPACE.sha256_lf,
+    'SEC-01 successor differs from its owner-approved immutable receipt');
 };
