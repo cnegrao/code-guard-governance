@@ -1,7 +1,8 @@
 import { projectAgent, legacyControlEnvelope } from "@/lib/legacy-control-dto";
+import { projectAgentDetail } from "@/lib/agent-detail-dto";
 import * as agentRepo from "@/repositories/agents";
 import { createAgentSchema, updateAgentSchema } from "@/lib/validation";
-import type { Agent, AgentDetail, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
+import type { Agent, AgentDetail, AgentDetailAgent, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
 import type { CreateAgentInput, UpdateAgentInput } from "@/lib/validation";
 import { db } from "@/lib/db";
 import { CG_AG_CONTROLS } from "@council/scanner";
@@ -22,7 +23,7 @@ export async function getAgent(
   const detail = await agentRepo.getAgentWithOwner(orgId, agentId);
   if (!detail) return null;
   const states = await getCompliance(orgId, agentId);
-  return { agent: projectAgent(detail.agent), owner_name: detail.owner_name, owner_email: detail.owner_email,
+  return { agent: projectAgentDetail(detail.agent), owner_name: detail.owner_name, owner_email: detail.owner_email,
     ...legacyControlEnvelope(states, getGapLabels(states)) };
 }
 
@@ -52,7 +53,7 @@ export async function updateAgent(
   orgId: string,
   agentId: string,
   input: UpdateAgentInput
-): Promise<Agent> {
+): Promise<AgentDetailAgent> {
   const validated = updateAgentSchema.parse(input);
 
   // ── Lifecycle enforcement (CG-AG-001): status changes must follow the state machine ──
@@ -81,7 +82,7 @@ export async function updateAgent(
     }
   }
 
-  return projectAgent(await agentRepo.updateAgent(orgId, agentId, validated));
+  return projectAgentDetail(await agentRepo.updateAgent(orgId, agentId, validated));
 }
 
 export async function getCompliance(

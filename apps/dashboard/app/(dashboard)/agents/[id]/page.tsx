@@ -9,11 +9,11 @@ import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { LegacyControlRecordsPanel } from "@/components/agents/LegacyControlRecordsPanel";
-import type { Agent } from "@/types/agents";
+import type { AgentDetailAgent } from "@/types/agents";
 
 export default function AgentDetailPage() {
   const params = useParams();
-  const [agent, setAgent] = useState<Agent | null>(null);
+  const [agent, setAgent] = useState<AgentDetailAgent | null>(null);
   const [legacyStates, setLegacyStates] = useState<Record<string, import("@/types/agents").ControlState>>({});
   const [gaps, setGaps] = useState<string[]>([]);
   const [ownerName, setOwnerName] = useState("");
@@ -98,8 +98,16 @@ export default function AgentDetailPage() {
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">Oversight Level</dt>
-                <dd className="text-white mt-0.5">{agent.oversight_level}</dd>
+                <dt className="text-gray-500">Effective oversight</dt>
+                <dd className="text-white mt-0.5">UNKNOWN / NOT_EVIDENCED</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">Historical oversight label (unverified)</dt>
+                <dd className="text-white mt-0.5">{agent.oversight?.recordedLevel ?? "No recorded label returned"}</dd>
+                <dd className="text-xs text-gray-400 mt-1">
+                  NON_AUTHORITATIVE. Historical labels and recorded control states do not prove supervision.
+                  Applicability and sufficiency are unknown.
+                </dd>
               </div>
               <div>
                 <dt className="text-gray-500">Model</dt>

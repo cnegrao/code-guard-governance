@@ -47,8 +47,25 @@ export interface AgentRecord extends Agent {
   external_refs: Record<string, unknown> | null;
 }
 
+/** Detail responses separate unverified history from effective supervision. */
+export interface AgentDetailAgent extends Omit<Agent, "oversight_level"> {
+  oversight_level: "UNKNOWN";
+  oversight: {
+    effectiveLevel: "UNKNOWN";
+    evidenceStatus: "NOT_EVIDENCED";
+    authority: "NON_AUTHORITATIVE";
+    recordedLevel: string | null;
+    source: {
+      table: "gov_repo.agents";
+      field: "oversight_level";
+      organisationId: string;
+      agentId: string;
+    };
+  };
+}
+
 export interface AgentDetail extends LegacyControlEnvelope {
-  agent: Agent;
+  agent: AgentDetailAgent;
   owner_name: string;
   owner_email: string;
 }
