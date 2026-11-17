@@ -3,6 +3,7 @@ import type { GraphEntity, Relationship } from '@council/graphos';
 import type { RepoFile } from './codeguard/types';
 import { SCANNER_ANALYSIS_BOUNDARY, type ScannerAnalysisBoundary, type SourceAnalysis, type DetectedRisk } from './core/types';
 import type { AgentClassification } from './core/classifier';
+import { projectScannerOversight } from './core/oversight';
 
 export type SourceType = 'local' | 'github' | 'gitlab' | 'azure_devops' | 'bitbucket' | 'replit' | 'lovable' | 'n8n' | 'dify' | 'langgraph' | 'crewai' | 'openai_agents' | 'mcp_server';
 
@@ -208,6 +209,7 @@ export class Scanner {
           agentType: a.type || 'ai_persona', riskLevel: a.riskLevel || 'medium',
           aiActRiskClass: cls?.aiActCategory, critical: a.critical || false,
           tools: a.tools || [], models: a.models || [], status: 'active',
+          oversightLevel: 'UNKNOWN', oversight: projectScannerOversight(a),
         } as Record<string, unknown>,
       });
       agentIds.push(id);

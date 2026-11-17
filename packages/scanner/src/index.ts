@@ -20,6 +20,7 @@ export { detectMemorySystems } from './core/memory-detector';
 export { estimateModelCost } from './core/model-parser';
 export { parseNotebook } from './core/notebook-parser';
 export { classifyAllAgents, summarizeAIAct } from './core/classifier';
+export type { ScannerOversight, OversightLevel } from './core/oversight';
 export { detectRisks } from './core/risk-detector';
 export { detectShadowAI } from './core/shadow-ai';
 export { scanCodeViolations } from './core/violations';

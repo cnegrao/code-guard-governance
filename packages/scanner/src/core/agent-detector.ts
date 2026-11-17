@@ -1,11 +1,12 @@
 import type { DetectedAgent } from './types';
+import type { OversightLevel } from './oversight';
 
 interface FrameworkPattern {
   name: string;
   signals: RegExp[];
   agentType: DetectedAgent['type'];
   defaultRisk: DetectedAgent['riskLevel'];
-  defaultOversight: string;
+  defaultOversight: OversightLevel;
   isAutonomous: boolean;
 }
 
@@ -98,7 +99,7 @@ export interface FrameworkMatch {
   framework: string;
   agentType: DetectedAgent['type'];
   defaultRisk: DetectedAgent['riskLevel'];
-  defaultOversight: string;
+  defaultOversight: OversightLevel;
   isAutonomous: boolean;
   confidence: number;
   evidence: string[];
@@ -161,7 +162,9 @@ export function buildAgentsFromFrameworkMatches(
         riskLevel: match.defaultRisk,
         critical: match.isAutonomous || match.defaultRisk === 'high',
         framework: match.framework,
-        oversightLevel: match.defaultOversight,
+        oversightLevel: 'UNKNOWN',
+        oversightSuggestion: match.defaultOversight,
+        filePath,
         isAutonomous: match.isAutonomous,
         confidence: match.confidence,
       });
