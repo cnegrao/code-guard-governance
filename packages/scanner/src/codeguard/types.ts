@@ -1,3 +1,5 @@
+import type { CodeguardOversight } from './oversight';
+
 export interface RepositoryProvider {
   name: string;
   fetchFiles(owner: string, repo: string, branch?: string, path?: string): Promise<RepoFile[]>;
@@ -17,7 +19,11 @@ export interface DiscoveryResult {
   branch: string;
   scannedAt: string;
   filesScanned: number;
-  agentsDiscovered: DiscoveredAgent[];
+  agentsDiscovered: Array<DiscoveredAgent & {
+    suggestedOversightAuthority: 'NON_AUTHORITATIVE';
+    oversightLevel: 'UNKNOWN';
+    oversight: CodeguardOversight;
+  }>;
   systemsDiscovered: DiscoveredSystem[];
 }
 
@@ -134,7 +140,8 @@ export interface ClassificationResult {
   agentType: string;
   riskLevel: string;
   aiActRiskClass: string;
-  oversightLevel: string;
+  oversightLevel: 'UNKNOWN';
+  oversight: CodeguardOversight;
   businessDomain: string;
   isAutonomous: boolean;
   confidence: number;

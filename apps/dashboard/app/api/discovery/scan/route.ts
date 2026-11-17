@@ -4,6 +4,7 @@ import { getProvider } from "@/lib/discovery/providers";
 import { detectAgents } from "@council/scanner/codeguard/agent-detector";
 import { groupAgentsIntoLSystems } from "@council/scanner/codeguard/system-detector";
 import { classifyAgent } from "@council/scanner/codeguard/classifier";
+import { normalizeOversightSuggestion } from "@council/scanner/codeguard/oversight";
 import { enrichAgent, enrichSummary } from "@council/scanner/codeguard/enrichment";
 import { generateRepoIntelligence } from "@council/scanner/codeguard/repo-intelligence";
 import { buildKnowledgeGraph } from "@council/scanner/codeguard/repo-knowledge-graph";
@@ -52,7 +53,11 @@ export async function POST(request: Request) {
 
     const readFile = async (path: string) => repoProvider.fetchFileContent(owner, repo, path, branch ?? "main");
 
-    const agents = await detectAgents(files, readFile);
+    const agents = (await detectAgents(files, readFile)).map(agent => ({
+      ...agent,
+      suggestedOversightLevel: normalizeOversightSuggestion(agent.suggestedOversightLevel),
+      suggestedOversightAuthority: 'NON_AUTHORITATIVE' as const,
+    }));
     const systems = groupAgentsIntoLSystems(agents);
 
     const repoIntel = await generateRepoIntelligence(
@@ -130,6 +135,9 @@ export async function POST(request: Request) {
         evidence: a.evidence,
         suggestedRiskLevel: a.suggestedRiskLevel,
         suggestedOversightLevel: a.suggestedOversightLevel,
+        suggestedOversightAuthority: a.suggestedOversightAuthority,
+        oversightLevel: a.classification.oversightLevel,
+        oversight: a.classification.oversight,
         isAutonomous: a.isAutonomous,
         capabilities: a.capabilities,
         enrichment: a.enrichment,

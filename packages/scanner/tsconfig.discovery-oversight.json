@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.lx07.json",
+  "include": ["src/**/*.ts", "test/discovery-oversight/**/*.ts"]
+}
