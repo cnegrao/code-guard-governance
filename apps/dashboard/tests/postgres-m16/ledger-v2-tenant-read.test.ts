@@ -278,6 +278,6 @@ test('S1A1-2B real PG17 tenant read boundary, cryptographic coverage, ACLs and s
       await assert.rejects(pg.sql(`UPDATE gov_repo.ledger_tenant_entries_v2 SET payload='{}'`,role),/permission denied/);
     }
     writeFileSync(join(ledgerRepo,'.artifacts/agent/ledger-v2-read-catalog.json'),JSON.stringify({routines,
-      tables:after.tables,columns:after.columns,defaults:after.defaults,server:'170011',vector:'0.8.7',definerDelta:3},null,2)+'\n');
+      tables:after.tables,columns:after.columns,defaults:after.defaults,server:await owner('SHOW server_version_num'),vector:'0.8.7',definerDelta:3},null,2)+'\n');
   });
 });

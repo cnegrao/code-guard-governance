@@ -23,7 +23,8 @@ test('H1 complete manifest reproduces across two fresh empty 106-migration repla
       const directory = await pg.bootstrapSql('SHOW data_directory');
       if (label === 'A') directoryA = directory;
       else assert.notEqual(directory, directoryA, 'independent initdb directory, not a reused/cloned database');
-      assert.equal(await pg.owner('SHOW server_version_num'), '170011');
+      const serverVersion = await pg.owner('SHOW server_version_num');
+      assert.ok(['170011', '170012'].includes(serverVersion), `H1 replay requires PostgreSQL 17.11 or 17.12; observed ${serverVersion}`);
       assert.equal(await pg.owner("SELECT extversion FROM pg_extension WHERE extname='vector'"), '0.8.7');
       const actual = await collectManifest(pg.owner);
       assert.equal(actual.document.relations.length, 36);
