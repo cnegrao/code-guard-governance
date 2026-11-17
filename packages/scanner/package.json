@@ -14,6 +14,8 @@
     "@council/canonical-contracts": "^0.1.0"
   },
   "scripts": {
+    "test:lx07": "tsx --test --test-isolation=none test/lx07/*.test.ts",
+    "typecheck:lx07": "tsc --noEmit -p tsconfig.lx07.json",
     "test:l02": "tsx --test --test-isolation=none test/l02/*.test.ts",
     "typecheck:l02": "tsc --noEmit -p tsconfig.l02.json",
     "test:path-policy": "tsx --test --test-isolation=none test/discovery-validation-lab/tests/path-policy.test.ts",

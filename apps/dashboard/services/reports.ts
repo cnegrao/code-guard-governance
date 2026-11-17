@@ -2,6 +2,22 @@ import PDFDocument from "pdfkit";
 import type { ReportData } from "@/repositories/reports";
 import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 
+// Keep the ceiling explicit at every PDF consumer, even with favourable legacy metrics.
+// No L1-L4 value or control flag is admitted as proof by this report path.
+function oversightNotice(doc: PDFKit.PDFDocument, left: number, y: number): number {
+  for (const text of [
+    "Effective oversight: UNKNOWN / NOT_EVIDENCED",
+    "Recorded labels / heuristic recommendations: NON_AUTHORITATIVE.",
+    "Recommendation: UNKNOWN; recorded label origin is unverified.",
+    "No admitted oversight evidence is read. Applicability and sufficiency are unknown.",
+    "Legacy rates, gaps, control flags and evidence counts do not prove supervision.",
+  ]) {
+    doc.fontSize(9).font("Helvetica").fillColor("#374151").text(text, left, y, { width: 495 });
+    y += doc.heightOfString(text, { width: 495 }) + 4;
+  }
+  return y;
+}
+
 export function generateExecutiveReport(data: ReportData): Uint8Array {
   const doc = new PDFDocument({ margin: 50, size: "A4" });
   const chunks: Buffer[] = [];
@@ -55,6 +71,7 @@ export function generateExecutiveReport(data: ReportData): Uint8Array {
   row("Total AI Systems", String(data.systems.total));
   row("Compliance Rate", `${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}`);
   y += 6;
+  y = oversightNotice(doc, left, y);
 
   heading(`Legacy Risk Label Distribution (${LEGACY_RISK_LABEL})`, 12);
   const maxRisk = Math.max(data.agents.byRisk.critical, data.agents.byRisk.high, data.agents.byRisk.medium, data.agents.byRisk.low, 1);
@@ -171,9 +188,22 @@ export function generateAIActReport(data: ReportData): Uint8Array {
   row("Agents Without AI System", String(data.aiAct.agentsWithoutSystem));
   y += 8;
 
-  heading("2. Human Oversight");
-  for (const o of data.aiAct.oversightLevels) {
-    row(o.level, String(o.count));
+  heading("2. Oversight Evidence Status");
+  y = oversightNotice(doc, left, y);
+  doc.fontSize(9).font("Helvetica").fillColor("#374151").text(
+    "Recorded labels (unverified), returned non-decommissioned rows only:", left, y, { width: 495 }
+  );
+  y += 16;
+  if (data.aiAct.oversight.recordedLevels.length === 0) {
+    doc.fontSize(9).font("Helvetica").fillColor("#374151").text(
+      "No recorded labels returned; this does not prove absence of supervision.", left, y, { width: 495 }
+    );
+    y += 16;
+  }
+  for (const o of data.aiAct.oversight.recordedLevels) {
+    const text = `${o.recordedLevel === null ? "(missing)" : o.recordedLevel === "" ? "(empty)" : o.recordedLevel}: ${o.count} recorded rows`;
+    doc.fontSize(9).font("Helvetica").fillColor("#374151").text(text, left, y, { width: 495 });
+    y += doc.heightOfString(text, { width: 495 }) + 4;
   }
   y += 8;
 
@@ -195,7 +225,7 @@ export function generateAIActReport(data: ReportData): Uint8Array {
   if (data.agents.byRisk.high > 3) recs.push(`${data.agents.byRisk.high} agents carry a legacy "high" risk label (${LEGACY_RISK_LABEL}); this is not governed risk.`);
   if (data.aiAct.agentsWithoutSystem > 0) recs.push(`${data.aiAct.agentsWithoutSystem} agents not linked to an AI System. Link them per AI Act Art. 3.1.`);
   if (data.compliance.rate !== null && data.compliance.rate < 85) recs.push(`Compliance rate is ${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}. Address outstanding governance gaps.`);
-  if (recs.length === 0) recs.push("No critical AI Act compliance issues detected. Continue monitoring.");
+  recs.push("Oversight remains UNKNOWN / NOT_EVIDENCED. Verify authoritative evidence before drawing supervision conclusions.");
   for (const r of recs) {
     doc.fontSize(10).font("Helvetica").fillColor("#d1d5db").text(`· ${r}`, left, y);
     y += 18;
@@ -238,6 +268,7 @@ export function generateDORAReport(data: ReportData): Uint8Array {
   heading("2. AI Agent Governance (DORA Art. 8)");
   row("Total Agents", String(data.agents.total));
   row("Compliance Rate", `${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}`);
+  y = oversightNotice(doc, left, y);
   row(`Legacy high-risk agent labels (${LEGACY_RISK_LABEL})`, String(data.agents.byRisk.high + data.agents.byRisk.critical));
   y += 8;
 
@@ -257,7 +288,7 @@ export function generateDORAReport(data: ReportData): Uint8Array {
   if (data.incidents.doraOpen > 0) recs.push(`${data.incidents.doraOpen} DORA incidents still open. Review DORA Art. 19 reporting deadlines.`);
   if (data.dora.majorIncidents > 0) recs.push(`${data.dora.majorIncidents} major incidents require immediate notification per DORA Art. 19(4).`);
   if (data.compliance.rate !== null && data.compliance.rate < 85) recs.push(`Agent compliance rate at ${data.compliance.rate === null ? "NO_DATA" : data.compliance.rate + "%"}. DORA Art. 8 requires complete ICT asset inventory.`);
-  if (recs.length === 0) recs.push("No critical DORA issues detected. Continue monitoring.");
+  recs.push("Oversight remains UNKNOWN / NOT_EVIDENCED. Verify authoritative evidence before drawing supervision conclusions.");
   for (const r of recs) {
     doc.fontSize(10).font("Helvetica").fillColor("#d1d5db").text(`· ${r}`, left, y);
     y += 18;

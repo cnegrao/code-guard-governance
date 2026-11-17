@@ -1,0 +1,41 @@
+{
+  "record_type": "ADDITIVE_LOCAL_CONTAINMENT_STATUS",
+  "recorded_date": "2026-11-16",
+  "timezone": "America/Sao_Paulo",
+  "roadmap_position": "M17.5 / V1-S1B / LX07",
+  "component": "Core scanner oversight producer and Unified Scanner technical graph projection",
+  "component_status": "IMPLEMENTED_LOCAL",
+  "lx07_status": "OPEN",
+  "v1_s1b_status": "OPEN",
+  "m17_5_status": "OPEN",
+  "starting_head": "fad55c937667f036cc7af5b21d45efd8db1ed049",
+  "branch": "feat/m175-s1b-lx07-20261116",
+  "effective_oversight": "UNKNOWN",
+  "oversight_evidence_state": "NOT_EVIDENCED",
+  "recommendation_authority": "NON_AUTHORITATIVE",
+  "independent_of": ["SR2-A4", "SR2-A5", "SR2-A6"],
+  "remaining_lx07_boundaries": [
+    "Historical persisted oversight values and ledger payloads are unchanged and cannot be upgraded to governed evidence",
+    "Legacy dashboard, Talk, reports and alternate codeguard classification consumers are not cleared by this producer slice",
+    "Independent acceptance of the complete exposure boundary is not granted"
+  ],
+  "other_s1b_open": ["LX01", "LX03", "LX04", "LX05", "LX06"],
+  "previous_closures_preserved": ["S1A", "C1", "C2A", "C2B-1", "C2B-2"],
+  "byom": {
+    "status": "NOT_CONCLUDED",
+    "future_real_openai_connection_test": "PENDING",
+    "connection_test_blocker": "CREDENTIAL_MISSING",
+    "new_credentials_requested": false,
+    "prior_implementation_tests_audit_preserved": true
+  },
+  "sr2_a4": "BLOCKED",
+  "a5_a6": "NOT_STARTED",
+  "s1c_s2": "NOT_STARTED",
+  "m18": "HOLD",
+  "m19_started": false,
+  "hosted_delta": 0,
+  "migration_delta": 0,
+  "canonical_authority_delta": 0,
+  "readiness_release": "NONE",
+  "evidence": "docs/codex/evidence/2026-11-16-m175-s1b-lx07-scanner-oversight.md"
+}

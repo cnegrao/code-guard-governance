@@ -2,6 +2,18 @@ import { db } from "@/lib/db";
 import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
 import { getUnifiedGraph, isAgentNode, type DiscoveryGraphNode } from "@/services/knowledge-graph";
 
+/** This legacy read has no admitted authoritative oversight-evidence input. */
+export interface ReportOversight {
+  effectiveLevel: "UNKNOWN";
+  evidenceStatus: "NOT_EVIDENCED";
+  authority: "NON_AUTHORITATIVE";
+  /** A stored label does not establish whether it was a recommendation or a default. */
+  recommendationStatus: "UNKNOWN";
+  source: { table: "gov_repo.agents"; field: "oversight_level"; organisationId: string };
+  /** Counts cover returned non-decommissioned rows only, not a proven population. */
+  recordedLevels: Array<{ recordedLevel: string | null; count: number }>;
+}
+
 export interface ReportData {
   org: { name: string; industry: string; date: string };
   /** byRisk counts LEGACY agents.risk_level labels (M17-S0): never governed risk, never an L15 input. */
@@ -11,7 +23,7 @@ export interface ReportData {
   findings: { open: number; bySeverity: Array<{ severity: string; count: number }>; criticalFindings: number };
   incidents: { open: number; doraOpen: number; recent: Array<{ code: string; title: string; severity: string; status: string; date: string }> };
   dora: { totalIncidents: number; majorIncidents: number; reportingStatus: string; thirdPartyConcentration: number };
-  aiAct: { highRiskSystems: number; agentsWithoutSystem: number; oversightLevels: Array<{ level: string; count: number }>; annexIiiDistribution: Array<{ sector: string; count: number }> };
+  aiAct: { highRiskSystems: number; agentsWithoutSystem: number; oversight: ReportOversight; annexIiiDistribution: Array<{ sector: string; count: number }> };
   regulatory: { aiActExposure: number; doraExposure: number; lgpdExposure: number; evidenceCount: number };
 }
 
@@ -82,8 +94,8 @@ export async function gatherReportData(orgId: string): Promise<ReportData> {
     sevMap.set(f.severity, (sevMap.get(f.severity) ?? 0) + 1);
   }
 
-  const oversightData = (oversightLevels.data as Array<{ oversight_level: string }>) ?? [];
-  const oversightMap = new Map<string, number>();
+  const oversightData = (oversightLevels.data as Array<{ oversight_level: string | null }>) ?? [];
+  const oversightMap = new Map<string | null, number>();
   for (const o of oversightData) {
     oversightMap.set(o.oversight_level, (oversightMap.get(o.oversight_level) ?? 0) + 1);
   }
@@ -154,7 +166,14 @@ export async function gatherReportData(orgId: string): Promise<ReportData> {
     aiAct: {
       highRiskSystems: highRiskSystems.count ?? 0,
       agentsWithoutSystem: agentsWithoutSystem.count ?? 0,
-      oversightLevels: Array.from(oversightMap.entries()).map(([level, count]) => ({ level, count })),
+      oversight: {
+        effectiveLevel: "UNKNOWN",
+        evidenceStatus: "NOT_EVIDENCED",
+        authority: "NON_AUTHORITATIVE",
+        recommendationStatus: "UNKNOWN",
+        source: { table: "gov_repo.agents", field: "oversight_level", organisationId: orgId },
+        recordedLevels: Array.from(oversightMap.entries()).map(([recordedLevel, count]) => ({ recordedLevel, count })),
+      },
       annexIiiDistribution: Array.from(annexIiiMap.entries()).map(([sector, count]) => ({ sector, count })),
     },
     regulatory: {

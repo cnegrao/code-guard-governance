@@ -46,7 +46,8 @@ export async function ledgerFoundationCluster(diagnostic: (message:string)=>void
   const owner=(q:string)=>pg.sql(q,'postgres'),svc=(q:string)=>pg.sql(q,'service_role');
   const applied=[...fullPrimaryChainMigrations()];
   try {
-    assert.equal(await owner('SHOW server_version_num'),'170011');
+    const serverVersion = await owner('SHOW server_version_num');
+    assert.ok(['170011', '170012'].includes(serverVersion), `ledger replay requires PostgreSQL 17.11 or 17.12; observed ${serverVersion}`);
     assert.equal(await owner("SELECT extversion FROM pg_extension WHERE extname='vector'"),'0.8.7');
     assert.equal(await owner("SELECT count(*) FROM pg_am WHERE amname='hnsw'"),'1');
     for(const name of canonical){
@@ -60,7 +61,7 @@ export async function ledgerFoundationCluster(diagnostic: (message:string)=>void
     await owner(readFileSync(join(ledgerRepo,'supabase/migrations',ledgerMigration),'utf8'));
     applied.push(ledgerMigration);
     assert.deepEqual(applied,canonical);
-    diagnostic(`Canonical replay PASS: 99 historical + 1 additive = ${applied.length}; REAL PG17.11 / pgvector0.8.7; no stand-in`);
+    diagnostic(`Canonical replay PASS: 99 historical + 1 additive = ${applied.length}; REAL PG${await owner('SHOW server_version')} / pgvector0.8.7; no stand-in`);
   };
   return {...pg,owner,svc,applyFoundation,applied};
 }

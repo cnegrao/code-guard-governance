@@ -1,4 +1,5 @@
 import type { DetectedAgent, DetectedRisk, SourceAnalysis, PackageAnalysis } from './types';
+import { projectScannerOversight, type ScannerOversight } from './oversight';
 
 export interface AgentClassification {
   agentId: string;
@@ -6,7 +7,8 @@ export interface AgentClassification {
   riskCategory: 'low' | 'medium' | 'high' | 'critical';
   aiActCategory: 'none' | 'minimal' | 'limited' | 'high' | 'unacceptable';
   domain: 'general' | 'healthcare' | 'finance' | 'government' | 'education';
-  oversightLevel: 'l1_automated' | 'l2_human_review' | 'l3_human_approval' | 'l4_human_in_charge';
+  oversightLevel: 'UNKNOWN';
+  oversight: ScannerOversight;
   confidence: number;
   evidence: string[];
 }
@@ -67,20 +69,8 @@ export function classifyAgent(
     riskCategory = agent.riskLevel === 'high' ? 'high' : 'medium';
   }
 
-  // ── Oversight Level ──
-  let oversightLevel: AgentClassification['oversightLevel'] = 'l1_automated';
-  if (agent.oversightLevel) {
-    oversightLevel = agent.oversightLevel as AgentClassification['oversightLevel'];
-  } else if (agent.critical) {
-    oversightLevel = 'l3_human_approval';
-    evidence.push('Critical agent → requires human approval');
-  } else if (agent.riskLevel === 'high') {
-    oversightLevel = 'l2_human_review';
-    evidence.push('High-risk agent → requires human review');
-  } else if (agent.isAutonomous) {
-    oversightLevel = 'l3_human_approval';
-    evidence.push('Autonomous agent → requires human approval');
-  }
+  const oversight = projectScannerOversight(agent);
+  evidence.push('Effective oversight UNKNOWN (NOT_EVIDENCED); any recommendation is a non-authoritative heuristic.');
 
   const confidence = Math.min(
     95,
@@ -97,7 +87,8 @@ export function classifyAgent(
     riskCategory,
     aiActCategory,
     domain,
-    oversightLevel,
+    oversightLevel: oversight.level,
+    oversight,
     confidence,
     evidence,
   };
@@ -118,7 +109,8 @@ export interface RepoAIActSummary {
   minimalRiskCount: number;
   unacceptableCount: number;
   requiresConformityAssessment: boolean;
-  requiresHumanOversight: boolean;
+  /** No governed applicability/oversight decision is available to this scanner. */
+  requiresHumanOversight: 'UNKNOWN';
   requiresTransparency: boolean;
   evidence: string[];
 }
@@ -143,11 +135,7 @@ export function summarizeAIAct(
     minimalRiskCount,
     unacceptableCount,
     requiresConformityAssessment: highRiskCount > 0,
-    requiresHumanOversight: classifications.some(c =>
-      c.oversightLevel === 'l2_human_review' ||
-      c.oversightLevel === 'l3_human_approval' ||
-      c.oversightLevel === 'l4_human_in_charge'
-    ),
+    requiresHumanOversight: 'UNKNOWN',
     requiresTransparency: limitedRiskCount > 0 || highRiskCount > 0,
     evidence,
   };

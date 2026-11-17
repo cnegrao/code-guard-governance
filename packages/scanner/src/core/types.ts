@@ -1,3 +1,5 @@
+import type { OversightLevel } from './oversight';
+
 export interface ScannerRequest {
   repoUrl: string;
   branch?: string;
@@ -144,7 +146,10 @@ export interface DetectedAgent {
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   critical: boolean;
   framework?: string;
+  /** Unverified legacy input; cannot establish effective oversight. */
   oversightLevel?: string;
+  /** Framework heuristic only, kept separate from an observed level. */
+  oversightSuggestion?: OversightLevel;
   isAutonomous?: boolean;
   confidence?: number;
   filePath?: string;

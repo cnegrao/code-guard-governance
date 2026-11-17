@@ -1,5 +1,6 @@
 import type { DiscoveredAgent, ClassificationResult } from "./types";
 import type { EnrichedAgentData } from "./enrichment";
+import { projectCodeguardOversight } from './oversight';
 
 const RISK_MAP: Record<string, { risk: string; aiAct: string }> = {
   autonomous: { risk: "high", aiAct: "high" },
@@ -32,17 +33,16 @@ export function classifyAgent(agent: DiscoveredAgent, enrichment?: EnrichedAgent
     `Evidence signals: ${agent.evidence.length}`,
   ];
 
-  if (agent.isAutonomous) reasoning.push("Autonomous agent detected — requires L3+ oversight.");
+  if (agent.isAutonomous) reasoning.push("Autonomy heuristic: L3 recommendation is NON_AUTHORITATIVE; effective oversight UNKNOWN / NOT_EVIDENCED.");
   if (domain) reasoning.push(`Business domain inferred: ${domain.domain}`);
 
   let finalRisk = risk.risk;
   let finalAiAct = risk.aiAct;
-  let finalOversight = agent.isAutonomous ? "l3_human_approval" : "l2_human_review";
+  const oversight = projectCodeguardOversight(agent, enrichment?.governancePriority === 'critical');
 
   if (enrichment) {
     if (enrichment.governancePriority === "critical") {
       finalRisk = "critical";
-      finalOversight = "l3_human_approval";
     } else if (enrichment.governancePriority === "high") {
       finalRisk = "high";
     }
@@ -69,7 +69,8 @@ export function classifyAgent(agent: DiscoveredAgent, enrichment?: EnrichedAgent
     agentType: agent.agentType,
     riskLevel: finalRisk,
     aiActRiskClass: finalAiAct,
-    oversightLevel: finalOversight,
+    oversightLevel: oversight.level,
+    oversight,
     businessDomain: enrichment?.fapi.financialServices ? "Financial Services" : domain?.domain ?? "General",
     isAutonomous: agent.isAutonomous,
     confidence: enrichment?.governanceConfidence ?? agent.confidence,
