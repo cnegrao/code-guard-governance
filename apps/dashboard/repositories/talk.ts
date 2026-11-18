@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
+import { projectAgentDetail, OVERSIGHT_LIMITATION, OVERSIGHT_PATTERN, containLegacyOversightText } from "@/lib/agent-detail-dto";
+import type { Agent } from "@/types/agents";
 import { getUnifiedGraph, isAgentNode } from "@/services/knowledge-graph";
 import type {
   UnifiedGraphNode,
@@ -7,6 +9,14 @@ import type {
   AgentGraphNode,
   DiscoveryGraphNode,
 } from "@/services/knowledge-graph";
+
+function projectTalkAgent(row: Record<string, unknown>, orgId: string) {
+  return { ...projectAgentDetail({ ...row, organisation_id: orgId } as unknown as Agent) };
+}
+
+function describeOversight(row: ReturnType<typeof projectTalkAgent>): string {
+  return `${OVERSIGHT_LIMITATION} Historical label (unverified): ${JSON.stringify(row.oversight.recordedLevel)}; source: gov_repo.agents.oversight_level, organisation ${row.oversight.source.organisationId}, agent ${row.oversight.source.agentId}`;
+}
 
 export interface GovernanceAnswer {
   answer: string;
@@ -24,6 +34,7 @@ export interface GovernanceAnswer {
 }
 
 const INTENT_PRIORITY: string[] = [
+  "oversight",
   "open_incidents", "discovery", "what_repo_does", "repo_services",
   "repo_modules_agents", "repo_ai_providers", "repo_autonomous",
   "repo_pii_agents", "repo_financial_services", "repo_aml_workflows",
@@ -43,17 +54,31 @@ const HANDLERS: Array<{
   handler: (orgId: string) => Promise<GovernanceAnswer>;
 }> = [
   {
+    name: "oversight",
+    patterns: [OVERSIGHT_PATTERN],
+    handler: async (orgId) => {
+      const { data } = await db.write.from("agents")
+        .select("agent_id, agent_code, name, oversight_level, status")
+        .eq("organisation_id", orgId).neq("status", "decommissioned").throwOnError();
+      const rows = ((data as Record<string, unknown>[]) ?? []).map(row => projectTalkAgent(row, orgId));
+      const list = rows.map(row => `· ${row.name} (${row.agent_code}) — ${describeOversight(row)}`).join("\n");
+      return ans(`${OVERSIGHT_LIMITATION}\n${rows.length} agent records returned.\n${list}`, 95,
+        rows.map(row => ({ source: "agents", record: row.agent_code, detail: describeOversight(row) })),
+        rows, "oversight", "Historical labels are retained with source identity; no canonical oversight evidence is admitted by this read.", rows.length);
+    },
+  },
+  {
     name: "high_risk_agents",
     patterns: [/high.risk.*agent|critical.*agent|most.*risk|riskiest/i],
     handler: async (orgId) => {
       const { data } = await db.write
-        .from("agents").select("agent_code, name, risk_level, oversight_level, status")
+        .from("agents").select("agent_id, agent_code, name, risk_level, oversight_level, status")
         .eq("organisation_id", orgId).in("risk_level", ["critical", "high"])
         .neq("status", "decommissioned").order("risk_level").throwOnError();
-      const r = (data as Array<Record<string, string>>) ?? [];
+      const r = ((data as Array<Record<string, unknown>>) ?? []).map(row => projectTalkAgent(row, orgId));
       if (r.length === 0) return ans(`No agents carry a legacy high/critical risk label (${LEGACY_RISK_LABEL}). This does not establish absence of risk: governed risk is UNKNOWN.`, 95, [], r, "high_risk_agents", "Queried agents table for risk_level IN (critical, high). No matches.", 0);
-      const list = r.map((a) => `${a.name} (${a.agent_code}) — legacy risk label ${a.risk_level}, ${a.oversight_level}`).join("\n");
-      return ans(`${r.length} agents carry a legacy high/critical risk label (${LEGACY_RISK_LABEL}; not governed risk):\n${list}`, 95, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `legacy risk label ${a.risk_level} (${LEGACY_RISK_LABEL}), ${a.oversight_level} oversight` })), r, "high_risk_agents", `Matched ${r.length} agents with risk_level critical or high from agents table.`, r.length);
+      const list = r.map((a) => `${a.name} (${a.agent_code}) — legacy risk label ${a.risk_level}, ${describeOversight(a)}`).join("\n");
+      return ans(`${r.length} agents carry a legacy high/critical risk label (${LEGACY_RISK_LABEL}; not governed risk):\n${list}`, 95, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `legacy risk label ${a.risk_level} (${LEGACY_RISK_LABEL}), ${describeOversight(a)}` })), r, "high_risk_agents", `Matched ${r.length} agents with risk_level critical or high from agents table.`, r.length);
     },
   },
   {
@@ -78,7 +103,7 @@ const HANDLERS: Array<{
       const r = (data as Array<Record<string, unknown>>) ?? [];
       if (r.length === 0) return ans("No gap records returned. Compliance is NOT_ASSESSED.", 98, [], r, "compliance_gaps", "Ran agent_compliance_gaps(). Zero agents with gaps.", 0);
       const list = r.slice(0, 10).map((g) => `· ${g.agent_name} (${g.agent_code}) — ${g.total_gaps} gaps`).join("\n");
-      return ans(`${r.length} agents with gaps. Top:\n${list}`, 90, r.slice(0, 10).map((g) => ({ source: "agent_compliance_gaps", record: g.agent_code as string, detail: `${g.total_gaps} gaps` })), r, "compliance_gaps", `agent_compliance_gaps() returned ${r.length} non-compliant agents.`, r.length);
+      return ans(`${r.length} agents with legacy gap records. Top:\n${list}`, 90, r.slice(0, 10).map((g) => ({ source: "agent_compliance_gaps", record: g.agent_code as string, detail: `${g.total_gaps} legacy gaps (non-authoritative)` })), r.map(projectLegacyGap), "compliance_gaps", `agent_compliance_gaps() returned ${r.length} legacy records; flags do not establish supervision.`, r.length);
     },
   },
   {
@@ -100,13 +125,13 @@ const HANDLERS: Array<{
     patterns: [/without.*owner|no.*owner|orphan.*agent|missing.*owner|unowned/i],
     handler: async (orgId) => {
       const { data } = await db.write
-        .from("agents").select("agent_code, name, risk_level, status, cg_ag_002_owner")
+        .from("agents").select("agent_id, agent_code, name, risk_level, oversight_level, status, cg_ag_002_owner")
         .eq("organisation_id", orgId).eq("cg_ag_002_owner", false)
         .neq("status", "decommissioned").throwOnError();
       const r = (data as Array<Record<string, string>>) ?? [];
       if (r.length === 0) return ans("No missing-owner records returned. Ownership coverage is UNKNOWN.", 95, [], r, "agents_without_owner", "Queried agents where cg_ag_002_owner = false. Zero results.", 0);
       const list = r.map((a) => `${a.name} (${a.agent_code}) — legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL})`).join("\n");
-      return ans(`${r.length} agents without owner:\n${list}`, 90, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `Owner flag: false` })), r, "agents_without_owner", `Found ${r.length} agents with cg_ag_002_owner = false.`, r.length);
+      return ans(`${r.length} agents without owner:\n${list}`, 90, r.map((a) => ({ source: "agents", record: a.agent_code, detail: `Owner flag: false` })), r.map(row => projectTalkAgent(row, orgId)), "agents_without_owner", `Found ${r.length} agents with cg_ag_002_owner = false.`, r.length);
     },
   },
   {
@@ -114,14 +139,15 @@ const HANDLERS: Array<{
     patterns: [/autonomous.*agent|self.*operating|without.*human/i],
     handler: async (orgId) => {
       const { data } = await db.write
-        .from("agents").select("agent_code, name, oversight_level, cg_ag_012_autonomous_governed, status")
+        .from("agents").select("agent_id, agent_code, name, oversight_level, cg_ag_012_autonomous_governed, status")
         .eq("organisation_id", orgId).eq("agent_type", "autonomous")
         .neq("status", "decommissioned").throwOnError();
       const r = (data as Array<Record<string, unknown>>) ?? [];
       if (r.length === 0) return ans("No autonomous agents registered.", 95, [], r, "autonomous_agents", "Queried agents with agent_type = autonomous. No results.", 0);
       const governed = r.filter((a) => a.cg_ag_012_autonomous_governed).length;
-      const list = r.map((a) => `· ${a.name} (${a.agent_code}) — oversight: ${a.oversight_level}, governed: ${a.cg_ag_012_autonomous_governed}`).join("\n");
-      return ans(`${r.length} autonomous agents. ${governed}/${r.length} governed.\n${list}`, 90, r.map((a) => ({ source: "agents", record: a.agent_code as string, detail: `oversight: ${a.oversight_level}` })), r, "autonomous_agents", `Queried agents where agent_type = autonomous. ${governed} of ${r.length} have CG-AG-012 governance.`, r.length);
+      const rows = r.map(row => projectTalkAgent(row, orgId));
+      const list = rows.map((a) => `· ${a.name} (${a.agent_code}) — ${describeOversight(a)}`).join("\n");
+      return ans(`${r.length} autonomous agents. ${governed}/${r.length} have a historical CG-AG-012 flag (non-authoritative).\n${list}`, 90, rows.map((a) => ({ source: "agents", record: a.agent_code, detail: describeOversight(a) })), rows, "autonomous_agents", `Queried agents where agent_type = autonomous. Manual CG-AG-012 flags do not establish effective supervision.`, r.length);
     },
   },
   {
@@ -129,7 +155,7 @@ const HANDLERS: Array<{
     patterns: [/discover|unregistered|scanned.*agent|agent.*discovered|which.*repositor/i],
     handler: async (orgId) => {
       const { data: pending } = await db.write
-        .from("agents").select("agent_code, name, agent_type, risk_level, external_refs, created_at")
+        .from("agents").select("agent_id, agent_code, name, agent_type, risk_level, oversight_level, external_refs, created_at")
         .eq("organisation_id", orgId).eq("status", "pending_registration")
         .not("external_refs", "is", null).order("created_at", { ascending: false }).throwOnError();
       const p = (pending as Array<Record<string, unknown>>) ?? [];
@@ -142,7 +168,7 @@ const HANDLERS: Array<{
         const d = (a.external_refs as Record<string, Record<string, unknown>>)?.discovery as Record<string, unknown> | undefined;
         return `· ${a.name} (${a.agent_code}) — ${d?.framework ?? "unknown"}`;
       }).join("\n");
-      return ans(`${p.length} agents pending review from ${repos.size} repos. Total discovered: ${total ?? 0}.\n${list}`, 90, p.slice(0, 8).map((a) => ({ source: "agents", record: a.agent_code as string, detail: "Pending review" })), p, "discovery", `Queried agents with status=pending_registration and discovery metadata. ${p.length} found.`, p.length);
+      return ans(`${p.length} agents pending review from ${repos.size} repos. Total discovered: ${total ?? 0}.\n${list}`, 90, p.slice(0, 8).map((a) => ({ source: "agents", record: a.agent_code as string, detail: "Pending review" })), p.map(row => projectTalkAgent(row, orgId)), "discovery", `Queried agents with status=pending_registration and discovery metadata. ${p.length} found.`, p.length);
     },
   },
   {
@@ -172,7 +198,7 @@ const HANDLERS: Array<{
     patterns: [/credential.*expos|expos.*credential|api.*key.*expos|hardcoded.*secret|agent.*secret/i],
     handler: async (orgId) => {
       const { data } = await db.write
-        .from("agents").select("agent_code, name, risk_level, external_refs, status")
+        .from("agents").select("agent_id, agent_code, name, risk_level, oversight_level, external_refs, status")
         .eq("organisation_id", orgId).not("external_refs", "is", null)
         .neq("status", "decommissioned").order("created_at", { ascending: false }).throwOnError();
       const all = (data as Array<Record<string, unknown>>) ?? [];
@@ -183,7 +209,7 @@ const HANDLERS: Array<{
       });
       if (creds.length === 0) return ans("No credential exposure detected in agent code.", 95, [], creds, "credential_exposure", "Scanned external_refs.discovery.lgpd.credentialExposure and lineage. No matches.", 0);
       const list = creds.map((a: Record<string, unknown>) => `· ${a.name} (${a.agent_code}) — legacy risk label: ${a.risk_level} (${LEGACY_RISK_LABEL})`).join("\n");
-      return ans(`${creds.length} agents have credential exposure risks.\n${list}`, 90, creds.map((a) => ({ source: "agents", record: a.agent_code as string, detail: "Credential exposure" })), creds, "credential_exposure", `Scanned ${all.length} agents for credential exposure. ${creds.length} matched.`, creds.length);
+      return ans(`${creds.length} agents have credential exposure risks.\n${list}`, 90, creds.map((a) => ({ source: "agents", record: a.agent_code as string, detail: "Credential exposure" })), creds.map(row => projectTalkAgent(row, orgId)), "credential_exposure", `Scanned ${all.length} agents for credential exposure. ${creds.length} matched.`, creds.length);
     },
   },
   {
@@ -191,7 +217,7 @@ const HANDLERS: Array<{
     patterns: [/external.*sink|send.*data.*external|data.*leaving|outbound.*api|data.*egress|sink.*detected/i],
     handler: async (orgId) => {
       const { data } = await db.write
-        .from("agents").select("agent_code, name, risk_level, external_refs, status")
+        .from("agents").select("agent_id, agent_code, name, risk_level, oversight_level, external_refs, status")
         .eq("organisation_id", orgId).not("external_refs", "is", null)
         .neq("status", "decommissioned").order("created_at", { ascending: false }).throwOnError();
       const all = (data as Array<Record<string, unknown>>) ?? [];
@@ -208,7 +234,7 @@ const HANDLERS: Array<{
         const count = (lineage?.externalSinks as string[] | undefined)?.length ?? 0;
         return `· ${a.name} (${a.agent_code}) — ${count} external sinks`;
       }).join("\n");
-      return ans(`${sinks.length} agents have external data sinks.\n${list}`, 90, sinks.map((a) => ({ source: "agents", record: a.agent_code as string, detail: "External sinks" })), sinks, "external_sinks", `Scanned ${all.length} agents for external sinks. ${sinks.length} matched.`, sinks.length);
+      return ans(`${sinks.length} agents have external data sinks.\n${list}`, 90, sinks.map((a) => ({ source: "agents", record: a.agent_code as string, detail: "External sinks" })), sinks.map(row => projectTalkAgent(row, orgId)), "external_sinks", `Scanned ${all.length} agents for external sinks. ${sinks.length} matched.`, sinks.length);
     },
   },
   {
@@ -216,7 +242,7 @@ const HANDLERS: Array<{
     patterns: [/governance.*finding|finding.*governance|agent.*finding|compliance.*finding|LGPD.*finding|issue.*agent/i],
     handler: async (orgId) => {
       const { data } = await db.write
-        .from("agents").select("agent_code, name, risk_level, external_refs, status")
+        .from("agents").select("agent_id, agent_code, name, risk_level, oversight_level, external_refs, status")
         .eq("organisation_id", orgId).not("external_refs", "is", null)
         .neq("status", "decommissioned").order("created_at", { ascending: false }).throwOnError();
       const all = (data as Array<Record<string, unknown>>) ?? [];
@@ -245,7 +271,7 @@ const HANDLERS: Array<{
         const f = lgpd?.findings as Array<Record<string, string>> | undefined;
         return `· ${a.name} (${a.agent_code}) — ${f?.length ?? 0} findings`;
       }).join("\n");
-      return ans(`${findings.length} agents have governance findings (${totalFindings} total, ${critical.length} with critical).\n${list}`, 90, findings.slice(0, 8).map((a) => ({ source: "agents", record: a.agent_code as string, detail: "Governance findings" })), findings, "governance_findings", `Scanned ${all.length} agents for LGPD findings. ${findings.length} with findings.`, findings.length);
+      return ans(`${findings.length} agents have governance findings (${totalFindings} total, ${critical.length} with critical).\n${list}`, 90, findings.slice(0, 8).map((a) => ({ source: "agents", record: a.agent_code as string, detail: "Governance findings" })), findings.map(row => projectTalkAgent(row, orgId)), "governance_findings", `Scanned ${all.length} agents for LGPD findings. ${findings.length} with findings.`, findings.length);
     },
   },
   {
@@ -551,20 +577,20 @@ export async function buildGovernanceContext(orgId: string): Promise<GovernanceE
   const evidence: GovernanceEvidence[] = [];
 
   const [{ data: agents }, { data: systems }, { data: gaps }, { data: incidents }] = await Promise.all([
-    db.write.from("agents").select("agent_code, name, risk_level, agent_type, oversight_level, status, cg_ag_002_owner, cg_ag_008_audit_trail").eq("organisation_id", orgId).neq("status", "decommissioned").limit(15).throwOnError(),
+    db.write.from("agents").select("agent_id, agent_code, name, risk_level, agent_type, oversight_level, status").eq("organisation_id", orgId).neq("status", "decommissioned").limit(15).throwOnError(),
     db.write.from("ai_systems").select("system_code, name, risk_class, lifecycle, status").eq("organisation_id", orgId).neq("status", "decommissioned").limit(10).throwOnError(),
     db.write.rpc("agent_compliance_gaps", { p_organisation_id: orgId }).throwOnError(),
     db.write.from("ict_incidents").select("incident_code, title, severity, status, occurred_at").eq("organisation_id", orgId).not("status", "in", '("resolved","closed")').order("occurred_at", { ascending: false }).limit(5).throwOnError(),
   ]);
 
   for (const a of (agents as Array<Record<string, unknown>>) ?? []) {
-    evidence.push({ type: "agent", source: "agents", record: a.agent_code as string, fields: a });
+    evidence.push({ type: "agent", source: "agents", record: a.agent_code as string, fields: projectTalkAgent(a, orgId) });
   }
   for (const s of (systems as Array<Record<string, unknown>>) ?? []) {
     evidence.push({ type: "system", source: "ai_systems", record: s.system_code as string, fields: s });
   }
   for (const g of ((gaps as Array<Record<string, unknown>>) ?? []).slice(0, 10)) {
-    evidence.push({ type: "gap", source: "agent_compliance_gaps", record: g.agent_code as string, fields: g });
+    evidence.push({ type: "gap", source: "agent_compliance_gaps", record: g.agent_code as string, fields: projectLegacyGap(g) });
   }
   for (const i of (incidents as Array<Record<string, unknown>>) ?? []) {
     evidence.push({ type: "incident", source: "ict_incidents", record: i.incident_code as string, fields: i });
@@ -582,12 +608,26 @@ export async function semanticSearch(orgId: string, embedding: number[], limit: 
   }).throwOnError();
 
   const results = (data as Array<Record<string, unknown>>) ?? [];
-  return results.map((r) => ({
-    type: "semantic",
-    source: "agent_embeddings",
-    record: r.agent_code as string,
-    fields: r,
-  }));
+  if (results.length === 0) return [];
+  // The legacy RPC scopes embeddings, but its joined agent is not tenant-bound (LX03).
+  // Re-read returned identities before disclosing agent fields or assigning provenance.
+  const { data: admitted } = await db.write.from("agents")
+    .select("agent_id, agent_code, name, agent_type, risk_level, oversight_level, ai_system_id, status")
+    .eq("organisation_id", orgId).in("agent_id", results.map(row => row.agent_id))
+    .neq("status", "decommissioned").throwOnError();
+  const agents = (admitted as Record<string, unknown>[]) ?? [];
+  return results.flatMap((r) => {
+    const agent = agents.find(row => row.agent_id === r.agent_id);
+    if (!agent) return [];
+    return [{
+      type: "semantic",
+      source: "agent_embeddings",
+      record: agent.agent_code as string,
+      fields: { ...projectTalkAgent(agent, orgId), similarity: r.similarity,
+        content_snippet: typeof r.content_snippet === "string" ? containLegacyOversightText(r.content_snippet) : null,
+        content_authority: "DERIVED_NON_AUTHORITATIVE" },
+    }];
+  });
 }
 
 export function formatContextForLLM(evidence: GovernanceEvidence[]): string {
@@ -599,4 +639,9 @@ export function formatContextForLLM(evidence: GovernanceEvidence[]): string {
       .join("\n");
     return `${label}\n${fields}`;
   }).join("\n\n");
+}
+
+function projectLegacyGap(row: Record<string, unknown>) {
+  return { agent_id: row.agent_id, agent_code: row.agent_code, agent_name: row.agent_name,
+    risk_level: row.risk_level, total_gaps: row.total_gaps, authority: "LEGACY_NON_AUTHORITATIVE" };
 }

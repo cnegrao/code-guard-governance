@@ -8,41 +8,7 @@ import type {
   UnifiedGraph,
 } from "@/services/knowledge-graph";
 
-export interface GraphNode {
-  agent_id: string;
-  agent_code: string;
-  name: string;
-  agent_type: string;
-  risk_level: string;
-  oversight_level: string;
-  status: string;
-  deployment_env: string;
-  model_name: string | null;
-  cg_ag_001_registered: boolean;
-  cg_ag_002_owner: boolean;
-  cg_ag_003_model_reg: boolean;
-  cg_ag_007_oversight: boolean;
-  cg_ag_008_audit_trail: boolean;
-  cg_ag_010_classified: boolean;
-  cg_ag_012_autonomous_governed: boolean;
-  external_refs?: Record<string, unknown>;
-  enrichment?: {
-    trustZone?: string;
-    governancePriority?: string;
-    complianceExposure?: string;
-    aiActExposure?: string;
-    doraExposure?: boolean;
-    containsPii?: boolean;
-    containsFinancial?: boolean;
-    containsHealth?: boolean;
-    lineageRiskLevel?: string;
-    costEstimate?: number;
-    costRisk?: string;
-    fapiCompliant?: boolean;
-    financialServices?: boolean;
-  };
-  business_domain?: string;
-}
+export type GraphNode = AgentGraphNode;
 
 export interface GraphEdge {
   id: string;
