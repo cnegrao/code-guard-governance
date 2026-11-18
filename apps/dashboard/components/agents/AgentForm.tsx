@@ -31,6 +31,7 @@ const AI_ACT_CLASSES = [
 ];
 
 const OVERSIGHT_LEVELS = [
+  { value: "", label: "Select a historical label explicitly" },
   { value: "l1_automated", label: "L1 — Automated" },
   { value: "l2_human_review", label: "L2 — Human Review" },
   { value: "l3_human_approval", label: "L3 — Human Approval" },
@@ -43,7 +44,12 @@ const DEPLOY_ENVS = [
   { value: "production", label: "Production" },
 ];
 
-export function AgentForm() {
+interface AgentOwnerOption {
+  user_id: string;
+  full_name: string;
+}
+
+export function AgentForm({ owners }: { owners: AgentOwnerOption[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -56,7 +62,8 @@ export function AgentForm() {
     agent_type: "assistive",
     risk_level: "medium",
     ai_act_risk_class: "minimal",
-    oversight_level: "l2_human_review",
+    oversight_level: "",
+    owner_user_id: "",
     model_name: "",
     model_provider: "",
     model_version: "1.0",
@@ -74,6 +81,14 @@ export function AgentForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!form.oversight_level) {
+      setError("Choose a historical oversight label explicitly. This does not prove supervision.");
+      return;
+    }
+    if (!owners.some((owner) => owner.user_id === form.owner_user_id)) {
+      setError("Choose an active responsible owner from your organisation.");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -145,6 +160,27 @@ export function AgentForm() {
             required
           />
         </div>
+        <div className="mt-4">
+          <Select
+            label="Responsible owner"
+            aria-label="Responsible owner"
+            aria-describedby="agent-owner-help"
+            name="owner_user_id"
+            options={[
+              { value: "", label: "Select a responsible owner" },
+              ...owners.map((owner) => ({ value: owner.user_id, label: owner.full_name })),
+            ]}
+            value={form.owner_user_id}
+            onChange={(e) => set("owner_user_id", e.target.value)}
+            required
+            disabled={loading || owners.length === 0}
+          />
+          <p id="agent-owner-help" className="mt-2 text-xs text-gray-400">
+            {owners.length === 0
+              ? "No active owners available in your organisation. Contact your administrator."
+              : "Choose an active user from your organisation. The owner is checked again when you submit."}
+          </p>
+        </div>
       </div>
 
       <div className="border-b border-border-dark pb-4">
@@ -171,12 +207,18 @@ export function AgentForm() {
             onChange={(e) => set("ai_act_risk_class", e.target.value)}
           />
           <Select
-            label="Oversight Level"
+            label="Historical oversight label (unverified)"
             options={OVERSIGHT_LEVELS}
             value={form.oversight_level}
             onChange={(e) => set("oversight_level", e.target.value)}
+            required
+            aria-describedby="oversight-limitation"
           />
         </div>
+        <p id="oversight-limitation" className="mt-3 text-xs text-gray-400">
+          Effective oversight: UNKNOWN / NOT_EVIDENCED. NON_AUTHORITATIVE — a recorded label
+          does not prove supervision. Applicability and sufficiency are unknown.
+        </p>
       </div>
 
       <div className="border-b border-border-dark pb-4">
@@ -247,7 +289,7 @@ export function AgentForm() {
       </div>
 
       <div className="flex gap-3">
-        <Button type="submit" loading={loading}>
+        <Button type="submit" loading={loading} disabled={owners.length === 0}>
           Create Agent
         </Button>
         <Button type="button" variant="ghost" onClick={() => router.back()}>

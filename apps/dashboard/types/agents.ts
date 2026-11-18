@@ -47,7 +47,7 @@ export interface AgentRecord extends Agent {
   external_refs: Record<string, unknown> | null;
 }
 
-/** Detail responses separate unverified history from effective supervision. */
+/** Registry responses (list/create/detail/update) separate unverified history from effective supervision. */
 export interface AgentDetailAgent extends Omit<Agent, "oversight_level"> {
   oversight_level: "UNKNOWN";
   oversight: {

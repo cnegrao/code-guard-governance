@@ -1,6 +1,19 @@
 import { AgentForm } from "@/components/agents/AgentForm";
+import { redirect } from "next/navigation";
+import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
+import { getUsersByOrg } from "@/repositories/users";
 
-export default function NewAgentPage() {
+export default async function NewAgentPage() {
+  let principal;
+  try {
+    principal = await requireVerifiedGovernancePrincipal();
+  } catch (error) {
+    if (error instanceof SessionAuthenticationError) redirect("/login");
+    throw error;
+  }
+  const owners = (await getUsersByOrg(principal.organisationId))
+    .map(({ user_id, full_name }) => ({ user_id, full_name }));
+
   return (
     <div>
       <div className="mb-6">
@@ -9,7 +22,7 @@ export default function NewAgentPage() {
           Add a new AI agent to the governance registry
         </p>
       </div>
-      <AgentForm />
+      <AgentForm owners={owners} />
     </div>
   );
 }
