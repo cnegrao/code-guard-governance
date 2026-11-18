@@ -5,6 +5,7 @@ import { getLLMProvider, GOVERNANCE_SYSTEM_PROMPT } from "@/lib/llm";
 import { generateGovernanceAnswer } from "@/lib/runtime/openai-governance-answer-producer";
 import { semanticSearch } from "@/services/coding-memory";
 import type { GovernanceAnswer } from "@/repositories/talk";
+import { containLegacyOversightText, mentionsOversight, OVERSIGHT_LIMITATION } from "@/lib/agent-detail-dto";
 
 const MEMORY: Map<string, Array<{ query: string; answer: string }>> = new Map();
 
@@ -53,7 +54,7 @@ export async function ask(principal: GovernanceWritePrincipal, query: string): P
 
   const evidence = await talkRepo.buildGovernanceContext(orgId);
 
-if (llm.available) {
+  if (llm.available) {
     let enhancedContext = talkRepo.formatContextForLLM(evidence);
 
     try {
@@ -69,12 +70,14 @@ if (llm.available) {
     try {
       const codingMemoryContext = await semanticSearch(orgId, query, 5);
       if (codingMemoryContext) {
-        enhancedContext += "\n\n--- Coding Memory (Repository Intelligence) ---\n" + codingMemoryContext;
+        enhancedContext += "\n\n--- Coding Memory (Repository Intelligence; derived, non-authoritative) ---\n" + containLegacyOversightText(codingMemoryContext);
       }
     } catch {}
 
     try {
-      const llmAnswer = await generateGovernanceAnswer(llm, orgId, GOVERNANCE_SYSTEM_PROMPT, enhancedContext, query);
+      const llmAnswer = await generateGovernanceAnswer(llm, orgId,
+        `${GOVERNANCE_SYSTEM_PROMPT}\n${OVERSIGHT_LIMITATION}\nNever infer effective supervision from historical labels, manual flags, semantic snippets or coding memory.`,
+        enhancedContext, query);
 
       if (llmAnswer.trim()) {
         const citations = evidence.slice(0, 5).map((e) => ({
@@ -84,7 +87,9 @@ if (llm.available) {
         }));
 
         const answer: GovernanceAnswer = {
-          answer: llmAnswer.trim(),
+          // Model prose is not an admitted oversight input. Keep this deterministic
+          // boundary on the returned answer as well as on retrieval and the prompt.
+          answer: mentionsOversight(llmAnswer) ? OVERSIGHT_LIMITATION : llmAnswer.trim(),
           confidence: 78,
           citations,
           supportingData: evidence.map((e) => e.fields),

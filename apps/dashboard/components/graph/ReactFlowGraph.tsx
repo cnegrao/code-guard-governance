@@ -14,41 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Spinner } from "@/components/ui/Spinner";
-
-interface AgentGraphNode {
-  agent_id: string; agent_code: string; name: string; agent_type: string;
-  risk_level: string; oversight_level: string; status: string;
-  deployment_env: string; model_name: string | null;
-  ai_system_id?: string | null;
-  business_domain?: string;
-  enrichment?: {
-    trustZone?: string;
-    governancePriority?: string;
-    complianceExposure?: string;
-    aiActExposure?: string;
-    doraExposure?: boolean;
-    containsPii?: boolean;
-    containsFinancial?: boolean;
-    containsHealth?: boolean;
-    lineageRiskLevel?: string;
-    costEstimate?: number;
-    costRisk?: string;
-    fapiCompliant?: boolean;
-    financialServices?: boolean;
-  };
-}
-
-interface DiscoveryGraphNode {
-  id: string; nodeType: string; label: string; layer: number;
-  metadata: Record<string, unknown>;
-}
-
-type UnifiedGraphNode = AgentGraphNode | DiscoveryGraphNode;
-
-interface UnifiedGraphEdge {
-  id: string; source: string; target: string;
-  type: string; metadata: Record<string, unknown>;
-}
+import type { AgentGraphNode, DiscoveryGraphNode, UnifiedGraphNode, UnifiedGraphEdge } from "@/services/knowledge-graph";
 
 function isAgentNode(n: UnifiedGraphNode): n is AgentGraphNode {
   return "agent_id" in n;
@@ -81,7 +47,7 @@ const discoveryShapes: Record<string, string> = {
   incident: "3px", third_party: "3px", finding: "8px",
   regulation: "50%", evidence: "3px", control: "3px",
 };
-const edgeLabels: Record<string, string> = { CALLS_AGENT: "calls", DELEGATES_TO: "delegates", SUPERVISES: "supervises", DEPENDS_ON: "depends", ESCALATES_TO: "escalates", ORCHESTRATES: "orchestrates", FALLBACK_TO: "fallback", PEER_COORDINATES: "coordinates", contains: "contains", belongs_to: "belongs to", processes: "processes", depends_on: "depends", exposes: "exposes" };
+const edgeLabels: Record<string, string> = { CALLS_AGENT: "calls", DELEGATES_TO: "delegates", SUPERVISES: "recorded supervision relation (unverified)", DEPENDS_ON: "depends", ESCALATES_TO: "escalates", ORCHESTRATES: "orchestrates", FALLBACK_TO: "fallback", PEER_COORDINATES: "coordinates", contains: "contains", belongs_to: "belongs to", processes: "processes", depends_on: "depends", exposes: "exposes" };
 
 function dagreLayout(nodes: Node[], edges: Edge[]): Node[] {
   const g = new dagre.graphlib.Graph();
@@ -355,7 +321,10 @@ function GraphCanvas() {
               <div className="flex justify-between"><span className="text-gray-500">Code</span><span className="text-white">{selectedNode.agent_code}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="text-white">{selectedNode.agent_type}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Legacy risk label</span><LegacyRiskBadge value={selectedNode.risk_level} /></div>
-              <div className="flex justify-between"><span className="text-gray-500">Oversight</span><span className="text-white">{selectedNode.oversight_level}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Effective oversight</span><span className="text-white">UNKNOWN / NOT_EVIDENCED</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Historical oversight label (unverified)</span><span className="text-white">{selectedNode.oversight?.recordedLevel === null || selectedNode.oversight?.recordedLevel === undefined ? "No recorded label returned" : selectedNode.oversight.recordedLevel === "" ? "(empty)" : selectedNode.oversight.recordedLevel}</span></div>
+              <p className="text-gray-400">NON_AUTHORITATIVE. Historical labels and manual flags do not prove effective supervision. Applicability and sufficiency are unknown.</p>
+              {selectedNode.oversight?.source && <p className="text-gray-500">Source: {selectedNode.oversight.source.table}.{selectedNode.oversight.source.field} · organisation {selectedNode.oversight.source.organisationId} · agent {selectedNode.oversight.source.agentId}</p>}
               <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="text-white">{selectedNode.status}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Model</span><span className="text-white">{selectedNode.model_name ?? "—"}</span></div>
             </div>
@@ -383,7 +352,7 @@ function GraphCanvas() {
                 <div className="mt-2 pt-2 border-t border-border-dark">
                   <span className={`text-xs ${selectedNode.label.includes("conformity") || selectedNode.label.includes("registered") ? "text-danger" : "text-warning"}`}>
                     {selectedNode.label.includes("conformity") ? "AI Act conformity required" :
-                     selectedNode.label.includes("human") ? "Human oversight required" :
+                     selectedNode.label.includes("human") || selectedNode.label.includes("oversight") ? "Historical oversight flag (non-authoritative); effective oversight UNKNOWN / NOT_EVIDENCED" :
                      "Compliance gap detected"}
                   </span>
                 </div>

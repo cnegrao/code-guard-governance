@@ -1,7 +1,11 @@
 import { db } from "@/lib/db";
 import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
+import { projectAgentOversight, containLegacyOversightText } from "@/lib/agent-detail-dto";
+import { legacyControlEnvelope, LEGACY_CONTROL_AUTHORITY, type LegacyControlEnvelope } from "@/lib/legacy-control-dto";
+import type { AgentDetailAgent } from "@/types/agents";
+import { resolveLegacyControlState } from "@/repositories/agents";
 
-export interface AgentGraphNode {
+export interface AgentGraphNode extends LegacyControlEnvelope {
   agent_id: string;
   agent_code: string;
   name: string;
@@ -9,14 +13,14 @@ export interface AgentGraphNode {
   /** LEGACY agents.risk_level label (M17-S0): never governed risk, never an L15 input. */
   risk_level: string;
   risk_level_authority: typeof LEGACY_RISK_LABEL;
-  oversight_level: string;
+  oversight_level: "UNKNOWN";
+  oversight: AgentDetailAgent["oversight"];
   status: string;
   deployment_env: string;
   model_name: string | null;
   cg_ag_001_registered: boolean;
   cg_ag_002_owner: boolean;
   cg_ag_003_model_reg: boolean;
-  cg_ag_007_oversight: boolean;
   cg_ag_008_audit_trail: boolean;
   cg_ag_010_classified: boolean;
   cg_ag_012_autonomous_governed: boolean;
@@ -333,7 +337,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
   const agents = (rawAgents as Record<string, unknown>[]) ?? [];
   const agentEdges = (rawEdges as Record<string, unknown>[]) ?? [];
 
-  const agentNodes: AgentGraphNode[] = agents.map((a) => {
+  const agentNodes: Array<AgentGraphNode & { cg_ag_007_oversight: boolean }> = agents.map((a) => {
     const discovery = (a.external_refs as Record<string, Record<string, unknown>> | undefined)?.discovery as Record<string, unknown> | undefined;
     const summary = discovery?.summary as Record<string, unknown> | undefined;
     const lineage = discovery?.lineage as Record<string, unknown> | undefined;
@@ -347,7 +351,9 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
       agent_type: a.agent_type as string,
       risk_level: a.risk_level as string,
       risk_level_authority: LEGACY_RISK_LABEL,
-      oversight_level: a.oversight_level as string,
+      oversight_level: "UNKNOWN" as const,
+      oversight: projectAgentOversight({ oversight_level: a.oversight_level, organisation_id: orgId, agent_id: a.agent_id as string }),
+      ...legacyControlEnvelope({ cg_ag_007_oversight: resolveLegacyControlState(a, "cg_ag_007_oversight") }, []),
       status: a.status as string,
       deployment_env: a.deployment_env as string,
       model_name: a.model_name as string | null,
@@ -386,6 +392,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
     target: e.target_agent_id as string,
     type: e.relationship_type as string,
     metadata: {
+      ...(e.relationship_type === "SUPERVISES" ? { authority: LEGACY_CONTROL_AUTHORITY, basis: "RECORDED_RELATIONSHIP_NOT_EFFECTIVE_SUPERVISION" } : {}),
       carries_pii: e.carries_pii,
       carries_phi: e.carries_phi,
       carries_financial: e.carries_financial,
@@ -425,7 +432,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
         cg_sys_003_risk_classified: s.cg_sys_003_risk_classified,
         cg_sys_004_tech_doc: s.cg_sys_004_tech_doc,
         cg_sys_005_risk_mgmt: s.cg_sys_005_risk_mgmt,
-        cg_sys_006_human_oversight: s.cg_sys_006_human_oversight,
+        ...legacyControlEnvelope({ cg_sys_006_human_oversight: resolveLegacyControlState(s, "cg_sys_006_human_oversight") }, []),
         cg_sys_007_conformity: s.cg_sys_007_conformity,
         cg_sys_008_post_market: s.cg_sys_008_post_market,
         systemComplianceScore,
@@ -453,8 +460,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
     }
 
     for (const cgKey of Object.keys(s).filter((k) => k.startsWith("cg_sys_"))) {
-      const controlStates: Record<string, string> = ((s.external_refs as Record<string, unknown>)?.controlStates ?? {}) as Record<string, string>;
-      const state = controlStates[cgKey] ?? (s[cgKey] === true ? "passed" : "not_assessed");
+      const state = resolveLegacyControlState(s, cgKey);
       if (state !== "failed") continue;
       const ctrlId = sanitizeId(`ctrl_${cgKey}`);
       const existingCtrl = nodes.find((n) => !isAgentNode(n) && n.id === ctrlId);
@@ -464,7 +470,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
           nodeType: "control",
           label: cgKey,
           layer: 5,
-          metadata: { control_key: cgKey, entity_type: "ai_system" },
+          metadata: { control_key: cgKey, entity_type: "ai_system", authority: LEGACY_CONTROL_AUTHORITY },
         } as DiscoveryGraphNode);
       }
       edges.push({
@@ -472,7 +478,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
         source: sysId,
         target: ctrlId,
         type: "violates",
-        metadata: {},
+        metadata: { authority: LEGACY_CONTROL_AUTHORITY },
       });
     }
   }
@@ -581,9 +587,8 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
   }
 
   for (const a of agentNodes) {
-    const controlStates: Record<string, string> = ((a.external_refs as Record<string, unknown>)?.controlStates ?? {}) as Record<string, string>;
     for (const cgKey of Object.keys(a).filter((k) => k.startsWith("cg_ag_"))) {
-      const state = controlStates[cgKey] ?? (a[cgKey as keyof AgentGraphNode] === true ? "passed" : "not_assessed");
+      const state = resolveLegacyControlState(a, cgKey);
       if (state !== "failed") continue;
       const ctrlId = sanitizeId(`ctrl_${cgKey}`);
       const existingCtrl = nodes.find((n) => !isAgentNode(n) && n.id === ctrlId);
@@ -593,7 +598,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
           nodeType: "control",
           label: cgKey,
           layer: 5,
-          metadata: { control_key: cgKey, entity_type: "agent" },
+          metadata: { control_key: cgKey, entity_type: "agent", authority: LEGACY_CONTROL_AUTHORITY },
         } as DiscoveryGraphNode);
       }
       const edgeId = `${a.agent_id}-violates-${ctrlId}`;
@@ -603,7 +608,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
           source: a.agent_id,
           target: ctrlId,
           type: "violates",
-          metadata: {},
+          metadata: { authority: LEGACY_CONTROL_AUTHORITY },
         });
       }
     }
@@ -635,20 +640,22 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
 
     for (let i = 0; i < Math.min(allEvidence.length, 5); i++) {
       const ev = allEvidence[i];
+      const matchText = containLegacyOversightText(String(ev.matchText ?? ""));
       const evId = sanitizeId(`ev_${a.agent_id}_${i}`);
       const existingEv = nodes.find((n) => !isAgentNode(n) && n.id === evId);
       if (!existingEv) {
         nodes.push({
           id: evId,
           nodeType: "evidence",
-          label: typeof ev.matchText === "string" && ev.matchText.length > 60 ? ev.matchText.slice(0, 60) + "..." : String(ev.matchText),
+          label: matchText.length > 60 ? matchText.slice(0, 60) + "..." : matchText,
           layer: 5,
           metadata: {
             source: a.agent_code,
+            authority: "DERIVED_NON_AUTHORITATIVE",
             filePath: ev.filePath,
             lineNumber: ev.lineNumber,
-            matchText: ev.matchText,
-            evidence: evidenceList[i] ?? ev.matchText,
+            matchText,
+            evidence: containLegacyOversightText(String(evidenceList[i] ?? matchText)),
           },
         } as DiscoveryGraphNode);
       }
@@ -659,7 +666,7 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
           source: evId,
           target: a.agent_id,
           type: "supports",
-          metadata: {},
+          metadata: { authority: "DERIVED_NON_AUTHORITATIVE" },
         });
       }
     }
@@ -735,7 +742,19 @@ export async function getUnifiedGraph(orgId: string): Promise<UnifiedGraph> {
   const svcCount = nodes.filter((n) => !isAgentNode(n) && n.nodeType === "service").length;
 
   return {
-    nodes,
+    nodes: nodes.map(node => {
+      if (!isAgentNode(node)) return node;
+      // Raw refs are needed only while constructing the graph. Expose the scalar
+      // locators used by Talk, never historical nested oversight/ledger payloads.
+      const { external_refs, cg_ag_007_oversight: _historicalFlag, ...publicNode } = node as AgentGraphNode & { cg_ag_007_oversight?: boolean };
+      const discovery = external_refs?.discovery as Record<string, unknown> | undefined;
+      const locators = Object.fromEntries(["repository", "framework", "filePath"].flatMap(key =>
+        typeof discovery?.[key] === "string" ? [[key, discovery[key]]] : []));
+      return { ...publicNode,
+        enrichment: Object.fromEntries(Object.entries(publicNode.enrichment ?? {}).filter(([, value]) =>
+          ["string", "boolean", "number"].includes(typeof value))),
+        external_refs: { discovery: { ...locators, isAutonomous: discovery?.isAutonomous === true } } };
+    }),
     edges,
     agentCount,
     discoveryCount: discCount,

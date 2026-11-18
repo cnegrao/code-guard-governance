@@ -114,6 +114,18 @@ export async function updateAgent(
   return data as AgentRecord;
 }
 
+/** Resolve a recorded legacy state; a false/missing flag is not a recorded failure. */
+export function resolveLegacyControlState(record: object, key: string): ControlState {
+  const raw = record as Record<string, unknown>;
+  const controlStates = (raw.external_refs as Record<string, unknown> | null | undefined)?.controlStates as Record<string, unknown> | null | undefined;
+  const recorded = controlStates?.[key];
+  if (recorded === "not_assessed" || recorded === "passed" || recorded === "failed" || recorded === "waived") {
+    return recorded;
+  }
+  if (recorded !== undefined && recorded !== "") return "not_assessed";
+  return raw[key] === true ? "passed" : "not_assessed";
+}
+
 export async function getAgentCompliance(
   orgId: string,
   agentId: string
@@ -145,7 +157,6 @@ export async function getAgentCompliance(
   }
 
   const raw = data as Record<string, unknown>;
-  const controlStates: Record<string, string> = ((raw.external_refs as Record<string, unknown>)?.controlStates ?? {}) as Record<string, string>;
 
   const controlKeys = [
     "cg_ag_001_registered",
@@ -164,13 +175,7 @@ export async function getAgentCompliance(
 
   const flags: Record<string, ControlState> = {};
   for (const key of controlKeys) {
-    if (controlStates[key]) {
-      flags[key] = controlStates[key] as ControlState;
-    } else if (raw[key] === true) {
-      flags[key] = "passed";
-    } else {
-      flags[key] = "not_assessed";
-    }
+    flags[key] = resolveLegacyControlState(raw, key);
   }
 
   return flags as unknown as ComplianceFlags;
