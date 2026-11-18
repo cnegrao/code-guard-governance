@@ -1,8 +1,8 @@
-import { projectAgent, legacyControlEnvelope } from "@/lib/legacy-control-dto";
+import { legacyControlEnvelope } from "@/lib/legacy-control-dto";
 import { projectAgentDetail } from "@/lib/agent-detail-dto";
 import * as agentRepo from "@/repositories/agents";
 import { createAgentSchema, updateAgentSchema } from "@/lib/validation";
-import type { Agent, AgentDetail, AgentDetailAgent, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
+import type { AgentDetail, AgentDetailAgent, AgentFilters, ComplianceFlags, ControlState } from "@/types/agents";
 import type { CreateAgentInput, UpdateAgentInput } from "@/lib/validation";
 import { db } from "@/lib/db";
 import { CG_AG_CONTROLS } from "@council/scanner";
@@ -11,9 +11,9 @@ import { assertTransition } from "@/lib/lifecycle";
 export async function listAgents(
   orgId: string,
   filters?: AgentFilters
-): Promise<{ agents: Agent[]; total: number }> {
+): Promise<{ agents: AgentDetailAgent[]; total: number }> {
   const result = await agentRepo.getAgents(orgId, filters);
-  return { agents: result.agents.map(projectAgent), total: result.total };
+  return { agents: result.agents.map(projectAgentDetail), total: result.total };
 }
 
 export async function getAgent(
@@ -31,7 +31,7 @@ export async function registerAgent(
   orgId: string,
   userId: string,
   input: CreateAgentInput
-): Promise<Agent> {
+): Promise<AgentDetailAgent> {
   const validated = createAgentSchema.parse(input);
 
   const { data: owner } = await db.write
@@ -46,7 +46,7 @@ export async function registerAgent(
     throw new Error("Owner not found, not active, or not in your organisation");
   }
 
-  return projectAgent(await agentRepo.createAgent(orgId, userId, validated));
+  return projectAgentDetail(await agentRepo.createAgent(orgId, userId, validated));
 }
 
 export async function updateAgent(
