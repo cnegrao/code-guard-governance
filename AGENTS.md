@@ -8,3 +8,4 @@
 - Hosted mutation requires explicit Carlos authorization. Deployment and production changes require explicit authorization.
 - Stop on architecture conflict, missing dependency, a historical migration or hosted mutation requirement, or scope ambiguity. Report the blocker before proceeding.
 - No review-of-review loops or repeated full-regression loops.
+- Read [GOVIA_MASTER.md](GOVIA_MASTER.md) before starting work for task authorization, scope, status, and decisions.

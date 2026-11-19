@@ -7,3 +7,4 @@
 - Never edit historical migrations. Hosted mutation requires explicit Carlos authorization; deployment and production changes require explicit authorization.
 - Stop on architecture conflict, missing dependency, a historical migration or hosted mutation requirement, or scope ambiguity.
 - No review-of-review loops or repeated full-regression loops.
+- Read [GOVIA_MASTER.md](GOVIA_MASTER.md) before starting work for task authorization, scope, status, and decisions.
