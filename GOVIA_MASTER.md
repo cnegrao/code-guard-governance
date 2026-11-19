@@ -1,14 +1,14 @@
 # GOV IA — MASTER ÚNICO DE GOVERNANÇA, RECUPERAÇÃO E EXECUÇÃO
 
 **Arquivo oficial proposto:** `GOVIA_MASTER.md` (preferencialmente na raiz de `cnegrao/code-guard-governance`)  
-**Documento ID:** `GOVIA-MASTER-001` · **Versão do conteúdo:** `1.0.0-rc3` · **Data de consolidação:** 19/11/2026 (Brasília)  
-**Estado de publicação:** **PR DOCUMENTAL AUTORIZADO; CRIAÇÃO BLOQUEADA POR PERMISSÃO GITHUB (HTTP 403); NÃO PUBLICADO** · **Aprovador:** Carlos  
+**Documento ID:** `GOVIA-MASTER-001` · **Versão do conteúdo:** `1.0.0-rc4` · **Data de consolidação:** 19/11/2026 (Brasília)  
+**Estado de publicação:** [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) **ABERTO — EM REVISÃO (draft)** · **Aprovador:** Carlos  
 **Baseline Git verificada:** `main@462751b239d1374f71337ddb6d525e27e1c9b267`  
-**Escopo da aprovação já concedida:** (i) matriz REC-01–14 e Fase 0 documental; (ii) preparação GOV-001/GOV-002 sem mutação; (iii) adoção do conceito de **um arquivo único de gestão**. **Carlos autorizou a criação de PR documental GOV-001 em 19/11/2026, sem merge. A tentativa de criar a branch foi recusada pelo GitHub (HTTP 403); aceite final, merge e ativação de proteções continuam sujeitos a autorizações separadas.**
+**Escopo da aprovação já concedida:** (i) matriz REC-01–14 e Fase 0 documental; (ii) preparação GOV-001/GOV-002 sem mutação; (iii) adoção do conceito de **um arquivo único de gestão**. **Carlos autorizou a criação de PR documental GOV-001 em 19/11/2026, sem merge. O [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) foi aberto em draft. Aceite final, merge e ativação de proteções continuam sujeitos a autorizações separadas.**
 
 > **REGRA DE OURO — UMA FONTE DE GESTÃO:** este é o **único arquivo ativo** de plano, WBS, status, decisões, riscos, evidências, handoff e contrato operacional do GOV IA. A arquitetura congelada, ADRs, código, testes, migrações e workflows continuam existindo como **fontes técnicas de verdade e provas**, não como planos de gestão concorrentes. Excel, PDFs, checkpoints e pacotes anteriores são arquivos históricos: não receberão atualizações paralelas. Alteração de status só neste master, mediante evidência e autorização.
 
-> **ESTADO INVIOLÁVEL:** `M17.5 = OPEN` · `M18 = HOLD` · `F0 = ABERTA` · `GOV-001 = PR AUTORIZADO / BLOQUEADO POR PERMISSÃO` · `GOV-002 = DESENHADO / NÃO ATIVADO` · `EXPOSIÇÃO EXTERNA = NO-GO ATÉ DECISÃO ESPECÍFICA`. Nenhum registro neste arquivo constitui autorização automática de código, PR, merge, migração, banco, hosted, deploy, segredo ou publicação.
+> **ESTADO INVIOLÁVEL:** `M17.5 = OPEN` · `M18 = HOLD` · `FASE 0 = ABERTA` · `GOV-001 = PR #88 ABERTO — EM REVISÃO` · `GOV-002 = NÃO IMPLANTADO` · `EXPOSIÇÃO EXTERNA = NO-GO ATÉ DECISÃO ESPECÍFICA`. Nenhum registro neste arquivo constitui autorização automática de código, PR, merge, migração, banco, hosted, deploy, segredo ou publicação.
 
 ## Índice operacional
 
@@ -40,10 +40,10 @@
 | M18 | HOLD; Executive S1 já integrado, não aceito | Respeitar predecessor M17.5 e aceite de personas |
 | BYOM | Candidato funcional local, feature flag; não SaaS | Triagem de segurança/compatibilidade para autorização específica |
 | SR2-A4 | BLOCKED; V2 preservada, V3 não promover; MPNet/Voyage experimentais | Nova hipótese e aceitação de qualidade, não tuning circular |
-| Governança | GOV-001 autorizado para PR, bloqueado por permissão GitHub; GOV-002 não implantado | Restaurar acesso de escrita autorizado e publicar PR documental; CI/ruleset depois |
+| Governança | GOV-001: [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) aberto em draft, em revisão. GOV-002: não implantado | Revisão documental e aceite explícito. Merge e GOV-002 exigem autorizações separadas |
 | Demo externa | NO-GO | D01–D09 relevantes, ambiente, segurança e autorização do responsável |
 
-**Próxima ação técnica única autorizada neste momento:** `F0-004` — finalizar a comparação *read-only* dos deltas e a elegibilidade dos testes herdados contra o `main`, sem solicitar novo inventário, alterar código ou executar bancos/testes. Triagem BYOM/M18/E0 documentada na seção 6; nenhuma integração funcional está autorizada. **Próxima ação administrativa autorizada:** abrir PR documental GOV-001 com este master e referências mínimas dos agentes, sem merge, CI nova ou alteração direta em `main`; **STOP atual: criação de branch negada com HTTP 403 pela integração GitHub**. Ambos são tarefas documentais compatíveis; nenhum trabalho funcional em paralelo.
+**Próxima ação técnica única autorizada neste momento:** `F0-004` — finalizar a comparação *read-only* dos deltas e a elegibilidade dos testes herdados contra o `main`, sem solicitar novo inventário, alterar código ou executar bancos/testes. Triagem BYOM/M18/E0 documentada na seção 6; nenhuma integração funcional está autorizada. **Próxima ação administrativa:** revisar o [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) e registrar o aceite quando autorizado. Merge, CI nova e alterações diretas em `main` continuam fora do escopo.
 
 **Permanecem congelados:** arquitetura L0–L16; 11 kinds, 12 relações, 16 famílias Passport; limite da autoridade de máquina em `PROPOSED`; S1 Executive/SEC-01 existentes; migrações históricas; verificações M15/M16 já pertinentes; decisões DEC-REC.
 
@@ -137,12 +137,12 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 
 ## 4. GOV-001 e GOV-002 — implantação controlada
 
-**Diagnóstico remoto em 19/11/2026:** `main` em SHA `462751b...`, `protected=false`, rulesets vazios; `AGENTS.md`, `CLAUDE.md`, `OPERATING_MODEL.md` existentes; workflows `.github/workflows/m15-postgres-regression.yml` e `m16-postgres17-security.yml` existentes; sem workflow específico de contrato de PR no baseline. A preparação documental GOV-001/GOV-002 foi concluída e a abertura do PR documental GOV-001 foi autorizada em 19/11/2026. **A criação da branch foi negada por HTTP 403 (Resource not accessible by integration); nenhuma publicação nem ativação ocorreu.**
+**Diagnóstico remoto em 19/11/2026:** `main` em SHA `462751b...`, `protected=false`, rulesets vazios; `AGENTS.md`, `CLAUDE.md`, `OPERATING_MODEL.md` existentes; workflows `.github/workflows/m15-postgres-regression.yml` e `m16-postgres17-security.yml` existentes; sem workflow específico de contrato de PR no baseline. A preparação documental GOV-001/GOV-002 foi concluída e a abertura do PR documental GOV-001 foi autorizada em 19/11/2026. **A primeira tentativa de criar a branch via conector retornou HTTP 403 (`Resource not accessible by integration`). O bloqueio de publicação foi resolvido com a interface web autenticada do GitHub, que permitiu publicar a branch e abrir o [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) em draft.**
 
 ### GOV-001 — contrato único e adoção
 
 1. Revisar e aceitar este `GOVIA_MASTER.md` como **único arquivo de gestão**.
-2. **PR documental GOV-001 autorizado em 19/11/2026, execução bloqueada por permissão:** incluir `GOVIA_MASTER.md` e ajustar `AGENTS.md`/`CLAUDE.md` **somente para apontar** a este arquivo; preservar `OPERATING_MODEL.md` existente. **Sem merge ou implantação GOV-002.**
+2. **GOV-001 = PR #88 ABERTO — EM REVISÃO:** o [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) em draft inclui `GOVIA_MASTER.md` e as referências mínimas em `AGENTS.md` e `CLAUDE.md`. Merge e implantação de GOV-002 seguem pendentes de autorizações separadas.
 3. **Não publicar** na mesma revisão uma cópia do velho Plano Mestre, um Decision Register, Task/Handoff templates ou checkpoints: seu conteúdo agora está incorporado aqui.
 4. Registrar `DEC-ID`, SHA do PR, revisor e aceite neste master. Publicação no Git não prova que novos agentes efetivamente leram o documento: conferir o preflight de uma sessão real.
 
@@ -178,7 +178,7 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 
 **GOV-002 DONE somente após** workflow operando no GitHub, checks observados e required, ruleset ACTIVE consultado, testes negativos N-01–N-10 com evidências e nenhum bypass de rotina não aprovado.
 
-**Estado atual:** GOV-001 autorizado para PR documental, **bloqueado pela permissão de escrita do conector GitHub**; GOV-002 proposta testada localmente, **não publicada nem ativada**. A proposta antiga de múltiplos documentos GOV foi **substituída** por esta abordagem de um master, por decisão do proprietário nesta conversa.
+**Estado atual:** **GOV-001 = PR #88 ABERTO — EM REVISÃO** (draft). **GOV-002 = NÃO IMPLANTADO**. A proposta de GOV-002 foi testada localmente. A proposta antiga de múltiplos documentos GOV foi **substituída** por esta abordagem de um master, por decisão do proprietário nesta conversa.
 
 ## 5. Matriz de recuperação aprovada
 
@@ -224,7 +224,7 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 | `F0-005` | Avaliar teste Voyage excluído sem compartilhar segredo | BLOQUEADO | Revisão sanitizada/autorizada localmente |
 | `F0-006` | Reconciliar evidências SEC-01 e bloqueios de M17.5 | PENDENTE | Somente verificação sem migração automática |
 | `F0-007` | Revisão independente e aceite formal de fechamento F0 | BLOQUEADO | F0-004–006 necessários |
-| `F0-008` | Bootstrap documental do controle por PR | AUTORIZADO; BLOCKED (GitHub HTTP 403) | Recuperar permissão de escrita ou usar executor Git autenticado; GOV-002/merge/ruleset exigem autorizações separadas |
+| `F0-008` | Bootstrap documental do controle por PR | PR #88 ABERTO — EM REVISÃO | [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) em draft. Aceite pendente. GOV-002, merge e ruleset exigem autorizações separadas |
 
 
 **F0-004 — resultado parcial conhecido:** leitura dirigida de quatro paths do `main`, sem mutação. Comparação registrada em 19/11:
@@ -281,8 +281,8 @@ O quadro é um inventário de trabalho e critérios, **não autorização de exe
 | HIST-003 | SHOW | Fonte GitHub do agente de demonstração publicada | CONCLUIDO_TECNICO | — | Repositorio fonte acessível, SHA fixado e CI executando testes reais |
 | HIST-004 | SHOW | Jornada D01–D06 demonstrada historicamente em hosted | EVIDENCIA_HISTORICA | — | Preservar recibos D01-D06; não equiparar hosted histórico a teste local atual |
 | HIST-005 | M18 | S1 Executive Workspace implementado no main | INTEGRADO_NAO_ACEITO | — | URL /workspace no navegador com dados governados e critérios S1; sem 0/UNKNOWN indevido |
-| GOV-001 | GOV | Adotar e versionar Plano Mestre + registro de decisões | PR AUTORIZADO / BLOQUEADO POR PERMISSÃO / NÃO INTEGRADO | — | Plano v1 aprovado; arquivo versionado e registro de tarefas sem ambiguidade |
-| GOV-002 | GOV | Proteger main: PR obrigatório, checks e trilha TASK_ID | DESENHADO; CI/RULESET NÃO ATIVOS | GOV-001 | main protegida; merge sem PR/check é bloqueado; PR referencia TASK_ID, baseline, prova e decisão |
+| GOV-001 | GOV | Adotar e versionar Plano Mestre + registro de decisões | PR #88 ABERTO — EM REVISÃO | — | Plano v1 aprovado; arquivo versionado e registro de tarefas sem ambiguidade |
+| GOV-002 | GOV | Proteger main: PR obrigatório, checks e trilha TASK_ID | NÃO IMPLANTADO | GOV-001 | main protegida; merge sem PR/check é bloqueado; PR referencia TASK_ID, baseline, prova e decisão |
 | GOV-003 | GOV | Implantar checkpoint e nova-sessão obrigatório | PENDENTE DE GOVERNANÇA ATIVA | GOV-001 | Todo chat começa com BASELINE_CHECK; cada tarefa termina com HANDOFF registrado |
 | SHOW-001 | SHOW | Definir ambiente e audiência segura de demonstração | PENDENTE | GOV-001 | Ambiente, acesso, dados, risco de exposição e modo online/offline escolhidos e aprovados |
 | SHOW-002 | SHOW | Catalogar e conferir recibos D01–D06 existentes | PENDENTE | HIST-004;SHOW-001 | Mapa 6 elos→SHA/ID/timestamp, validade temporal, ambiente e evidência acessível |
@@ -415,13 +415,14 @@ Abaixo estão os cenários publicados no Plano Mestre v1.0/v1.1. Aguardam replan
 | `DEC-REC-008` | Só declarar aceite/claim com prova; demo tem GO próprio | APROVADA | Carlos | 2026-11-19 |
 
 
-### 10.3 Novas decisões de consolidação / autorização — sem inferir publicação
+### 10.3 Novas decisões de consolidação / autorização
 
 | DEC-ID | Data | Decisão registrada | Autoridade | Estado |
 |---|---|---|---|---|
 | `DEC-GOV-001-PREP` | 2026-11-19 | Preparar contrato de agentes e proteção Git/CI GOV-001/GOV-002 **sem modificar o repositório** | Carlos | APROVADO — PREPARAÇÃO SOMENTE |
 | `DEC-GOV-ONE-MASTER` | 2026-11-19 | Substituir múltiplos arquivos de **gestão** por um único `GOVIA_MASTER.md`, com plano, decisões, tarefas, status, fontes e regras de execução; entregar versão única para revisão | Carlos | APROVADA — CONSOLIDAÇÃO DOCUMENTAL |
 | `DEC-GOV-PR-BOOTSTRAP` | 2026-11-19 | Criar branch e PR documental de GOV-001 com master único e referências mínimas em `AGENTS.md`/`CLAUDE.md`; sem merge e sem alteração direta de `main` | Carlos | **AUTORIZADO — PR APENAS; tentativa 403** |
+| `DEC-GOV-001-DOC-CORRECTION` | 2026-11-19 | Atualizar somente `GOVIA_MASTER.md` na branch do [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) para registrar a publicação e preservar os gates vigentes | Carlos | AUTORIZADO — CORREÇÃO DOCUMENTAL |
 | `DEC-GOV-PUBLISH` | — | Aceitar conteúdo final, integrar PR, instalar CI GOV-002 ou ativar ruleset | Carlos | **NÃO DECIDIDO**; exige decisão específica posterior |
 
 **Histórico imutável:** decisões anteriores não são apagadas; correção ou revogação exige novo DEC-ID com vínculo `supersedes`, justificativa, impacto e aprovação. `DEC-003` (fronteira econômica M18/M19.5) segue em aberto. Não criar uma planilha ou Decision Register paralelo para editar decisões.
@@ -621,7 +622,7 @@ BLOQUEIOS + DONO: … | DEC-ID NOVA: … / N/A
 ### 14.2 Aceite e publicação (passos separados)
 
 1. **Aceite de conteúdo:** Carlos revisa este arquivo; correções de conteúdo não alteram estados formais sem DEC-ID.
-2. **PR GOV-001 autorizado em 19/11/2026:** comparar `main` atual, propor criação `GOVIA_MASTER.md` e atualização mínima de referências de agentes. **Criação bloqueada por HTTP 403 do conector; publicação futura em branch/PR não equivale a aceite nem autoriza merge.**
+2. **PR GOV-001 aberto em 19/11/2026:** o [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) está em draft e em revisão. Aceite do conteúdo e integração à `main` exigem decisão explícita.
 3. **Checks de GOV-002:** instalar e testar workflow de PR em bootstrap; verificar contexto real do check e a existência de revisor elegível.
 4. **Ruleset ativo:** somente após CI observado, exigir PR/review/checks, proibir atualização direta e registrar evidências N-01–N-10.
 5. **Adoção operacional comprovada:** iniciar uma nova tarefa, ler o master versionado e produzir preflight e handoff por referência real. Só então marcar GOV-001/GOV-002 `DONE` conforme respectivos critérios.
@@ -635,8 +636,9 @@ BLOQUEIOS + DONO: … | DEC-ID NOVA: … / N/A
 | Pacote GOV-001/GOV-002 | 19/11/2026 | Preparação de contrato e CI, 15 testes unitários reportados | Proposta técnica, **não instalada** |
 | `GOVIA_MASTER.md 1.0.0-rc1` | 19/11/2026 | Consolidação única solicitada/autorizada por Carlos | Histórico documental; não publicado |
 | `GOVIA_MASTER.md 1.0.0-rc2` | 19/11/2026 | QA estrutural (77 hashes; 33 tarefas), correção de tabela e triagem F0-004 BYOM/M18/E0 sem mutação | Histórico documental |
-| `GOVIA_MASTER.md 1.0.0-rc3` | 19/11/2026 | `DEC-GOV-PR-BOOTSTRAP` registrado; tentativa de publicação bloqueada pela integração GitHub (403), sem mutação | **PR AUTORIZADO; NÃO PUBLICADO** |
+| `GOVIA_MASTER.md 1.0.0-rc3` | 19/11/2026 | `DEC-GOV-PR-BOOTSTRAP` registrado; tentativa de publicação bloqueada pela integração GitHub (403), sem mutação | Histórico anterior à abertura do PR |
+| `GOVIA_MASTER.md 1.0.0-rc4` | 19/11/2026 | Correção do estado após abertura do [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) em draft. HTTP 403 mantido como ocorrência histórica resolvida por publicação via interface web autenticada | **GOV-001 EM REVISÃO. GOV-002 NÃO IMPLANTADO.** |
 
 **Próxima revisão recomendada deste master:** após concluir a revisão read-only F0-004, atualizar exclusivamente as linhas de status afetadas e acrescentar EV-ID; não reescrever o documento inteiro.
 
-**Checkpoint de publicação rc3:** tentativa de criar a branch `docs/gov001-master-bootstrap-20261119` via conector GitHub recusada com HTTP 403 (`Resource not accessible by integration`). **Nenhuma branch, commit, PR, merge ou alteração de `main` foi realizada.** O escopo já autorizado permanece exclusivamente documental; `M17.5 OPEN`, `M18 HOLD`, `F0 ABERTA`, `GOV-001/002 NÃO IMPLANTADOS`.
+**Checkpoint de publicação rc4:** branch `docs/gov001-master-bootstrap-20261119` publicada pela interface web autenticada do GitHub, com commit inicial `29168c2d1ae765bb17723848ec286bf9665e87ae`. O [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) está aberto em draft para `main` e aguarda revisão e aceite. A tentativa anterior pelo conector retornou HTTP 403. Permanecem `M17.5 = OPEN`, `M18 = HOLD`, `FASE 0 = ABERTA` e `GOV-002 = NÃO IMPLANTADO`.
