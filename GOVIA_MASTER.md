@@ -1,7 +1,7 @@
 # GOV IA — MASTER ÚNICO DE GOVERNANÇA, RECUPERAÇÃO E EXECUÇÃO
 
 **Arquivo oficial:** `GOVIA_MASTER.md` na raiz de `cnegrao/code-guard-governance`  
-**Documento ID:** `GOVIA-MASTER-001` · **Versão do conteúdo:** `1.0.2` · **Data de consolidação:** 19/11/2026 (Brasília)
+**Documento ID:** `GOVIA-MASTER-001` · **Versão do conteúdo:** `1.0.3` · **Data de consolidação:** 23/11/2026 (Brasília)
 **Publicação histórica GOV-001:** [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) integrado à `main` em `2083ecff43e3569f6de7e7e03d07d5a60be2c097` · **Aprovador:** Carlos
 **Baseline Git da regularização:** `main@2083ecff43e3569f6de7e7e03d07d5a60be2c097` · **Baseline histórica do PR #88:** `462751b239d1374f71337ddb6d525e27e1c9b267`  
 **Escopo da aprovação:** matriz REC-01–14, Fase 0 documental e adoção de um arquivo único de gestão. Para GOV-001, Carlos aprovou a rc4 e a integração do PR #88, além de autorizar a regularização exclusiva deste arquivo e o fechamento após reconciliação das evidências (`DEC-GOV-001-ACCEPT`).
@@ -29,21 +29,21 @@
 
 ## 1. Painel de comando e próxima ação
 
-| Item | Situação verificável em 19/11/2026 | Próxima evidência necessária |
+| Item | Situação documental em 23/11/2026; evidências históricas qualificadas | Próxima evidência necessária |
 |---|---|---|
-| GitHub `main` | Baseline F0-005 `826159b18766f8b032c3e2b09727945039d09bdd`; PR #90 integrado (EV-027) | Consultar o HEAD remoto antes da próxima tarefa |
+| GitHub `main` | Baseline F0-006 `3bb46f3060d918c3ce316b075d6588fef5bb6864`; PR #91 integrado (EV-028); baseline anterior F0-005 preservada em EV-027 | Confirmar publicação desta versão por PR, checks e merge; não presumir SHA final |
 | Proteção `main` | `protected=false`, rulesets `[]` nas consultas de leitura | GOV-002: workflow verificado e ruleset efetivamente ACTIVE |
 | CI existente | M15 regression e M16 PG17 security; histórico PASS no SHA citado | Não supor check required nem aceitação de M18 |
-| Fase de recuperação | F0 ABERTA; F0-004 concluído documentalmente; F0-005 concluído documentalmente com arquivo em quarentena; inventário histórico de 37 worktrees/18 dirty e 326 fingerprints | F0-006 PENDENTE; F0-007 BLOQUEADO; preservar worktrees |
+| Fase de recuperação | F0 ABERTA; F0-004 concluído documentalmente; F0-005 concluído documentalmente com arquivo em quarentena; F0-006 concluído documental condicionado, com publicação sujeita aos gates; 39 worktrees preexistentes preservados; inventário histórico 37/18 e 326 fingerprints mantido | F0-007 BLOQUEADO até autorização e execução específicas; preservar worktrees |
 | Sources locais exportados | 77 arquivos em 13 branches; teste Voyage excluído e mantido em quarentena | Duas ocorrências da linha 181 seguem SEGREDO_POTENCIAL; REC-09 bloqueado |
 | M17.5 | OPEN | Fechamento V1 explícito com critérios e prova |
 | M18 | HOLD; Executive S1 já integrado, não aceito | Respeitar predecessor M17.5 e aceite de personas |
 | BYOM | Candidato funcional local, feature flag; não SaaS | Triagem de segurança/compatibilidade para autorização específica |
 | SR2-A4 | BLOCKED; V2 preservada, V3 não promover; MPNet/Voyage experimentais | Nova hipótese e aceitação de qualidade, não tuning circular |
-| Governança | GOV-001: DONE; GOV-002: NÃO IMPLANTADO; F0-005: fechamento documental condicionado autorizado (`DEC-F0-005-DOC-QUARANTINE`) | F0-006 exige autorização específica; GOV-002 e TA-001 seguem na WBS, sem autorização automática |
+| Governança | GOV-001: DONE; GOV-002: NÃO IMPLANTADO; F0-006: `DEC-F0-006-DOC-CLOSE`, EV-028–EV-034; F0-005 e quarentena preservados | TA-001 PENDENTE, dependência GOV-001 atendida; GOV-002 e TA-001 sem execução autorizada |
 | Demo externa | NO-GO | D01–D09 relevantes, ambiente, segurança e autorização do responsável |
 
-**Próxima ação única:** `F0-006`, dependente de autorização específica de Carlos para reconciliar evidências SEC-01 e bloqueios de M17.5. Não iniciada nesta sessão. Voyage permanece em quarentena; GOV-002/TA-001 continuam pistas distintas da WBS, sem desbloqueio automático.
+**Próxima ação única após publicação válida:** avaliação de `F0-007` mediante autorização específica de Carlos, sem iniciá-lo automaticamente. F0-007 continua BLOQUEADO até autorização e execução próprias. Voyage permanece em quarentena; GOV-002/TA-001 continuam pistas distintas da WBS. A ordem de avaliação de F0-007 não cria dependência canônica de TA-001 em F0-007.
 
 **Permanecem congelados:** arquitetura L0–L16; 11 kinds, 12 relações, 16 famílias Passport; limite da autoridade de máquina em `PROPOSED`; S1 Executive/SEC-01 existentes; migrações históricas; verificações M15/M16 já pertinentes; decisões DEC-REC.
 
@@ -190,7 +190,7 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 | REC-02 | Discovery S1–S3 | Motor/fluxo integrados; jornada atual ainda por validar | REUTILIZAR | P0 | Avaliar fluxo real, não recodificar scanner |
 | REC-03 | LX07 / segurança | PR #84–87 integrados; LX07 global não necessariamente CLOSED | MANTER CORREÇÕES | P0 | Deltas residuais com evidência |
 | REC-04 | M18 Executive | UI e query no main; testes locais têm variantes | PRESERVAR/COMPARAR TESTES | P0 | Aceite S1 e permissão seguem pendentes |
-| REC-05 | SEC-01 no TEST | Prova histórica de implantação e pós-check 11/11 | VERIFICAR ESTADO | P0 | Não reaplicar a migração |
+| REC-05 | SEC-01 no TEST | Implantação/pós-check históricos de 11/11 reconciliados; TEST é projeto Supabase hospedado; estado atual NOT_EVIDENCED | VERIFICAR ESTADO | P0 | Nova autorização específica para coleta hosted antes de migração, D06/SHOW-003 ou aceite dependente do TEST atual; não reaplicar a migração |
 | REC-06 | BYOM | Implementação local com feature flag, APIs/UI, serviço e testes | CANDIDATO A RECUPERAÇÃO | P1 | Segurança, compatibilidade e hosted separados |
 | REC-07 | SR2-A4 V2/V3 | Qualificação experimental; V3 falhou em corpus independente | PRESERVAR V2/REJEITAR V3 | P1 | A4 BLOCKED |
 | REC-08 | SR2 MPNet | Runtime qualificado; qualidade insuficiente | PESQUISA/ARQUIVO | P2 | Não promover provider |
@@ -211,9 +211,13 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 - E0 Worker: variante local usa `createRequire` para interop CJS/ESM; `main` possui importações nomeadas. **Não aplicar por hipótese**: reproduzir falha atual antes de autorizar delta.
 - Passport: preservar artefatos de compatibilidade/recovery como histórico; jamais executar patches de migração histórica por causa do inventário.
 
+**Qualificação F0-006 (C3/C4):** A4 é o primeiro bloqueio técnico demonstrado dentro da rota SR2 atualmente documentada; não foi demonstrado que seja a única rota arquitetural de contenção LX03. Alternativa exige decisão ou emenda arquitetural própria, fora de F0-006. `REC-07 = P1 / A4 BLOCKED` permanece; a criticidade P0 da cadeia M17.5 decorre de `RISK-008`, sem reclassificar REC-07.
+
 ## 6. Fase 0 — estado e critérios de fechamento
 
 **Escopo autorizado:** análise documental/read-only já aprovada. Nenhum teste, PR, merge, commit, alteração Git, DB/hosted, migração, deployment ou correção funcional decorre automaticamente da F0.
+
+**Autorização específica desta publicação:** Carlos autorizou branch/worktree isolado, commit, PR e merge exclusivamente de `GOVIA_MASTER.md` para F0-006 (`DEC-F0-006-DOC-CLOSE`), condicionados ao preflight e aos gates GitHub, sem bypass. Essa autorização não amplia as demais classes de ação da F0.
 
 | TASK_ID | Entrega | Status nesta revisão | Evidência/pendência |
 |---|---|---|---|
@@ -222,8 +226,8 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 | `F0-003` | Indexar exportador (77 fontes/1 excluída) | CONCLUÍDO DOCUMENTAL | Registro SHA256 por arquivo na planilha v1.1 |
 | `F0-004` | Comparar semântica M18/Worker/BYOM vs main atual | **CONCLUÍDO DOCUMENTAL** — `DEC-F0-004-DOC-CLOSE` | Codex e Claude reconciliados: EV-017–EV-020; F-01–F-07 e V1–V3 rastreados; testes NOT_RUN, sem aceite funcional |
 | `F0-005` | Avaliar teste Voyage excluído sem compartilhar segredo | **CONCLUÍDO DOCUMENTAL — ARQUIVO EM QUARENTENA** | DEC-F0-005-DOC-QUARANTINE; EV-022–EV-027; triagem encerrada, candidato REC-09 não liberado |
-| `F0-006` | Reconciliar evidências SEC-01 e bloqueios de M17.5 | PENDENTE | Somente verificação sem migração automática |
-| `F0-007` | Revisão independente e aceite formal de fechamento F0 | BLOQUEADO | F0-004–006 necessários |
+| `F0-006` | Reconciliar evidências SEC-01 e bloqueios de M17.5 | **CONCLUÍDO DOCUMENTAL CONDICIONADO** | DEC-F0-006-DOC-CLOSE; EV-028–EV-034; interpretação documental de F0(c); publicação válida depende de PR/checks/merge; TEST atual NOT_EVIDENCED |
+| `F0-007` | Revisão independente e aceite formal de fechamento F0 | BLOQUEADO | F0-004–006 necessários; autorização e execução específicas ainda obrigatórias |
 | `F0-008` | Bootstrap documental do controle por PR | CONCLUÍDO | PR #88 integrado e GOV-001 aceito conforme DEC-GOV-001-ACCEPT e EV-013–EV-016 |
 
 
@@ -271,6 +275,8 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 
 **Handoff F0-004:** `MASTER_VERSION=1.0.1`; `BASELINE=fb11a04cf3688f544fcac9d733453c60f47fee1e`; `EXECUTORES=Codex (análise) + Claude Code (adversarial)`; `TESTES=NOT_RUN`; `EVIDÊNCIAS=EV-017–EV-021`; `ACEITE=DOCUMENTAL LIMITADO`; `ESCOPO ALTERADO=GOVIA_MASTER.md SOMENTE`; publicação no [PR #90](https://github.com/cnegrao/code-guard-governance/pull/90), HEAD documental verificado `ee27ff1db87220c52d82b7b8d0c319d3399e9570` antes do registro aditivo EV-021; `ESFORÇO ATIVO=DESCONHECIDO`; `DONO DOS GATES/CORREÇÕES=Carlos (decisão) + Codex (eventual execução autorizada)`; `PRÓXIMA AÇÃO ÚNICA=F0-005 mediante autorização específica`. Não declarar F0-007 concluído, não declarar F0 CLOSED.
 
+**Checkpoint histórico anterior ao fechamento F0-006, preservado integralmente:**
+
 **Gate de encerramento F0:** (a) conciliar fontes e variantes relevantes com segurança; (b) manter o fechamento documental condicionado de F0-005 e a quarentena, sem liberar Voyage nem presumir sanitização/segurança; (c) reconciliar evidências SEC-01 no banco TEST **sem reaplicar migrations** e bloqueios formais M17.5, mediante autorização específica; (d) revisão independente; (e) aceite escrito de Carlos. Até atender: **F0 ABERTA**. F0-006 permanece PENDENTE; F0-007 permanece BLOQUEADO.
 
 **F0-005:** o exportador excluiu `apps/dashboard/tests/voyage-embedding-provider.test.ts` por `POTENTIAL_EMBEDDED_SECRET`. É somente um alerta do filtro, **não prova de vazamento**. Nenhum agente deve solicitar ou publicar o texto bruto sem triagem local específica.
@@ -284,6 +290,29 @@ Exceção precisa `DEC-ID` novo, motivo, escopo, aprovador, risco, validade e re
 **Contenção:** regra local específica em `.git/info/exclude`, linha 65; `git check-ignore -v` confirmou a regra, `git ls-files --error-unmatch` confirmou ausência no índice e a existência foi verificada apenas por metadados (EV-025). Arquivo preservado, untracked e ignorado. **Quarentena é contenção, não confirmação de segurança.** `git add -f` ainda pode forçar inclusão; `info/exclude` é local e não acompanha clones novos. Não há comprovação de ausência de vazamento, credencial ativa ou comprometimento; essas questões permanecem `NOT_EVIDENCED`.
 
 **Contrato e handoff documental:** `TASK_ID=F0-005`; `MASTER_VERSION=1.0.2`; `BASELINE=826159b18766f8b032c3e2b09727945039d09bdd`; branch `docs/f0-005-documental-quarantine-20261119`, worktree isolado e limpo no preflight (EV-027); único delta permitido `GOVIA_MASTER.md`. Carlos autorizou branch, commit, PR e merge documental condicionado aos gates GitHub e à validação do HEAD (EV-026); publicação/merge desta versão ainda não comprovados neste checkpoint. Estado anterior BLOQUEADO → **CONCLUÍDO DOCUMENTAL — ARQUIVO EM QUARENTENA**. Verificação aplicável: integridade documental, WBS de 33 tarefas, históricos/gates e `git diff --check`; CI independente no PR. Testes funcionais locais, probes e chamadas externas Voyage: `NOT_RUN`; conteúdo do teste não aberto, lido, impresso ou incorporado nesta sessão. Alvo operacional ativo: 30 minutos; esforço ativo medido: DESCONHECIDO. Os 37 worktrees preexistentes não são alterados; apenas um worktree documental adicional é criado. STOP se escopo, checks, revisão exigida ou HEAD não satisfizerem os gates. Próxima ação única: **F0-006 mediante autorização específica**, sem iniciar F0-006, GOV-002 ou M18; F0-007 BLOQUEADO e FASE 0 ABERTA.
+
+### F0-006 — fechamento documental condicionado (23/11/2026)
+
+**Decisão e gate F0(c):** Carlos autoriza o fechamento documental condicionado e adota expressamente a interpretação de que F0(c) está atendido **quanto à reconciliação das evidências históricas sobre o PostgreSQL TEST**, não quanto à verificação do estado atual desse ambiente (`DEC-F0-006-DOC-CLOSE`, EV-031). O texto original do gate acima e `DEC-REC-005` permanecem preservados. A interpretação não elimina nem substitui futuras verificações técnicas; não encerra a Fase 0 nem equivale ao aceite de F0-007.
+
+**Reconciliação reutilizada:** `F0_006_CODEX_READONLY_HANDOFF` e `F0_006_CLAUDE_ADVERSARIAL_HANDOFF` integrais foram recebidos e lidos (EV-029/030). O parecer Claude `READY_FOR_DOCUMENTAL_CLOSE` foi condicionado a C1–C6 e à decisão de Carlos, agora registrada. Resultados técnicos abaixo são atribuídos às verificações relatadas nesses handoffs; não foram novamente executados ou inspecionados nesta publicação. As instruções de próximas ações antigas dos relatórios não substituem a autorização atual.
+
+| Eixo SEC-01 | Evidência reconciliada e limite |
+|---|---|
+| Implementação e integração | Migração `20261111123119_sec01_transactional_workspace_acquisition_v1.sql`, RPC e consumidor transacional integrados em `76e5676a1ca085f0d9448d4ef3e32bba0b51417e`; handoffs confirmam ancestralidade e ausência de delta funcional relevante até a baseline |
+| Teste local e CI histórica | Local PG17.11: 12/12 documentados; M16 [44737680743](https://github.com/cnegrao/code-guard-governance/actions/runs/44737680743) e M15 [44737680757](https://github.com/cnegrao/code-guard-governance/actions/runs/44737680757), ambos success na baseline segundo os handoffs; clusters descartáveis, sem comprovar TEST atual |
+| Implantação no TEST | Recibo histórico: COMMIT 11/11/2026 às 22h35 e pós-check independente às 22h35min16s de Brasília; histórico 101→102; 198 tabelas e 660 rotinas anteriores preservadas; D06/browser não executados nessa aplicação, conforme EV-029/030 |
+| Estado atual e aceite | TEST atual NOT_EVIDENCED; REC-05 VERIFICAR ESTADO; SEC-01 e HIST-002/005 sem aceite funcional/operacional; M18 HOLD |
+
+**C1/C2 — limite TA-001:** TA-001 permanece PENDENTE, com dependência canônica GOV-001 já DONE; não está bloqueado por F0-007. A matriz S1–S8 abaixo é exclusivamente insumo para futura TA-001: não registra sua implementação, execução ou aceite, nem aceite de TA-002/003/004. **C3/C4:** rota SR2/A4 e severidades qualificadas em §5, sem decisão arquitetural nova.
+
+**C5 — TEST hosted:** o PostgreSQL TEST é projeto Supabase hospedado. Qualquer coleta atual de catálogo/ACL/dependências constitui acesso hosted e exige autorização específica posterior. Antes de migração nesse ambiente, D06/SHOW-003 contra ele ou aceite formal dependente de seu estado atual, realizar verificação específica autorizada. Não houve acesso hosted, SQL, migração, teste, deploy ou atualização de banco; nenhum identificador sensível ou credencial é registrado.
+
+**C6 — proveniência e preservação:** os handoffs localizam o recibo Markdown e o JSON sanitizado adjacente em `.worktrees/d06-functional-20261111/docs/codex/evidence/`, com nome-base `2026-11-11-sec01-test-deployment-pass`, no worktree histórico `fad55c937667f036cc7af5b21d45efd8db1ed049` (EV-032). Ambos foram reportados untracked e não ignorados, sujeitos a staging e perda acidentais. O Markdown já consta do §13: OID `2f7354ffc8724693b8c4fcbab11976e06a9da135`, SHA256 `803d8354eb421888f150e93047cf659f1a860aea420408221913119adab99a11`, reconciliados pelos relatórios, sem nova verificação do recibo nesta publicação. O JSON não é usado como prova independente: só foi fornecido hash abreviado no handoff Claude, insuficiente para registrar SHA256 integral verificável. Não inferir base de cálculo do hash histórico do corpo da RPC. As variantes untracked do checkout original (`lib/workspace/`, `ExecutiveWorkspace.tsx`, `tests/m18-*`, `workspace/`) colidem com caminhos já tracked na main; preservar o checkout e usar o worktree isolado. Nenhum recibo foi adicionado, movido, excluído, modificado ou publicado. **Contenção futura proposta, não executada:** Carlos autorizar preservação em destino controlado com hashes integrais, acesso restrito e proteção local específica contra staging; reconciliar colisões em escopo próprio antes de trocar o checkout original.
+
+**Contrato e handoff documental:** `TASK_ID=F0-006`; `MASTER_VERSION=1.0.3`; `BASELINE=3bb46f3060d918c3ce316b075d6588fef5bb6864`; branch/worktree `docs/f0-006-documental-close-20261123` / `.worktrees/f0-006-documental-close-20261123`, inicialmente limpo; único delta `GOVIA_MASTER.md`. Estado anterior PENDENTE → CONCLUÍDO DOCUMENTAL CONDICIONADO, com publicação sujeita a PR/checks/merge confirmados. Preflight documental manual (EV-028), sem scripts que criam artefatos adicionais, conforme restrição desta tarefa; verificação documental EV-033, 33 tarefas WBS preservadas. Nenhuma repetição das análises ou da revisão adversarial. Testes funcionais locais: NOT_RUN, não aplicáveis; CI do PR permanece gate independente. Alvo ativo informativo: 30 minutos; esforço ativo medido DESCONHECIDO. Uma tentativa de criação do worktree foi bloqueada pelo sandbox, resolvida pela execução autorizada. Preservados os 39 worktrees preexistentes e as alterações locais; criado somente o worktree documental adicional. STOP em baseline divergente, conflito material, delta fora do master ou falha dos gates, sem bypass. Próxima ação única após publicação válida: avaliação de F0-007 mediante autorização específica, sem início automático.
+
+**Checkpoint de publicação F0-006 (23/11/2026):** [PR #92](https://github.com/cnegrao/code-guard-governance/pull/92) aberto para main; HEAD inicial publicado `618cab49e05b5c17b50b6b31e27dafab2e894bb3` e blob do master `d7af85a48907e1f212418ffa17a3d0f94adf5138` conferidos por Git/API (EV-034). Somente o master foi alterado. Este registro aditivo sucede aquele HEAD; CI do candidato final e merge ainda não comprovados neste checkpoint. Revisões observadas: nenhuma; não há exigência efetiva de revisão humana nas regras consultadas. Nenhum bypass ou setting alterado. A validação documental foi recuperada após EPERM de subprocesso Git no sandbox e perda de acentos no pipe Windows, corrigidos sem testes funcionais ou nova análise técnica.
 
 ## 7. Roadmap integrado e WBS
 
@@ -343,6 +372,23 @@ O quadro é um inventário de trabalho e critérios, **não autorização de exe
 | FUT-001 | FUTURO | Inteligência econômica 7B / Finance-FinOps (M19.5 proposto) | FORA_ESCOPO | M18-000 | Definir roadmap/ADR próprio; preservar objetivo de negócio, sem prometer ROI no M18 |
 
 
+**Insumo F0-006 para TA-001 — matriz S1–S8 reconciliada, sem execução de TA-001 (EV-029/030):** as dependências e estados abaixo reproduzem a reconciliação já concluída; não são nova inspeção extensa nem aceite operacional. Fonte técnica canônica: [contrato Hub §14 na baseline](https://github.com/cnegrao/code-guard-governance/blob/3bb46f3060d918c3ce316b075d6588fef5bb6864/docs/trust-assurance/v1-hub-read-contract.md).
+
+| Slice | Prova/fechamento a preservar | Lacuna e dependência reconciliadas |
+|---|---|---|
+| S1A Audit/LX08 | V2 principal-bound; fechamento técnico CONTAINED/PASS preservado | Hosted não verificado; não reabrir pelo texto histórico de S0 |
+| S1B legado vivo | L01/LX02, L02, L03 e deltas LX07 #84–87 preservados; SR2 A1–A3 e pre-A4 H1/P1-H2/P1-FRAME/P3-REV/M1/M2/M3 preservados | LX03 e LX07 global abertos; LX01/04/05/06 residuais; na rota SR2 atual A4 BLOCKED é o primeiro bloqueio técnico demonstrado, A5/A6 não iniciados; F-2/F-3 de M3 seguem para A4 |
+| S1C packages/exportações | Contrato L04/LX09 e correção parcial Reports; L05 SAFE limitado ao guard | Depende de S1B; fechamento global S1C não evidenciado |
+| S2 contratos | Desenho S0 e decisões arquiteturais V1-A1/V1-A2 preservados | Depende de S1C; execução operacional não evidenciada |
+| S3 reads tenant-bound | Inventário de 40 categorias e componentes upstream | Depende de S2; composição completa do Hub não comprovada |
+| S4 PRODUCT | Pack V0/E1 e contratos documentais | Depende de S2; pode avançar sem S3 após autorização; operação não comprovada |
+| S5 TENANT | Manifest/lineage e eixos independentes desenhados | Depende de S3 + S4; operação não comprovada |
+| S6 European Profile | Contrato documental e eixos separados | Depende de S4 + S5; execução tenant não comprovada |
+| S7 API/UI Hub | Onze views A–K desenhadas | Depende de S1C + S4 + S5 + S6; E2E completo não evidenciado |
+| S8 fechamento adversarial | Critérios W-V1-01–20 documentais | Depende de S7; aceite runtime completo não evidenciado |
+
+TA-001 continua PENDENTE e espera autorização própria. LX03 B1/B2 originais não se confundem com os achados encerrados de A3: os handoffs registram mitigação de tenant na aplicação pelo PR #87, RPC legada inalterada e dependência `coding_memory_search` ainda presente. A4 não é declarado única rota possível; qualquer alternativa exige decisão/emenda arquitetural fora de F0-006.
+
 ### 7.3 Datas herdadas — referência histórica, não compromisso
 
 Abaixo estão os cenários publicados no Plano Mestre v1.0/v1.1. Aguardam replanejamento por delta, capacidade, riscos, dependências e autorização. Não usar estas janelas como promessas a cliente ou como relógio para forçar gates.
@@ -375,6 +421,8 @@ Abaixo estão os cenários publicados no Plano Mestre v1.0/v1.1. Aguardam replan
 - **M18 completo:** `HOLD` até M17.5 formalmente CLOSED ou decisão arquitetural excepcional aprovada; S0 ADR ainda pendente, sem confundir código S1 antecipado com autorização para S2–S8.
 - **Quatro personas oficiais:** Executive/Board, CISO/Security, Compliance/Auditor e AI/Data Owner. O limite 7A de visibilidade de custo sustentado por dados não autoriza ROI e FinOps 7B; `DEC-003` continua em aberto para S0/M19.5.
 - **M18 DONE:** gates A–O e W01–W48 aplicáveis, quatro personas aceitas, segurança/tenant, browser real, CI e ato formal de aceite de Carlos. Nem visual novo nem demo parcial substituem essas provas.
+
+**Limite do fechamento F0-006:** a matriz S1–S8 em §7 é insumo para TA-001, sem implementação ou aceite dessa tarefa. Permanecem LX03, LX07 global, contenções residuais/S1C e Hub operacional sem fechamento; A4 BLOCKED na rota SR2 atual, sem promover V3/MPNet/Voyage. SEC-01 integrado/testado historicamente não recebe aceite funcional ou operacional; TEST atual e browser Executive atual NOT_EVIDENCED. M17.5 OPEN, M18 HOLD e exposição externa NO-GO preservados.
 
 ### 8.3 Demonstração — checkpoints D01 a D09
 
@@ -459,6 +507,7 @@ Abaixo estão os cenários publicados no Plano Mestre v1.0/v1.1. Aguardam replan
 | `DEC-GOV-001-ACCEPT` | 2026-11-19 | Aceite explícito da rc4 e autorização de integração do PR #88. Autorização subsequente de branch, PR e merge exclusivos de `GOVIA_MASTER.md` e fechamento de GOV-001 após reconciliação das provas e observância dos gates do GitHub. Substitui `DEC-GOV-PUBLISH` somente quanto a GOV-001 | Carlos | ACEITO · EV-016 |
 | `DEC-F0-004-DOC-CLOSE` | 2026-11-19 | Carlos autorizou o PR documental e integração controlada de fechamento **somente documental** de F0-004 após conciliação Codex × Claude. Registrar F-01–F-07 e V1–V3, sem resolver funcionalmente nenhum achado, sem abrir F0-005 e sem mudar gates de produto | Carlos | ACEITE DOCUMENTAL LIMITADO — EV-020; publicação sujeita a PR/checks/revisão |
 | `DEC-F0-005-DOC-QUARANTINE` | 2026-11-19 | Encerrar documentalmente F0-005 com arquivo em quarentena; Carlos aceita o risco residual exclusivamente durante a quarentena. Autoriza branch, commit, PR e merge **somente de GOVIA_MASTER.md**, sem bypass e após checks/revisão humana efetivamente exigidos e HEAD validado. Não libera REC-09 nem autoriza uso, integração, execução, distribuição ou exposição Voyage; utilização futura requer triagem específica e nova autorização. Atualiza o estado de F0-005 e seu tratamento no gate F0, preservando F0 ABERTA | Carlos | ACEITE DOCUMENTAL CONDICIONADO — EV-022–EV-027; não é liberação de segurança |
+| `DEC-F0-006-DOC-CLOSE` | 2026-11-23 | Carlos autoriza fechamento documental condicionado F0-006, incorporação C1–C6 e branch/worktree/commit/PR/merge exclusivos do master, após gates GitHub efetivos e HEAD validado, sem bypass. Adota expressamente F0(c) atendido quanto à reconciliação das evidências históricas sobre o TEST, sem verificar seu estado atual nem apagar o gate original. REC-05 VERIFICAR ESTADO, TEST atual NOT_EVIDENCED; verificação específica futura autorizada obrigatória antes de migração, D06/SHOW-003 ou aceite dependente do TEST atual. Sem acesso hosted, aceite SEC-01/M18, execução TA-001 ou início F0-007 | Carlos | ACEITE DOCUMENTAL CONDICIONADO — EV-028–EV-034; FASE 0 ABERTA |
 
 **CONFLICT-GOV-001-001 — reconciliado.** A rc4 descrevia o PR #88 como aberto em draft após a integração já comprovada no GitHub. Dono: Carlos. EV-013 comprova o estado Git e DEC-GOV-001-ACCEPT autoriza a correção. O registro anterior permanece no histórico rc4.
 
@@ -495,6 +544,13 @@ Abaixo estão os cenários publicados no Plano Mestre v1.0/v1.1. Aguardam replan
 | EV-025 | Contenção Codex declarada e reconfirmada apenas por metadados: regra específica em info/exclude:65; check-ignore positivo; teste presente e ausente do índice | CONTENÇÃO LOCAL / LEITURA DE METADADOS | Mesma solicitação, §3; comandos nesta sessão: `git -C .worktrees/m175-sr2-a4-voyage-20261113 check-ignore -v -- apps/dashboard/tests/voyage-embedding-provider.test.ts`, `git ls-files --error-unmatch` no mesmo worktree e `Test-Path` | 2026-11-19 | Arquivo preservado, untracked e ignorado; conteúdo não acessado. Proteção local, ausente em clones novos; add -f pode forçar inclusão |
 | EV-026 | Carlos autorizou fechamento documental condicionado e branch/commit/PR/merge exclusivos do master, aceitando risco residual somente sob quarentena | DECISÃO DO RESPONSÁVEL | Solicitação de Carlos nesta sessão, §§1, 3, 4 e 6; DEC-F0-005-DOC-QUARANTINE | 2026-11-19 | Gates GitHub e HEAD validado obrigatórios; nenhum uso Voyage ou início de F0-006/GOV-002/M18 autorizado |
 | EV-027 | Baseline F0-005 remota confirmada e PR #90 integrado em 826159b18766f8b032c3e2b09727945039d09bdd; preflight limpo na nova branch documental, 134 migrações preservadas | GIT / API / PREFLIGHT LOCAL | `git ls-remote origin refs/heads/main`; API `branches/main`; [baseline](https://github.com/cnegrao/code-guard-governance/commit/826159b18766f8b032c3e2b09727945039d09bdd); `.worktrees/f0-005-documental-quarantine-20261119/.artifacts/agent/session.json` e checkpoint preflight | 2026-11-19 | main protected=false; regras efetivas e rulesets vazios na consulta. Preflight PASS após liberação de subprocesso Git bloqueado por EPERM no sandbox; 37 worktrees anteriores preservados; nenhum PASS funcional implícito |
+| EV-028 | Preflight F0-006: main remota na baseline exata; PR #91 merged em `3bb46f3060d918c3ce316b075d6588fef5bb6864`; #84–87 merged; novo worktree documental limpo, index vazio e origin canônico | GIT / API / PREFLIGHT DOCUMENTAL | `git ls-remote origin refs/heads/main`; API `branches/main`, `pulls/84`–`87`, `pulls/91`, `rules/branches/main`, `rulesets`; `.worktrees/f0-006-documental-close-20261123` | 2026-11-23 | CONFIRMADA nesta publicação; protected=false, regras/rulesets vazios; 39 worktrees preexistentes preservados; inventário histórico 37/18 não reescrito; scripts geradores de artefatos não executados |
+| EV-029 | Reconciliação SEC-01, recibo histórico TEST, matriz S1–S8 e bloqueios M17.5 | HANDOFF READ-ONLY RECEBIDO | `C:/Users/cnegr/Downloads/F0_006_CODEX_READONLY_HANDOFF.md`; SHA256 `220fee585893d8c59b60125790f8d070555a135d8243e9fc57a9a2a184c34ae7` | Recebido 2026-11-23; coleta relatada 2026-11-20 | Integridade do anexo calculada nesta publicação; verificações técnicas atribuídas ao relatório, sem reexecução. Rótulos TA-001/rota/severidade corrigidos por C1–C4; não é aceite funcional |
+| EV-030 | Revisão adversarial já concluída: READY_FOR_DOCUMENTAL_CLOSE condicionado a C1–C6 e interpretação humana de F0(c) | HANDOFF ADVERSARIAL RECEBIDO | `C:/Users/cnegr/Downloads/F0_006_CLAUDE_ADVERSARIAL_HANDOFF.md`; SHA256 `71df3e694311ce3bfd90152cfd15b53f862f8eb442eb019999b584cd9dfee8d8` | Recebido 2026-11-23 | Integridade do anexo calculada nesta publicação; verificações independentes relatadas por Claude, não repetidas; não é revisão humana do PR |
+| EV-031 | Decisão expressa de Carlos sobre F0(c), C1–C6 e publicação/merge exclusivo do master | DECISÃO DO RESPONSÁVEL | Solicitação “F0-006 — Fechamento documental condicionado”, §§1–10, retomada “SESSÃO: ATUAL / RETOMADA DE EXECUÇÃO AUTORIZADA”; DEC-F0-006-DOC-CLOSE | 2026-11-23 | CONFIRMADA nesta sessão; não autoriza hosted, SQL, testes locais, código, deploy, TA-001 ou F0-007 |
+| EV-032 | Localização/proveniência histórica e riscos dos recibos SEC-01 e colisões de variantes locais | EVIDÊNCIA HISTÓRICA RELATADA / PRESERVAÇÃO | EV-029 §3 e EV-030 C6; recibo Markdown no §13, linha 11; localização lógica e limites em §6 | Recebido 2026-11-23 | Recibos reportados untracked/não ignorados; sem nova leitura, staging ou publicação. JSON sem hash integral disponível nos anexos, não usado como prova independente; contenção futura apenas proposta |
+| EV-033 | Verificação exclusiva do delta documental: GOVIA_MASTER.md; WBS de 33 tarefas e registros anteriores preservados; C1–C6, gate original, estados e referências consistentes | VALIDAÇÃO DOCUMENTAL | `git diff --check` e comparação em memória com a baseline, na branch `docs/f0-006-documental-close-20261123` | 2026-11-23 | Verificação documental antes do PR; testes funcionais locais NOT_RUN, não aplicáveis. Publicação/merge dependem de HEAD publicado e gates GitHub, sem sucesso presumido |
+| EV-034 | PR documental F0-006 aberto para main, baseline exata e único arquivo GOVIA_MASTER.md; HEAD inicial `618cab49e05b5c17b50b6b31e27dafab2e894bb3` e blob `d7af85a48907e1f212418ffa17a3d0f94adf5138` publicados iguais aos locais | PUBLICAÇÃO / LEITURA GIT E API | [PR #92](https://github.com/cnegrao/code-guard-governance/pull/92); API `pulls/92`, `pulls/92/files`, `pulls/92/reviews`; Git HEAD e blob | 2026-11-23 | CONFIRMADA publicação daquele HEAD antes deste registro aditivo; M15/M16 iniciados automaticamente, sem resultado presumido. Publicação válida condicionada aos gates e HEAD finais, sem bypass; merge/SHA final não presumidos |
 
 ### 10.5 Integridade das provas locais de recuperação
 
@@ -522,6 +578,8 @@ Abaixo estão os cenários publicados no Plano Mestre v1.0/v1.1. Aguardam replan
 | RISK-008 | P0 | M17.5 não encerra por dependências | V1 Hub sem aceite, LX03/C3 pendentes | TA-001 delta e fechar blockers por prova; limites de esforço | Codex/ACP |
 | RISK-009 | P1 | Evidência hospedada vs local confundida | D06 browser localhost com backend hosted | Identificar ambiente/commit/time e não alegar novo E2E local | ACP |
 | RISK-014 | P1 | Teste Voyage em quarentena contém duas ocorrências da linha 181 ainda SEGREDO_POTENCIAL; segurança e ausência de vazamento/credencial ativa/comprometimento não comprovadas | Uso/exposição, inclusão forçada com git add -f ou clone novo sem info/exclude | OPEN: manter quarentena local; não usar, integrar, executar, distribuir ou expor. Desbloqueio somente após triagem específica, evidência suficiente para adjudicar as duas ocorrências e riscos, contenção adequada ao destino e autorização explícita de Carlos | Carlos |
+| RISK-015 | P1 | Recibos SEC-01 locais untracked/não ignorados; risco de staging ou perda e lacuna de proveniência integral do JSON | Inclusão acidental, limpeza ou perda do worktree histórico; uso de hash abreviado como prova | OPEN: preservar sem operar sobre recibos nesta tarefa; futura contenção específica autorizada com destino controlado, hashes integrais e proteção contra staging; colisões untracked/tracked exigem escopo próprio | Carlos |
+| RISK-016 | P0 | TEST hospedado com estado atual NOT_EVIDENCED apesar de implantação histórica SEC-01 reconciliada | Migração, D06/SHOW-003 ou aceite dependente do estado atual | OPEN: REC-05 VERIFICAR ESTADO; coletar catálogo/ACL/dependências somente após nova autorização hosted específica; fechamento F0-006 não substitui a coleta | Carlos |
 
 
 **Riscos adicionais da consolidação:** (RISK-010) este master não ser efetivamente lido por agentes em outro chat; (RISK-011) workflow/CI poder ser editado no mesmo PR que deveria fiscalizar; (RISK-012) deadlock de aprovação quando não há revisor humano elegível; (RISK-013) este próprio master ficar desatualizado em relação ao Git. Mitigação: gate de preflight lendo o arquivo real, review humana, bootstrap antes de required-check, reconciliação por SHA e registro de conflitos. Cada um permanece `OPEN` até prova de mitigação.
@@ -693,7 +751,8 @@ BLOQUEIOS + DONO: … | DEC-ID NOVA: … / N/A
 | `GOVIA_MASTER.md 1.0.0` | 19/11/2026 | Regularização do PR #88 e fechamento com DEC-GOV-001-ACCEPT e EV-013–EV-016 | GOV-001 DONE |
 | `GOVIA_MASTER.md 1.0.1` | 19/11/2026 | Reconciliação Codex × Claude F0-004: F-01–F-07, V1–V3, EV-017–EV-021 e DEC-F0-004-DOC-CLOSE; nenhuma modificação funcional | Encerramento DOCUMENTAL F0-004; F0 ABERTA; publicação e HEAD documental verificado no PR #90 (EV-021); merge ainda não comprovado |
 | `GOVIA_MASTER.md 1.0.2` | 19/11/2026 | DEC-F0-005-DOC-QUARANTINE; EV-022–EV-027; triagem Codex, revisão Claude já realizada, adjudicação humana e contenção local; baseline 826159b confirma merge histórico do PR #90 (EV-027), sem reescrever EV-021 | F0-005 CONCLUÍDO DOCUMENTAL — ARQUIVO EM QUARENTENA; REC-09 bloqueado; F0-006 PENDENTE; F0-007 BLOQUEADO; FASE 0 ABERTA. Publicação desta versão sujeita a PR, checks/revisão efetivos e HEAD validado |
+| `GOVIA_MASTER.md 1.0.3` | 23/11/2026 | DEC-F0-006-DOC-CLOSE; EV-028–EV-034; reconciliação Codex × Claude reutilizada, C1–C6 e interpretação documental expressa de F0(c); baseline `3bb46f3060d918c3ce316b075d6588fef5bb6864` comprova PR #91 merged sem reescrever o checkpoint 1.0.2 | F0-006 CONCLUÍDO DOCUMENTAL CONDICIONADO; REC-05 VERIFICAR ESTADO/TEST atual NOT_EVIDENCED; REC-07 P1/A4 BLOCKED; TA-001 PENDENTE; F0-007 BLOQUEADO; FASE 0 ABERTA; M17.5 OPEN; M18 HOLD; GOV-002 NÃO IMPLANTADO; exposição externa NO-GO. Publicação válida sujeita a PR/checks/revisão efetiva/merge e HEAD confirmado |
 
-**Próxima ação única:** `F0-006`, dependente de autorização específica de Carlos. Quarentena Voyage preservada; GOV-002/TA-001 independentes e não autorizados automaticamente.
+**Próxima ação única após publicação válida:** avaliação de `F0-007` mediante autorização específica de Carlos, sem início automático. Quarentena Voyage preservada; GOV-002/TA-001 independentes e não autorizados automaticamente.
 
 **Checkpoint histórico de publicação rc4:** branch `docs/gov001-master-bootstrap-20261119` publicada pela interface web autenticada do GitHub, com commit inicial `29168c2d1ae765bb17723848ec286bf9665e87ae`. O [PR #88](https://github.com/cnegrao/code-guard-governance/pull/88) foi aberto em draft para `main` e aguardava revisão e aceite naquele checkpoint. A tentativa anterior pelo conector retornou HTTP 403. Permanecem `M17.5 = OPEN`, `M18 = HOLD`, `FASE 0 = ABERTA` e `GOV-002 = NÃO IMPLANTADO`.
