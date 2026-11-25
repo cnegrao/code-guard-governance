@@ -1,6 +1,7 @@
 import type { DiscoveredAgent, ClassificationResult } from "./types";
 import type { EnrichedAgentData } from "./enrichment";
 import { projectCodeguardOversight } from './oversight';
+import { FINOPS_FLAG_RULES } from '../l15/finops-signal-adapter';
 
 const RISK_MAP: Record<string, { risk: string; aiAct: string }> = {
   autonomous: { risk: "high", aiAct: "high" },
@@ -56,8 +57,11 @@ export function classifyAgent(agent: DiscoveredAgent, enrichment?: EnrichedAgent
     if (enrichment.lgpd.credentialExposure) reasoning.push("Credential exposure risk detected.");
     if (enrichment.fapi.financialServices) reasoning.push("Financial services domain detected.");
     if (enrichment.fapi.doraExposure) reasoning.push("DORA exposure: operational resilience required.");
-    if (enrichment.finops.costRisk === "critical" || enrichment.finops.costRisk === "high") {
-      reasoning.push(`FinOps risk: ${enrichment.finops.costRisk} ($${enrichment.finops.monthlyCostEstimate}/mo)`);
+    // Reuse L15's admitted technical flags; never read estimate-derived risk, amounts or free-text hotspots.
+    for (const rule of Object.values(FINOPS_FLAG_RULES)) {
+      if (enrichment.finops[rule.flag] !== true) continue;
+      const observation = rule.signalKind === 'DETECTED_ABSENCE' ? 'not detected' : 'pattern detected';
+      reasoning.push(`FinOps technical signal (INFERRED / NON_AUTHORITATIVE): ${rule.observation}: ${observation}.`);
     }
     reasoning.push(`Trust zone: ${enrichment.trustZone.trustZone}`);
     reasoning.push(`Governance priority: ${enrichment.governancePriority}`);

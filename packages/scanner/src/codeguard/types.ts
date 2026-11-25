@@ -1,4 +1,5 @@
 import type { CodeguardOversight } from './oversight';
+import type { FinOpsCostEvidence } from './enrichment/finops';
 
 export interface RepositoryProvider {
   name: string;
@@ -66,7 +67,9 @@ export interface EnrichmentData {
     monthlyCostEstimate: number;
     costRisk: string;
     costHotspots: string[];
-    breakdown: Array<{ category: string; estimatedMonthly: number }>;
+    breakdown: Array<{ category: string; estimatedMonthly: number; costEvidence?: FinOpsCostEvidence }>;
+    /** Optional for historical readers; new scanner results always label all cost fields. */
+    costEvidence?: FinOpsCostEvidence;
   };
   lgpd: {
     findings: Array<{ category: string; severity: string; rule: string; match: string; line: number; filePath: string; message: string }>;
@@ -118,6 +121,7 @@ export interface EnrichmentData {
     external_sinks: number;
     internal_sinks: number;
     monthly_cost_estimate: number;
+    monthly_cost_estimate_evidence?: FinOpsCostEvidence;
     code_locations: number;
     compliance_exposure: string;
     ai_act_exposure: string;

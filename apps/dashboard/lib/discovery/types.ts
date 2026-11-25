@@ -1,3 +1,5 @@
+import type { FinOpsCostEvidence } from '@council/scanner/codeguard/enrichment/finops';
+
 export interface RepositoryProvider {
   name: string;
   fetchFiles(owner: string, repo: string, branch?: string, path?: string): Promise<RepoFile[]>;
@@ -60,7 +62,9 @@ export interface EnrichmentData {
     monthlyCostEstimate: number;
     costRisk: string;
     costHotspots: string[];
-    breakdown: Array<{ category: string; estimatedMonthly: number }>;
+    breakdown: Array<{ category: string; estimatedMonthly: number; costEvidence?: FinOpsCostEvidence }>;
+    /** Optional for historical readers; new scanner results always label all cost fields. */
+    costEvidence?: FinOpsCostEvidence;
   };
   lgpd: {
     findings: Array<{ category: string; severity: string; rule: string; match: string; line: number; filePath: string; message: string }>;
@@ -112,6 +116,7 @@ export interface EnrichmentData {
     external_sinks: number;
     internal_sinks: number;
     monthly_cost_estimate: number;
+    monthly_cost_estimate_evidence?: FinOpsCostEvidence;
     code_locations: number;
     compliance_exposure: string;
     ai_act_exposure: string;
