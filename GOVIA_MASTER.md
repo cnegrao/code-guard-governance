@@ -865,3 +865,15 @@ BLOQUEIOS + DONO: … | DEC-ID NOVA: … / N/A
 | DEC-ARCH-006 | Demonstração roda no TEST (GOVIA_DEMO). A produção hosted atual não será migrada; uma produção nova será criada a partir das migrações da `main` quando autorizada. | VIGENTE |
 
 **EV-ARCH-PRD-20261125:** leitura só de metadados, feita por Carlos. A produção hosted contém apenas o schema de agosto/2026, sem L14/L15/Discovery Machine. Nela, 12 funções `SECURITY DEFINER` (incluindo `ledger_append`, `agent_graph_traverse`, `compute_governance_score`) são executáveis por `anon` e `authenticated`, sem `search_path` fixo. No TEST as mesmas estão revogadas. A correção (REVOKE) está pendente de decisão de Carlos. O TEST tem RLS ligado em todas as tabelas de `gov_repo`.
+
+### Atualização de decisões — 25/11/2026, noite (decisor Carlos; arquiteto Claude)
+
+| ID | Decisão / evidência | Estado |
+| --- | --- | --- |
+| DEC-ARCH-004 (atualização) | OPS-001 executada por Carlos no TEST `zkqfvqwqdypgpzauzinw` via Supabase CLI (`db push --include-all`, lista conferida antes). Aplicadas 3 de 10: `20261021030240`, `20261021134359`, `20261021201316` (ledger v2). A 4ª (`20261022142630`, SR1) foi recusada pela própria trava `SR1_UNAPPROVED_STARTING_CATALOG` (hash do catálogo diverge porque o TEST já tinha migrações de novembro); transação desfeita, banco íntegro. Ledger v2 ativado por Carlos com `call gov_repo.ledger_v2_activate(array['discovery_scan','talk_governance_logging'])`; `ledger_integrity_epochs_v2 = 1`. | EXECUTADO PARCIALMENTE — suficiente para a demo |
+| DEC-ARCH-008 | As 7 migrações de busca semântica (`20261022142630` a `20261029195734`) ficam adiadas no TEST. Nenhuma rota ou tela do dashboard chama essas funções hoje. Se forem necessárias, serão reescritas para o catálogo atual; a trava não será contornada. Busca semântica (LX03/SR2) sai do caminho da demonstração. | VIGENTE |
+| DEC-ARCH-007 | Fonte de teste e demonstração: somente GitHub (repositório `cnegrao/govia-agent-source`). Demais fontes (GitLab, Bitbucket, Azure DevOps, CI/CD/IaC, documentos, identidade) e conectores de catálogo (M19) permanecem no roadmap e serão implementados conforme demanda comercial, cada um com cliente, ambiente e critério de aceite reais. Catálogo com implementação hoje: apenas Purview inbound (M10), sem conexão live comprovada. | VIGENTE |
+
+**EV-ARCH-PRD-20261125 (complemento):** Carlos executou o REVOKE das 12 funções `SECURITY DEFINER` na produção hosted e confirmou `anon_pode = false` e `authenticated_pode = false` em todas. Carlos declarou que não há dados válidos em nenhum ambiente (produção, dev ou TEST).
+
+**EV-DEMO-SOURCE-V2-20261125:** branch `feat/v2-ouvidoria` (commit `5f2ce87`) em `cnegrao/govia-agent-source` acrescenta dois agentes de ouvidoria (triagem e encaminhamento), ferramentas, API, `mcp.json`, base de conhecimento e `db/schema.sql` com colunas de dados pessoais. A `main` do repositório de demonstração permanece em `cfa95f1` até o fim da SHOW-001. Integração da v2 é decisão de Carlos após a SHOW-001.
