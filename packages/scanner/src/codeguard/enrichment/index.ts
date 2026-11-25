@@ -1,5 +1,5 @@
 import { analyseDataLineage, type DataLineageResult } from "./lineage";
-import { analyseFinOps, type FinOpsResult } from "./finops";
+import { analyseFinOps, heuristicCostEvidence, type FinOpsResult } from "./finops";
 import { scanLGPDP, type LGPDPResult } from "./lgpd";
 import { detectFAPI, type FAPIResult } from "./fapi";
 import { inferTrustZone, computeGovernancePriority, type TrustZoneResult } from "./trust-zone";
@@ -48,8 +48,7 @@ export async function enrichAgent(
   if (lgpd.severity === "high") exposureSignals.push("high_lgpd");
   if (lineage.riskLevel === "critical") exposureSignals.push("critical_lineage");
   if (lineage.riskLevel === "high") exposureSignals.push("high_lineage");
-  if (finops.costRisk === "critical") exposureSignals.push("critical_finops");
-  if (finops.costRisk === "high") exposureSignals.push("high_finops");
+  // L15 §23 / LX04: costRisk mixes presumed usage and pattern flags; it is not compliance evidence.
   if (fapi.doraExposure && !fapi.fapiCompliant) exposureSignals.push("dora_gap");
 
   if (exposureSignals.filter((s) => s.startsWith("critical")).length >= 2) complianceExposure = "critical";
@@ -122,6 +121,7 @@ export function enrichSummary(
     external_sinks: enrichment.lineage.externalSinks.length,
     internal_sinks: enrichment.lineage.internalSinks.length,
     monthly_cost_estimate: enrichment.finops.monthlyCostEstimate,
+    monthly_cost_estimate_evidence: heuristicCostEvidence(),
     code_locations: enrichment.codeMap.agentCodeLocations.length,
     compliance_exposure: enrichment.complianceExposure,
     ai_act_exposure: enrichment.aiActExposure,
