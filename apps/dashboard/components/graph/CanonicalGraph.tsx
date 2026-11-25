@@ -17,9 +17,9 @@ export function CanonicalGraph({ graph }: { graph: GovernedGraph }) {
     return {
       nodes: graph.nodes.map(node => ({ id: node.nodeId,
         position: { x: layout.node(node.nodeId).x - 130, y: layout.node(node.nodeId).y - 50 },
-        style: { width: 260 },
+        style: { width: 260, background: '#12151A', color: '#F2F4F7', border: '1px solid #3A414C', borderRadius: 8, textAlign: 'left' as const },
         data: { label: <div><strong>{node.canonicalObjectKind}</strong><div className="break-all text-xs">{node.canonicalObjectId}</div>
-          {node.canonicalObjectKind === 'AGENT' && <Link href={`/agents/canonical/${encodeURIComponent(node.canonicalObjectId)}`}>Open Passport</Link>}</div> },
+          {node.canonicalObjectKind === 'AGENT' && <Link className="text-[#6B9BFF] underline" href={`/agents/canonical/${encodeURIComponent(node.canonicalObjectId)}`}>Open Passport</Link>}</div> },
       })),
       edges: graph.edges.map(edge => ({ id: edge.canonicalRelationshipId,
         source: edge.source.nodeId, target: edge.target.nodeId, label: edge.relationshipType })),
