@@ -1,3 +1,18 @@
+/** ADR L15 §23: estimates are QUARANTINED; observed cost requires L12 evidence.
+ * Covers the legacy amount, costRisk, hotspots and every breakdown field (including confidence).
+ * A numeric heuristic zero is not an observed zero, financial measure, governed fact or KPI.
+ */
+export interface FinOpsCostEvidence {
+  kind: "HEURISTIC";
+  authority: "QUARANTINED";
+  observedCostState: "UNKNOWN";
+  evidenceState: "NOT_EVIDENCED";
+}
+
+export function heuristicCostEvidence(): FinOpsCostEvidence {
+  return { kind: "HEURISTIC", authority: "QUARANTINED", observedCostState: "UNKNOWN", evidenceState: "NOT_EVIDENCED" };
+}
+
 export interface FinOpsResult {
   nPlusOneDetected: boolean;
   expensiveScans: boolean;
@@ -8,6 +23,8 @@ export interface FinOpsResult {
   costRisk: "low" | "medium" | "high" | "critical";
   costHotspots: string[];
   breakdown: CostBreakdownItem[];
+  /** Optional for legacy adapter callers; analyseFinOps always emits the boundary. */
+  costEvidence?: FinOpsCostEvidence;
 }
 
 export interface CostBreakdownItem {
@@ -15,6 +32,7 @@ export interface CostBreakdownItem {
   estimatedMonthly: number;
   confidence: number;
   callCount: number;
+  costEvidence?: FinOpsCostEvidence;
 }
 
 const N_PLUS_ONE_PATTERNS: RegExp[] = [
@@ -128,6 +146,7 @@ export function analyseFinOps(content: string): FinOpsResult {
         estimatedMonthly,
         confidence,
         callCount,
+        costEvidence: heuristicCostEvidence(),
       };
     });
 
@@ -157,5 +176,6 @@ export function analyseFinOps(content: string): FinOpsResult {
     costRisk,
     costHotspots: hotspots,
     breakdown,
+    costEvidence: heuristicCostEvidence(),
   };
 }
