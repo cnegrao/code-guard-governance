@@ -18,7 +18,7 @@ export interface AgentChainItem {
   sourceName: string;
   sourceId: string;
   kind: string;
-  state: ReviewState;
+  state: ReviewState | null;
   dependencies: string[];
   dependencyLabels?: string[];
   identityKey?: string;
@@ -30,7 +30,11 @@ export interface SupersededChainItem {
   candidateId: string; reviewSubjectId?: string; sourceName: string; kind: string; sourceId: string;
   runId: string; sourceVersion?: string; newerRunId: string; newerSourceVersion?: string;
 }
-export interface AgentChainPlan { items: AgentChainItem[]; superseded: SupersededChainItem[]; errors: string[]; previewKey: string; batchId: string }
+export interface AlreadyGovernedChainItem {
+  candidateId: string; sourceName: string; sourceId: string; kind: 'AGENT';
+  canonicalId: string; mappedSourceName: string; earlierDecisionId: string;
+}
+export interface AgentChainPlan { items: AgentChainItem[]; alreadyGoverned: AlreadyGovernedChainItem[]; superseded: SupersededChainItem[]; errors: string[]; previewKey: string; batchId: string }
 export type ChainStep = 'CONFIRM' | 'CERTIFY' | 'RECONCILE' | 'MATERIALIZE';
 export interface ChainItemResult {
   reviewSubjectId: string;
@@ -212,7 +216,7 @@ export function chainItem(row: ChainCandidate, members: readonly ChainCandidate[
   return {
     reviewSubjectId: row.reviewSubjectId ?? `missing:${c.candidateId}`, candidateId: c.candidateId,
     sourceName: identity ?? (c.candidateKind === 'RELATIONSHIP' ? c.relationshipTypeCode : c.sourceObject.externalId),
-    sourceId: c.sourceObject.externalId, kind: c.candidateKind, state: row.state ?? 'DETECTED', dependencies, dependencyLabels, identityKey,
+    sourceId: c.sourceObject.externalId, kind: c.candidateKind, state: row.state ?? null, dependencies, dependencyLabels, identityKey,
     ...reconciliationProposal(matches), ...(reason ? { needsIndividualReview: reason } : {}),
   };
 }

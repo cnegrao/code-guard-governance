@@ -21,6 +21,14 @@ test('canonical AGENT anchor retains pending versions while canonical dependenci
   assert.equal(members.length, 6);
 });
 
+test('absent review state remains null and unavailable, with no fabricated DETECTED state', () => {
+  const row = candidate('AGENT', 'no-review', { agentCode: 'TriagemManifestacaoAgent' });
+  delete row.reviewSubjectId; delete row.state;
+  const preview = chainItem(row, [row], []);
+  assert.equal(preview.state, null);
+  assert.match(preview.needsIndividualReview!, /pending human review is unavailable/);
+});
+
 test('dependency order always places AGENT before AGENT_VERSION and both endpoints before relationships', () => {
   const fixture = chainFixture();
   const items = fixture.all.map(row => chainItem(row, fixture.all, []));

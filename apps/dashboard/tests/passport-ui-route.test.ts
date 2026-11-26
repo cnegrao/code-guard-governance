@@ -21,6 +21,7 @@ const passport: AgentPassport360 = { canonicalAgent:identity, displayName:null, 
     nonAuthoritativeAnalysis:{label:'NON-AUTHORITATIVE ANALYSIS',hypotheses:[]}} };
 let Page: typeof import('@/app/(dashboard)/agents/canonical/[canonicalObjectId]/page').default;
 let Component: typeof import('@/components/agents/AgentPassport').AgentPassport;
+let AlreadyGovernedAgents: typeof import('@/components/workspace/AgentChainReview').AlreadyGovernedAgents;
 let session: typeof import('@/lib/governance/passport-session');
 let ListPage: typeof import('@/app/(dashboard)/agents/canonical/page').default;
 let listCalls: unknown[][];
@@ -41,11 +42,24 @@ before(async()=>{
   session=await import('@/lib/governance/passport-session');
   Page=(await import('@/app/(dashboard)/agents/canonical/[canonicalObjectId]/page')).default;
   Component=(await import('@/components/agents/AgentPassport')).AgentPassport;
+  AlreadyGovernedAgents=(await import('@/components/workspace/AgentChainReview')).AlreadyGovernedAgents;
   ListPage=(await import('@/app/(dashboard)/agents/canonical/page')).default;
 });
 beforeEach(async()=>{
   process.env.JWT_SECRET=secret; received=[]; available=true; listCalls=[];
   cookie=await signToken({sub:'user:1',org,email:'test@example.invalid',role:'VIEWER',credentialEpoch:'2026-09-25T00:00:00.000001+00:00'});
+});
+
+test('already-governed chain identity renders the earlier decision without review state fabrication or selection controls', () => {
+  const html = renderToStaticMarkup(createElement(AlreadyGovernedAgents, { items: [{ candidateId: 'new-agent-candidate',
+    sourceName: 'TriagemManifestacaoAgent', mappedSourceName: 'TriagemManifestacaoAgent', kind: 'AGENT', sourceId: 'triagem_agent.py',
+    canonicalId: 'canonical-object:c77b2d65', earlierDecisionId: 'decision:earlier-agent' }] }));
+  assert.match(html, /Already governed — mapped to TriagemManifestacaoAgent \(canonical-object:c77b2d65\) by an earlier decision/);
+  assert.match(html, /No review \(already governed\)/);
+  assert.match(html, /decision:earlier-agent/);
+  assert.match(html, /not included in decisions/);
+  assert.doesNotMatch(html, /DETECTED|<input|<button|checkbox/);
+  assert.equal(renderToStaticMarkup(createElement(AlreadyGovernedAgents, { items: [] })), '');
 });
 
 test('real Passport component renders exactly 16 accessible and navigable sections including UNKNOWN',()=>{

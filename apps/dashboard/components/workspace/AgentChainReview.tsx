@@ -3,7 +3,21 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import type { AgentChainPlan, AgentChainResult } from '@/lib/governance/agent-chain';
+import type { AgentChainPlan, AgentChainResult, AlreadyGovernedChainItem } from '@/lib/governance/agent-chain';
+
+export function AlreadyGovernedAgents({ items }: { items: readonly AlreadyGovernedChainItem[] }) {
+  if (!items.length) return null;
+  return <Card>
+    <h2 className="text-lg font-semibold">Already governed (not included in decisions)</h2>
+    <ul className="mt-3 space-y-3" aria-label="Already governed agent identities">{items.map(item => <li key={item.candidateId} className="break-words">
+      <strong>{item.sourceName}</strong> · {item.kind}
+      <p>Already governed — mapped to {item.mappedSourceName} ({item.canonicalId}) by an earlier decision</p>
+      <p className="text-xs">Review state: No review (already governed)</p>
+      <p className="text-xs">Source: {item.sourceId} · Earlier decision: {item.earlierDecisionId}</p>
+      <p className="text-sm">This candidate is not selectable and will not be changed by this batch.</p>
+    </li>)}</ul>
+  </Card>;
+}
 
 export function AgentChainReview({ reviewId, canonicalId }: { reviewId?: string; canonicalId?: string }) {
   const [plan, setPlan] = useState<AgentChainPlan | null>(null);
@@ -66,7 +80,7 @@ export function AgentChainReview({ reviewId, canonicalId }: { reviewId?: string;
             <span><strong>{index + 1}. {item.sourceName}</strong> · {item.kind}<br />{item.outcome.replaceAll('_', ' ')}
               {item.match && <span> — {item.match.label} ({item.match.id})</span>}</span>
           </label>
-          <p className="mt-2 text-xs text-gray-400">Source: {item.sourceId} · Review state: {item.state}</p>
+          <p className="mt-2 text-xs text-gray-400">Source: {item.sourceId} · Review state: {item.state ?? 'No review'}</p>
           {item.needsIndividualReview && <p className="mt-2 text-amber-300">Needs individual review: {item.needsIndividualReview}</p>}
           {item.dependencies.length > 0 && <p className="mt-2 text-xs">Requires pending reviews: {(item.dependencyLabels ?? item.dependencies).join(', ')}</p>}
           {!item.reviewSubjectId.startsWith('missing:') && <Link className="mt-2 inline-block text-primary underline" href={`/governance/reviews/${encodeURIComponent(item.reviewSubjectId)}`}>Inspect individual review</Link>}
@@ -82,6 +96,7 @@ export function AgentChainReview({ reviewId, canonicalId }: { reviewId?: string;
         {busy ? 'Applying governed decisions…' : `Confirm ${selected.length} individual decisions`}
       </Button>
     </Card>}
+    {plan && <AlreadyGovernedAgents items={plan.alreadyGoverned} />}
     {plan && plan.superseded.length > 0 && <Card>
       <h2 className="text-lg font-semibold">Superseded by newer discovery run (not included)</h2>
       <p className="mt-2 text-sm">These earlier proposals are not selectable and will not be changed by this batch.</p>

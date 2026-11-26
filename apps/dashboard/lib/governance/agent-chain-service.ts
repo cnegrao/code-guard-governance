@@ -1,7 +1,7 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { asOrganisationId, type OrganisationId } from '@council/canonical-contracts';
-import { asReviewSubjectId, type ReviewState } from '@council/governance-review';
+import { asReviewSubjectId, EndpointResolutionError, normalizedObjectIdentity, type ReviewState } from '@council/governance-review';
 import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
 import { privilegedDb, createGovernedReviewPersistence } from './persistence';
 import { rehydrateNormalizedCandidate, normalizedCandidateEnvelopeHash } from './discovery-intake-persistence';
@@ -9,14 +9,19 @@ import { workspaceCommands } from './workspace-commands';
 import { submitReconciliationDecision, triggerMaterialization } from './decision-commands';
 import { getGovernanceDecisionDetail } from './decision-query';
 import { sourceName } from './source-name';
+import { canonicalEndpointResolution } from './relationship-resolution';
 import { chainItem, collectAgentChain, duplicateCreateErrors, executeChain, latestDiscoveryChain, objectIdentityKey, orderChain, referenceCandidates, selectedChain,
-  ChainCommandError, type AgentChainPlan, type ChainCandidate, type ChainMatch } from './agent-chain';
+  ChainCommandError, type AgentChainPlan, type AlreadyGovernedChainItem, type ChainCandidate, type ChainMatch } from './agent-chain';
 
 export interface ChainAnchor { reviewId?: string; canonicalId?: string }
 interface CandidateRow { envelope: unknown; envelope_hash: string; acquisition_run_id: string }
 interface RunRow { run_id: string; source_connection_id: string; started_at: string; source_version: string | null }
 interface ReviewRow { review_subject_id: string; finding_id: string; state: ReviewState }
-interface MappingRow { candidate_id: string; canonical_object_id: string }
+interface MappingRow {
+  candidate_id: string; canonical_object_id: string; canonical_object_kind: string;
+  source_connection_id: string; source_external_type: string; source_external_id: string;
+  normalized_object_identity: string; created_by_decision_id: string;
+}
 interface ObjectRow { canonical_object_id: string; kind: string }
 interface RelationshipRow { relationship_id: string; relationship_type: string; source_canonical_object_id: string; target_canonical_object_id: string; valid_to: string | null }
 interface InvocationRow { review_subject_id: string; reconciliation_decision_id: string }
@@ -41,7 +46,7 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
   const [candidates, reviews, mappings, objects, relationships, decisions, operations, runs] = await Promise.all([
     readRows<CandidateRow>(org, 'discovery_candidates', 'envelope,envelope_hash,acquisition_run_id', 'candidate_id'),
     readRows<ReviewRow>(org, 'review_subjects', 'review_subject_id,finding_id,state', 'review_subject_id'),
-    readRows<MappingRow>(org, 'canonical_normalized_object_mappings', 'candidate_id,canonical_object_id', 'mapping_id'),
+    readRows<MappingRow>(org, 'canonical_normalized_object_mappings', 'candidate_id,canonical_object_id,canonical_object_kind,source_connection_id,source_external_type,source_external_id,normalized_object_identity,created_by_decision_id', 'mapping_id'),
     readRows<ObjectRow>(org, 'canonical_objects', 'canonical_object_id,kind', 'canonical_object_id'),
     readRows<RelationshipRow>(org, 'canonical_relationships', 'relationship_id,relationship_type,source_canonical_object_id,target_canonical_object_id,valid_to', 'relationship_id'),
     readRows<InvocationRow>(org, 'reconciliation_invocations', 'review_subject_id,reconciliation_decision_id', 'invocation_id'),
@@ -72,7 +77,36 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
   try { members = collectAgentChain(all, anchor); }
   catch { throw new ChainCommandError('No exact AGENT source was found for this anchor. Open its individual review.'); }
   const latest = latestDiscoveryChain(members);
-  const pending = latest.current.filter(row => !row.canonicalId);
+  const alreadyGoverned: AlreadyGovernedChainItem[] = [];
+  const resolvedMembers = await Promise.all(latest.current.map(async row => {
+    const c = row.candidate;
+    if (c.candidateKind !== 'AGENT' || row.reviewSubjectId) return row;
+    const unresolved = { ...row, canonicalId: undefined };
+    try {
+      // DEC-REV-001-B: read the existing exact binding. Do not create a review,
+      // promote this candidate, reconcile it again or write another mapping.
+      const resolved = await canonicalEndpointResolution.resolveEndpoint(org, {
+        referenceKind: 'CANDIDATE', candidateKind: 'AGENT', candidateId: c.candidateId,
+      });
+      if (resolved.organisationId !== org || resolved.kind !== 'AGENT') return unresolved;
+      const identity = normalizedObjectIdentity(c);
+      const exact = mappings.filter(m => m.canonical_object_kind === 'AGENT' &&
+        m.source_connection_id === c.sourceObject.connectionId && m.source_external_type === c.sourceObject.externalType &&
+        m.source_external_id === c.sourceObject.externalId && m.normalized_object_identity === identity);
+      if (exact.length !== 1 || exact[0].canonical_object_id !== resolved.objectId || !exact[0].created_by_decision_id) return unresolved;
+      const origin = all.find(r => r.candidate.candidateId === exact[0].candidate_id)?.candidate;
+      const name = sourceName('AGENT', c.proposedIdentity) ?? c.sourceObject.externalId;
+      alreadyGoverned.push({ candidateId: c.candidateId, sourceName: name, sourceId: c.sourceObject.externalId, kind: 'AGENT',
+        canonicalId: resolved.objectId, mappedSourceName: origin?.candidateKind === 'AGENT' ? sourceName('AGENT', origin.proposedIdentity) ?? name : name,
+        earlierDecisionId: exact[0].created_by_decision_id });
+      return { ...row, canonicalId: resolved.objectId };
+    } catch (error) {
+      if (error instanceof EndpointResolutionError) return unresolved;
+      throw error;
+    }
+  }));
+  alreadyGoverned.sort((a, b) => a.candidateId.localeCompare(b.candidateId));
+  const pending = resolvedMembers.filter(row => !row.canonicalId);
   const matchKey = objectIdentityKey;
   const canonicalKinds = new Map(objects.map(o => [o.canonical_object_id, o.kind]));
   const matchesByIdentity = new Map<string, Map<string, ChainMatch>>();
@@ -93,7 +127,7 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
     // (or a display name) is insufficient even when only one object exists.
     const key = c.candidateKind === 'RELATIONSHIP' ? undefined : matchKey(c);
     const matches = key ? [...(matchesByIdentity.get(key)?.values() ?? [])].sort((a, b) => a.id.localeCompare(b.id)) : [];
-    const item = chainItem(row, latest.current, matches, all);
+    const item = chainItem(row, resolvedMembers, matches, all);
     if (c.candidateKind !== 'RELATIONSHIP' && !key) item.needsIndividualReview = 'Normalized identity unavailable; needs individual review.';
     return item;
   });
@@ -105,7 +139,7 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
     if (row.candidate.candidateKind !== 'RELATIONSHIP') continue;
     const c = row.candidate;
     const endpointIds = [c.sourceEndpoint, c.targetEndpoint].map(ref => {
-      const endpoints = referenceCandidates(ref, latest.current);
+      const endpoints = referenceCandidates(ref, resolvedMembers);
       if (endpoints.length !== 1) return undefined;
       return endpoints[0].canonicalId ?? items.find(i => i.candidateId === endpoints[0].candidate.candidateId)?.match?.id;
     });
@@ -119,8 +153,8 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
   const ordered = orderChain(items);
   const errors = [...latest.errors, ...duplicateCreateErrors(ordered)];
   const previewKey = createHash('sha256').update(JSON.stringify([org, anchor, ordered,
-    latest.superseded, errors, members.map(r => [normalizedCandidateEnvelopeHash(r.candidate), r.discoveryRun])])).digest('hex');
-  return { items: ordered, superseded: latest.superseded, errors, previewKey, batchId: randomUUID() };
+    alreadyGoverned, latest.superseded, errors, members.map(r => [normalizedCandidateEnvelopeHash(r.candidate), r.discoveryRun])])).digest('hex');
+  return { items: ordered, alreadyGoverned, superseded: latest.superseded, errors, previewKey, batchId: randomUUID() };
 }
 
 export interface ApproveChainInput {

@@ -1,6 +1,7 @@
 import { before, beforeEach, mock, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { asOrganisationId } from '@council/canonical-contracts';
+import { asCanonicalObjectId, asOrganisationId } from '@council/canonical-contracts';
+import { EndpointResolutionError } from '@council/governance-review';
 import { chainFixture, twoDiscoveryRunsFixture } from './helpers/agent-chain-fixtures';
 
 const org = asOrganisationId('org-chain');
@@ -11,6 +12,9 @@ let calls: { step: string; input: Record<string, unknown>; port?: unknown }[];
 let reads: string[];
 let failReview: string | undefined;
 let authenticationFails = false;
+let resolvedParentId: string | undefined;
+let resolutionFailure: 'ENDPOINT_NOT_CANONICAL' | 'ENDPOINT_MAPPING_AMBIGUOUS';
+let endpointReads: { org: unknown; reference: unknown }[];
 class AuthenticationError extends Error {}
 
 mock.module('@/lib/auth', { namedExports: {
@@ -62,6 +66,13 @@ mock.module('@/lib/governance/decision-commands', { namedExports: {
   },
 } });
 mock.module('@/lib/governance/decision-query', { namedExports: { getGovernanceDecisionDetail: async () => ({}) } });
+mock.module('@/lib/governance/relationship-resolution', { namedExports: {
+  canonicalEndpointResolution: { async resolveEndpoint(actualOrg: unknown, reference: unknown) {
+    endpointReads.push({ org: actualOrg, reference });
+    if (!resolvedParentId) throw new EndpointResolutionError(resolutionFailure);
+    return { organisationId: org, kind: 'AGENT', objectId: asCanonicalObjectId(resolvedParentId) };
+  } },
+} });
 
 let service: typeof import('../lib/governance/agent-chain-service');
 let route: typeof import('../app/api/governance/workspace/agent-chain/route');
@@ -77,6 +88,7 @@ beforeEach(() => {
     acquisition_runs: [{ organisation_id: org, run_id: 'run-default', source_connection_id: 'conn', started_at: '2026-11-26T09:00:00Z', source_version: 'default-commit' }],
   };
   calls = []; reads = []; failReview = undefined; authenticationFails = false;
+  resolvedParentId = undefined; resolutionFailure = 'ENDPOINT_NOT_CANONICAL'; endpointReads = [];
 });
 async function approval() {
   const anchor = { reviewId: 'review:agent' };
@@ -212,7 +224,9 @@ function loadTwoRuns() {
       source_connection_id: 'conn', source_version: run.sourceVersion, started_at: run.startedAt })),
     canonical_objects: [{ organisation_id: org, canonical_object_id: 'canonical-object:c77b2d65-fixture', kind: 'AGENT' }],
     canonical_normalized_object_mappings: [{ organisation_id: org, candidate_id: fixture.old.agent.candidate.candidateId,
-      canonical_object_id: 'canonical-object:c77b2d65-fixture' }],
+      canonical_object_id: 'canonical-object:c77b2d65-fixture', canonical_object_kind: 'AGENT', source_connection_id: 'conn',
+      source_external_type: 'file', source_external_id: fixture.old.agent.candidate.sourceObject.externalId,
+      normalized_object_identity: 'TriagemManifestacaoAgent', created_by_decision_id: 'decision:earlier-agent' }],
   };
   return fixture;
 }
@@ -257,14 +271,88 @@ test('Triagem two-run regression: newest objects appear once, new AGENT gets its
   assert.ok(calls.every(call => !fixture.old.all.some(row => row.reviewSubjectId === call.input.reviewSubjectId)));
 });
 
-test('a latest AGENT proposal absent from the review queue blocks dependents with the missing source name', async () => {
+test('a no-review AGENT without an exact resolved mapping blocks dependents with the missing source name', async () => {
   const fixture = loadTwoRuns();
   tables.review_subjects = tables.review_subjects.filter(row => row.review_subject_id !== fixture.latest.agent.reviewSubjectId);
   const plan = await service.previewAgentChain(org, { canonicalId: 'canonical-object:c77b2d65-fixture' });
   const version = plan.items.find(item => item.kind === 'AGENT_VERSION')!;
   assert.match(version.needsIndividualReview!, /TriagemManifestacaoAgent/);
   assert.match(version.dependencyLabels!.join(' '), /TriagemManifestacaoAgent.*missing pending review/);
+  assert.equal(plan.items.find(item => item.kind === 'AGENT')?.state, null);
+  assert.deepEqual(plan.alreadyGoverned, []);
   assert.ok(plan.items.filter(item => item.kind === 'RELATIONSHIP').every(item => item.needsIndividualReview));
+  assert.equal(calls.length, 0);
+});
+
+for (const referenceKind of ['CANDIDATE', 'SOURCE_OBJECT'] as const) {
+  test(`DEC-REV-001-B: no-review exact governed AGENT unlocks ${referenceKind} parent and relations with no AGENT write`, async () => {
+    const fixture = loadTwoRuns();
+    const anchor = { canonicalId: 'canonical-object:c77b2d65-fixture' };
+    tables.review_subjects = tables.review_subjects.filter(row => row.review_subject_id !== fixture.latest.agent.reviewSubjectId);
+    if (referenceKind === 'SOURCE_OBJECT') {
+      const record = tables.discovery_candidates.find(row => (row.envelope as { candidateId: string }).candidateId === fixture.latest.version.candidate.candidateId)!;
+      const envelope = { ...fixture.latest.version.candidate, proposedIdentity: { agent: { referenceKind, candidateKind: 'AGENT', sourceObject: fixture.latest.agent.candidate.sourceObject } } };
+      record.envelope = envelope; record.envelope_hash = JSON.stringify(envelope);
+    }
+    resolvedParentId = anchor.canonicalId;
+    const before = JSON.stringify(tables);
+    const plan = await service.previewAgentChain(org, anchor);
+    assert.deepEqual(plan.errors, []);
+    assert.equal(plan.items.length, fixture.latest.all.length - 1);
+    assert.ok(!plan.items.some(item => item.kind === 'AGENT'));
+    assert.ok(plan.items.every(item => !item.needsIndividualReview));
+    assert.deepEqual(plan.items.find(item => item.kind === 'AGENT_VERSION')?.dependencies, []);
+    assert.deepEqual(plan.alreadyGoverned, [{
+      candidateId: fixture.latest.agent.candidate.candidateId, sourceName: 'TriagemManifestacaoAgent', kind: 'AGENT',
+      sourceId: fixture.latest.agent.candidate.sourceObject.externalId, canonicalId: anchor.canonicalId,
+      mappedSourceName: 'TriagemManifestacaoAgent', earlierDecisionId: 'decision:earlier-agent',
+    }]);
+    assert.deepEqual(endpointReads, [{ org, reference: { referenceKind: 'CANDIDATE', candidateKind: 'AGENT', candidateId: fixture.latest.agent.candidate.candidateId } }]);
+    assert.equal(JSON.stringify(tables), before);
+    const input = { anchor, previewKey: plan.previewKey, batchId: plan.batchId,
+      selectedIds: plan.items.map(item => item.reviewSubjectId), justification: 'Review selected dependents; preserve the earlier governed AGENT decision.' };
+    await assert.rejects(service.approveAgentChain(principal, { ...input, selectedIds: [...input.selectedIds, `missing:${fixture.latest.agent.candidate.candidateId}`] }), /eligible items/);
+    assert.equal(calls.length, 0);
+    const result = await service.approveAgentChain(principal, input);
+    assert.ok(result.items.every(item => item.status === 'MATERIALIZED'));
+    assert.equal(calls.filter(call => call.step === 'RECONCILE').length, plan.items.length);
+    assert.ok(calls.every(call => !String(call.input.reviewSubjectId).includes('agent:')));
+    assert.equal(JSON.stringify(tables), before, 'no review or mapping is created/changed for the already-governed candidate');
+  });
+}
+
+test('DEC-REV-001-B: ambiguous exact endpoint resolution keeps the no-review AGENT and its dependents blocked', async () => {
+  const fixture = loadTwoRuns();
+  tables.review_subjects = tables.review_subjects.filter(row => row.review_subject_id !== fixture.latest.agent.reviewSubjectId);
+  resolutionFailure = 'ENDPOINT_MAPPING_AMBIGUOUS';
+  const plan = await service.previewAgentChain(org, { canonicalId: 'canonical-object:c77b2d65-fixture' });
+  assert.deepEqual(plan.alreadyGoverned, []);
+  assert.ok(plan.items.filter(item => ['AGENT', 'AGENT_VERSION', 'RELATIONSHIP'].includes(item.kind)).every(item => item.needsIndividualReview));
+  assert.equal(calls.length, 0);
+});
+
+test('DEC-REV-001-B: name matches or an incomplete source/decision proof cannot substitute for an exact governed binding', async () => {
+  for (const field of ['source_external_id', 'normalized_object_identity', 'created_by_decision_id']) {
+    const fixture = loadTwoRuns();
+    tables.review_subjects = tables.review_subjects.filter(row => row.review_subject_id !== fixture.latest.agent.reviewSubjectId);
+    tables.canonical_normalized_object_mappings[0][field] = field === 'created_by_decision_id' ? '' : 'different-source-or-identity';
+    resolvedParentId = 'canonical-object:c77b2d65-fixture';
+    const plan = await service.previewAgentChain(org, { canonicalId: resolvedParentId });
+    assert.deepEqual(plan.alreadyGoverned, [], field);
+    assert.ok(plan.items.find(item => item.kind === 'AGENT_VERSION')?.needsIndividualReview, field);
+  }
+  assert.equal(calls.length, 0);
+});
+
+test('DEC-REV-001-B: a lost exact binding invalidates a prior preview before any dependent command', async () => {
+  const fixture = loadTwoRuns();
+  tables.review_subjects = tables.review_subjects.filter(row => row.review_subject_id !== fixture.latest.agent.reviewSubjectId);
+  resolvedParentId = 'canonical-object:c77b2d65-fixture';
+  const anchor = { canonicalId: resolvedParentId };
+  const plan = await service.previewAgentChain(org, anchor);
+  resolvedParentId = undefined;
+  await assert.rejects(service.approveAgentChain(principal, { anchor, previewKey: plan.previewKey, batchId: plan.batchId,
+    selectedIds: plan.items.map(item => item.reviewSubjectId), justification: 'A stale preview must fail closed.' }), /chain changed/);
   assert.equal(calls.length, 0);
 });
 
