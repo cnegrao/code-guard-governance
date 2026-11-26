@@ -92,6 +92,7 @@ function buildBaseCommand(input: ExecuteGovernanceActionInput, subject: ReviewSu
     expectedState: subject.state,
     actor: { authorityKind: RECONCILIATION_AUTHORITY_KIND.HUMAN, actorReference: input.actorUserId },
     occurredAt: asIsoTimestamp(new Date().toISOString()),
+    ...(input.reasonCode === undefined ? {} : { reasonCode: input.reasonCode }),
   };
 }
 

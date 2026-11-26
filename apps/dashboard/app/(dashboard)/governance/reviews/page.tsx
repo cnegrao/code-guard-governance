@@ -251,6 +251,7 @@ export default function GovernanceReviewQueuePage() {
                     <Link href={`/governance/reviews/${item.reviewSubjectId}`}>
                       <Button size="sm" variant="ghost">Review</Button>
                     </Link>
+                    {item.candidateKind === 'AGENT' && <Link className="ml-2 text-sm text-primary underline" href={`/governance/agent-chain?reviewId=${encodeURIComponent(item.reviewSubjectId)}`}>Review agent chain</Link>}
                   </td>
                 </tr>
               ))}

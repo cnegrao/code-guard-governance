@@ -203,6 +203,7 @@ export function AgentPassport({ passport }: { passport: AgentPassport360 }) {
       <h2 className="mt-2 break-words text-2xl font-bold text-white">{name ?? 'AGENT'}</h2>
       {name && <p className="mt-1 text-xs text-gray-400">{SOURCE_NAME_LABEL}</p>}
       <p className="mt-3 break-all text-xs text-gray-400">Canonical AGENT: {passport.canonicalAgent.objectId}</p>
+      <Link className="mt-3 inline-block text-sm text-primary underline" href={`/governance/agent-chain?canonicalId=${encodeURIComponent(passport.canonicalAgent.objectId)}`}>Review agent chain</Link>
       <p className="mt-2 text-sm text-gray-300">Governed view · 16 / 16 families represented</p>
       <a className="mt-3 inline-block text-sm text-[#91B5FF] underline" href="#passport-evidence-gaps">Evidence gaps ({gapCount})</a>
     </header>
