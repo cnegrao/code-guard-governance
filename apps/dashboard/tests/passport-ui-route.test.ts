@@ -57,6 +57,19 @@ test('real Passport component renders exactly 16 accessible and navigable sectio
   assert.ok(html.includes('<details'));assert.ok(html.includes('Source, trust and provenance')); assert.ok(!html.includes('17. Risk'));
 });
 
+test('source name remains separate from canonical UNKNOWN; evidence gaps are counted and collapsed',()=>{
+  const view={...passport,sourceNames:{'canonical:agent':'RepositoryAnalysisAgent'}};
+  const html=renderToStaticMarkup(createElement(Component,{passport:view}));
+  assert.match(html, /RepositoryAnalysisAgent/); assert.match(html, /source name \(not governed\)/);
+  assert.equal(view.displayName,null);
+  const gapStart=html.indexOf('<details id="passport-evidence-gaps"');
+  assert.ok(gapStart>0); assert.doesNotMatch(html.slice(gapStart,html.indexOf('>',gapStart)), /\bopen\b/);
+  assert.match(html.slice(gapStart),/Evidence gaps \([1-9]\d*\)/);
+  assert.ok(html.indexOf('id="passport-identity"')<gapStart);
+  assert.ok(html.indexOf('Current AgentVersion: UNKNOWN')>gapStart);
+  assert.match(html.slice(gapStart),/NOT_EVIDENCED.*do not establish compliance/);
+});
+
 function profileTraceView(missing=false): AgentPassport360 {
   const fact:ProfileFact={type:'profile',id:'version:1:framework',versionId:'version:1',field:'runtimeFrameworkReference',value:'LangGraph',
     provenance:{storage:'agent_version_technical_profiles',authority:'GOVERNED_PROFILE',profileOriginProposalId:'profile:proposal',

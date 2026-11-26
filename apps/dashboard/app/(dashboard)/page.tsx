@@ -1,347 +1,67 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { LegacyRiskBadge } from "@/components/ui/LegacyRiskBadge";
-import { LEGACY_RISK_LABEL } from "@/lib/legacy-risk";
-import { LEGACY_CONTROL_LIMITATION } from "@/lib/legacy-control-dto";
-import { Spinner } from "@/components/ui/Spinner";
-import Link from "next/link";
-import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { CANONICAL_OBJECT_KIND } from '@council/canonical-contracts';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { Card } from '@/components/ui/Card';
+import { useAuth } from '@/hooks/useAuth';
+import { organisationDisplayName } from '@/lib/brand';
 
-interface DashboardData {
-  totalAgents: number;
-  totalSystems: number;
-  openFindings: number;
-  openIncidents: number;
-  upcomingReviews: number;
-  highRiskAgents: number;
-  agentsWithoutSystem: number;
-  systemsWithoutAgents: number;
-  highRiskSystems: number;
-  openDoraIncidents: number;
-  totalLegacyControlGaps: number;
-  riskDistribution: { critical: number; high: number; medium: number; low: number };
-  recentIncidents: Array<{
-    incident_code: string;
-    title: string;
-    severity: string;
-    status: string;
-    occurred_at: string;
-  }>;
-  legacyControlGaps: Array<{
-    agent_code: string;
-    agent_name: string;
-    risk_level: string;
-    total_gaps: number;
-    owner_name: string;
-  }>;
-  industry: string;
-  repositoriesScanned: number;
-  agentsDiscovered: number;
-  repositoriesWithAI: number;
-  governancePriorityCritical: number;
-}
-
-function riskColor(v: number): "blue" | "yellow" | "red" {
-  if (v === 0) return "blue";
-  if (v <= 5) return "yellow";
-  return "red";
+interface Estate {
+  byKind: Record<string, number>;
+  canonicalObjects: number;
+  canonicalRelationships: number;
+  pendingReview: number;
+  asOf: string;
 }
 
 export default function DashboardPage() {
   const { session } = useAuth();
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [data, setData] = useState<Estate | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch("/api/dashboard/summary")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load dashboard");
-        return res.json();
-      })
-      .then(setData)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    let active = true;
+    fetch('/api/dashboard/estate')
+      .then(res => { if (!res.ok) throw new Error('Governed estate could not be read.'); return res.json(); })
+      .then(value => { if (active) setData(value); })
+      .catch(err => { if (active) setError(err.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  if (loading) return <Spinner className="py-12" />;
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-danger mb-2">{error}</p>
-        <p className="text-gray-400 text-sm">ERROR: Data could not be read. No governance conclusion is available.</p>
+  return <div className="space-y-6" aria-busy={loading}>
+    <header className="rounded-xl border border-border-dark bg-surface-dark/50 p-6">
+      <p className="text-xs font-semibold tracking-[0.2em] text-gray-400">GOVERNYX</p>
+      <h2 className="mt-2 text-2xl font-semibold text-white">AI Governance Intelligence</h2>
+      <p className="mt-2 text-sm text-gray-400">{organisationDisplayName(session?.org?.name)} · Canonical inventory and human review</p>
+    </header>
+    <section aria-labelledby="estate-title" className="space-y-4">
+      <div>
+        <h3 id="estate-title" className="text-lg font-semibold text-white">Governed estate</h3>
+        <p className="mt-1 text-sm text-gray-400">Canonical objects and effective canonical relationships. These counts do not establish compliance.</p>
       </div>
-    );
-  }
-  if (!data) return null;
-
-  const isDora = data.industry === "financial_services" || data.industry === "insurance";
-
-  return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white">Dashboard</h2>
-        <p className="text-sm text-gray-400 mt-1">
-          {session?.org?.name} — Operational inventory overview — indicative legacy data
-        </p>
+      {loading && <p role="status" className="text-sm text-gray-400">Reading canonical state… Counts remain UNKNOWN until the read completes.</p>}
+      {error && <p role="alert" className="text-sm text-warning">{error} Counts are UNKNOWN; no governance conclusion is available.</p>}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Canonical objects" value={data?.canonicalObjects ?? 'UNKNOWN'} color="gray" />
+        <Link href="/graph"><StatCard label="Canonical relationships" value={data?.canonicalRelationships ?? 'UNKNOWN'} color="gray" subtitle="Open governed graph" /></Link>
+        <Link href="/governance/reviews"><StatCard label="Pending review" value={data?.pendingReview ?? 'UNKNOWN'} color="gray" subtitle="DETECTED · PROPOSED · CONFIRMED" /></Link>
       </div>
-
-      {/* ROW 1 — Estate Overview */}
-      <div className="mb-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          Estate Overview
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <StatCard label="Total Agents" value={data.totalAgents} color="blue" />
-          <StatCard label="Total AI Systems" value={data.totalSystems} color="blue" />
-        </div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Object.values(CANONICAL_OBJECT_KIND).map(kind => <StatCard key={kind} label={kind} value={data?.byKind?.[kind] ?? 'UNKNOWN'} color="gray" />)}
       </div>
-
-      {/* ROW 2 — Operations */}
-      <div className="mb-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          Operations
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <StatCard
-              label="Open Findings"
-              value={data.openFindings}
-              color={riskColor(data.openFindings)}
-            />
-          </div>
-          <div>
-            <StatCard
-              label="Open Incidents"
-              value={data.openIncidents}
-              color={riskColor(data.openIncidents)}
-            />
-          </div>
-          <div>
-            <StatCard
-              label="Upcoming Reviews"
-              value={data.upcomingReviews}
-              color={data.upcomingReviews > 5 ? "yellow" : "gray"}
-              subtitle="Agents + resources due"
-            />
-          </div>
-        </div>
+      {data?.asOf && <p className="text-xs text-gray-400">Effective at {data.asOf}. Reads are not a transaction-wide snapshot.</p>}
+    </section>
+    <Card>
+      <h3 className="font-semibold text-white">Explore the estate</h3>
+      <div className="mt-3 flex flex-wrap gap-4 text-sm">
+        <Link href="/agents/canonical" className="text-[#91B5FF] underline">Agent Passports</Link>
+        <Link href="/governance/reviews" className="text-[#91B5FF] underline">Review Queue</Link>
+        <Link href="/graph" className="text-[#91B5FF] underline">Governed Graph</Link>
       </div>
-
-      {/* ROW 2.5 — Discovery Coverage */}
-      <div className="mb-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          Discovery Coverage
-        </h3>
-        <div className="grid grid-cols-4 gap-4">
-          <Link href="/discovery">
-            <StatCard
-              label="Repositories Scanned"
-              value={data.repositoriesScanned}
-              color={data.repositoriesScanned > 0 ? "blue" : "gray"}
-              subtitle="Via Discovery Engine"
-            />
-          </Link>
-          <Link href="/discovery">
-            <StatCard
-              label="Agents Discovered"
-              value={data.agentsDiscovered}
-              color={data.agentsDiscovered > 0 ? "blue" : "gray"}
-              subtitle="Detected via Discovery"
-            />
-          </Link>
-          <Link href="/discovery">
-            <StatCard
-              label="Repos With AI"
-              value={data.repositoriesWithAI}
-              color={data.repositoriesWithAI > 0 ? "yellow" : "gray"}
-              subtitle="Contain AI agents"
-            />
-          </Link>
-          <Link href="/discovery">
-            <StatCard
-              label="Critical Priority"
-              value={data.governancePriorityCritical}
-              color={data.governancePriorityCritical > 0 ? "red" : "blue"}
-              subtitle="Governance findings"
-            />
-          </Link>
-        </div>
-      </div>
-
-      {/* ROW 3 — Governance */}
-      <div className="mb-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          Governance
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
-          <Link href="/agents?risk=critical">
-            <StatCard
-              label="Legacy High-Risk Agent Labels"
-              value={data.highRiskAgents}
-              color={riskColor(data.highRiskAgents)}
-              subtitle={`Critical + High · ${LEGACY_RISK_LABEL}`}
-            />
-          </Link>
-          <div>
-            <StatCard
-              label="Agents Without AI System"
-              value={data.agentsWithoutSystem}
-              color={riskColor(data.agentsWithoutSystem)}
-              subtitle="AI Act gap"
-            />
-          </div>
-          <StatCard
-            label="AI Systems Without Agents"
-            value={data.systemsWithoutAgents}
-            color={data.systemsWithoutAgents > 0 ? "yellow" : "blue"}
-            subtitle="Orphan systems"
-          />
-        </div>
-      </div>
-
-      {/* ROW 4 — Executive Exposure */}
-      <div className="mb-6">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          Executive Exposure
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
-          <StatCard
-            label="Legacy High-Risk AI System Labels"
-            value={data.highRiskSystems}
-            color={riskColor(data.highRiskSystems)}
-            subtitle={`AI Act Annex III · ${LEGACY_RISK_LABEL}`}
-          />
-          {isDora ? (
-            <div>
-              <StatCard
-                label="Open DORA Reporting Records"
-                value={data.openDoraIncidents}
-                color={riskColor(data.openDoraIncidents)}
-                subtitle="Recorded reporting activity"
-              />
-            </div>
-          ) : (
-            <StatCard
-              label="Legacy Control Gap Records"
-              value={data.totalLegacyControlGaps}
-              color={riskColor(data.totalLegacyControlGaps)}
-              subtitle={LEGACY_CONTROL_LIMITATION}
-            />
-          )}
-          {isDora && (
-            <StatCard
-              label="Legacy Control Gap Records"
-              value={data.totalLegacyControlGaps}
-              color={riskColor(data.totalLegacyControlGaps)}
-              subtitle={LEGACY_CONTROL_LIMITATION}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* DETAILS */}
-      <div className="grid grid-cols-2 gap-6 mb-6">
-        <Card>
-          <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
-            Legacy Risk Label Distribution
-          </h3>
-          <p className="text-[10px] uppercase tracking-wide text-gray-500 -mt-3 mb-3">
-            {LEGACY_RISK_LABEL} — not governed risk; absence of a governed risk is UNKNOWN
-          </p>
-          <div className="space-y-3">
-            {[
-              { label: "Critical", value: data.riskDistribution.critical, color: "bg-danger" },
-              { label: "High", value: data.riskDistribution.high, color: "bg-orange-500" },
-              { label: "Medium", value: data.riskDistribution.medium, color: "bg-warning" },
-              { label: "Low", value: data.riskDistribution.low, color: "bg-success" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-3">
-                <span className="text-xs text-gray-400 w-16">{item.label}</span>
-                <div className="flex-1 h-2 bg-surface-dark rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${item.color} rounded-full transition-all`}
-                    style={{
-                      width: `${data.totalAgents > 0 ? (item.value / data.totalAgents) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-xs text-gray-300 w-8 text-right">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card>
-          <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
-            Recorded Legacy Control Gaps
-          </h3>
-          <p className="text-xs text-gray-400 mb-3">{LEGACY_CONTROL_LIMITATION}</p>
-          {data.legacyControlGaps.length === 0 ? (
-            <p className="text-sm text-gray-500">No gap records returned. This does not establish compliance.</p>
-          ) : (
-            <div className="space-y-2">
-              {data.legacyControlGaps.map((gap) => (
-                <div
-                  key={gap.agent_code}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-dark/50 border border-border-dark/30"
-                >
-                  <div>
-                    <span className="text-sm text-white">{gap.agent_name}</span>
-                    <span className="text-xs text-gray-500 ml-2">{gap.owner_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <LegacyRiskBadge value={gap.risk_level} />
-                    <span className="text-xs text-danger">{gap.total_gaps} gaps</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-
-      {data.recentIncidents.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">
-            Recent Incidents
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-dark text-left text-gray-400">
-                  <th className="py-2 px-3 font-medium">Code</th>
-                  <th className="py-2 px-3 font-medium">Title</th>
-                  <th className="py-2 px-3 font-medium">Severity</th>
-                  <th className="py-2 px-3 font-medium">Status</th>
-                  <th className="py-2 px-3 font-medium">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recentIncidents.map((inc) => (
-                  <tr key={inc.incident_code} className="border-b border-border-dark/50">
-                    <td className="py-2 px-3 font-mono text-xs">{inc.incident_code}</td>
-                    <td className="py-2 px-3 text-white">{inc.title}</td>
-                    <td className="py-2 px-3">
-                      <Badge variant={inc.severity as "critical" | "high" | "medium" | "low"}>
-                        {inc.severity}
-                      </Badge>
-                    </td>
-                    <td className="py-2 px-3 text-gray-400 text-xs">{inc.status}</td>
-                    <td className="py-2 px-3 text-gray-400 text-xs">
-                      {new Date(inc.occurred_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
-    </div>
-  );
+    </Card>
+  </div>;
 }

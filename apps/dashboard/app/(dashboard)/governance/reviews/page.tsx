@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Spinner } from "@/components/ui/Spinner";
 import { StateBadge } from "@/components/workspace/StateBadge";
+import { SOURCE_NAME_LABEL } from '@/lib/governance/source-name';
 
 interface WorkspaceSummary {
   needsReview: number;
@@ -20,6 +21,7 @@ interface WorkspaceSummary {
 }
 
 interface ReviewQueueItem {
+  sourceName: string | null;
   reviewSubjectId: string;
   candidateKind: string;
   state: string;
@@ -233,8 +235,14 @@ export default function GovernanceReviewQueuePage() {
                   <td className="py-3 pr-4"><StateBadge state={item.state} /></td>
                   <td className="py-3 pr-4 text-gray-300">{item.candidateKind}</td>
                   <td className="py-3 pr-4 text-gray-300">
-                    <div>{item.sourceExternalId}</div>
-                    <div className="text-xs text-gray-500">{item.sourceConnectionId} · {item.sourceExternalType}</div>
+                    <div className="font-medium break-words">{item.sourceName ?? item.sourceExternalId}</div>
+                    {item.sourceName && <div className="text-xs text-gray-400">{SOURCE_NAME_LABEL}</div>}
+                    <details className="mt-1 text-xs text-gray-400">
+                      <summary className="cursor-pointer">Source identity</summary>
+                      <p className="break-all">{item.sourceExternalId}</p>
+                      <p className="break-all">{item.sourceConnectionId} · {item.sourceExternalType}</p>
+                      <p>Canonical name: UNKNOWN</p>
+                    </details>
                   </td>
                   <td className="py-3 pr-4 text-gray-400 text-xs">{formatTimestamp(item.detectedAt)}</td>
                   <td className="py-3 pr-4 text-gray-300">{item.evidenceCount}</td>

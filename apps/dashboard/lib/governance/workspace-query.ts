@@ -18,6 +18,7 @@ import {
 import { canonicalStringify, privilegedDb, sha256Hex } from "./persistence";
 import { governanceReviewPersistence } from "./persistence";
 import { discoveryIntakePersistence } from "./discovery-intake-persistence";
+import { readFindingSourceNames } from './source-name-query';
 
 /**
  * Governance Workspace read side (CQRS query path). Server-only: never
@@ -52,6 +53,7 @@ export interface ReviewQueueFilter {
 }
 
 export interface ReviewQueueItem {
+  readonly sourceName: string | null;
   readonly reviewSubjectId: string;
   readonly candidateKind: DiscoveryCandidateKind;
   readonly state: ReviewState;
@@ -84,8 +86,9 @@ interface ReviewQueueRow {
   assertion_count: number;
 }
 
-function reviewQueueItemFromRow(row: ReviewQueueRow): ReviewQueueItem {
+function reviewQueueItemFromRow(row: ReviewQueueRow, sourceName: string | null): ReviewQueueItem {
   return {
+    sourceName,
     reviewSubjectId: row.review_subject_id,
     candidateKind: row.candidate_kind as DiscoveryCandidateKind,
     state: row.state as ReviewState,
@@ -152,7 +155,8 @@ export async function listReviewQueue(
   const hasMore = rows.length > pageSize;
   const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
 
-  return { items: pageRows.map(reviewQueueItemFromRow), page, pageSize, hasMore };
+  const names = await readFindingSourceNames(organisationId, pageRows.map(row => row.finding_id));
+  return { items: pageRows.map(row => reviewQueueItemFromRow(row, names[row.finding_id] ?? null)), page, pageSize, hasMore };
 }
 
 // ---------------------------------------------------------------------------

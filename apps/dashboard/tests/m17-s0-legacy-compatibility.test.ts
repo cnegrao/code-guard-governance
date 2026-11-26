@@ -149,13 +149,13 @@ test('O87 agent detail: risk level and AI Act class render only through the labe
   assert.doesNotMatch(page, />\s*\{agent\.(risk_level|ai_act_risk_class)\}\s*</);
 });
 
-test('O87 dashboard aggregates: the summary carries the legacy authority marker and the page labels every legacy aggregate', () => {
+test('O87 dashboard aggregates: legacy summary keeps its authority marker; Home reads canonical estate only', () => {
   const repo = source('repositories/dashboard.ts');
   assert.match(repo, /legacyRiskAuthority: typeof LEGACY_RISK_LABEL/);
   assert.match(repo, /legacyRiskAuthority: LEGACY_RISK_LABEL,/);
   const page = source('app/(dashboard)/page.tsx');
-  assert.match(page, /Legacy High-Risk Agent Labels/); assert.match(page, /Legacy High-Risk AI System Labels/);
-  assert.match(page, /Legacy Risk Label Distribution/); assert.match(page, /<LegacyRiskBadge value=\{gap\.risk_level\} \/>/);
+  assert.match(page, /\/api\/dashboard\/estate/); assert.match(page, /Governed estate/);
+  assert.doesNotMatch(page, /LegacyRiskBadge|riskDistribution|highRiskAgents|highRiskSystems|\/api\/dashboard\/summary/);
   assert.doesNotMatch(page, /label="High Risk Agents"|label="High-Risk AI Systems"|>\s*Risk Distribution\s*</);
 });
 

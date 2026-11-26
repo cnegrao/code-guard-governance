@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CodeGuard AI — AI Governance OS",
+  title: "GOVERNYX — AI Governance Intelligence",
   description:
-    "AI Governance Operating System for any organisation that develops, deploys, operates or supervises AI systems. Multi-industry. Multi-framework. Agent-centric.",
+    "GOVERNYX — AI Governance Intelligence for organisations that develop, deploy, operate or supervise AI systems.",
 };
 
 export default function RootLayout({

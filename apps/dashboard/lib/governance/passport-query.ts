@@ -10,6 +10,7 @@ import { readPassportExecution } from './passport-execution-query';
 import { readPassportGovernedFacts } from './passport-governance-read';
 import { readPassportRiskOverlay } from './passport-risk-overlay-read';
 import { readProfileGovernance } from './passport-profile-provenance';
+import { readCanonicalSourceNames } from './source-name-query';
 
 /**
  * Server-only CQRS read composition. No command port, write RPC, provider or generated facts. Families 3 / 4 / 12 / 14 consume
@@ -223,6 +224,9 @@ export async function getAgentPassport(principal: GovernanceWritePrincipal, cano
     family('connectivity', execution.filter(f=>f.fact.field==='DECLARED_CONNECTIVITY'), ['Runtime reachability, network permission and topology coverage: UNKNOWN.']),
   ];
   const riskOverlay = await readPassportRiskOverlay(principal, selected ? 'AGENT_VERSION' : 'AGENT', selected ?? canonicalObjectId);
+  const sourceNames = await readCanonicalSourceNames(org,
+    [{ objectId: canonicalObjectId, kind: 'AGENT' }, ...versionContexts.map(v => ({ objectId: v.objectId, kind: 'AGENT_VERSION' }))],
+    new Date(readAt).toISOString());
   return { canonicalAgent, displayName: null, versionContexts, selectedVersionId: selected, currentVersionId: null,
-    families, provenanceSummary: allFacts.map(f => f.provenance), riskOverlay };
+    families, provenanceSummary: allFacts.map(f => f.provenance), riskOverlay, sourceNames };
 }

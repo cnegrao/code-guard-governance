@@ -54,11 +54,10 @@ test('real active consumers use legacy fields; neutral panel has no aggregate pe
   }
   const home = read('app/(dashboard)/page.tsx');
   assert.doesNotMatch(home, /Legacy Control Coverage|Top Compliance Gaps|Total Governance Gaps|All CG-AG controls|cColor/);
-  assert.match(home, /Recorded Legacy Control Gaps/);
-  assert.match(home, /This does not establish compliance/);
-  // The retained CSS width is categorical risk-distribution layout, not a public assurance ratio.
-  assert.equal((home.match(/%/g) ?? []).length, 1);
-  assert.match(home, /width: `\$\{data\.totalAgents > 0 \? \(item\.value \/ data\.totalAgents\) \* 100 : 0\}%`/);
+  assert.match(home, /Governed estate/);
+  assert.match(home, /These counts do not establish compliance/);
+  assert.match(home, /\/api\/dashboard\/estate/);
+  assert.doesNotMatch(home, /Recorded Legacy Control Gaps|riskDistribution|data\.totalAgents|%/);
   const table = read('components/agents/AgentTable.tsx');
   assert.doesNotMatch(table, /compliancePct|complianceColor|cg_ag_|%|>Compliance</);
   assert.doesNotMatch(read('app/(dashboard)/agents/page.tsx'), /compliance status/);
