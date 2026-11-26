@@ -119,6 +119,8 @@ export interface PassportVersionContext {
   associationMappingIds: readonly string[];
 }
 export interface AgentPassport360 {
+  /** Source context only; displayName and canonical identity remain unchanged. */
+  sourceNames?: Readonly<Record<string, string | null>>;
   canonicalAgent: IdentityFact;
   displayName: null;
   versionContexts: readonly PassportVersionContext[];

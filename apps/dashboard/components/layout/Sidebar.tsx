@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { Brand } from './Brand';
+import { organisationDisplayName } from '@/lib/brand';
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: "◉" },
@@ -25,7 +27,7 @@ export function Sidebar() {
   return (
     <aside className="w-64 border-r border-border-dark flex flex-col bg-surface-dark/50 h-screen sticky top-0">
       <div className="h-16 flex items-center gap-3 px-6 border-b border-border-dark shrink-0">
-        <span className="text-primary font-bold text-lg">◆ CodeGuard</span>
+        <Brand />
       </div>
 
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
@@ -50,7 +52,7 @@ export function Sidebar() {
 
       <div className="p-4 border-t border-border-dark shrink-0">
         <div className="text-xs text-gray-500 truncate mb-2">
-          {session?.org?.name ?? "..."}
+          {organisationDisplayName(session?.org?.name) ?? "..."}
         </div>
         <button
           onClick={logout}

@@ -48,9 +48,9 @@ test('actual detail/home pages consume the new response and render no legacy agg
   const System = (await import('../app/(dashboard)/systems/[id]/page')).default;
   const Home = (await import('../app/(dashboard)/page')).default;
   const { legacyControlEnvelope } = await import('../lib/legacy-control-dto');
-  async function loaded(page: () => React.ReactNode, data: unknown) {
+  async function loaded(page: () => React.ReactNode, data: unknown, status = 200) {
     state.length = 0; cursor = 0; started = false; pending = [];
-    const fetch = t.mock.method(globalThis, 'fetch', async () => Response.json(data));
+    const fetch = t.mock.method(globalThis, 'fetch', async () => Response.json(data, { status }));
     try {
       page(); started = true; pending.forEach(fn => fn());
       await new Promise<void>(resolve => setImmediate(resolve));
@@ -68,14 +68,17 @@ test('actual detail/home pages consume the new response and render no legacy agg
     // only in the legacy control section, whose source and states changed here.
     assert.doesNotMatch(markup.slice(markup.indexOf('Legacy Control Records')), /text-success|bg-success/);
   }
-  for (const industry of ['other', 'financial_services']) {
-    const markup = await loaded(Home, { totalAgents: 0, totalSystems: 0, totalLegacyControlGaps: 0,
-      legacyControlGaps: [], riskDistribution: { critical: 0, high: 0, medium: 0, low: 0 }, recentIncidents: [], industry });
-    assert.match(markup, /Recorded Legacy Control Gaps/); assert.match(markup, /Legacy Control Gap Records/);
-    assert.match(markup, /This does not establish compliance/);
-    assert.doesNotMatch(markup, /Legacy Control Coverage|Top Compliance Gaps|Total Governance Gaps|\d+%<\/div>/);
-    assert.match(markup, /grid-cols-2 gap-4/);
-  }
+  const markup = await loaded(Home, { canonicalObjects: 7, canonicalRelationships: 2, pendingReview: 63,
+    byKind: { AGENT: 3, AGENT_VERSION: 2, MODEL: 1, TOOL: 1, API: 0 }, asOf: '2026-11-25T12:00:00Z' });
+  assert.match(markup, /Governed estate/); assert.match(markup, /GOVERNYX/);
+  assert.match(markup, /These counts do not establish compliance/);
+  assert.doesNotMatch(markup, /Legacy Control|Legacy Risk|Repositories Scanned|Total Agents/);
+  assert.match(markup, />63<\/div>/); assert.match(markup, />UNKNOWN<\/div>/);
+  assert.match(markup, /grid-cols-2 gap-4/);
+  const failed = await loaded(Home, { error: 'read unavailable' }, 500);
+  assert.match(failed, /Counts are UNKNOWN/); assert.doesNotMatch(failed, />0<\/div>/);
+  const empty = await loaded(Home, { canonicalObjects: 0, canonicalRelationships: 0, pendingReview: 0, byKind: { AGENT: 0 } });
+  assert.match(empty, />0<\/div>/); assert.match(empty, />UNKNOWN<\/div>/);
 });
 test('sidebar destinations exist, canonical passports are reachable and root is active', async () => {
   const { Sidebar } = await import('../components/layout/Sidebar');
@@ -84,6 +87,18 @@ test('sidebar destinations exist, canonical passports are reachable and root is 
   assert.ok(hrefs.includes('/agents/canonical')); assert.ok(hrefs.includes('/graph')); assert.ok(hrefs.includes('/'));
   for (const href of hrefs) assert.ok(existsSync(new URL(`../app/(dashboard)${href === '/' ? '' : href}/page.tsx`, import.meta.url)), href);
   assert.doesNotMatch(markup, /href="\/(dashboard|compliance|settings)"/);
+});
+
+test('graph labels keep canonical identity secondary and distinguish every canonical object kind', async () => {
+  const { CanonicalNodeLabel } = await import('../components/graph/CanonicalNodeLabel');
+  const { CANONICAL_OBJECT_KIND } = await import('@council/canonical-contracts');
+  for (const kind of Object.values(CANONICAL_OBJECT_KIND)) {
+    const html=renderToStaticMarkup(React.createElement(CanonicalNodeLabel,{kind,objectId:'canonical:opaque',sourceName:'Readable source name'}));
+    assert.match(html,/Readable source name/); assert.match(html,/source name \(not governed\)/);
+    assert.ok(html.indexOf('Readable source name')<html.indexOf('canonical:opaque'));
+    assert.match(html,/Canonical name: UNKNOWN/); assert.ok(html.includes(kind));
+    if(kind==='AGENT')assert.match(html,/agents\/canonical\/canonical%3Aopaque/);
+  }
 });
 test('active Agent list table exposes inventory with no derived control percentage column', async t => {
   t.mock.module('../hooks/useAgents', { namedExports: { useAgents: () => ({

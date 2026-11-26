@@ -6,8 +6,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white">◆ CodeGuard AI</h1>
-          <p className="text-gray-400 mt-2 text-sm">Governance OS</p>
+          <h1 className="text-2xl font-bold tracking-widest text-white">GOVERNYX</h1>
+          <p className="text-gray-400 mt-2 text-sm">AI Governance Intelligence</p>
         </div>
         <div className="bg-surface-dark/70 backdrop-blur border border-border-dark/50 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-6">Sign In</h2>
