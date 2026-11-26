@@ -1,7 +1,7 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
-import { asOrganisationId, type NormalizedObjectCandidate, type OrganisationId } from '@council/canonical-contracts';
-import { asReviewSubjectId, normalizedObjectIdentity, type ReviewState } from '@council/governance-review';
+import { asOrganisationId, type OrganisationId } from '@council/canonical-contracts';
+import { asReviewSubjectId, type ReviewState } from '@council/governance-review';
 import type { GovernanceWritePrincipal } from '../auth/governance-write-principal';
 import { privilegedDb, createGovernedReviewPersistence } from './persistence';
 import { rehydrateNormalizedCandidate, normalizedCandidateEnvelopeHash } from './discovery-intake-persistence';
@@ -9,11 +9,12 @@ import { workspaceCommands } from './workspace-commands';
 import { submitReconciliationDecision, triggerMaterialization } from './decision-commands';
 import { getGovernanceDecisionDetail } from './decision-query';
 import { sourceName } from './source-name';
-import { chainItem, collectAgentChain, executeChain, orderChain, referenceCandidates, selectedChain,
+import { chainItem, collectAgentChain, duplicateCreateErrors, executeChain, latestDiscoveryChain, objectIdentityKey, orderChain, referenceCandidates, selectedChain,
   ChainCommandError, type AgentChainPlan, type ChainCandidate, type ChainMatch } from './agent-chain';
 
 export interface ChainAnchor { reviewId?: string; canonicalId?: string }
-interface CandidateRow { envelope: unknown; envelope_hash: string }
+interface CandidateRow { envelope: unknown; envelope_hash: string; acquisition_run_id: string }
+interface RunRow { run_id: string; source_connection_id: string; started_at: string; source_version: string | null }
 interface ReviewRow { review_subject_id: string; finding_id: string; state: ReviewState }
 interface MappingRow { candidate_id: string; canonical_object_id: string }
 interface ObjectRow { canonical_object_id: string; kind: string }
@@ -37,20 +38,26 @@ async function readRows<T>(org: OrganisationId, table: string, columns: string, 
 
 export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor): Promise<AgentChainPlan> {
   if (!!anchor.reviewId === !!anchor.canonicalId) throw new ChainCommandError('Select one AGENT.');
-  const [candidates, reviews, mappings, objects, relationships, decisions, operations] = await Promise.all([
-    readRows<CandidateRow>(org, 'discovery_candidates', 'envelope,envelope_hash', 'candidate_id'),
+  const [candidates, reviews, mappings, objects, relationships, decisions, operations, runs] = await Promise.all([
+    readRows<CandidateRow>(org, 'discovery_candidates', 'envelope,envelope_hash,acquisition_run_id', 'candidate_id'),
     readRows<ReviewRow>(org, 'review_subjects', 'review_subject_id,finding_id,state', 'review_subject_id'),
     readRows<MappingRow>(org, 'canonical_normalized_object_mappings', 'candidate_id,canonical_object_id', 'mapping_id'),
     readRows<ObjectRow>(org, 'canonical_objects', 'canonical_object_id,kind', 'canonical_object_id'),
     readRows<RelationshipRow>(org, 'canonical_relationships', 'relationship_id,relationship_type,source_canonical_object_id,target_canonical_object_id,valid_to', 'relationship_id'),
     readRows<InvocationRow>(org, 'reconciliation_invocations', 'review_subject_id,reconciliation_decision_id', 'invocation_id'),
     readRows<OperationRow>(org, 'materialization_operations', 'reconciliation_decision_id,status,resulting_canonical_object_id,resulting_relationship_id', 'materialization_operation_id'),
+    readRows<RunRow>(org, 'acquisition_runs', 'run_id,source_connection_id,started_at,source_version', 'run_id'),
   ]);
   const byFinding = new Map(reviews.map(row => [row.finding_id, row]));
   const decisionIds = new Set(decisions.map(row => row.review_subject_id));
+  const byRun = new Map(runs.map(run => [run.run_id, run]));
   const all: ChainCandidate[] = candidates.map(row => {
     const candidate = rehydrateNormalizedCandidate(row.envelope);
     if (normalizedCandidateEnvelopeHash(candidate) !== row.envelope_hash) throw new Error('CHAIN_CANDIDATE_HASH_MISMATCH');
+    const run = byRun.get(row.acquisition_run_id);
+    if (!run || run.source_connection_id !== candidate.sourceObject.connectionId || !Number.isFinite(Date.parse(run.started_at))) {
+      throw new ChainCommandError('Discovery run provenance is unavailable or inconsistent. Use individual review.');
+    }
     const review = byFinding.get(candidate.findingId);
     const ids = [...new Set(mappings.filter(m => m.candidate_id === candidate.candidateId).map(m => m.canonical_object_id))];
     if (ids.length > 1) throw new ChainCommandError('A source mapping is ambiguous; use individual review.');
@@ -58,16 +65,15 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
     const applied = operations.find(o => o.reconciliation_decision_id === decision?.reconciliation_decision_id && o.status === 'APPLIED');
     return { candidate, reviewSubjectId: review?.review_subject_id, state: review?.state,
       canonicalId: ids[0] ?? applied?.resulting_canonical_object_id ?? applied?.resulting_relationship_id ?? undefined,
-      hasDecision: !!review && decisionIds.has(review.review_subject_id) };
+      hasDecision: !!review && decisionIds.has(review.review_subject_id),
+      discoveryRun: { id: run.run_id, startedAt: run.started_at, sourceVersion: run.source_version ?? undefined } };
   });
   let members: ChainCandidate[];
   try { members = collectAgentChain(all, anchor); }
   catch { throw new ChainCommandError('No exact AGENT source was found for this anchor. Open its individual review.'); }
-  const pending = members.filter(row => !row.canonicalId);
-  const matchKey = (c: NormalizedObjectCandidate): string | undefined => {
-    try { return JSON.stringify([c.candidateKind, normalizedObjectIdentity(c)]); }
-    catch { return undefined; }
-  };
+  const latest = latestDiscoveryChain(members);
+  const pending = latest.current.filter(row => !row.canonicalId);
+  const matchKey = objectIdentityKey;
   const canonicalKinds = new Map(objects.map(o => [o.canonical_object_id, o.kind]));
   const matchesByIdentity = new Map<string, Map<string, ChainMatch>>();
   for (const row of all) {
@@ -87,7 +93,7 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
     // (or a display name) is insufficient even when only one object exists.
     const key = c.candidateKind === 'RELATIONSHIP' ? undefined : matchKey(c);
     const matches = key ? [...(matchesByIdentity.get(key)?.values() ?? [])].sort((a, b) => a.id.localeCompare(b.id)) : [];
-    const item = chainItem(row, all, matches);
+    const item = chainItem(row, latest.current, matches, all);
     if (c.candidateKind !== 'RELATIONSHIP' && !key) item.needsIndividualReview = 'Normalized identity unavailable; needs individual review.';
     return item;
   });
@@ -99,7 +105,7 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
     if (row.candidate.candidateKind !== 'RELATIONSHIP') continue;
     const c = row.candidate;
     const endpointIds = [c.sourceEndpoint, c.targetEndpoint].map(ref => {
-      const endpoints = referenceCandidates(ref, all);
+      const endpoints = referenceCandidates(ref, latest.current);
       if (endpoints.length !== 1) return undefined;
       return endpoints[0].canonicalId ?? items.find(i => i.candidateId === endpoints[0].candidate.candidateId)?.match?.id;
     });
@@ -111,9 +117,10 @@ export async function previewAgentChain(org: OrganisationId, anchor: ChainAnchor
     }
   }
   const ordered = orderChain(items);
+  const errors = [...latest.errors, ...duplicateCreateErrors(ordered)];
   const previewKey = createHash('sha256').update(JSON.stringify([org, anchor, ordered,
-    members.map(r => normalizedCandidateEnvelopeHash(r.candidate))])).digest('hex');
-  return { items: ordered, previewKey, batchId: randomUUID() };
+    latest.superseded, errors, members.map(r => [normalizedCandidateEnvelopeHash(r.candidate), r.discoveryRun])])).digest('hex');
+  return { items: ordered, superseded: latest.superseded, errors, previewKey, batchId: randomUUID() };
 }
 
 export interface ApproveChainInput {
@@ -131,6 +138,7 @@ export async function approveAgentChain(principal: GovernanceWritePrincipal, inp
   const org = asOrganisationId(principal.organisationId);
   const plan = await previewAgentChain(org, input.anchor);
   if (plan.previewKey !== input.previewKey) throw new ChainCommandError('The chain changed. Reload the preview before approving.');
+  if (plan.errors.length) throw new ChainCommandError(plan.errors.join(' '));
   let selected;
   try { selected = selectedChain(plan.items, input.selectedIds); }
   catch { throw new ChainCommandError('Select eligible items and all their pending dependencies.'); }

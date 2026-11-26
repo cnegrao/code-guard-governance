@@ -25,7 +25,7 @@ export function AgentChainReview({ reviewId, canonicalId }: { reviewId?: string;
       if (!response.ok) throw new Error(data.error ?? 'Unable to load chain.');
       if (!controller.signal.aborted) {
         setPlan(data);
-        setSelected((data as AgentChainPlan).items.filter(item => !item.needsIndividualReview).map(item => item.reviewSubjectId));
+        setSelected((data as AgentChainPlan).errors.length ? [] : (data as AgentChainPlan).items.filter(item => !item.needsIndividualReview).map(item => item.reviewSubjectId));
       }
     }).catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load chain.'); });
     return () => controller.abort();
@@ -54,6 +54,8 @@ export function AgentChainReview({ reviewId, canonicalId }: { reviewId?: string;
     {plan && <Card>
       <h2 className="text-lg font-semibold">Chain preview</h2>
       <p className="mt-2 text-sm">Names below are source names (not governed). Execution follows the displayed dependency order.</p>
+      {plan.errors.length > 0 && <div role="alert" className="mt-4 text-red-400"><p>This preview cannot be approved.</p>
+        <ul>{plan.errors.map(message => <li key={message}>{message}</li>)}</ul></div>}
       {!plan.items.length && <p className="mt-4">No pending chain items were found.</p>}
       <ol className="mt-4 space-y-4" aria-label="Agent chain execution order">
         {plan.items.map((item, index) => <li key={item.reviewSubjectId} className="rounded border border-border-dark p-3 break-words">
@@ -66,7 +68,7 @@ export function AgentChainReview({ reviewId, canonicalId }: { reviewId?: string;
           </label>
           <p className="mt-2 text-xs text-gray-400">Source: {item.sourceId} · Review state: {item.state}</p>
           {item.needsIndividualReview && <p className="mt-2 text-amber-300">Needs individual review: {item.needsIndividualReview}</p>}
-          {item.dependencies.length > 0 && <p className="mt-2 text-xs">Requires pending reviews: {item.dependencies.join(', ')}</p>}
+          {item.dependencies.length > 0 && <p className="mt-2 text-xs">Requires pending reviews: {(item.dependencyLabels ?? item.dependencies).join(', ')}</p>}
           {!item.reviewSubjectId.startsWith('missing:') && <Link className="mt-2 inline-block text-primary underline" href={`/governance/reviews/${encodeURIComponent(item.reviewSubjectId)}`}>Inspect individual review</Link>}
         </li>)}
       </ol>
@@ -76,9 +78,18 @@ export function AgentChainReview({ reviewId, canonicalId }: { reviewId?: string;
         onChange={event => setReason(event.target.value)} className="mt-2 w-full rounded border border-border-dark bg-surface-dark p-3" rows={4} />
       {missingDependencies && <p role="alert" className="mt-2 text-amber-300">Select every pending dependency or deselect its dependent items.</p>}
       <p className="mt-3 text-sm">Stops at the first error. Completed writes remain recorded. Batch: {plan.batchId}</p>
-      <Button className="mt-4" disabled={busy || !!result || !selected.length || !reason.trim() || !!missingDependencies} onClick={() => void approve()}>
+      <Button className="mt-4" disabled={busy || !!result || !!plan.errors.length || !selected.length || !reason.trim() || !!missingDependencies} onClick={() => void approve()}>
         {busy ? 'Applying governed decisions…' : `Confirm ${selected.length} individual decisions`}
       </Button>
+    </Card>}
+    {plan && plan.superseded.length > 0 && <Card>
+      <h2 className="text-lg font-semibold">Superseded by newer discovery run (not included)</h2>
+      <p className="mt-2 text-sm">These earlier proposals are not selectable and will not be changed by this batch.</p>
+      <ul className="mt-3 space-y-3" aria-label="Superseded discovery proposals">{plan.superseded.map(item => <li key={item.candidateId} className="break-words">
+        <strong>{item.sourceName}</strong> · {item.kind}<p className="text-xs">Source: {item.sourceId}</p>
+        <p className="text-xs">Discovery run: {item.runId}{item.sourceVersion ? ` · ${item.sourceVersion}` : ''}</p>
+        <p className="text-xs">Superseded by run: {item.newerRunId}{item.newerSourceVersion ? ` · ${item.newerSourceVersion}` : ''}</p>
+      </li>)}</ul>
     </Card>}
     {result && <Card>
       <h2 className="text-lg font-semibold">Batch result</h2>

@@ -1,7 +1,7 @@
 import { before, beforeEach, mock, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { asOrganisationId } from '@council/canonical-contracts';
-import { chainFixture } from './helpers/agent-chain-fixtures';
+import { chainFixture, twoDiscoveryRunsFixture } from './helpers/agent-chain-fixtures';
 
 const org = asOrganisationId('org-chain');
 const principal = { organisationId: org, actorUserId: 'carlos', issuedAtSeconds: 1700000000, expiresAtSeconds: 1700003600, credentialEpoch: '2026-11-26T00:00:00.000000+00:00' };
@@ -56,7 +56,7 @@ mock.module('@/lib/governance/decision-commands', { namedExports: {
   },
   triggerMaterialization: async (input: Record<string, unknown>) => {
     calls.push({ step: 'MATERIALIZE', input });
-    const family = input.reviewSubjectId === 'review:relationship' ? 'RELATIONSHIP' : 'OBJECT';
+    const family = String(input.reviewSubjectId).startsWith('review:relationship') ? 'RELATIONSHIP' : 'OBJECT';
     return { kind: 'APPLIED', result: { applicable: true, family, result: { status: 'APPLIED',
       canonicalObjectId: `canonical:${input.reviewSubjectId}`, relationshipId: 'canonical-relationship' } } };
   },
@@ -72,8 +72,9 @@ before(async () => {
 beforeEach(() => {
   const { all } = chainFixture();
   tables = {
-    discovery_candidates: all.map(row => ({ envelope: row.candidate, envelope_hash: JSON.stringify(row.candidate), organisation_id: org })),
+    discovery_candidates: all.map(row => ({ envelope: row.candidate, envelope_hash: JSON.stringify(row.candidate), organisation_id: org, acquisition_run_id: 'run-default' })),
     review_subjects: all.map(row => ({ organisation_id: org, review_subject_id: row.reviewSubjectId, finding_id: row.candidate.findingId, state: row.state })),
+    acquisition_runs: [{ organisation_id: org, run_id: 'run-default', source_connection_id: 'conn', started_at: '2026-11-26T09:00:00Z', source_version: 'default-commit' }],
   };
   calls = []; reads = []; failReview = undefined; authenticationFails = false;
 });
@@ -89,7 +90,7 @@ function addModelMatch(id: string, modelReference = 'source-model') {
   tables.canonical_objects.push({ organisation_id: org, canonical_object_id: id, kind: 'MODEL' });
   const envelope = { ...chainFixture().model.candidate, candidateId: `mapped:${id}`, findingId: `mapped-finding:${id}`,
     assertionIds: [`mapped-assertion:${id}`], evidenceIds: [`mapped-evidence:${id}`], proposedIdentity: { modelReference } };
-  tables.discovery_candidates.push({ organisation_id: org, envelope, envelope_hash: JSON.stringify(envelope) });
+  tables.discovery_candidates.push({ organisation_id: org, envelope, envelope_hash: JSON.stringify(envelope), acquisition_run_id: 'run-default' });
   tables.canonical_normalized_object_mappings.push({ organisation_id: org, candidate_id: envelope.candidateId, canonical_object_id: id });
 }
 
@@ -99,7 +100,7 @@ test('preview is read-only, tenant-scoped, complete and exposes source names and
   assert.ok(plan.items.some(item => item.sourceName === 'source-prompt'));
   assert.equal(plan.items.at(-1)?.kind, 'RELATIONSHIP');
   assert.equal(calls.length, 0);
-  assert.equal(new Set(reads).size, 7);
+  assert.equal(new Set(reads).size, 8);
   assert.equal(plan.previewKey, (await service.previewAgentChain(org, { reviewId: 'review:agent' })).previewKey);
 });
 
@@ -197,4 +198,122 @@ test('applied relationship receipts leave the pending preview, without re-decidi
   const plan = await service.previewAgentChain(org, { reviewId: 'review:agent' });
   assert.ok(!plan.items.some(item => item.kind === 'RELATIONSHIP'));
   assert.equal(calls.length, 0);
+});
+
+function loadTwoRuns() {
+  const fixture = twoDiscoveryRunsFixture();
+  fixture.old.agent.state = 'CERTIFIED';
+  tables = {
+    discovery_candidates: fixture.all.map(row => ({ organisation_id: org, envelope: row.candidate,
+      envelope_hash: JSON.stringify(row.candidate), acquisition_run_id: row.discoveryRun!.id })),
+    review_subjects: fixture.all.map(row => ({ organisation_id: org, review_subject_id: row.reviewSubjectId,
+      finding_id: row.candidate.findingId, state: row.state })),
+    acquisition_runs: [fixture.old, fixture.latest].map(run => ({ organisation_id: org, run_id: run.id,
+      source_connection_id: 'conn', source_version: run.sourceVersion, started_at: run.startedAt })),
+    canonical_objects: [{ organisation_id: org, canonical_object_id: 'canonical-object:c77b2d65-fixture', kind: 'AGENT' }],
+    canonical_normalized_object_mappings: [{ organisation_id: org, candidate_id: fixture.old.agent.candidate.candidateId,
+      canonical_object_id: 'canonical-object:c77b2d65-fixture' }],
+  };
+  return fixture;
+}
+
+test('Triagem two-run regression: newest objects appear once, new AGENT gets its own MATCH and versions/relationships follow the governed parent', async () => {
+  const fixture = loadTwoRuns();
+  const before = JSON.stringify(tables);
+  const anchor = { canonicalId: 'canonical-object:c77b2d65-fixture' };
+  const plan = await service.previewAgentChain(org, anchor);
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.items.length, fixture.latest.all.length);
+  for (const name of ['TRIAGEM_PROMPT', 'classificar_manifestacao', 'mascarar_dados_pessoais']) {
+    assert.equal(plan.items.filter(item => item.sourceName === name).length, 1);
+    assert.equal(plan.superseded.filter(item => item.sourceName === name).length, 1);
+  }
+  assert.ok(plan.superseded.every(row => row.runId === 'run-old' && row.newerRunId === 'run-new' && row.sourceVersion === '7b5aaf9' && row.newerSourceVersion === '77f0128'));
+  const agent = plan.items.find(item => item.kind === 'AGENT')!;
+  const version = plan.items.find(item => item.kind === 'AGENT_VERSION')!;
+  assert.equal(agent.candidateId, fixture.latest.agent.candidate.candidateId);
+  assert.equal(agent.outcome, 'MATCH_EXISTING');
+  assert.equal(agent.match?.id, anchor.canonicalId);
+  assert.equal(plan.items.filter(item => item.kind === 'AGENT_VERSION').length, 1);
+  assert.deepEqual(version.dependencies, [agent.reviewSubjectId]);
+  assert.ok(plan.items.every(item => !item.needsIndividualReview));
+  assert.equal(JSON.stringify(tables), before, 'preview must not change older proposals or mappings');
+  await assert.rejects(service.approveAgentChain(principal, { anchor, previewKey: plan.previewKey, batchId: plan.batchId,
+    selectedIds: [...plan.items.map(item => item.reviewSubjectId), fixture.old.prompt.reviewSubjectId!], justification: 'Attempt to include an older proposal.' }), /eligible items/);
+  assert.equal(calls.length, 0, 'a superseded proposal cannot be forced into the batch');
+  const result = await service.approveAgentChain(principal, { anchor, previewKey: plan.previewKey, batchId: plan.batchId,
+    selectedIds: plan.items.map(item => item.reviewSubjectId), justification: 'Reviewed the latest Triagem discovery proposals and the exact existing AGENT.' });
+  assert.ok(result.items.every(item => item.status === 'MATERIALIZED'));
+  const agentDecision = calls.find(call => call.step === 'RECONCILE' && call.input.reviewSubjectId === agent.reviewSubjectId)!;
+  assert.equal(agentDecision.input.requestedOutcome, 'MATCH_EXISTING');
+  assert.equal(agentDecision.input.matchCanonicalObjectId, anchor.canonicalId);
+  assert.equal(calls.filter(call => call.step === 'RECONCILE').length, plan.items.length);
+  assert.ok(calls.findIndex(call => call.step === 'MATERIALIZE' && call.input.reviewSubjectId === agent.reviewSubjectId) <
+    calls.findIndex(call => call.step === 'CONFIRM' && call.input.reviewSubjectId === version.reviewSubjectId));
+  for (const relationship of plan.items.filter(item => item.kind === 'RELATIONSHIP')) {
+    const invocation = calls.findIndex(call => call.step === 'CONFIRM' && call.input.reviewSubjectId === relationship.reviewSubjectId);
+    assert.ok(relationship.dependencies.every(id => calls.findIndex(call => call.step === 'MATERIALIZE' && call.input.reviewSubjectId === id) < invocation));
+  }
+  assert.ok(calls.every(call => !fixture.old.all.some(row => row.reviewSubjectId === call.input.reviewSubjectId)));
+});
+
+test('a latest AGENT proposal absent from the review queue blocks dependents with the missing source name', async () => {
+  const fixture = loadTwoRuns();
+  tables.review_subjects = tables.review_subjects.filter(row => row.review_subject_id !== fixture.latest.agent.reviewSubjectId);
+  const plan = await service.previewAgentChain(org, { canonicalId: 'canonical-object:c77b2d65-fixture' });
+  const version = plan.items.find(item => item.kind === 'AGENT_VERSION')!;
+  assert.match(version.needsIndividualReview!, /TriagemManifestacaoAgent/);
+  assert.match(version.dependencyLabels!.join(' '), /TriagemManifestacaoAgent.*missing pending review/);
+  assert.ok(plan.items.filter(item => item.kind === 'RELATIONSHIP').every(item => item.needsIndividualReview));
+  assert.equal(calls.length, 0);
+});
+
+test('an entirely missing latest parent candidate stays unresolved by name and does not reactivate the older version proposal', async () => {
+  const fixture = loadTwoRuns();
+  tables.review_subjects = tables.review_subjects.filter(row => row.review_subject_id !== fixture.latest.agent.reviewSubjectId);
+  tables.discovery_candidates = tables.discovery_candidates.filter(row => (row.envelope as { candidateId: string }).candidateId !== fixture.latest.agent.candidate.candidateId);
+  const plan = await service.previewAgentChain(org, { canonicalId: 'canonical-object:c77b2d65-fixture' });
+  const versions = plan.items.filter(item => item.kind === 'AGENT_VERSION');
+  assert.equal(versions.length, 1);
+  assert.equal(versions[0].candidateId, fixture.latest.version.candidate.candidateId);
+  assert.match(versions[0].needsIndividualReview!, /Missing AGENT proposal TriagemManifestacaoAgent/);
+  assert.ok(plan.superseded.some(item => item.candidateId === fixture.old.version.candidate.candidateId));
+  assert.ok(plan.items.filter(item => item.kind === 'RELATIONSHIP').every(item => item.needsIndividualReview));
+  assert.equal(calls.length, 0);
+});
+
+test('multiple canonical AGENT matches do not inherit authority from the Passport anchor', async () => {
+  const fixture = loadTwoRuns();
+  const envelope = { ...fixture.old.agent.candidate, candidateId: 'other-canonical-agent', findingId: 'other-agent-finding',
+    sourceObject: { ...fixture.old.agent.candidate.sourceObject, externalId: 'different-agent.ts' } };
+  tables.discovery_candidates.push({ organisation_id: org, envelope, envelope_hash: JSON.stringify(envelope), acquisition_run_id: 'run-old' });
+  tables.canonical_objects.push({ organisation_id: org, canonical_object_id: 'second-canonical-agent', kind: 'AGENT' });
+  tables.canonical_normalized_object_mappings.push({ organisation_id: org, candidate_id: envelope.candidateId, canonical_object_id: 'second-canonical-agent' });
+  const plan = await service.previewAgentChain(org, { canonicalId: 'canonical-object:c77b2d65-fixture' });
+  assert.match(plan.items.find(item => item.kind === 'AGENT')!.needsIndividualReview!, /Multiple reconciliation candidates/);
+  assert.ok(plan.items.filter(item => ['AGENT_VERSION', 'RELATIONSHIP'].includes(item.kind)).every(item => item.needsIndividualReview));
+  assert.equal(calls.length, 0);
+});
+
+test('same-run duplicate identities block preview and server approval before any governed command', async () => {
+  const fixture = chainFixture();
+  const envelope = { ...fixture.prompt.candidate, candidateId: 'duplicate-prompt', findingId: 'duplicate-prompt-finding' };
+  tables.discovery_candidates.push({ organisation_id: org, envelope, envelope_hash: JSON.stringify(envelope), acquisition_run_id: 'run-default' });
+  tables.review_subjects.push({ organisation_id: org, review_subject_id: 'review:duplicate-prompt', finding_id: envelope.findingId, state: 'PROPOSED' });
+  const input = await approval();
+  const plan = await service.previewAgentChain(org, input.anchor);
+  assert.match(plan.errors.join(' '), /Duplicate CREATE NEW identity.*source-prompt/);
+  await assert.rejects(service.approveAgentChain(principal, input), /Duplicate CREATE NEW identity/);
+  assert.equal(calls.length, 0);
+});
+
+test('new source-parent proposal remains executable when historic rows share its exact normalized identity', async () => {
+  const fixture = loadTwoRuns();
+  const record = tables.discovery_candidates.find(row => (row.envelope as { candidateId: string }).candidateId === fixture.latest.version.candidate.candidateId)!;
+  const envelope = { ...fixture.latest.version.candidate, proposedIdentity: { agent: { referenceKind: 'SOURCE_OBJECT', candidateKind: 'AGENT', sourceObject: fixture.latest.agent.candidate.sourceObject } } };
+  record.envelope = envelope; record.envelope_hash = JSON.stringify(envelope);
+  const plan = await service.previewAgentChain(org, { canonicalId: 'canonical-object:c77b2d65-fixture' });
+  assert.deepEqual(plan.errors, []);
+  assert.ok(plan.items.every(item => !item.needsIndividualReview));
+  assert.deepEqual(plan.items.find(item => item.kind === 'AGENT_VERSION')?.dependencies, [fixture.latest.agent.reviewSubjectId]);
 });

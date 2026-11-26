@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chainItem, collectAgentChain, executeChain, orderChain, reconciliationProposal, selectedChain, ChainCommandError } from '../lib/governance/agent-chain';
-import { candidate, chainFixture, item } from './helpers/agent-chain-fixtures';
+import { chainItem, collectAgentChain, duplicateCreateErrors, executeChain, latestDiscoveryChain, orderChain, reconciliationProposal, selectedChain, ChainCommandError } from '../lib/governance/agent-chain';
+import { candidate, chainFixture, item, twoDiscoveryRunsFixture } from './helpers/agent-chain-fixtures';
 
 test('chain follows the exact agent parent and revision support, including prompts and behavior endpoints', () => {
   const { all, version } = chainFixture();
@@ -58,7 +58,46 @@ test('ambiguous source parent is visible for individual review and never chosen 
   const all = [...fixture.all, candidate('AGENT', 'other-agent', { agentCode: 'second' }), version];
   const members = collectAgentChain(all, { reviewId: 'review:agent' });
   assert.ok(members.includes(version));
-  assert.match(chainItem(version, all, []).needsIndividualReview!, /ambiguous/);
+  assert.match(chainItem(version, all, []).needsIndividualReview!, /ambiguous/i);
+});
+
+test('newer discovery proposals supersede old objects, technical revision proposals and their relationships without changing history', () => {
+  const fixture = twoDiscoveryRunsFixture(); fixture.old.agent.canonicalId = 'canonical-triagem';
+  const snapshot = JSON.stringify(fixture.all);
+  const members = collectAgentChain(fixture.all, { canonicalId: 'canonical-triagem' });
+  const result = latestDiscoveryChain(members);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.current.map(row => row.candidate.candidateId).sort(), fixture.latest.all.map(row => row.candidate.candidateId).sort());
+  assert.deepEqual(result.superseded.map(row => row.candidateId).sort(), fixture.old.all.map(row => row.candidate.candidateId).sort());
+  assert.ok(result.superseded.every(row => row.runId === 'run-old' && row.newerRunId === 'run-new'));
+  assert.equal(JSON.stringify(fixture.all), snapshot);
+});
+
+test('same-run duplicate CREATE NEW identities block the batch even across source files', () => {
+  const rows = [candidate('TOOL', 'one', { declarationKey: 'same-tool' }), candidate('TOOL', 'two', { declarationKey: 'same-tool' })];
+  rows[1].candidate = { ...rows[1].candidate, sourceObject: { ...rows[1].candidate.sourceObject, externalId: 'other-file.ts' } } as typeof rows[1]['candidate'];
+  const items = rows.map(row => chainItem(row, rows, []));
+  assert.match(duplicateCreateErrors(items).join(' '), /Duplicate CREATE NEW identity.*same-tool/);
+  assert.throws(() => selectedChain(items, items.map(row => row.reviewSubjectId)), /Duplicate CREATE NEW/);
+  assert.deepEqual(duplicateCreateErrors([items[0], { ...items[1], outcome: 'MATCH_EXISTING' }]), []);
+});
+
+test('discovery recency never crosses source connections or chooses between tied runs', () => {
+  const fixture = twoDiscoveryRunsFixture();
+  const anotherSource = { ...fixture.old.prompt, candidate: { ...fixture.old.prompt.candidate, candidateId: 'other-source', sourceObject: { ...fixture.old.prompt.candidate.sourceObject, connectionId: 'another-connection' } } } as typeof fixture.old.prompt;
+  const result = latestDiscoveryChain([fixture.old.prompt, fixture.latest.prompt, anotherSource]);
+  assert.equal(result.current.length, 2);
+  fixture.latest.prompt.discoveryRun!.startedAt = fixture.old.prompt.discoveryRun!.startedAt;
+  assert.match(latestDiscoveryChain([fixture.old.prompt, fixture.latest.prompt]).errors.join(' '), /tied start times/);
+});
+
+test('latest proposal selection follows the source connection when a declaration moves between commits', () => {
+  const fixture = twoDiscoveryRunsFixture();
+  fixture.latest.prompt.candidate = { ...fixture.latest.prompt.candidate, sourceObject: { ...fixture.latest.prompt.candidate.sourceObject, externalId: 'renamed-agent.ts' } } as typeof fixture.latest.prompt.candidate;
+  const result = latestDiscoveryChain([fixture.old.prompt, fixture.latest.prompt]);
+  assert.deepEqual(result.current, [fixture.latest.prompt]);
+  assert.equal(result.superseded[0].candidateId, fixture.old.prompt.candidate.candidateId);
+  assert.deepEqual(result.errors, []);
 });
 
 test('first error preserves completed items, identifies failed step and never calls later steps or items', async () => {
