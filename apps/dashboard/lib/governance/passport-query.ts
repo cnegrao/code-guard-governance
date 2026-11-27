@@ -10,7 +10,7 @@ import { readPassportExecution } from './passport-execution-query';
 import { readPassportGovernedFacts } from './passport-governance-read';
 import { readPassportRiskOverlay } from './passport-risk-overlay-read';
 import { readProfileGovernance } from './passport-profile-provenance';
-import { readCanonicalSourceNames } from './source-name-query';
+import { readCanonicalSourceNames, readCanonicalVersionCommits } from './source-name-query';
 
 /**
  * Server-only CQRS read composition. No command port, write RPC, provider or generated facts. Families 3 / 4 / 12 / 14 consume
@@ -157,7 +157,18 @@ export async function getAgentPassport(principal: GovernanceWritePrincipal, cano
         recordedAt: row.recorded_at, revision: row.revision, ...await decisionSupport(row.created_by_decision_id) } };
   }
   const relationships: RelationshipFact[] = [];
-  const edgeRows = selected ? await read('canonical_relationships', { source_canonical_object_id: selected, source_kind: 'AGENT_VERSION' }) : [];
+  const uses: RelationshipFact[] = [];
+  const [versionCommits, useRows] = await Promise.all([
+    readCanonicalVersionCommits(org, versionContexts.map(v => v.objectId), new Date(readAt).toISOString()),
+    Promise.all(versionContexts.map(v => read('canonical_relationships', { source_canonical_object_id: v.objectId, source_kind: 'AGENT_VERSION' }))),
+  ]);
+  for (const version of versionContexts) version.sourceCommits = versionCommits[version.objectId];
+  for (const row of useRows.flat()) {
+    if (!((row.relationship_type === 'USES_MODEL' && row.target_kind === 'MODEL') || (row.relationship_type === 'USES_TOOL' && row.target_kind === 'TOOL'))) continue;
+    const fact = await relationship(row);
+    if (fact && !uses.some(r => r.id === fact.id)) uses.push(fact);
+  }
+  const edgeRows = selected ? [...useRows[versionContexts.findIndex(v => v.objectId === selected)]] : [];
   edgeRows.push(...await read('canonical_relationships', { target_canonical_object_id: canonicalObjectId, target_kind: 'AGENT', relationship_type: 'HANDOFF_TO' }));
   for (const row of edgeRows) {
     const edge = await relationship(row);
@@ -225,8 +236,9 @@ export async function getAgentPassport(principal: GovernanceWritePrincipal, cano
   ];
   const riskOverlay = await readPassportRiskOverlay(principal, selected ? 'AGENT_VERSION' : 'AGENT', selected ?? canonicalObjectId);
   const sourceNames = await readCanonicalSourceNames(org,
-    [{ objectId: canonicalObjectId, kind: 'AGENT' }, ...versionContexts.map(v => ({ objectId: v.objectId, kind: 'AGENT_VERSION' }))],
+    [{ objectId: canonicalObjectId, kind: 'AGENT' }, ...versionContexts.map(v => ({ objectId: v.objectId, kind: 'AGENT_VERSION' })),
+      ...uses.map(r => ({ objectId: r.targetId, kind: r.targetKind }))],
     new Date(readAt).toISOString());
   return { canonicalAgent, displayName: null, versionContexts, selectedVersionId: selected, currentVersionId: null,
-    families, provenanceSummary: allFacts.map(f => f.provenance), riskOverlay, sourceNames };
+    families, provenanceSummary: allFacts.map(f => f.provenance), riskOverlay, sourceNames, uses };
 }

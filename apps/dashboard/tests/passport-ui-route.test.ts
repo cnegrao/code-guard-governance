@@ -35,6 +35,7 @@ before(async()=>{
   mock.module('next/headers',{namedExports:{cookies:async()=>({get:()=>cookie?{value:cookie}:undefined}),headers:async()=>new Headers({'x-codeguard-org':'attacker-tenant'})}});
   mock.module('next/navigation',{namedExports:{notFound:()=>{throw new Error('NOT_FOUND');}}});
   mock.module('next/link',{defaultExport:({children,...props}:{children:ReactNode;href:string})=>createElement('a',props,children)});
+  mock.module('@/lib/governance/source-name-query',{namedExports:{readCanonicalSourceNames:async()=>({'canonical:agent':'TriagemManifestacaoAgent'})}});
   mock.module('@/lib/governance/passport-query',{namedExports:{getAgentPassport:async(...args:unknown[])=>{received=args;return available?{...passport,selectedVersionId:args[2]??null}:undefined;}}});
   mock.module('@/lib/governance/passport-read-store',{namedExports:{passportReader:(tenant:string)=>async(table:string,filter:unknown)=>{
     listCalls.push([tenant,table,filter]); return [{canonical_object_id:'canonical:agent',kind:'AGENT',organisation_id:org}];
@@ -214,6 +215,19 @@ test('canonical list requests only session-local AGENT objects and links to cano
   const html=renderToStaticMarkup(await ListPage());
   assert.deepEqual(listCalls,[[org,'canonical_objects',{kind:'AGENT'}]]);
   assert.ok(html.includes('href="/agents/canonical/canonical%3Aagent"'));
+  assert.ok(html.indexOf('TriagemManifestacaoAgent') < html.indexOf('>canonical:agent</p>'));
+  assert.match(html,/source name \(not governed\) · AGENT/);
+});
+
+test('Agent Passport summarizes source commits and exact version model/tool uses without selecting a current version',()=>{
+  const view: AgentPassport360 = {...passport, sourceNames:{'version:1':'triagem_agent.py','model:1':'gpt-4.1-mini'},
+    versionContexts:[{...passport.versionContexts[0],sourceCommits:['7b5aaf9','77f0128']}],
+    uses:[{type:'relationship',id:'use:1',stateId:'use-state:1',relationshipType:'USES_MODEL',sourceId:'version:1',sourceKind:'AGENT_VERSION',
+      targetId:'model:1',targetKind:'MODEL',versionId:'version:1',provenance:{...provenance,storage:'canonical_relationships',authority:'GOVERNED_RELATIONSHIP'}}]};
+  const html=renderToStaticMarkup(createElement(Component,{passport:view}));
+  assert.match(html,/>Versions</); assert.match(html,/Commit \(source\): 7b5aaf9 · 77f0128/);
+  assert.match(html,/>Uses</); assert.match(html,/gpt-4.1-mini · USES_MODEL/);
+  assert.match(html,/Current AgentVersion: UNKNOWN/); assert.match(html,/Selected AgentVersion: UNKNOWN/);
 });
 
 test('detail renders the selected version alongside the stable Agent',async()=>{

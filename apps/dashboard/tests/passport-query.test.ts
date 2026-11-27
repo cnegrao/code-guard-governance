@@ -154,6 +154,26 @@ function addData() {
 beforeEach(() => { tables = {}; calls = []; dbError = undefined; governance = []; overlayItems = []; rpcCalls = []; rpcError = false; leakAll = false; addObject('agent','AGENT'); });
 const section = (p: NonNullable<Awaited<ReturnType<typeof getPassport>>>, id: string) => p.families.find(f => f.id === id)!;
 
+test('logical Agent summary reads commits and current model/tool relations for all exact versions, without inheriting their facts', async () => {
+  addVersion('version:1'); addVersion('version:2'); addVersion('unrelated','different-agent');
+  addObject('model','MODEL'); addObject('tool','TOOL');
+  addEdge('USES_MODEL','model','MODEL','version:1');
+  addEdge('USES_TOOL','tool','TOOL','version:2');
+  addEdge('USES_MODEL','model','MODEL','unrelated');
+  addEdge('USES_TOOL','old-tool','TOOL','version:1'); addObject('old-tool','TOOL');
+  tables.canonical_relationships.find(r => r.target_canonical_object_id === 'old-tool')!.valid_to = at;
+  for (const [version, commit] of [['version:1','7b5aaf9'],['version:2','77f0128']]) {
+    add('discovery_candidates',{candidate_id:`candidate:${version}`,candidate_kind:'AGENT_VERSION',acquisition_run_id:`run:${version}`,proposed_identity:{}});
+    add('acquisition_runs',{run_id:`run:${version}`,source_version:commit});
+  }
+  const p=(await getPassport(viewer(org),'agent'))!;
+  assert.deepEqual(p.versionContexts.map(v => v.sourceCommits),[['7b5aaf9'],['77f0128']]);
+  assert.deepEqual(p.uses!.map(r => r.targetId),['model','tool']);
+  assert.equal(p.selectedVersionId,null); assert.equal(p.currentVersionId,null);
+  assert.deepEqual(section(p,'model').facts,[]); assert.deepEqual(section(p,'tools').facts,[]);
+  assert.ok(calls.every(c => c.filters.some(([key,value]) => key==='organisation_id' && value===org)));
+});
+
 function addExecution(accepted = true) {
   addVersion('version:1');
   const candidate = `candidate:agent-version:${'a'.repeat(32)}`;

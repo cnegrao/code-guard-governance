@@ -85,6 +85,9 @@ test('sidebar destinations exist, canonical passports are reachable and root is 
   const markup = renderToStaticMarkup(React.createElement(Sidebar));
   const hrefs = [...markup.matchAll(/href="([^"]+)"/g)].map(m => m[1]);
   assert.ok(hrefs.includes('/agents/canonical')); assert.ok(hrefs.includes('/graph')); assert.ok(hrefs.includes('/'));
+  assert.equal(hrefs.at(-1), '/agents');
+  assert.ok(markup.indexOf('Agent Passports') < markup.indexOf('Legacy inventory'));
+  assert.doesNotMatch(markup, /Agent Inventory/);
   for (const href of hrefs) assert.ok(existsSync(new URL(`../app/(dashboard)${href === '/' ? '' : href}/page.tsx`, import.meta.url)), href);
   assert.doesNotMatch(markup, /href="\/(dashboard|compliance|settings)"/);
 });
