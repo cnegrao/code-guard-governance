@@ -4,7 +4,7 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createRequire } from 'node:module';
 import type { GovernedGraph } from '@council/graphos/governed';
-import { CANONICAL_READABLE_ZOOM } from '../components/graph/canonical-layout';
+import { CANONICAL_MIN_ZOOM, CANONICAL_READABLE_ZOOM } from '../components/graph/canonical-layout';
 
 const slots: any[] = [];
 let cursor = 0;
@@ -30,6 +30,8 @@ mock.module('react', { namedExports: { ...React,
   },
 } });
 mock.module('next/link', { defaultExport: ({ children, ...props }: any) => React.createElement('a', props, children) });
+let focusQuery = '';
+mock.module('next/navigation', { namedExports: { useSearchParams: () => new URLSearchParams(focusQuery) } });
 Object.assign(globalThis, { React });
 function elements(tree: any): any[] {
   if (!React.isValidElement(tree)) return [];
@@ -75,19 +77,37 @@ test('queue toggle includes superseded items, resets pagination and updates top 
   assert.doesNotMatch(result.html, /Superseded by newer discovery run/);
 });
 
-test('four agent groups keep readable initial fit bounds in a taller, keyboard focusable scroll canvas', async t => {
+test('graph opens centered at 0.85, honors URL focus after measurement and allows fit and zoom down to 0.2', async t => {
   slots.length = 0; cursor = 0;
   let flowProps: any;
+  let initialized = false;
+  const centers: unknown[][] = [];
+  const setCenter = (...args: unknown[]) => { centers.push(args); return Promise.resolve(true); };
   const flow = createRequire(import.meta.url)('@xyflow/react');
-  const replacements = { ReactFlow: (props: any) => { flowProps = props; return React.createElement('div', null, props.children); }, Background: () => null, Controls: () => null };
+  const replacements = { ReactFlow: (props: any) => { flowProps = props; return React.createElement('div', null, props.children); }, Background: () => null, Controls: () => null,
+    useReactFlow: () => ({ setCenter }), useNodesInitialized: () => initialized };
   const original = Object.fromEntries(Object.keys(replacements).map(key => [key, flow[key]]));
   Object.assign(flow, replacements); t.after(() => Object.assign(flow, original));
   mock.module('@xyflow/react/dist/style.css', { defaultExport: {} });
   const { CanonicalGraph } = await import('../components/graph/CanonicalGraph');
   const graph = { nodes: ['a', 'b', 'c', 'd'].map(id => ({ nodeId: id, canonicalObjectId: id, canonicalObjectKind: 'AGENT' })), edges: [] } as unknown as GovernedGraph;
-  const html = renderToStaticMarkup(React.createElement(CanonicalGraph, { graph }));
-  assert.equal(flowProps.fitViewOptions.minZoom, CANONICAL_READABLE_ZOOM);
-  assert.ok(flowProps.minZoom >= 0.85); assert.equal(flowProps.zoomOnScroll, false); assert.equal(flowProps.preventScrolling, false);
+  const render = () => { cursor = 0; return renderToStaticMarkup(React.createElement(CanonicalGraph, { graph })); };
+  const html = render(); await flush();
+  assert.equal(centers.length, 0, 'wait for measured nodes');
+  initialized = true; render(); await flush();
+  const expectCenter = (id: string) => {
+    const node = flowProps.nodes.find((node: any) => node.id === `agent-group:${id}`);
+    assert.deepEqual(centers.at(-1), [node.position.x + node.style.width / 2, node.position.y + node.style.height / 2, { zoom: CANONICAL_READABLE_ZOOM }]);
+  };
+  expectCenter('a');
+  focusQuery = 'focus=d'; render(); await flush(); expectCenter('d');
+  focusQuery = 'focus=unavailable'; render(); await flush(); expectCenter('a');
+  focusQuery = '';
+  assert.equal(flowProps.fitView, undefined);
+  assert.equal(flowProps.fitViewOptions.minZoom, CANONICAL_MIN_ZOOM);
+  assert.equal(flowProps.fitViewOptions.nodes, undefined, 'fit includes every group');
+  assert.equal(flowProps.minZoom, 0.2); assert.equal(flowProps.zoomOnScroll, false); assert.equal(flowProps.preventScrolling, false);
+  assert.match(html, /width:100%;height:100%/);
   assert.match(html, /overflow-auto/); assert.match(html, /max\(800px, calc\(100dvh - 260px\)\)/);
   assert.match(html, /tabindex="0" role="region" aria-label="Canonical graph/);
   assert.equal(flowProps.nodes.length, 8);
