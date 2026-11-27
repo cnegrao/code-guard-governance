@@ -91,6 +91,17 @@ const baseInput = {
   reviewSubjectId: SUBJECT_ID,
 };
 
+test('workspace-commands: a human chain justification and batch reference survive confirmation in the individual audit event', async () => {
+  const reasonCode = 'Agent chain batch 11111111-2222-3333-4444-555555555555\nI reviewed the source.';
+  const port = fakePort({ subject: buildSubject({ state: REVIEW_STATE.PROPOSED, evidenceIds: [asEvidenceId('evidence-1')] }) });
+  const outcome = await workspaceCommands.confirmReview({ ...baseInput, expectedState: REVIEW_STATE.PROPOSED, reasonCode }, port);
+  assert.equal(outcome.kind, 'APPLIED');
+  if (outcome.kind === 'APPLIED') {
+    assert.equal(outcome.subject.lastTransition?.reasonCode, reasonCode);
+    assert.deepEqual(outcome.subject.lastTransition?.actor, { authorityKind: 'HUMAN', actorReference: 'user-1' });
+  }
+});
+
 test("workspace-commands: acting on a missing review subject fails closed as NOT_FOUND", async () => {
   const port = fakePort({ subject: undefined });
   const outcome = await workspaceCommands.confirmReview(
