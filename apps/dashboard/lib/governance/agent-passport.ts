@@ -114,11 +114,14 @@ export type PassportFamily = { [K in PassportFamilyId]: {
 } }[PassportFamilyId];
 export interface PassportVersionContext {
   objectId: string;
+  sourceCommits?: readonly string[];
   /** No governed display/versionCode projection exists in this V1. */
   versionCode: null;
   associationMappingIds: readonly string[];
 }
 export interface AgentPassport360 {
+  /** Read-only summary across exactly associated versions; never an inherited Agent fact. */
+  uses?: readonly RelationshipFact[];
   /** Source context only; displayName and canonical identity remain unchanged. */
   sourceNames?: Readonly<Record<string, string | null>>;
   canonicalAgent: IdentityFact;

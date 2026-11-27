@@ -18,7 +18,7 @@ import {
 import { canonicalStringify, privilegedDb, sha256Hex } from "./persistence";
 import { governanceReviewPersistence } from "./persistence";
 import { discoveryIntakePersistence } from "./discovery-intake-persistence";
-import { readFindingSourceNames } from './source-name-query';
+import { readFindingSourceNames, readRelationshipSourceLabels } from './source-name-query';
 
 /**
  * Governance Workspace read side (CQRS query path). Server-only: never
@@ -156,6 +156,7 @@ export async function listReviewQueue(
   const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
 
   const names = await readFindingSourceNames(organisationId, pageRows.map(row => row.finding_id));
+  Object.assign(names, await readRelationshipSourceLabels(organisationId, pageRows.filter(row => row.candidate_kind === 'RELATIONSHIP').map(row => row.finding_id)));
   return { items: pageRows.map(row => reviewQueueItemFromRow(row, names[row.finding_id] ?? null)), page, pageSize, hasMore };
 }
 

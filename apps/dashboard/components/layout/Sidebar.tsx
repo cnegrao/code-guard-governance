@@ -9,7 +9,6 @@ import { organisationDisplayName } from '@/lib/brand';
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: "◉" },
   { href: "/agents/canonical", label: "Agent Passports", icon: "◇" },
-  { href: "/agents", label: "Agent Inventory", icon: "◆" },
   { href: "/systems", label: "System Inventory", icon: "▣" },
   { href: "/discovery", label: "Repository Discovery", icon: "◎" },
   { href: "/graph", label: "Governed Graph", icon: "◈" },
@@ -18,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/search", label: "Search", icon: "◇" },
   { href: "/audit", label: "Audit Trail", icon: "◎" },
   { href: "/reports", label: "Reports", icon: "▤" },
+  { href: "/agents", label: "Legacy inventory", icon: "◆" },
 ];
 
 export function Sidebar() {

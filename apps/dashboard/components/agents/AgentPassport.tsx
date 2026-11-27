@@ -208,14 +208,34 @@ export function AgentPassport({ passport }: { passport: AgentPassport360 }) {
       <a className="mt-3 inline-block text-sm text-[#91B5FF] underline" href="#passport-evidence-gaps">Evidence gaps ({gapCount})</a>
     </header>
     <Card>
-      <h3 className="font-semibold text-white">AgentVersion context</h3>
+      <h3 className="font-semibold text-white">Versions</h3>
+      <p className="mt-2 text-sm text-gray-400">Canonical versions associated with this Agent. No current version is inferred.</p>
       {passport.selectedVersionId && <p className="mt-2 break-all text-sm text-gray-300">Selected AgentVersion: {passport.selectedVersionId}</p>}
-      <ul className="mt-3 flex flex-wrap gap-3 text-sm">
+      {!passport.versionContexts.length && <p className="mt-3 text-sm text-gray-400">Associated versions: UNKNOWN</p>}
+      <ul className="mt-3 space-y-3 text-sm">
         <li><Link className="text-[#91B5FF] underline" href={route}>Logical Agent only</Link></li>
         {passport.versionContexts.map(version => <li key={version.objectId} className="max-w-full break-words"><Link className="text-[#91B5FF] underline" aria-current={passport.selectedVersionId === version.objectId ? 'page' : undefined}
           href={route + '?version=' + encodeURIComponent(version.objectId)}>{passport.sourceNames?.[version.objectId] ?? version.objectId}</Link>
-          {passport.sourceNames?.[version.objectId] && <span className="block text-xs text-gray-400">{SOURCE_NAME_LABEL}</span>}</li>)}
+          {passport.sourceNames?.[version.objectId] && <span className="block text-xs text-gray-400">{SOURCE_NAME_LABEL}</span>}
+          <p className="mt-1 break-all text-xs text-gray-400">AGENT_VERSION · {version.objectId}</p>
+          <p className="mt-1 break-all text-xs text-gray-300">Commit (source): {version.sourceCommits?.length ? version.sourceCommits.join(' · ') : 'UNKNOWN'}</p>
+        </li>)}
       </ul>
+    </Card>
+    <Card>
+      <h3 className="font-semibold text-white">Uses</h3>
+      <p className="mt-2 text-sm text-gray-400">Models and tools linked by canonical relationships, grouped by their exact AgentVersion.</p>
+      {!passport.uses?.length && <p className="mt-3 text-sm text-gray-400">Model / tool relationships: UNKNOWN</p>}
+      {passport.versionContexts.filter(version => passport.uses?.some(use => use.sourceId === version.objectId)).map(version => <div key={version.objectId} className="mt-4">
+        <Link className="break-words text-sm text-[#91B5FF] underline" href={route + '?version=' + encodeURIComponent(version.objectId)}>{passport.sourceNames?.[version.objectId] ?? version.objectId}</Link>
+        {passport.sourceNames?.[version.objectId] && <p className="text-xs text-gray-400">{SOURCE_NAME_LABEL}</p>}
+        <ul className="mt-2 space-y-3">{passport.uses!.filter(use => use.sourceId === version.objectId).map(use => <li key={use.id} className="border-l border-border-dark pl-3">
+          <p className="break-words text-sm text-gray-200">{passport.sourceNames?.[use.targetId] ?? 'UNKNOWN'} · {use.relationshipType}</p>
+          <p className="text-xs text-gray-400">{SOURCE_NAME_LABEL} · {use.targetKind}</p>
+          <p className="mt-1 break-all text-xs text-gray-500">{use.targetId}</p>
+          <Provenance context={use.provenance} />
+        </li>)}</ul>
+      </div>)}
     </Card>
     <nav aria-label="Passport families" className="flex flex-wrap gap-2">
       {passport.families.map((section, index) => <a key={section.id} href={'#passport-' + section.id} className="rounded border border-border-dark px-3 py-2 text-xs text-gray-300 hover:text-white">{index + 1}. {section.label}</a>)}
