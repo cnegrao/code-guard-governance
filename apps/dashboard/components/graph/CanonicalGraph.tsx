@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, type ReactNode } from 'react';
 import { CanonicalNodeLabel } from './CanonicalNodeLabel';
-import { canonicalLayout, CANONICAL_NODE_HEIGHT, CANONICAL_NODE_WIDTH } from './canonical-layout';
+import { canonicalLayout, CANONICAL_NODE_HEIGHT, CANONICAL_NODE_WIDTH, CANONICAL_READABLE_ZOOM } from './canonical-layout';
 import { ReactFlow, Background, Controls, Handle, Position, MarkerType, type Node, type NodeProps } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { GovernedGraph } from '@council/graphos/governed';
@@ -33,7 +33,7 @@ export function CanonicalGraph({ graph, sourceNames, versionParents = NO_PARENTS
   graph: GovernedGraph; sourceNames?: Readonly<Record<string, string | null>>;
   versionParents?: Readonly<Record<string, string | null>>;
 }) {
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges, width, height } = useMemo(() => {
     const layout = canonicalLayout(graph, versionParents);
     const nodes: Node[] = layout.groups.map(group => ({ id: group.id, type: 'agentGroup', zIndex: -1, position: { x: group.x, y: group.y },
       style: { width: group.width, height: group.height, background: '#101720', border: '1px solid #3A506E', borderRadius: 12 },
@@ -46,7 +46,7 @@ export function CanonicalGraph({ graph, sourceNames, versionParents = NO_PARENTS
       style: { width: CANONICAL_NODE_WIDTH, height: CANONICAL_NODE_HEIGHT, background: '#12151A', color: '#F2F4F7', border: '1px solid #566173', borderRadius: 8 },
       data: { kind: node.canonicalObjectKind, objectId: node.canonicalObjectId, sourceName: sourceNames?.[node.canonicalObjectId] },
     })));
-    return { nodes, edges: [
+    return { nodes, width: layout.width, height: layout.height, edges: [
       ...graph.edges.map(edge => ({ ...EDGE_STYLE, id: edge.canonicalRelationshipId,
         source: edge.source.nodeId, target: edge.target.nodeId, label: edge.relationshipType })),
       ...layout.associations.map(edge => ({ ...EDGE_STYLE, ...edge, label: 'Version · governed mapping',
@@ -57,11 +57,16 @@ export function CanonicalGraph({ graph, sourceNames, versionParents = NO_PARENTS
   return <div>
     <p className="mb-2 text-sm text-gray-400">{graph.nodes.length} canonical objects · {graph.edges.length} canonical relationships</p>
     <p className="mb-3 text-xs text-gray-400">Agent → Version → Dependencies. Dashed links show version mappings; shared dependencies appear once.</p>
-    <div className="overflow-hidden rounded-xl border border-[#3A414C] bg-[#0D1015]" style={{ height: 680 }}>
-      <ReactFlow colorMode="dark" nodeTypes={NODE_TYPES} nodes={nodes} edges={edges} fitView fitViewOptions={{ padding: 0.12 }} minZoom={0.05}
-        nodesDraggable={false} nodesConnectable={false}>
-        <Background /><Controls />
-      </ReactFlow>
+    <p className="mb-3 text-xs text-gray-400">Scroll to explore the grid. Use the controls to zoom.</p>
+    <div className="overflow-auto rounded-xl border border-[#3A414C] bg-[#0D1015]" style={{ height: 'max(800px, calc(100dvh - 260px))' }}
+      tabIndex={0} role="region" aria-label="Canonical graph, scroll to explore">
+      <div style={{ width: width * CANONICAL_READABLE_ZOOM + 80, height: height * CANONICAL_READABLE_ZOOM + 80, minWidth: '100%', minHeight: '100%' }}>
+        <ReactFlow colorMode="dark" nodeTypes={NODE_TYPES} nodes={nodes} edges={edges} fitView
+          fitViewOptions={{ padding: 0.02, minZoom: CANONICAL_READABLE_ZOOM, maxZoom: 1 }} minZoom={CANONICAL_READABLE_ZOOM}
+          zoomOnScroll={false} preventScrolling={false} nodesDraggable={false} nodesConnectable={false}>
+          <Background /><Controls position="top-left" />
+        </ReactFlow>
+      </div>
     </div>
   </div>;
 }

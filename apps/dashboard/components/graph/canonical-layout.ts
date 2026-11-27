@@ -3,6 +3,7 @@ import type { GovernedGraph } from '@council/graphos/governed';
 
 export const CANONICAL_NODE_WIDTH = 320;
 export const CANONICAL_NODE_HEIGHT = 210;
+export const CANONICAL_READABLE_ZOOM = 0.85;
 
 /** Layout only. Parent mappings never enter GovernedGraph's relationship set. */
 export function canonicalLayout(graph: GovernedGraph, versionParents: Readonly<Record<string, string | null>>) {
@@ -31,7 +32,6 @@ export function canonicalLayout(graph: GovernedGraph, versionParents: Readonly<R
   };
   const groups: { id: string; agentId?: string; label: string; x: number; y: number; width: number; height: number }[] = [];
   const positions = new Map<string, { x: number; y: number; parentId: string }>();
-  let top = 0;
   for (const key of [...agents.map(n => n.nodeId), 'shared', 'other']) {
     const members = graph.nodes.filter(n => bucket(n.nodeId) === key).toSorted((a, b) => a.nodeId.localeCompare(b.nodeId));
     if (!members.length) continue;
@@ -64,8 +64,16 @@ export function canonicalLayout(graph: GovernedGraph, versionParents: Readonly<R
     const height = Math.max(...members.map(n => positions.get(n.nodeId)!.y + CANONICAL_NODE_HEIGHT)) + 32;
     groups.push({ id: groupId, agentId: agents.find(a => a.nodeId === key)?.canonicalObjectId,
       label: key === 'shared' ? 'Shared dependencies' : key === 'other' ? 'Other canonical objects' : 'Agent',
-      x: 0, y: top, width: 1364, height });
-    top += height + 72;
+      x: 0, y: 0, width: 1364, height });
   }
-  return { groups, positions, associations };
+  const columns = Math.ceil(Math.sqrt(groups.length));
+  let top = 0;
+  for (let start = 0; start < groups.length; start += columns) {
+    const row = groups.slice(start, start + columns);
+    row.forEach((group, column) => { group.x = column * (group.width + 72); group.y = top; });
+    top += Math.max(...row.map(group => group.height)) + 72;
+  }
+  const width = Math.max(0, ...groups.map(group => group.x + group.width));
+  const height = Math.max(0, ...groups.map(group => group.y + group.height));
+  return { groups, positions, associations, width, height };
 }

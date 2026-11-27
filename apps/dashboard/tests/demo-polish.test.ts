@@ -99,6 +99,11 @@ test('layered layout groups exact agent versions and unique dependencies; shared
     const a=positions[i],b=positions[j];
     if(a.parentId===b.parentId && a.x===b.x)assert.ok(Math.abs(a.y-b.y)>=CANONICAL_NODE_HEIGHT);
   }
-  for(let i=1;i<layout.groups.length;i++)assert.ok(layout.groups[i].y>layout.groups[i-1].y+layout.groups[i-1].height);
+  assert.equal(layout.groups[0].y, layout.groups[1].y, 'groups use the available width');
+  assert.ok(layout.groups[1].x > layout.groups[0].x + layout.groups[0].width);
+  for(let i=0;i<layout.groups.length;i++)for(let j=i+1;j<layout.groups.length;j++){
+    const a=layout.groups[i],b=layout.groups[j];
+    assert.ok(a.x+a.width<=b.x || b.x+b.width<=a.x || a.y+a.height<=b.y || b.y+b.height<=a.y);
+  }
   assert.deepEqual(canonicalLayout(graph,{va:'a',vb:'b'}),layout);
 });

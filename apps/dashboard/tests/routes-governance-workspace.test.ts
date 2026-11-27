@@ -26,6 +26,7 @@ const state: MockState = {
   summaryThrows: false,
   commandOutcome: { kind: "APPLIED", subject: { state: "CONFIRMED" } },
 };
+let queueFilter: { org: string; filter: Record<string, unknown> };
 
 mock.module("@/lib/auth", {
   namedExports: {
@@ -55,7 +56,7 @@ mock.module("@/lib/governance/workspace-query", {
       if (state.detailThrows) throw new Error("connection to postgres://internal-host failed");
       return state.detail;
     },
-    listReviewQueue: async () => state.queuePage,
+    listReviewQueue: async (org: string, filter: Record<string, unknown>) => { queueFilter = { org, filter }; return state.queuePage; },
     getWorkspaceSummary: async () => {
       if (state.summaryThrows) throw new Error("connection to postgres://internal-host failed");
       return state.summary;
@@ -205,6 +206,15 @@ test("summary route: an internal failure is sanitized, never a raw 500 with inte
   assert.equal(res.status, 500);
   const json = await res.json();
   assert.equal(JSON.stringify(json).includes("postgres://"), false);
+});
+
+test("queue route: superseded visibility is opt-in and remains scoped to the session tenant", async () => {
+  for (const [params, expected] of [['', false], ['?showSuperseded=true', true], ['?showSuperseded=false', false], ['?showSuperseded=invalid', false]] as const) {
+    const res = await queueRoute.GET(new Request(`http://localhost/api/x${params}`));
+    assert.equal(res.status, 200);
+    assert.equal(queueFilter.org, state.session.orgId);
+    assert.equal(queueFilter.filter.showSuperseded, expected);
+  }
 });
 
 test("summary route: a healthy request passes the summary through unchanged", async () => {

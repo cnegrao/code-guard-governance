@@ -19,6 +19,7 @@ import { canonicalStringify, privilegedDb, sha256Hex } from "./persistence";
 import { governanceReviewPersistence } from "./persistence";
 import { discoveryIntakePersistence } from "./discovery-intake-persistence";
 import { readFindingSourceNames, readRelationshipSourceLabels } from './source-name-query';
+import { readSupersededReviews } from './superseded-review-query';
 
 /**
  * Governance Workspace read side (CQRS query path). Server-only: never
@@ -48,6 +49,7 @@ export interface ReviewQueueFilter {
   readonly candidateKind?: string;
   readonly sourceConnectionId?: string;
   readonly search?: string;
+  readonly showSuperseded?: boolean;
   readonly page: number;
   readonly pageSize: number;
 }
@@ -64,6 +66,7 @@ export interface ReviewQueueItem {
   readonly detectedAt: string;
   readonly evidenceCount: number;
   readonly assertionCount: number;
+  readonly superseded: boolean;
 }
 
 export interface ReviewQueuePage {
@@ -71,6 +74,7 @@ export interface ReviewQueuePage {
   readonly page: number;
   readonly pageSize: number;
   readonly hasMore: boolean;
+  readonly supersededCount: number;
 }
 
 interface ReviewQueueRow {
@@ -86,8 +90,9 @@ interface ReviewQueueRow {
   assertion_count: number;
 }
 
-function reviewQueueItemFromRow(row: ReviewQueueRow, sourceName: string | null): ReviewQueueItem {
+function reviewQueueItemFromRow(row: ReviewQueueRow, sourceName: string | null, superseded: boolean): ReviewQueueItem {
   return {
+    superseded,
     sourceName,
     reviewSubjectId: row.review_subject_id,
     candidateKind: row.candidate_kind as DiscoveryCandidateKind,
@@ -126,38 +131,45 @@ export async function listReviewQueue(
   const pageSize = Math.min(Math.max(Math.trunc(filter.pageSize) || REVIEW_QUEUE_DEFAULT_PAGE_SIZE, 1), REVIEW_QUEUE_MAX_PAGE_SIZE);
   const page = Math.max(Math.trunc(filter.page) || 1, 1);
   const from = (page - 1) * pageSize;
-  const to = from + pageSize; // fetch one extra row to detect hasMore without a second count query
+  const superseded = await readSupersededReviews(organisationId);
+  // Filter before slicing pages. A page of old runs must not conceal current items.
+  const rows: ReviewQueueRow[] = [];
+  for (let offset = 0; ; offset += 200) {
+    let query = privilegedDb
+      .from("review_subject_queue")
+      .select(
+        "review_subject_id, candidate_kind, state, finding_id, source_connection_id, source_external_type, source_external_id, detected_at, evidence_count, assertion_count, triage_rank",
+      )
+      .eq("organisation_id", organisationId);
 
-  let query = privilegedDb
-    .from("review_subject_queue")
-    .select(
-      "review_subject_id, candidate_kind, state, finding_id, source_connection_id, source_external_type, source_external_id, detected_at, evidence_count, assertion_count, triage_rank",
-    )
-    .eq("organisation_id", organisationId);
+    if (filter.state) query = query.eq("state", filter.state);
+    if (filter.candidateKind) query = query.eq("candidate_kind", filter.candidateKind);
+    if (filter.sourceConnectionId) query = query.eq("source_connection_id", filter.sourceConnectionId);
+    if (filter.search && filter.search.trim().length > 0) {
+      const term = escapeIlikeTerm(filter.search.trim());
+      query = query.or(`finding_id.ilike.%${term}%,source_external_id.ilike.%${term}%`);
+    }
 
-  if (filter.state) query = query.eq("state", filter.state);
-  if (filter.candidateKind) query = query.eq("candidate_kind", filter.candidateKind);
-  if (filter.sourceConnectionId) query = query.eq("source_connection_id", filter.sourceConnectionId);
-  if (filter.search && filter.search.trim().length > 0) {
-    const term = escapeIlikeTerm(filter.search.trim());
-    query = query.or(`finding_id.ilike.%${term}%,source_external_id.ilike.%${term}%`);
+    const { data, error } = await query
+      .order("triage_rank", { ascending: true })
+      .order("detected_at", { ascending: false })
+      .order("review_subject_id", { ascending: false })
+      .range(offset, offset + 199);
+
+    if (error) throw new Error(`review_subject_queue query failed: ${error.message}`);
+    if (!Array.isArray(data)) throw new Error('review_subject_queue returned incomplete data');
+    rows.push(...data as ReviewQueueRow[]);
+    if (rows.length > 10000) throw new Error('review_subject_queue read limit exceeded');
+    if (data.length < 200) break;
   }
-
-  const { data, error } = await query
-    .order("triage_rank", { ascending: true })
-    .order("detected_at", { ascending: false })
-    .order("review_subject_id", { ascending: false })
-    .range(from, to);
-
-  if (error) throw new Error(`review_subject_queue query failed: ${error.message}`);
-
-  const rows = (data ?? []) as ReviewQueueRow[];
-  const hasMore = rows.length > pageSize;
-  const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
+  const supersededCount = rows.filter(row => superseded.has(row.review_subject_id)).length;
+  const visible = filter.showSuperseded ? rows : rows.filter(row => !superseded.has(row.review_subject_id));
+  const hasMore = visible.length > from + pageSize;
+  const pageRows = visible.slice(from, from + pageSize);
 
   const names = await readFindingSourceNames(organisationId, pageRows.map(row => row.finding_id));
   Object.assign(names, await readRelationshipSourceLabels(organisationId, pageRows.filter(row => row.candidate_kind === 'RELATIONSHIP').map(row => row.finding_id)));
-  return { items: pageRows.map(row => reviewQueueItemFromRow(row, names[row.finding_id] ?? null)), page, pageSize, hasMore };
+  return { items: pageRows.map(row => reviewQueueItemFromRow(row, names[row.finding_id] ?? null, superseded.has(row.review_subject_id))), page, pageSize, hasMore, supersededCount };
 }
 
 // ---------------------------------------------------------------------------
@@ -165,6 +177,7 @@ export async function listReviewQueue(
 // ---------------------------------------------------------------------------
 
 export interface WorkspaceSummary {
+  readonly supersededByState: Readonly<Partial<Record<ReviewState, number>>>;
   readonly needsReview: number;
   readonly detected: number;
   readonly proposed: number;
@@ -201,7 +214,7 @@ async function countNeedsReviewByRelationshipFlag(
 }
 
 export async function getWorkspaceSummary(organisationId: OrganisationId): Promise<WorkspaceSummary> {
-  const [detected, proposed, confirmed, certified, objectFindingsNeedingReview, relationshipFindingsNeedingReview] =
+  const [detected, proposed, confirmed, certified, objectFindingsNeedingReview, relationshipFindingsNeedingReview, superseded] =
     await Promise.all([
       countReviewSubjectsByState(organisationId, REVIEW_STATE.DETECTED),
       countReviewSubjectsByState(organisationId, REVIEW_STATE.PROPOSED),
@@ -209,9 +222,11 @@ export async function getWorkspaceSummary(organisationId: OrganisationId): Promi
       countReviewSubjectsByState(organisationId, REVIEW_STATE.CERTIFIED),
       countNeedsReviewByRelationshipFlag(organisationId, false),
       countNeedsReviewByRelationshipFlag(organisationId, true),
+      readSupersededReviews(organisationId),
     ]);
 
   return {
+    supersededByState: Object.fromEntries(Object.values(REVIEW_STATE).map(state => [state, [...superseded.values()].filter(value => value === state).length])),
     needsReview: detected + proposed + confirmed,
     detected,
     proposed,
