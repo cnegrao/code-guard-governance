@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { retrievalNotice, type TalkRetrievalState } from "@/lib/talk-retrieval-state";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +11,7 @@ import { Spinner } from "@/components/ui/Spinner";
 interface Message {
   role: "user" | "system";
   content: string;
+  retrieval?: TalkRetrievalState;
   citations?: Array<{ source: string; record: string; detail: string }>;
   confidence?: number;
   intent?: string;
@@ -58,6 +60,7 @@ export default function GovernancePage() {
         {
           role: "system",
           content: data.answer,
+          retrieval: data.retrieval,
           citations: data.citations,
           confidence: data.confidence,
           intent: data.intent,
@@ -110,6 +113,7 @@ export default function GovernancePage() {
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[80%] ${m.role === "user" ? "bg-primary/20 border border-primary/30" : "bg-surface-dark/70 border border-border-dark/50"} rounded-xl p-4`}>
               <div className="text-sm text-white whitespace-pre-wrap">{m.content}</div>
+              {m.retrieval && <p role="status" className="mt-2 text-xs text-amber-300">{retrievalNotice(m.retrieval)}</p>}
               {m.confidence && (
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant={m.confidence >= 85 ? "passed" : m.confidence >= 60 ? "medium" : "failed"}>

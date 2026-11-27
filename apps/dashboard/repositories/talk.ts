@@ -30,6 +30,7 @@ export interface GovernanceAnswer {
     rows_used: number;
     confidence_rationale: string;
   };
+  retrieval?: import("@/lib/talk-retrieval-state").TalkRetrievalState;
   evidence_count: number;
 }
 
@@ -599,35 +600,26 @@ export async function buildGovernanceContext(orgId: string): Promise<GovernanceE
   return evidence.slice(0, 15);
 }
 
-export async function semanticSearch(orgId: string, embedding: number[], limit: number = 10): Promise<GovernanceEvidence[]> {
-  const { data } = await db.write.rpc("agent_semantic_search", {
-    p_query_embedding: embedding,
-    p_organisation_id: orgId,
-    p_limit: limit,
-    p_similarity_threshold: 0.65,
-  }).throwOnError();
-
-  const results = (data as Array<Record<string, unknown>>) ?? [];
-  if (results.length === 0) return [];
-  // The legacy RPC scopes embeddings, but its joined agent is not tenant-bound (LX03).
-  // Re-read returned identities before disclosing agent fields or assigning provenance.
-  const { data: admitted } = await db.write.from("agents")
-    .select("agent_id, agent_code, name, agent_type, risk_level, oversight_level, ai_system_id, status")
-    .eq("organisation_id", orgId).in("agent_id", results.map(row => row.agent_id))
-    .neq("status", "decommissioned").throwOnError();
-  const agents = (admitted as Record<string, unknown>[]) ?? [];
-  return results.flatMap((r) => {
-    const agent = agents.find(row => row.agent_id === r.agent_id);
-    if (!agent) return [];
-    return [{
-      type: "semantic",
-      source: "agent_embeddings",
-      record: agent.agent_code as string,
-      fields: { ...projectTalkAgent(agent, orgId), similarity: r.similarity,
-        content_snippet: typeof r.content_snippet === "string" ? containLegacyOversightText(r.content_snippet) : null,
-        content_authority: "DERIVED_NON_AUTHORITATIVE" },
-    }];
-  });
+/** Current direct operational lookup, not SR2 or semantic retrieval.
+ * The Talk service calls this only after the retained V2 session eligibility gate.
+ * No owner/system/embedding joins or legacy source text are admitted here.
+ */
+export async function lexicalAgentLookup(orgId: string, query: string): Promise<GovernanceEvidence[]> {
+  const tokens = [...new Set(query.slice(0, 512).match(/[\p{L}\p{N}]{2,48}/gu) ?? [])].slice(0, 8);
+  if (!tokens.length) throw new Error("No lexical selector");
+  // Only alphanumeric tokens reach PostgREST's filter grammar; no caller-provided expression.
+  const filters = tokens.flatMap(token => [`name.ilike.*${token}*`, `agent_code.ilike.*${token}*`]).join(",");
+  const { data } = await db.write.from("agents")
+    .select("agent_id, agent_code, name, agent_type, status")
+    .eq("organisation_id", orgId).neq("status", "decommissioned")
+    .or(filters).order("agent_id").limit(5).throwOnError();
+  return ((data ?? []) as Array<Record<string, unknown>>).map(row => ({
+    type: "direct_lexical", source: "gov_repo.agents", record: String(row.agent_code),
+    fields: { agent_id: row.agent_id, agent_code: row.agent_code, name: row.name,
+      agent_type: row.agent_type, status: row.status, organisation_id: orgId,
+      authority: "LEGACY_NON_AUTHORITATIVE", derivation: "DIRECT_OPERATIONAL_CONTEXT",
+      currentness: "CURRENT_DIRECT_READ_NOT_HISTORICAL_EMBEDDING" },
+  }));
 }
 
 export function formatContextForLLM(evidence: GovernanceEvidence[]): string {

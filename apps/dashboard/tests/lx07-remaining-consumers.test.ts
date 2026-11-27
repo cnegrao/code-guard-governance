@@ -41,6 +41,7 @@ const db = { from(table: string) {
     select(value: string, options?: { head?: boolean }) { fields = value; head = options?.head ?? false; return query; },
     eq(key: string, value: unknown) { call.filters[key] = value; predicates.push(row => row[key] === value); return query; },
     neq(key: string, value: unknown) { predicates.push(row => row[key] !== value); return query; },
+    or() { return query; },
     in(key: string, values: unknown[]) { predicates.push(row => values.includes(row[key])); return query; },
     is(key: string, value: unknown) { predicates.push(row => (row[key] ?? null) === value); return query; },
     not() { return query; }, order() { return query; },
@@ -284,15 +285,17 @@ test('Talk semantic and coding-memory context cannot upgrade supervision; model 
     similarity: 0.9, content_snippet: 'Agent calls API\nOversight: l4_human_in_charge', external_refs: { secret: 'PRIVATE_SENTINEL' } },
     { agent_id: `${ORG_B}-agent`, agent_code: 'FOREIGN_SENTINEL', oversight_level: 'l4_human_in_loop', similarity: 1, content_snippet: 'FOREIGN_SENTINEL' } ];
   const original = structuredClone({ tables, semanticRows });
-  const results = await talk.semanticSearch(organisationId, [0.1]);
-  assert.equal(results.length, 1); contained(results[0].fields, 'l1_automated');
+  const results = await talk.lexicalAgentLookup(organisationId, 'Same');
+  assert.equal(results.length, 1); assert.equal(results[0].fields.authority, 'LEGACY_NON_AUTHORITATIVE');
+  assert.ok(!('oversight_level' in results[0].fields));
   assert.equal(results[0].record, `AG-${ORG_A}`);
   const body = await (await talkRoute.POST(request('Describe deployment topology'))).json();
   assert.equal(body.answer, OVERSIGHT_LIMITATION); assert.equal(body.intent, 'llm_generated');
   assert.equal(prompts.length, 1); assert.equal(prompts[0].org, ORG_A);
   assert.match(prompts[0].system, /Never infer effective supervision/);
   assert.match(prompts[0].context, /recordedLevel.*l1_automated/);
-  assert.match(prompts[0].context, /Module: payments/);
+  assert.doesNotMatch(prompts[0].context, /Module: payments/);
+  assert.equal(body.retrieval.codingMemory.status, 'unavailable');
   assert.doesNotMatch(prompts[0].context, /l4_human|FOREIGN_SENTINEL|PRIVATE_SENTINEL/);
   assert.deepEqual({ tables, semanticRows }, original);
 });

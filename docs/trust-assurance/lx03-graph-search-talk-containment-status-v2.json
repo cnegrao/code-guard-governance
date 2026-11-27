@@ -1,0 +1,44 @@
+{
+  "record_type": "ADDITIVE_LOCAL_CONTAINMENT_STATUS",
+  "recorded_date": "2026-11-27",
+  "timezone": "America/Sao_Paulo",
+  "checkpoint": "TA-002a / M17.5 Phase 2 / LX03 B1-B2",
+  "decision": "DEC-TA-002-ROUTE",
+  "starting_head": "09cf209333a39647919271b2c2e4fc9da47fd196",
+  "branch": "ta-002a-lx03-containment",
+  "predecessor": "docs/trust-assurance/lx03-graph-search-talk-containment-status-v1.json",
+  "slice_status": "LOCAL_APPLICATION_CONTAINMENT_TESTED",
+  "blockers": [
+    { "id": "B1", "status": "CONTAINED", "scope": "LOCAL_APPLICATION_CALLERS", "disposition": "Legacy agent vector RPC disconnected; bounded lexical lookup of direct tenant-bound agent fields, with no source joins or embedding snippets." },
+    { "id": "B2", "status": "CONTAINED", "scope": "LOCAL_APPLICATION_CALLERS", "disposition": "Legacy coding RPC disconnected; Talk and both memory API modes report unavailable/UNKNOWN without raw chunk or provider fallback." }
+  ],
+  "application_legacy_rpc_call_sites": 0,
+  "database_rpc_retirement": "NOT_PERFORMED",
+  "hosted_verification": "NOT_VERIFIED",
+  "browser_verification": "NOT_EVIDENCED_BROWSER_HOST_UNAVAILABLE",
+  "ui_render_test": "PASS",
+  "talk_semantic_parity": "NOT_ACHIEVED",
+  "a4_status": "BLOCKED",
+  "ta_002b_status": "NOT_STARTED_SEPARATE_TASK",
+  "lx03_status": "NEEDS_CONTAINMENT_REMAINING_C3_GATES_OPEN",
+  "v1_s1b_status": "OPEN",
+  "ta_002_status": "OPEN",
+  "m17_5_status": "OPEN",
+  "readiness": {
+    "CONTROLLED_DEMO_READINESS": "HOLD",
+    "EXTERNAL_PUBLICATION_READINESS": "HOLD",
+    "TENANT_ASSURANCE_READINESS": "HOLD",
+    "CERTIFICATION_READINESS": "HOLD",
+    "M18": "HOLD"
+  },
+  "database_delta": 0,
+  "migration_delta": 0,
+  "hosted_delta": 0,
+  "evidence": "docs/codex/evidence/2026-11-27-ta-002a-lx03-containment.md",
+  "limitations": [
+    "Application containment only; historical SQL/catalog identities remain unchanged and are not declared safe or retired.",
+    "The unchanged V2 ledger session eligibility gate precedes Talk reads; acquisition uses direct application reads, not the frozen transactional SR2 retrieval protocol.",
+    "Lexical lookup is a bounded current direct observation over identifiers/names/type/status, not semantic relevance or complete inventory coverage.",
+    "Original graph/search/answer-authority, LX01/LX06 and other C3 gates are not closed by this slice."
+  ]
+}

@@ -133,7 +133,7 @@ test('static: no tracked consumer calls a service_role-only definer through the 
     const text = source(path);
     for (const rpc of SERVICE_ONLY_RPCS) assert.doesNotMatch(text, new RegExp(`db\\.read\\s*\\.rpc\\(\\s*["']${rpc}["']`), `${path} ${rpc}`);
   }
-  assert.equal((source('repositories/talk.ts').match(/db\.write\.rpc\("agent_semantic_search"/g) ?? []).length, 1);
+  assert.equal((source('repositories/talk.ts').match(/db\.write\.rpc\("agent_semantic_search"/g) ?? []).length, 0);
   assert.equal((source('repositories/dashboard.ts').match(/db\.write\.rpc\("agent_compliance_gaps"/g) ?? []).length, 2);
 });
 

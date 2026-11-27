@@ -54,10 +54,7 @@ test('legacy chunks indexed before S1 never reach the LLM retrieval context as r
     { symbol_type: 'agent_code', symbol_name: 'Planner', path: 'src/agent.ts', similarity: 0.8,
       summary: 'langgraph agent: Planner. Type: planner, Risk: high. Evidence: uses tools', metadata: { riskLevel: 'high' } },
   ];
-  const context = await mod.semanticSearch('org', 'which agents are risky?');
-  assert.ok(context.includes('AI Agent: Planner (langgraph, planner) at src/agent.ts'));
-  assert.doesNotMatch(context, RISK);
-  assert.doesNotMatch(context, /critical|\bhigh\b/i);
+  assert.ok(!('semanticSearch' in mod), 'legacy retrieval cannot reach the LLM');
   repoRows = searchRows.map(r => ({ ...r, memory_id: 'm' }));
   const memory = await mod.getRepositoryMemory('org', 'repo');
   for (const chunk of memory) {
@@ -69,7 +66,8 @@ test('legacy chunks indexed before S1 never reach the LLM retrieval context as r
 test('the memory API route reads through the sanitizing service, never the raw repository', async () => {
   const { readFileSync } = await import('node:fs');
   const route = readFileSync(new URL('../app/api/discovery/memory/route.ts', import.meta.url), 'utf8');
-  assert.match(route, /getRepositoryMemory\(orgId, repositoryId\)/);
+  assert.match(route, /CODING_MEMORY_UNAVAILABLE/);
+  assert.doesNotMatch(route, /getRepositoryMemory|semanticSearch/);
   assert.doesNotMatch(route, /codingMemoryRepo/);
   const service = readFileSync(new URL('../services/coding-memory.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(service.replace(/\/\*\*[\s\S]*?\*\//g, ''), /agent\.(riskLevel|suggestedRiskLevel)/);
