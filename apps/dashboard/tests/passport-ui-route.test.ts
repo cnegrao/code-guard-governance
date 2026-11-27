@@ -69,6 +69,8 @@ test('real Passport component renders exactly 16 accessible and navigable sectio
   for(const [id,label] of PASSPORT_FAMILIES){assert.ok(html.includes(`id="passport-${id}"`));assert.ok(html.includes(`href="#passport-${id}"`));}
   assert.ok(html.includes('UNKNOWN')); assert.ok(html.includes('canonical:agent'));assert.ok(html.includes('Current AgentVersion: UNKNOWN'));
   assert.ok(html.includes('Selected AgentVersion: UNKNOWN')); assert.ok(html.includes('version%3A1'));assert.ok(html.includes('version%3A2'));
+  assert.ok(html.includes('href="/graph?focus=canonical%3Aagent"'));
+  assert.ok(html.includes('Open graph'));
   assert.ok(html.includes('<details'));assert.ok(html.includes('Source, trust and provenance')); assert.ok(!html.includes('17. Risk'));
 });
 

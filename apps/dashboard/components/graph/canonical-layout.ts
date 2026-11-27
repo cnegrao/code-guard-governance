@@ -4,6 +4,9 @@ import type { GovernedGraph } from '@council/graphos/governed';
 export const CANONICAL_NODE_WIDTH = 320;
 export const CANONICAL_NODE_HEIGHT = 210;
 export const CANONICAL_READABLE_ZOOM = 0.85;
+export const CANONICAL_MIN_ZOOM = 0.2;
+export const GROUP_PADDING = 24;
+export const GROUP_HEADER_HEIGHT = 48;
 
 /** Layout only. Parent mappings never enter GovernedGraph's relationship set. */
 export function canonicalLayout(graph: GovernedGraph, versionParents: Readonly<Record<string, string | null>>) {
@@ -30,7 +33,14 @@ export function canonicalLayout(graph: GovernedGraph, versionParents: Readonly<R
     const own = owners.get(id)!;
     return own.size === 1 ? [...own][0] : own.size > 1 ? 'shared' : 'other';
   };
-  const groups: { id: string; agentId?: string; label: string; x: number; y: number; width: number; height: number }[] = [];
+  const relationshipCounts = new Map<string, number>();
+  for (const edge of graph.edges) {
+    // Count each incident canonical relationship once per group, including shared dependencies.
+    for (const key of new Set([bucket(edge.source.nodeId), bucket(edge.target.nodeId)])) {
+      relationshipCounts.set(key, (relationshipCounts.get(key) ?? 0) + 1);
+    }
+  }
+  const groups: { id: string; agentId?: string; label: string; relationshipCount: number; x: number; y: number; width: number; height: number }[] = [];
   const positions = new Map<string, { x: number; y: number; parentId: string }>();
   for (const key of [...agents.map(n => n.nodeId), 'shared', 'other']) {
     const members = graph.nodes.filter(n => bucket(n.nodeId) === key).toSorted((a, b) => a.nodeId.localeCompare(b.nodeId));
@@ -61,19 +71,37 @@ export function canonicalLayout(graph: GovernedGraph, versionParents: Readonly<R
         bottom = position.y + CANONICAL_NODE_HEIGHT + 64;
       }
     }
-    const height = Math.max(...members.map(n => positions.get(n.nodeId)!.y + CANONICAL_NODE_HEIGHT)) + 32;
+    // Trim unused ranks and empty columns while retaining Agent → Version → Dependencies.
+    const columns = [...new Set(members.map(n => positions.get(n.nodeId)!.x))].sort((a, b) => a - b);
+    const top = Math.min(...members.map(n => positions.get(n.nodeId)!.y));
+    for (const node of members) {
+      const position = positions.get(node.nodeId)!;
+      position.x = GROUP_PADDING + columns.indexOf(position.x) * 490;
+      position.y += GROUP_HEADER_HEIGHT + GROUP_PADDING - top;
+    }
+    const width = Math.max(...members.map(n => positions.get(n.nodeId)!.x + CANONICAL_NODE_WIDTH)) + GROUP_PADDING;
+    const height = Math.max(...members.map(n => positions.get(n.nodeId)!.y + CANONICAL_NODE_HEIGHT)) + GROUP_PADDING;
     groups.push({ id: groupId, agentId: agents.find(a => a.nodeId === key)?.canonicalObjectId,
       label: key === 'shared' ? 'Shared dependencies' : key === 'other' ? 'Other canonical objects' : 'Agent',
-      x: 0, y: 0, width: 1364, height });
+      relationshipCount: relationshipCounts.get(key) ?? 0, x: 0, y: 0, width, height });
   }
+  groups.sort((a, b) => b.relationshipCount - a.relationshipCount || a.id.localeCompare(b.id));
   const columns = Math.ceil(Math.sqrt(groups.length));
   let top = 0;
   for (let start = 0; start < groups.length; start += columns) {
     const row = groups.slice(start, start + columns);
-    row.forEach((group, column) => { group.x = column * (group.width + 72); group.y = top; });
+    let left = 0;
+    for (const group of row) {
+      group.x = left; group.y = top;
+      left += group.width + 72;
+    }
     top += Math.max(...row.map(group => group.height)) + 72;
   }
   const width = Math.max(0, ...groups.map(group => group.x + group.width));
   const height = Math.max(0, ...groups.map(group => group.y + group.height));
   return { groups, positions, associations, width, height };
+}
+
+export function canonicalFocusGroup(groups: ReturnType<typeof canonicalLayout>['groups'], objectId: string | null) {
+  return groups.find(group => group.agentId === objectId) ?? groups[0];
 }
