@@ -23,7 +23,7 @@ before(async () => {
   mock.module('@/repositories/talk', { namedExports: {
     executeQuery: async () => ({ answer: 'router answer', confidence, intent: 'fixture', citations: [] }),
     buildGovernanceContext: async () => [{ source: 'fixture', record: 'TEST-001', type: 'Agent', fields: {} }],
-    formatContextForLLM: () => 'SYNTHETIC_CONTEXT', semanticSearch: async () => [],
+    formatContextForLLM: () => 'SYNTHETIC_CONTEXT', lexicalAgentLookup: async () => [],
   } });
   mock.module('@/services/coding-memory', { namedExports: { semanticSearch: async () => '' } });
   mock.module('@/lib/db', { namedExports: { db: { write: { rpc: async (name: string, args: Record<string, unknown>) => {
@@ -68,11 +68,11 @@ afterEach(() => {
   mock.restoreAll();
   for (const [key, value] of saved) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
 });
-test('Talk observes only the answer after embeddings; existing trimming, confidence and citations remain', async () => {
+test('Talk uses lexical context without embeddings; existing trimming, confidence and citations remain', async () => {
   const answer = await ask(principal(openaiSourceConfiguration().organisationId), 'SYNTHETIC_QUERY');
   assert.equal(answer.answer, 'TEST-001 answer'); assert.equal(answer.confidence, 78);
   assert.equal(answer.citations.length, 1); assert.equal(answer.intent, 'llm_generated');
-  assert.equal(calls.length, 2); assert.ok(calls[0].endsWith('/embeddings')); assert.ok(calls[1].endsWith('/chat/completions'));
+  assert.equal(calls.length, 1); assert.ok(calls[0].endsWith('/chat/completions'));
   assert.equal(rows.length, 2); assert.deepEqual(rows.map(row => row.operation), ['GOVERNANCE_ANSWER', 'CHAT_COMPLETION']);
   assert.ok(!JSON.stringify(rows).includes('SYNTHETIC_')); assert.ok(!JSON.stringify(rows).includes('TEST-001 answer'));
 });
@@ -84,7 +84,7 @@ test('Talk empty OpenAI answer uses the existing fallback without exposing the e
   });
   const answer = await ask(principal(openaiSourceConfiguration().organisationId), 'SYNTHETIC_QUERY');
   assert.equal(answer.answer, 'router answer'); assert.equal(answer.confidence, 72); assert.equal(answer.intent, 'fixture');
-  assert.equal(calls.length, 2); assert.equal(rows.length, 2);
+  assert.equal(calls.length, 1); assert.equal(rows.length, 2);
   assert.deepEqual(rows.map(row => row.operation), ['GOVERNANCE_ANSWER', 'CHAT_COMPLETION']);
   assert.ok(!JSON.stringify({ rows, answer }).includes('TEST-001 answer'));
 });
@@ -118,7 +118,7 @@ test('concurrent Talk invocations keep tenant, source, producer and trace mappin
   let fetchCount = 0;
   mock.method(globalThis, 'fetch', async (url: string | URL | Request) => {
     const endpoint = String(url); calls.push(endpoint);
-    if (++fetchCount === 2) { resolveFirstChatStarted(); await fetchGate; } else if (fetchCount === 3) releaseFetch();
+    if (++fetchCount === 1) { resolveFirstChatStarted(); await fetchGate; } else if (fetchCount === 2) releaseFetch();
     return Response.json(endpoint.endsWith('/embeddings') ? { data: [{ embedding: [0.1] }] } :
       { choices: [{ message: { content: '  TEST-001 answer  ' } }] });
   });

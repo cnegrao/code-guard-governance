@@ -76,7 +76,7 @@ test('permission failures never become empty product populations or favourable r
 test('supporting memory reads reject unavailable legacy storage and Talk never infers universal compliance', async () => {
   const memory = await import('../repositories/coding-memory');
   failedTable = 'coding_memory'; await assert.rejects(memory.getRepositoryMemory(org, 'repo'), /read failed/);
-  failedTable = 'coding_memory_search'; await assert.rejects(memory.searchSimilar(org, [1]), /read failed/);
+  assert.ok(!('searchSimilar' in memory), 'legacy vector retrieval has no application entry point');
   failedTable = '';
   const talk = await import('../repositories/talk');
   for (const query of ['compliance gaps', 'agents without owner', 'systems without conformity']) {

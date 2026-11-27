@@ -1,23 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireVerifiedGovernancePrincipal, SessionAuthenticationError } from "@/lib/auth";
-import { semanticSearch, getRepositoryMemory } from "@/services/coding-memory";
+import { CODING_MEMORY_UNAVAILABLE } from "@/lib/talk-retrieval-state";
 
 export async function GET(request: Request) {
   try {
-    const { organisationId: orgId } = await requireVerifiedGovernancePrincipal();
+    await requireVerifiedGovernancePrincipal();
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("query");
     const repositoryId = searchParams.get("repository_id");
     const action = searchParams.get("action") ?? "search";
 
-    if (action === "repo" && repositoryId) {
-      const chunks = await getRepositoryMemory(orgId, repositoryId);
-      return NextResponse.json({ chunks, total: chunks.length });
-    }
-
-    if (action === "search" && query) {
-      const result = await semanticSearch(orgId, query, 10);
-      return NextResponse.json({ result, empty: !result });
+    if ((action === "repo" && repositoryId) || (action === "search" && query)) {
+      // Legacy chunks have no admitted SR2 projection. The adjacent repo mode is not a fallback.
+      return NextResponse.json(CODING_MEMORY_UNAVAILABLE);
     }
 
     return NextResponse.json({ error: "action=search requires query, action=repo requires repository_id" }, { status: 400 });

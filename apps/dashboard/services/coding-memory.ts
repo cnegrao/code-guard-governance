@@ -229,30 +229,7 @@ export async function indexAgentCode(
   return indexed;
 }
 
-export async function semanticSearch(
-  orgId: string,
-  query: string,
-  limit: number = 10
-): Promise<string> {
-  const llm = getLLMProvider();
-  if (!llm.available) return "";
-
-  try {
-    const embedding = await llm.generateEmbedding(query);
-    if (embedding.length === 0) return "";
-
-    const result = await codingMemoryRepo.searchSimilar(orgId, embedding, limit, 0.5);
-    if (result.chunks.length === 0) return "";
-
-    return result.chunks
-      .map((c, i) => `[${i + 1}] ${c.symbol_type}:${c.symbol_name} (${c.path}) — ${stripHeuristicRisk(c.summary)} [similarity: ${(c.similarity ?? 0).toFixed(2)}]`)
-      .join("\n");
-  } catch {
-    return "";
-  }
-}
-
-/** Repository memory read with legacy heuristic risk text / keys removed (pre-S1 chunks included). */
+/** Dormant legacy repository reader; public retrieval is unavailable under TA-002a. */
 export async function getRepositoryMemory(orgId: string, repositoryId: string) {
   const chunks = await codingMemoryRepo.getRepositoryMemory(orgId, repositoryId);
   return chunks.map(c => ({ ...c, summary: stripHeuristicRisk(c.summary), metadata: stripHeuristicRiskMetadata(c.metadata ?? {}) }));

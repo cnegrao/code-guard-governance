@@ -10,11 +10,6 @@ export interface CodingMemoryChunk {
   similarity?: number;
 }
 
-export interface CodingMemorySearchResult {
-  chunks: CodingMemoryChunk[];
-  total: number;
-}
-
 export async function storeChunk(
   orgId: string,
   repositoryId: string,
@@ -68,38 +63,6 @@ export async function storeChunks(
     if (id) stored++;
   }
   return stored;
-}
-
-export async function searchSimilar(
-  orgId: string,
-  embedding: number[],
-  limit: number = 10,
-  threshold: number = 0.5
-): Promise<CodingMemorySearchResult> {
-  try {
-    const { data } = await db.write.rpc("coding_memory_search", {
-      p_organisation_id: orgId,
-      p_embedding: embedding,
-      p_limit: limit,
-      p_threshold: threshold,
-    }).throwOnError();
-
-    const chunks = (data as Array<Record<string, unknown>>) ?? [];
-    return {
-      chunks: chunks.map((c) => ({
-        memory_id: c.memory_id as string,
-        path: c.path as string,
-        symbol_type: c.symbol_type as string,
-        symbol_name: c.symbol_name as string,
-        summary: c.summary as string,
-        metadata: (c.metadata as Record<string, unknown>) ?? {},
-        similarity: c.similarity as number,
-      })),
-      total: chunks.length,
-    };
-  } catch {
-    throw new Error("Coding memory read failed");
-  }
 }
 
 export async function getRepositoryMemory(
