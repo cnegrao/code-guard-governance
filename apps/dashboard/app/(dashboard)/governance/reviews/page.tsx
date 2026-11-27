@@ -11,6 +11,7 @@ import { StateBadge } from "@/components/workspace/StateBadge";
 import { SOURCE_NAME_LABEL } from '@/lib/governance/source-name';
 
 interface WorkspaceSummary {
+  supersededByState: Partial<Record<string, number>>;
   needsReview: number;
   detected: number;
   proposed: number;
@@ -21,6 +22,7 @@ interface WorkspaceSummary {
 }
 
 interface ReviewQueueItem {
+  superseded: boolean;
   sourceName: string | null;
   reviewSubjectId: string;
   candidateKind: string;
@@ -35,6 +37,7 @@ interface ReviewQueueItem {
 }
 
 interface ReviewQueuePage {
+  supersededCount: number;
   items: ReviewQueueItem[];
   page: number;
   pageSize: number;
@@ -83,6 +86,7 @@ export default function GovernanceReviewQueuePage() {
   const [source, setSource] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [showSuperseded, setShowSuperseded] = useState(false);
 
   const [queue, setQueue] = useState<ReviewQueuePage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,7 +103,7 @@ export default function GovernanceReviewQueuePage() {
     }
   }, []);
 
-  const loadQueue = useCallback(async () => {
+  const loadQueue = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
@@ -108,27 +112,32 @@ export default function GovernanceReviewQueuePage() {
       if (kind) params.set("kind", kind);
       if (source) params.set("source", source);
       if (search) params.set("search", search);
+      if (showSuperseded) params.set("showSuperseded", "true");
       params.set("page", String(page));
-      const res = await fetch(`/api/governance/workspace/reviews?${params.toString()}`);
+      const res = await fetch(`/api/governance/workspace/reviews?${params.toString()}`, { signal });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Unable to load the review queue.");
       }
-      setQueue(await res.json());
+      const result: ReviewQueuePage = await res.json();
+      if (!signal?.aborted) setQueue(result);
     } catch (err) {
+      if (signal?.aborted) return;
       setError(err instanceof Error ? err.message : "Unable to load the review queue.");
       setQueue(null);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  }, [state, kind, source, search, page]);
+  }, [state, kind, source, search, page, showSuperseded]);
 
   useEffect(() => {
     loadSummary();
   }, [loadSummary]);
 
   useEffect(() => {
-    loadQueue();
+    const controller = new AbortController();
+    loadQueue(controller.signal);
+    return () => controller.abort();
   }, [loadQueue]);
 
   function applyFilters(next: Partial<{ state: string; kind: string; source: string; search: string }>) {
@@ -137,6 +146,10 @@ export default function GovernanceReviewQueuePage() {
     if ("source" in next) setSource(next.source ?? "");
     if ("search" in next) setSearch(next.search ?? "");
     setPage(1);
+  }
+
+  function hiddenCount(...states: string[]) {
+    return showSuperseded ? 0 : states.reduce((total, state) => total + (summary?.supersededByState?.[state] ?? 0), 0);
   }
 
   return (
@@ -154,23 +167,28 @@ export default function GovernanceReviewQueuePage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Needs Review</h3>
-          <div className="text-2xl font-bold text-warning">{summary?.needsReview ?? "–"}</div>
+          <div className="text-2xl font-bold text-warning">{summary ? summary.needsReview - hiddenCount('DETECTED', 'PROPOSED', 'CONFIRMED') : "–"}</div>
+          <p className="text-xs text-gray-400 mt-1">{summary ? hiddenCount('DETECTED', 'PROPOSED', 'CONFIRMED') : '–'} superseded hidden</p>
         </Card>
         <Card>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Detected</h3>
-          <div className="text-2xl font-bold text-gray-300">{summary?.detected ?? "–"}</div>
+          <div className="text-2xl font-bold text-gray-300">{summary ? summary.detected - hiddenCount('DETECTED') : "–"}</div>
+          <p className="text-xs text-gray-400 mt-1">{summary ? hiddenCount('DETECTED') : '–'} superseded hidden</p>
         </Card>
         <Card>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Proposed</h3>
-          <div className="text-2xl font-bold text-warning">{summary?.proposed ?? "–"}</div>
+          <div className="text-2xl font-bold text-warning">{summary ? summary.proposed - hiddenCount('PROPOSED') : "–"}</div>
+          <p className="text-xs text-gray-400 mt-1">{summary ? hiddenCount('PROPOSED') : '–'} superseded hidden</p>
         </Card>
         <Card>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Confirmed</h3>
-          <div className="text-2xl font-bold text-accent-cyan">{summary?.confirmed ?? "–"}</div>
+          <div className="text-2xl font-bold text-accent-cyan">{summary ? summary.confirmed - hiddenCount('CONFIRMED') : "–"}</div>
+          <p className="text-xs text-gray-400 mt-1">{summary ? hiddenCount('CONFIRMED') : '–'} superseded hidden</p>
         </Card>
         <Card>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Certified</h3>
-          <div className="text-2xl font-bold text-success">{summary?.certified ?? "–"}</div>
+          <div className="text-2xl font-bold text-success">{summary ? summary.certified - hiddenCount('CERTIFIED') : "–"}</div>
+          <p className="text-xs text-gray-400 mt-1">{summary ? hiddenCount('CERTIFIED') : '–'} superseded hidden</p>
         </Card>
       </div>
 
@@ -197,6 +215,10 @@ export default function GovernanceReviewQueuePage() {
             onChange={(e) => applyFilters({ search: e.target.value })}
           />
         </div>
+        <label className="mt-4 flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" checked={showSuperseded} onChange={(event) => { setShowSuperseded(event.target.checked); setPage(1); }} />
+          Show superseded ({loading || !queue ? '…' : queue.supersededCount})
+        </label>
       </Card>
 
       {loading && <Spinner className="py-12" />}
@@ -232,7 +254,9 @@ export default function GovernanceReviewQueuePage() {
             <tbody>
               {queue.items.map((item) => (
                 <tr key={item.reviewSubjectId} className="border-b border-border-dark/50 last:border-0">
-                  <td className="py-3 pr-4"><StateBadge state={item.state} /></td>
+                  <td className="py-3 pr-4"><StateBadge state={item.state} />
+                    {item.superseded && <p className="mt-1 text-xs text-gray-400">Superseded by newer discovery run</p>}
+                  </td>
                   <td className="py-3 pr-4 text-gray-300">{item.candidateKind}</td>
                   <td className="py-3 pr-4 text-gray-300">
                     <div className="font-medium break-words">{item.sourceName ?? item.sourceExternalId}</div>

@@ -60,6 +60,7 @@ export async function GET(request: Request) {
       candidateKind: kindParam,
       sourceConnectionId: searchParams.get("source") ?? undefined,
       search: searchParam,
+      showSuperseded: searchParams.get("showSuperseded") === "true",
       page,
       pageSize,
     });
